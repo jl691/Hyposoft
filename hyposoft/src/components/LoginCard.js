@@ -3,22 +3,15 @@ import { Anchor, Box, Button, Image, TextInput } from 'grommet'
 import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 
+import * as userutils from '../utils/userutils'
+import * as firebaseutils from '../utils/firebaseutils'
+
 import '../misc.css'
 
 class LoginCard extends React.Component {
     defaultState = {
-        loginEmail: '',
-        loginPass: '',
-        signupEmail: '',
-        signupPass: '',
-        signupConfirmPass: '',
-        firstName: '',
-        lastName: '',
-        isProfessor: false,
-        errorStyle: 'errorText',
-        loginErrorStyle: 'errorText',
-        loginErrorMessage: '',
-        signupErrorMessage: ''
+        username: '',
+        password: ''
     }
 
     state = {...this.defaultState}
@@ -26,6 +19,19 @@ class LoginCard extends React.Component {
     constructor () {
         super()
         this.handleStateChange = this.handleStateChange.bind(this)
+        this.handleLoginClick = this.handleLoginClick.bind(this)
+    }
+
+    handleLoginClick() {
+        userutils.isLoginValid(this.state.username, this.state.password, user => {
+            if (user) {
+                // It's a valid login
+                userutils.logUserIn(user)
+                this.setState(this.defaultState) // This act will redirect them to dashboard
+            } else {
+                ToastsStore.info('Invalid login', 3000, 'info')
+            }
+        })
     }
 
     handleStateChange (e, thingToChange) {
@@ -38,9 +44,9 @@ class LoginCard extends React.Component {
     }
 
     render () {
-        // if (userutils.isUserLoggedIn()) {
-        //     return <Redirect to='/classes' />
-        // }
+        if (userutils.isUserLoggedIn()) {
+            return <Redirect to='/dashboard' />
+        }
 
         const props = this.props
         return (
@@ -57,14 +63,14 @@ class LoginCard extends React.Component {
                         <Image fit='contain' src='logo_main.png' alt='Logo' alignSelf='center' margin={{bottom: 'medium'}} />
                         <TextInput
                             placeholder='Username' style={styles.TIStyle}
-                            value={this.state.loginEmail}
-                            onChange={e => this.handleStateChange(e, 'loginEmail')}
+                            value={this.state.username}
+                            onChange={e => this.handleStateChange(e, 'username')}
                             onKeyDown={e => e.key === 'Enter' && this.handleLoginClick()}
                              />
                         <TextInput
                             placeholder='Password' type='password' style={styles.TIStyle}
-                            value={this.state.loginPass}
-                            onChange={e => this.handleStateChange(e, 'loginPass')}
+                            value={this.state.password}
+                            onChange={e => this.handleStateChange(e, 'password')}
                             onKeyDown={e => e.key === 'Enter' && this.handleLoginClick()}
                              />
                         <Button primary label='Log in' onClick={() => this.handleLoginClick()} />

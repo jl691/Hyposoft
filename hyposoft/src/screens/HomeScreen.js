@@ -4,7 +4,6 @@ import {
     Box,
     Grommet,
     Heading } from 'grommet'
-import Logo from '../components/Logo'
 import LoginCard from '../components/LoginCard'
 
 import backgroundImage from '../res/bgblurred2.png'

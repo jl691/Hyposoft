@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom'
 import HomeScreen from './screens/HomeScreen'
 import * as serviceWorker from './serviceWorker'
 import { BrowserRouter, Route, Switch } from 'react-router-dom'
+import * as fbu from './utils/firebaseutils'
 
 ReactDOM.render((
             <BrowserRouter>
