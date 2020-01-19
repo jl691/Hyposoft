@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom'
 import * as serviceWorker from './serviceWorker'
 import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import './utils/firebaseutils'
+import './animation.css'
 
 import HomeScreen from './screens/HomeScreen'
 import DashboardScreen from './screens/DashboardScreen'

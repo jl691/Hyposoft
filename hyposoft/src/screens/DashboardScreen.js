@@ -35,7 +35,15 @@ class DashboardScreen extends Component {
     }
 
     render() {
+        const messsage = localStorage.getItem('dashboard_message')
+        if (messsage !== '') {
+            const x =
+            ToastsStore.info(messsage, 3000, 'burntToast')
+            localStorage.removeItem('dashboard_message')
+        }
+
         if (!userutils.isUserLoggedIn()) {
+            userutils.logout()
             return <Redirect to='/' />
         }
 

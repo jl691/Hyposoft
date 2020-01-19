@@ -71,5 +71,13 @@ function logout() {
     localStorage.clear()
 }
 
+function getUser(email, callback) {
+    firebaseutils.usersRef.doc(email).get().then(doc => callback(doc.data()))
+}
+
+function changePassword(newPass) {
+    firebaseutils.usersRef.doc(localStorage.getItem('email')).update({password: firebaseutils.hashAndSalt(newPass)})
+}
+
 export { isUserLoggedIn, createUser, modifyUser, deleteUser, isLoggedInUserAdmin,
-isLoginValid, logUserIn, logout }
+isLoginValid, logUserIn, logout, getUser, changePassword }

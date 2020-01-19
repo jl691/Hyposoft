@@ -3,6 +3,7 @@ import { Anchor, Box, Button, Grommet, Heading, TextInput } from 'grommet'
 import * as userutils from '../utils/userutils'
 import * as firebaseutils from '../utils/firebaseutils'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
+import { Redirect } from 'react-router-dom'
 import theme from '../theme'
 
 class SettingsScreen extends React.Component {
@@ -11,18 +12,66 @@ class SettingsScreen extends React.Component {
         username: '@'+localStorage.getItem('username'),
         newPass: '',
         newPassConf: '',
-        currPass: ''
+        currPass: '',
+        redirect: ''
     }
 
     handleSave () {
+        userutils.modifyUser(this.state.displayName, this.state.username.substring(1), localStorage.getItem('email'))
+        localStorage.setItem('displayName', this.state.displayName)
+        localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(this.state.displayName+this.state.username.substring(1)+localStorage.getItem('email')))
 
+        if (this.state.currPass !== '' || this.state.newPass !== '' || this.state.newPassConf !== '') {
+            ToastsStore.info("Click the Change Password link above to confirm password change (Other changes saved)", 3000, 'burntToast')
+        } else {
+            ToastsStore.info('Changes saved', 3000, 'burntToast')
+        }
     }
 
     changePassword () {
+        userutils.getUser(localStorage.getItem('email'), user => {
+            if (user) {
+                if (user.password !== firebaseutils.hashAndSalt(this.state.currPass)) {
+                    ToastsStore.info('Incorrect current password', 3000, 'burntToast')
+                } else {
+                    if (this.state.newPass.trim().length === 0) {
+                        ToastsStore.info("New password can't be empty", 3000, 'burntToast')
+                        return
+                    }
 
+                    if (this.state.newPass !== this.state.newPassConf) {
+                        ToastsStore.info("New password doesn't match with confirmation", 3000, 'burntToast')
+                    } else {
+                        userutils.changePassword(this.state.newPass)
+                        ToastsStore.info('Password changed', 3000, 'burntToast')
+                        this.setState({
+                            displayName: localStorage.getItem('displayName'),
+                            username: '@'+localStorage.getItem('username'),
+                            newPass: '',
+                            newPassConf: '',
+                            currPass: '',
+                            redirect: ''
+                        })
+                    }
+                }
+            } else {
+                // User is misbehaving
+                userutils.logout()
+                this.setState({redirect: '/'})
+            }
+        })
     }
 
     render() {
+        if (this.state.redirect !== '') {
+            return <Redirect to={this.state.redirect} />
+        }
+
+        if (!userutils.isUserLoggedIn()) {
+            userutils.logout()
+            return <Redirect to='/' />
+        }
+
         return (
             <Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
@@ -88,6 +137,7 @@ class SettingsScreen extends React.Component {
                                             const value = e.target.value
                                             this.setState(oldState => ({...oldState, currPass: value}))
                                         }}
+                                        value={this.state.currPass}
                                         />
                                     <TextInput
                                         placeholder="New password"
@@ -97,6 +147,7 @@ class SettingsScreen extends React.Component {
                                             const value = e.target.value
                                             this.setState(oldState => ({...oldState, newPass: value}))
                                         }}
+                                        value={this.state.newPass}
                                         />
                                     <TextInput
                                         style={{...styles.TIStyle2, marginTop: 10}}
@@ -106,6 +157,7 @@ class SettingsScreen extends React.Component {
                                             const value = e.target.value
                                             this.setState(oldState => ({...oldState, newPassConf: value}))
                                         }}
+                                        value={this.state.newPassConf}
                                         />
                                     <Box direction='column' flex alignSelf='stretch' margin={{top: 'medium', bottom: 'small'}}>
                                         <Box direction='row' flex justify='start'>
@@ -121,7 +173,7 @@ class SettingsScreen extends React.Component {
                                     onClick={() => this.handleSave()}
                                     />
                                 <Button
-                                    label="Cancel"
+                                    label="Back"
                                     onClick={() => this.props.history.goBack()}
                                     />
                             </Box>
