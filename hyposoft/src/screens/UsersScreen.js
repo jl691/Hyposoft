@@ -14,7 +14,7 @@ import {
 
 import theme from '../theme'
 
-class DashboardScreen extends Component {
+class UsersScreen extends Component {
     state = {
         redirect: '',
         loading: true,
@@ -49,14 +49,6 @@ class DashboardScreen extends Component {
             return <Redirect to='/' />
         }
 
-        var content = this.actions.map(element => (
-                    <ItemCard
-                        key={element.id}
-                        title={element.title}
-                        desc={element.desc}
-                        onAction={() => this.doAction(element.id)} />
-                ))
-
         return (
             <Grommet theme={theme} full className='fade'>
 
@@ -65,13 +57,14 @@ class DashboardScreen extends Component {
                         <HomeButton alignSelf='start' this={this} />
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
-                        }} >Dashboard</Heading>
+                        }} >Users</Heading>
                         <UserMenu alignSelf='end' this={this} />
                     </AppBar>
+
                     <Box direction='row'
                         justify='center'
                         wrap={true}>
-                        {content}
+
                     </Box>
                 </Box>
                 <ToastsContainer store={ToastsStore} lightBackground/>
@@ -80,4 +73,4 @@ class DashboardScreen extends Component {
     }
 }
 
-export default DashboardScreen
+export default UsersScreen

@@ -8,6 +8,7 @@ import './animation.css'
 import HomeScreen from './screens/HomeScreen'
 import DashboardScreen from './screens/DashboardScreen'
 import SettingsScreen from './screens/SettingsScreen'
+import UsersScreen from './screens/UsersScreen'
 
 ReactDOM.render((
             <BrowserRouter>
@@ -15,6 +16,7 @@ ReactDOM.render((
                     <Route exact path='/' component={HomeScreen} />
                     <Route exact path='/dashboard' component={DashboardScreen} />
                     <Route exact path='/settings' component={SettingsScreen} />
+                    <Route exact path='/users' component={UsersScreen} />
                 </Switch>
             </BrowserRouter>
         ), document.getElementById('root'))
