@@ -1,5 +1,5 @@
 import React from 'react'
-import { Anchor, Box, Button, CheckBox, Grommet, Heading, TextInput } from 'grommet'
+import { Anchor, Box, Button, Grommet, Heading, TextInput } from 'grommet'
 import * as userutils from '../utils/userutils'
 import * as firebaseutils from '../utils/firebaseutils'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
@@ -8,7 +8,7 @@ import theme from '../theme'
 class SettingsScreen extends React.Component {
     state = {
         displayName: localStorage.getItem('displayName'),
-        username: localStorage.getItem('username'),
+        username: '@'+localStorage.getItem('username'),
         newPass: '',
         newPassConf: '',
         currPass: ''

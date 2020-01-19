@@ -22,7 +22,11 @@ class LoginCard extends React.Component {
     }
 
     handleLoginClick() {
-        userutils.isLoginValid(this.state.username, this.state.password, user => {
+        var username = this.state.username
+        if (username.startsWith('@')) {
+            username = username.substring(1)
+        }
+        userutils.isLoginValid(username, this.state.password, user => {
             if (user) {
                 // It's a valid login
                 userutils.logUserIn(user)
