@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import HomeScreen from './screens/HomeScreen'
 import RackView from "./components/RackView";
+import AddRackView from "./components/AddRackView";
 import * as serviceWorker from './serviceWorker'
 import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import * as fbu from './utils/firebaseutils'
@@ -11,6 +12,7 @@ ReactDOM.render((
                 <Switch>
                     <Route exact path='/' component={HomeScreen} />
                     <Route exact path='/racks' component={RackView} />
+                    <Route exact path='/addrack' component={AddRackView} />
                 </Switch>
             </BrowserRouter>
         ), document.getElementById('root'))

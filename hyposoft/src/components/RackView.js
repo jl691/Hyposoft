@@ -5,6 +5,40 @@ import {Add, Trash} from "grommet-icons";
 import * as userutils from "../utils/userutils";
 import * as rackutils from "../utils/rackutils";
 
+const columns = [
+    {
+        property: "letter",
+        header: "Row",
+        primary: true
+    },
+    {
+        property: "number",
+        header: "Position"
+    },
+    {
+        property: "height",
+        header: "Occupied",
+        render: datum => (
+            <Box pad={{vertical: 'xsmall'}}>
+                <Meter
+                    values={[{value: datum.instances / 42 * 100}]}
+                    thickness="small"
+                    size="small"
+                />
+            </Box>
+        )
+    },
+    {
+
+        property: "instances",
+        header: "Instances"
+    }
+]
+
+const InfiniteScrollDataTable = () => {
+    const step = 10;
+}
+
 function AdminTools() {
     if (userutils.isLoggedInUserAdmin()) {
         return (
@@ -29,7 +63,6 @@ class RackView extends React.Component {
 
     componentDidMount() {
         rackutils.getRacks(racksdb => {
-            console.log(racksdb);
             this.setState({racks: racksdb});
         })
     }
@@ -40,37 +73,7 @@ class RackView extends React.Component {
                 <Box border={{color: 'brand', size: 'medium'}} pad={"medium"}>
                     <Heading margin={"none"}>Racks</Heading>
                     <AdminTools/>
-                    <DataTable columns={
-                        [
-                            {
-                                property: "letter",
-                                header: "Row",
-                                primary: true
-                            },
-                            {
-                                property: "number",
-                                header: "Position"
-                            },
-                            {
-                                property: "height",
-                                header: "Occupied",
-                                render: datum => (
-                                    <Box pad={{vertical: 'xsmall'}}>
-                                        <Meter
-                                            values={[{value: datum.instances / 42 * 100}]}
-                                            thickness="small"
-                                            size="small"
-                                        />
-                                    </Box>
-                                )
-                            },
-                            {
-
-                                property: "instances",
-                                header: "Instances"
-                            }
-                        ]
-                    } data={this.state.racks}/>
+                    <DataTable columns={columns} data={this.state.racks}/>
                 </Box>
             </Grommet>
         )

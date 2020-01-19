@@ -18,4 +18,18 @@ function getRacks(callback) {
     });
 }
 
-export {getRacks}
+function addSingleRack(row, number, height, callback) {
+    //assume from validated
+    racksRef.add({
+        letter: row,
+        number: number,
+        height: height,
+        instances: []
+    }).then(function (docRef) {
+        callback(docRef.id);
+    }).catch(function (error) {
+        callback(null);
+    })
+}
+
+export {getRacks, addSingleRack}
