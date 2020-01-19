@@ -1,24 +1,46 @@
 import React, { Component } from 'react'
 
 import {
-    Box,
-    Grommet,
-    Heading } from 'grommet'
-//import LoginCard from '../components/LoginCard'
+    Heading,
+    Grommet } from 'grommet'
 
-import backgroundImage from '../res/bgblurred2.png'
 import theme from '../theme'
+import AppBar from '../components/AppBar'
+import HomeButton from '../components/HomeButton'
+import UserMenu from '../components/UserMenu'
+import FilterBarInstances from '../components/FilterBarInstances'
+import SearchInstances from '../components/SearchInstances'
+import AddModelButton from '../components/AddModelButton'
+import InstanceTable from '../components/InstanceTable'
 
 class InstanceScreen extends Component {
-    state = {
 
-    }
     render() {
         return (
-            <React.Fragment>
-                <h1>My Instances</h1>
-            </React.Fragment>
+            <Grommet theme={theme} full className='fade'>
+                <AppBar>
+                    <HomeButton alignSelf='start' this={this} />
+                    <Heading alignSelf='center' level='4' margin={{
+                        top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
+                    }} >Instances</Heading>
+                    <UserMenu alignSelf='end' this={this} />
+                </AppBar>
+                <FilterBarInstances>
+                    <SearchInstances>
                 
+                    </SearchInstances>
+                    <AddModelButton>
+
+                    </AddModelButton>
+
+                
+                </FilterBarInstances>
+
+                <InstanceTable>
+                    
+                </InstanceTable>
+      
+            </Grommet>
            
         )
     }
