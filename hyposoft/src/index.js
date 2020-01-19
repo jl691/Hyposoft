@@ -5,10 +5,16 @@ import * as serviceWorker from './serviceWorker'
 import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import * as fbu from './utils/firebaseutils'
 
+//For Instance Mgmt testing purposes:
+import InstanceScreen from './screens/InstanceScreen'
+
+
 ReactDOM.render((
             <BrowserRouter>
                 <Switch>
-                    <Route exact path='/' component={HomeScreen} />
+                    {/* For Instance Mgmt testing purposes: */}
+                    {/* <Route exact path='/' component={HomeScreen} /> */}
+                    <Route exact path='/' component={InstanceScreen} />
                 </Switch>
             </BrowserRouter>
         ), document.getElementById('root'))
