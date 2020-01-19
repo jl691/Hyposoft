@@ -2,14 +2,15 @@ import {racksRef} from "./firebaseutils";
 
 function getRacks(callback) {
     const itemsArray = [];
-    racksRef.get().then(function (querySnapshot) {
+    racksRef.orderBy("letter").orderBy("number").get().then(function (querySnapshot) {
         querySnapshot.forEach(function (doc) {
+            let instanceCount = doc.data().instances ? Object.keys(doc.data().instances).length : 0;
             itemsArray.push({
                 id: doc.id,
                 letter: doc.data().letter,
                 number: doc.data().number,
                 height: doc.data().height,
-                instances: Object.keys(doc.data().instances).length
+                instances: instanceCount
             });
         });
         if (callback) {
@@ -32,4 +33,29 @@ function addSingleRack(row, number, height, callback) {
     })
 }
 
-export {getRacks, addSingleRack}
+function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback){
+    //assume form validated
+    let rowStartNumber = rowStart.charCodeAt(0);
+    console.log(rowStart);
+    console.log(rowStartNumber);
+    let rowEndNumber = rowEnd.charCodeAt(0);
+    console.log(rowEnd);
+    console.log(rowEndNumber);
+    for(let i=rowStartNumber; i<=rowEndNumber; i++){
+        let currLetter = String.fromCharCode(i);
+        console.log(currLetter);
+        for(let j=numberStart; j<=numberEnd; j++){
+            racksRef.add({
+                letter: currLetter,
+                number: j,
+                height: height,
+                instances: []
+            }).catch(function (error) {
+                callback(null);
+            })
+        }
+    }
+    callback(true);
+}
+
+export {getRacks, addSingleRack, addRackRange}

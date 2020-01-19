@@ -7,9 +7,13 @@ import * as rackutils from "../utils/rackutils";
 
 const columns = [
     {
+        property: "id",
+        header: "ID",
+        primary: true
+    },
+    {
         property: "letter",
         header: "Row",
-        primary: true
     },
     {
         property: "number",
@@ -35,16 +39,11 @@ const columns = [
     }
 ]
 
-const InfiniteScrollDataTable = () => {
-    const step = 10;
-}
-
 function AdminTools() {
     if (userutils.isLoggedInUserAdmin()) {
         return (
             <Box direction={"row"}>
-                <Button icon={<Add/>} label={"Add"} style={{width: '150px'}} onClick={() => {
-                }}/>
+                <Button icon={<Add/>} label={"Add"} style={{width: '150px'}} href="addrack" />
                 <Button icon={<Trash/>} label={"Remove"} style={{width: '150px'}} onClick={() => {
                 }}/>
             </Box>
