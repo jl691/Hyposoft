@@ -32,4 +32,12 @@ function deleteModel(vendor, modelNumber) {
     firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).delete()
 }
 
-export { createModel, modifyModel, deleteModel }
+function doesModelDocExist(vendor, modelNumber) {
+    var docRef = firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber))
+    docRef.get().then(doc => {
+      // not sure what I should be returning
+      return doc.exists
+    })
+}
+
+export { createModel, modifyModel, deleteModel, doesModelDocExist }
