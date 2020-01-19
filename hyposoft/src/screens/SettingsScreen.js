@@ -36,6 +36,7 @@ class SettingsScreen extends React.Component {
                                         this.setState(oldState => ({...oldState, displayName: value}))
                                     }}
                                     value={this.state.displayName}
+                                    title='Display name'
                                     />
                             </div>
                             <Box margin={{top: 'medium'}}>
@@ -48,6 +49,7 @@ class SettingsScreen extends React.Component {
                                         }}
                                         value={this.state.username}
                                         disabled
+                                        title='Username'
                                         />
                                 </div>
                             </Box>
@@ -61,6 +63,7 @@ class SettingsScreen extends React.Component {
                                         }}
                                         value={localStorage.getItem('email')}
                                         disabled
+                                        title='Email'
                                         />
                                 </div>
                             </Box>
