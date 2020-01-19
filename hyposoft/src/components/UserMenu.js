@@ -15,7 +15,7 @@ const UserMenu = (props) => {
     }
 
     return (
-            <Menu label='Admin'
+            <Menu label={localStorage.getItem('displayName')}
                 margin={{ right: 'small' }}
                 items={items}
             />

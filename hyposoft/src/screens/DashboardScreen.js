@@ -22,13 +22,16 @@ class DashboardScreen extends Component {
     }
 
     actions = [
-        {title: 'Action 1', desc: 'Description of action 1'},
-        {title: 'Action 2', desc: 'Description of action 2'},
-        {title: 'Action 3', desc: 'Description of action 3'}
+        {title: 'Users', desc: 'View and manage users'},
+        {title: 'Models', desc: 'View and manage models'},
+        {title: 'Instances', desc: 'View and manage instances of models'},
+        {title: 'Racks', desc: 'View and manage racks'},
+        {title: 'Import / Export', desc: 'Import and export models and instances'},
+        {title: 'Reports', desc: 'Generate rack usage reports'}
     ]
 
     doAction (action) {
-
+        alert(action) // STUB
     }
 
     render() {
@@ -50,7 +53,7 @@ class DashboardScreen extends Component {
                 <Box fill background='light-2'>
                     <AppBar>
                         <HomeButton alignSelf='start' this={this} />
-                        <Heading alignSelf='center' flex={1} level='4' margin={{
+                        <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                         }} >Dashboard</Heading>
                         <UserMenu alignSelf='end' this={this} />

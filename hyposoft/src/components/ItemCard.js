@@ -8,6 +8,7 @@ const ClassInfoCard = props => (
         background='#FFFFFF'
         width={'medium'}
         margin={{top: 'medium', left: 'medium'}}
+        onClick={() => props.onAction()}
         pad='small' >
         <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}} direction='column' justify='start'>
             <Heading level='4' margin='none'>{props.title}</Heading>
@@ -19,7 +20,8 @@ const ClassInfoCard = props => (
 const styles = {
     boxStyle: {
         borderRadius: 10,
-        borderColor: '#EDEDED'
+        borderColor: '#EDEDED',
+        cursor: 'pointer'
     }
 }
 
