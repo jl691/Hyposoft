@@ -1,24 +1,49 @@
 import React, { Component } from 'react'
+import PropTypes from 'prop-types';
 import { Accordion, AccordionPanel, Box, Text } from 'grommet'
-
-//TODO: Watch video again on how he nested the todos in the list
-//Essentially try to do the same here
+import InstanceRow from './InstanceRow'
 
 export default class InstanceTable extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+                instances: [
+                    {
+                        id: 1,
+                        model_id: 'R710'
+                    },
+                    {
+                        id: 2,
+                        model_id: 'R708'
+                    },
+                    {
+                        id: 3,
+                        model_id: 'S800'
+                    }
+                ]
+            
+        }
+    }
+
     render() {
-        return (
+        console.log(this.props.instances)
+        // should it be this.props or this.state? error when you use props
+        return this.state.instances.map(( instance ) => (
             <Accordion>
-            <AccordionPanel label="Panel 1">
-            <Box pad="medium" background="light-2">
-            <Text>One</Text>
-            </Box>
-            </AccordionPanel>
-            <AccordionPanel label="Panel 2">
-            <Box pad="medium" background="light-2">
-            <Text>Two</Text>
-            </Box>
-            </AccordionPanel>
+                <InstanceRow>
+                    instance={instance} 
+                </InstanceRow>
+                   
             </Accordion>
-        )
+          
+          
+         
+        ));
+      
     }
 }
+
+InstanceTable.propTypes = {
+    instances: PropTypes.array.isRequired,
+
+  }

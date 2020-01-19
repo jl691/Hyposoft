@@ -35,10 +35,12 @@ class InstanceScreen extends Component {
 
                 
                 </FilterBarInstances>
-
+                
                 <InstanceTable>
-                    
+                    {/* how to access these values from InstanceTable? */}
+                  
                 </InstanceTable>
+
       
             </Grommet>
            
