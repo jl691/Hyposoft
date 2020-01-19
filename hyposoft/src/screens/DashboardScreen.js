@@ -22,12 +22,12 @@ class DashboardScreen extends Component {
     }
 
     actions = [
-        {title: 'Users', desc: 'View and manage users'},
-        {title: 'Models', desc: 'View and manage models'},
-        {title: 'Instances', desc: 'View and manage instances of models'},
-        {title: 'Racks', desc: 'View and manage racks'},
-        {title: 'Import / Export', desc: 'Import and export models and instances'},
-        {title: 'Reports', desc: 'Generate rack usage reports'}
+        {id: 0, title: 'Users', desc: 'View and manage users'},
+        {id: 1, title: 'Models', desc: 'View and manage models'},
+        {id: 2, title: 'Instances', desc: 'View and manage instances of models'},
+        {id: 3, title: 'Racks', desc: 'View and manage racks'},
+        {id: 4, title: 'Import / Export', desc: 'Import and export models and instances'},
+        {id: 5, title: 'Reports', desc: 'Generate rack usage reports'}
     ]
 
     doAction (action) {
@@ -41,10 +41,10 @@ class DashboardScreen extends Component {
 
         var content = this.actions.map(element => (
                     <ItemCard
-                        key={element.title}
+                        key={element.id}
                         title={element.title}
                         desc={element.desc}
-                        onAction={() => this.doAction(element.title)} />
+                        onAction={() => this.doAction(element.id)} />
                 ))
 
         return (
