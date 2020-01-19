@@ -4,7 +4,6 @@ import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 
 import * as userutils from '../utils/userutils'
-import * as firebaseutils from '../utils/firebaseutils'
 
 import '../misc.css'
 
@@ -60,7 +59,7 @@ class LoginCard extends React.Component {
                 pad='small' >
                 <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}} direction='column' justify='start'>
                     <Box pad={{top: 'small', bottom: 'small'}}>
-                        <Image fit='contain' src='logo_main.png' alt='Logo' alignSelf='center' margin={{bottom: 'medium'}} />
+                        <Image fit='contain' width='200px' src='logo_main.png' alt='Logo' alignSelf='center' margin={{bottom: 'medium'}} />
                         <TextInput
                             placeholder='Username' style={styles.TIStyle}
                             value={this.state.username}

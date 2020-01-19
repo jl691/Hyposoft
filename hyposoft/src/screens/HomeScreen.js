@@ -2,8 +2,7 @@ import React, { Component } from 'react'
 
 import {
     Box,
-    Grommet,
-    Heading } from 'grommet'
+    Grommet } from 'grommet'
 import LoginCard from '../components/LoginCard'
 
 import backgroundImage from '../res/bgblurred2.png'

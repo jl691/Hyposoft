@@ -1,9 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import HomeScreen from './screens/HomeScreen'
+import DashboardScreen from './screens/DashboardScreen'
 import * as serviceWorker from './serviceWorker'
 import { BrowserRouter, Route, Switch } from 'react-router-dom'
-import * as fbu from './utils/firebaseutils'
+import './utils/firebaseutils'
 
 //For Instance Mgmt testing purposes:
 import InstanceScreen from './screens/InstanceScreen'
@@ -12,9 +13,14 @@ import InstanceScreen from './screens/InstanceScreen'
 ReactDOM.render((
             <BrowserRouter>
                 <Switch>
+
                     {/* For Instance Mgmt testing purposes: */}
                     {/* <Route exact path='/' component={HomeScreen} /> */}
                     <Route exact path='/' component={InstanceScreen} />
+
+                    {/* <Route exact path='/' component={HomeScreen} />
+                    <Route exact path='/dashboard' component={DashboardScreen} /> */}
+
                 </Switch>
             </BrowserRouter>
         ), document.getElementById('root'))
