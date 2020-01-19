@@ -9,6 +9,7 @@ function isUserLoggedIn() {
     return firebaseutils.hashAndSalt(displayName+username+email) === loginCheck
 }
 
+//probably need to switch this over to a role-based check at some point for multiple admins
 function isLoggedInUserAdmin() {
     return isUserLoggedIn() && (localStorage.getItem('username') === 'admin')
 }
