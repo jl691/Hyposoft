@@ -37,7 +37,6 @@ class InstanceScreen extends Component {
                 </FilterBarInstances>
                 
                 <InstanceTable>
-                    {/* how to access these values from InstanceTable? */}
                   
                 </InstanceTable>
 
@@ -48,8 +47,6 @@ class InstanceScreen extends Component {
     }
 }
 
-const styles = {
 
-}
 
 export default InstanceScreen

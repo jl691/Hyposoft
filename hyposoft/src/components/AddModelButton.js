@@ -1,13 +1,13 @@
 import React from 'react'
 import { Add } from 'grommet-icons'
-import IconButton from './IconButton'
+import { Button } from 'grommet'
 
 
 
 const AddModelButton = props => 
-<IconButton 
+<Button
+    label="Add Model" 
     icon={<Add />} 
-    label= "Add Model" 
     // TODO: Correct functionality here
     onClick={() => props.this.props.history.push('/dashboard')} 
 />
