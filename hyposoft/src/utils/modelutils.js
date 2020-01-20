@@ -38,6 +38,30 @@ function doesModelDocExist(vendor, modelNumber) {
       // not sure what I should be returning
       return doc.exists
     })
+    .catch( error => {
+      console.log("Error getting documents: ", error)
+    })
 }
 
-export { createModel, modifyModel, deleteModel, doesModelDocExist }
+function getSuggestedVendors(userInput) {
+  // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    var beginningInput = userInput.slice(0,userInput.length-1)
+    var endInput = userInput.slice(userInput.length-1,userInput.length)
+    var upperBound = beginningInput + String.fromCharCode(endInput.charCodeAt(0)+1)
+    var query = firebaseutils.modelsRef.where("vendor",">=",userInput).where("vendor","<",upperBound)
+
+    var vendorArray = new Array()
+    query.get().then(querySnapshot => {
+      querySnapshot.forEach( doc => {
+        if (!vendorArray.includes(doc.vendor)) {
+          vendorArray.push(doc.vendor)
+        }
+      })
+      return vendorArray
+    })
+    .catch( error => {
+      console.log("Error getting documents: ", error)
+    })
+}
+
+export { createModel, modifyModel, deleteModel, doesModelDocExist, getSuggestedVendors }
