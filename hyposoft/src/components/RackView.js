@@ -30,10 +30,6 @@ class RackView extends React.Component {
                 this.setState({racks: rackCallback, initialLoaded: true});
             }
         })
-
-        /*        rackutils.getRacks(racksdb => {
-                    this.setState({racks: racksdb});
-                })*/
     }
 
     AdminTools() {
