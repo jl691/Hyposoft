@@ -1,7 +1,7 @@
 const theme = {
     global: {
         colors: {
-            brand: '#4BBD51',
+            brand: '#4BBD51'
         },
         edgeSize: {
             small: '7px' // Padding around an icon-only button. Default: 12px
@@ -18,5 +18,6 @@ const theme = {
     custom: {
         iconSize: '17px',
     }
-};
-export default theme;
+}
+
+export default theme
