@@ -32,8 +32,29 @@ function deleteModel(vendor, modelNumber) {
     firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).delete()
 }
 
-function getModel(vendor, modelNumber) {
-    return firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).get()
+function getModel(vendor, modelNumber, callback) {
+    firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).get().then(doc => callback(doc.data()))
+}
+
+function getModelsWithShortFormFields(startAfter, callback) {
+    firebaseutils.modelsRef.orderBy('vendor').orderBy('modelNumber').limit(25).startAfter(startAfter).get()
+    .then( docSnaps => {
+      // added this in from anshu
+      var newStartAfter = null
+      if (docSnaps.docs.length === 25) {
+        newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
+      }
+
+      const models = docSnaps.docs.map( doc => (
+        {vendor: doc.data().vendor, modelNumber: doc.data().modelNumber, height: doc.data().height,
+          cpu: doc.data().cpu, storage: doc.data().storage}
+      ))
+      callback(models,newStartAfter)
+    })
+    .catch( error => {
+      console.log("Error getting documents: ", error)
+      callback(null,null)
+    })
 }
 
 function doesModelDocExist(vendor, modelNumber, callback) {
@@ -69,4 +90,4 @@ function getSuggestedVendors(userInput, callback) {
     })
 }
 
-export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors }
+export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModelsWithShortFormFields }
