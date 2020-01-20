@@ -33,7 +33,7 @@ function addSingleRack(row, number, height, callback) {
     })
 }
 
-function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback){
+function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback) {
     //assume form validated
     let rowStartNumber = rowStart.charCodeAt(0);
     console.log(rowStart);
@@ -41,10 +41,10 @@ function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback
     let rowEndNumber = rowEnd.charCodeAt(0);
     console.log(rowEnd);
     console.log(rowEndNumber);
-    for(let i=rowStartNumber; i<=rowEndNumber; i++){
+    for (let i = rowStartNumber; i <= rowEndNumber; i++) {
         let currLetter = String.fromCharCode(i);
         console.log(currLetter);
-        for(let j=numberStart; j<=numberEnd; j++){
+        for (let j = numberStart; j <= numberEnd; j++) {
             racksRef.add({
                 letter: currLetter,
                 number: j,
@@ -58,4 +58,23 @@ function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback
     callback(true);
 }
 
-export {getRacks, addSingleRack, addRackRange}
+function deleteSingleRack(id, callback) {
+    racksRef.doc(id).get().then(function (doc) {
+        if(doc.exists){
+            if(doc.data().instances &&  Object.keys(doc.data().instances).length > 0){
+                callback(null)
+            }
+            else {
+                racksRef.doc(id).delete().then(function () {
+                    callback(id);
+                }).catch(function (error) {
+                    callback(null);
+                })
+            }
+        } else {
+            callback(null);
+        }
+    })
+}
+
+export {getRacks, addSingleRack, addRackRange, deleteSingleRack}
