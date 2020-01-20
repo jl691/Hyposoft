@@ -68,5 +68,9 @@ function logUserIn(userObject) {
     localStorage.setItem('email', userObject.email)
 }
 
+function logout() {
+    localStorage.clear()
+}
+
 export { isUserLoggedIn, createUser, modifyUser, deleteUser, isLoggedInUserAdmin,
-isLoginValid, logUserIn }
+isLoginValid, logUserIn, logout }
