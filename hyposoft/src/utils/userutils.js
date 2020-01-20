@@ -80,7 +80,11 @@ function changePassword(newPass) {
 
 function loadUsers(startAfter, callback) {
     firebaseutils.usersRef.orderBy('username').limit(25).startAfter(startAfter).get().then(docSnaps => {
-        const newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
+        var newStartAfter = null
+        if (docSnaps.docs.length === 25) {
+            newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
+        }
+        
         const users = docSnaps.docs.map(doc => (
             {dummy: true, username: doc.data().username, name: doc.data().displayName,
                  role: (doc.data().username === 'admin' ? 'Admin' : 'User')}

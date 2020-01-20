@@ -37,7 +37,9 @@ class UsersScreen extends Component {
 
     componentWillMount() {
         firebaseutils.usersRef.orderBy('username').limit(25).get().then(docSnaps => {
-            this.startAfter = docSnaps.docs[docSnaps.docs.length-1]
+            if (docSnaps.docs.length === 25) {
+                this.startAfter = docSnaps.docs[docSnaps.docs.length-1]
+            }
             this.setState({users: docSnaps.docs.map(doc => (
                 {dummy: true, username: doc.data().username, name: doc.data().displayName,
                      role: (doc.data().username === 'admin' ? 'Admin' : 'User')}
@@ -104,10 +106,14 @@ class UsersScreen extends Component {
                                                     <DataTable
                                                         step={25}
                                                         onMore={() => {
-                                                            userutils.loadUsers(this.startAfter, (users, newStartAfter) => {
-                                                                this.startAfter = newStartAfter
-                                                                this.setState({users: users})
-                                                            })
+                                                            if (this.startAfter) {
+                                                                userutils.loadUsers(this.startAfter, (users, newStartAfter) => {
+                                                                    this.startAfter = newStartAfter
+                                                                    this.setState(oldState => (
+                                                                        {users: [...oldState.users, ...users]}
+                                                                    ))
+                                                                })
+                                                            }
                                                         }}
                                                         columns={
                                                             [
