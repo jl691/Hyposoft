@@ -78,5 +78,16 @@ function changePassword(newPass) {
     firebaseutils.usersRef.doc(localStorage.getItem('email')).update({password: firebaseutils.hashAndSalt(newPass)})
 }
 
+function loadUsers(startAfter, callback) {
+    firebaseutils.usersRef.orderBy('username').limit(25).startAfter(startAfter).get().then(docSnaps => {
+        const newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
+        const users = docSnaps.docs.map(doc => (
+            {dummy: true, username: doc.data().username, name: doc.data().displayName,
+                 role: (doc.data().username === 'admin' ? 'Admin' : 'User')}
+        ))
+        callback(users, newStartAfter)
+    })
+}
+
 export { isUserLoggedIn, createUser, modifyUser, deleteUser, isLoggedInUserAdmin,
-isLoginValid, logUserIn, logout, getUser, changePassword }
+isLoginValid, logUserIn, logout, getUser, changePassword, loadUsers }

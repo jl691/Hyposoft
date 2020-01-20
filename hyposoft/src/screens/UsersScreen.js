@@ -5,6 +5,7 @@ import UserMenu from '../components/UserMenu'
 import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import * as userutils from '../utils/userutils'
+import * as firebaseutils from '../utils/firebaseutils'
 
 import {
     Box,
@@ -20,14 +21,21 @@ import theme from '../theme'
 class UsersScreen extends Component {
     state = {
         redirect: '',
-        loading: true,
-        classes: []
+        users: [
+        ]
     }
 
-    users = [
-        {checked: true, username: 'admin', name: 'Admin', role: 'Admin'},
-        {checked: true, username: 'user1', name: 'User', role: 'User'}
-    ]
+    startAfter = null
+
+    componentWillMount() {
+        firebaseutils.usersRef.orderBy('username').limit(25).get().then(docSnaps => {
+            this.startAfter = docSnaps.docs[docSnaps.docs.length-1]
+            this.setState({users: docSnaps.docs.map(doc => (
+                {dummy: true, username: doc.data().username, name: doc.data().displayName,
+                     role: (doc.data().username === 'admin' ? 'Admin' : 'User')}
+            ))})
+        })
+    }
 
     render() {
         if (this.state.redirect !== '') {
@@ -74,36 +82,45 @@ class UsersScreen extends Component {
                                                <Heading level='4' margin='none'>{this.props.title}</Heading>
                                                <Box align="center">
                                                     <DataTable
-                                                      columns={[
-                                                        {
-                                                            property: 'name',
-                                                            header: <Text>Name</Text>,
-                                                            sortable: true,
-                                                        },
-                                                        {
-                                                            property: 'username',
-                                                            header: <Text>Username</Text>,
-                                                            primary: true,
-                                                            sortable: true,
-                                                        },
-                                                        {
-                                                            property: 'role',
-                                                            header: <Text>Role</Text>,
-                                                            sortable: true,
-                                                        },
-                                                          {
-                                                            property: 'checked',
-                                                            render: datum => (
-                                                              <FormTrash style={{cursor: 'pointer'}} onClick={() => {}} />
-                                                            ),
-                                                            align: 'center',
-                                                            header: <Text>Delete</Text>,
-                                                            sortable: false
-                                                          }
-                                                      ].map(col => ({ ...col }))}
-                                                      data={this.users}
-                                                      sortable
-                                                      size="medium"
+                                                        step={25}
+                                                        onMore={() => {
+                                                            userutils.loadUsers(this.startAfter, (users, newStartAfter) => {
+                                                                this.startAfter = newStartAfter
+                                                                this.setState({users: users})
+                                                            })
+                                                        }}
+                                                        columns={
+                                                            [
+                                                                {
+                                                                    property: 'name',
+                                                                    header: <Text>Name</Text>,
+                                                                    sortable: true,
+                                                                },
+                                                                {
+                                                                    property: 'username',
+                                                                    header: <Text>Username</Text>,
+                                                                    primary: true,
+                                                                    sortable: true,
+                                                                },
+                                                                {
+                                                                    property: 'role',
+                                                                    header: <Text>Role</Text>,
+                                                                    sortable: true,
+                                                                },
+                                                                {
+                                                                    property: 'dummy',
+                                                                    render: datum => (
+                                                                    <FormTrash style={{cursor: 'pointer'}} onClick={() => {}} />
+                                                                ),
+                                                                    align: 'center',
+                                                                    header: <Text>Delete</Text>,
+                                                                    sortable: false
+                                                                }
+                                                            ].map(col => ({ ...col }))
+                                                        }
+                                                        data={this.state.users}
+                                                        sortable
+                                                        size="medium"
                                                     />
                                                 </Box>
                                            </Box>
