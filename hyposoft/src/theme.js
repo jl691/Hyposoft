@@ -13,10 +13,10 @@ const theme = {
         },
         text: {
             brand: '#FFFFFF'
-        }
+        },
     },
     custom: {
-        iconSize: '17px'
+        iconSize: '17px',
     }
 }
 
