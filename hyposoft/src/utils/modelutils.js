@@ -32,6 +32,10 @@ function deleteModel(vendor, modelNumber) {
     firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).delete()
 }
 
+function getModel(vendor, modelNumber) {
+    return firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).get()
+}
+
 function doesModelDocExist(vendor, modelNumber, callback) {
     var docRef = firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber))
     docRef.get().then(doc => {
@@ -65,4 +69,4 @@ function getSuggestedVendors(userInput, callback) {
     })
 }
 
-export { createModel, modifyModel, deleteModel, doesModelDocExist, getSuggestedVendors }
+export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors }
