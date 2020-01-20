@@ -13,7 +13,9 @@ import {
     DataTable,
     Grommet,
     Heading,
-    Text } from 'grommet'
+    Layer,
+    Text,
+    TextInput } from 'grommet'
 
 import { Add, FormTrash } from "grommet-icons"
 import theme from '../theme'
@@ -27,6 +29,12 @@ class UsersScreen extends Component {
 
     startAfter = null
 
+    constructor() {
+        super()
+        this.onClose = this.onClose.bind(this)
+        this.addUserDialog = this.addUserDialog.bind(this)
+    }
+
     componentWillMount() {
         firebaseutils.usersRef.orderBy('username').limit(25).get().then(docSnaps => {
             this.startAfter = docSnaps.docs[docSnaps.docs.length-1]
@@ -35,6 +43,18 @@ class UsersScreen extends Component {
                      role: (doc.data().username === 'admin' ? 'Admin' : 'User')}
             ))})
         })
+    }
+
+    addUserDialog() {
+        this.setState(currState => (
+            {...currState, showAddDialog: true}
+        ))
+    }
+
+    onClose() {
+        this.setState(currState => (
+            {...currState, showAddDialog: false}
+        ))
     }
 
     render() {
@@ -146,7 +166,7 @@ class UsersScreen extends Component {
                                                 <Heading level='4' margin='none'>Missing someone?</Heading>
                                                 <p>Assign a username to them, and we'll invite them to join.</p>
                                                 <Box direction='column' flex alignSelf='stretch'>
-                                                    <Button primary icon={<Add />} label="Add" onClick={() => {}} />
+                                                    <Button primary icon={<Add />} label="Add" onClick={this.addUserDialog} />
                                                 </Box>
                                             </Box>
                                         </Box>
@@ -155,6 +175,55 @@ class UsersScreen extends Component {
                            </Box>
                     </Box>
                 </Box>
+                {this.state.showAddDialog && (
+                    <Layer position="center" modal onClickOutside={this.onClose} onEsc={this.onClose}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Add User
+                            </Heading>
+                            <p>Assign them a username, and give us an email address to send them their invitation.</p>
+                            <Box direction="column" gap="small">
+                                <TextInput style={{
+                                        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
+                                        width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal'
+                                    }}
+                                    placeholder="Username"
+                                    onChange={e => {
+                                        const value = e.target.value
+                                        this.setState(oldState => ({...oldState, newUserUsername: value}))
+                                    }}
+                                    value={this.state.newUserUsername}
+                                    title='Display name'
+                                    />
+                                <TextInput style={{
+                                        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
+                                        width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
+                                    }}
+                                    placeholder="Email"
+                                    onChange={e => {
+                                        const value = e.target.value
+                                        this.setState(oldState => ({...oldState, newUserEmail: value}))
+                                    }}
+                                    value={this.state.newUserEmail}
+                                    title='Display name'
+                                    />
+                            </Box>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="end" >
+                                <Button label="Add" primary onClick={() => {}} />
+                                <Button
+                                    label="Close"
+                                    onClick={this.onClose}
+                                    />
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
                 <ToastsContainer store={ToastsStore} lightBackground/>
             </Grommet>
         )
