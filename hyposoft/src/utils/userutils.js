@@ -48,7 +48,6 @@ function deleteUser(email) {
 }
 
 function isLoginValid(username, password, callback) {
-    console.log(firebaseutils.hashAndSalt(password.trim()))
     firebaseutils.usersRef.where('username', '==', username)
     .where('password', '==', firebaseutils.hashAndSalt(password.trim())).get()
     .then(querySnapshot => {
