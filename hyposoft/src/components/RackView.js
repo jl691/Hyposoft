@@ -6,6 +6,7 @@ import * as userutils from "../utils/userutils";
 import * as rackutils from "../utils/rackutils";
 import AddRackView from "./AddRackView";
 import {ToastsContainer, ToastsStore} from "react-toasts";
+import DeleteRackView from "./DeleteRackView"
 
 class RackView extends React.Component {
 
@@ -29,8 +30,7 @@ class RackView extends React.Component {
             return (
                 <Box direction={"row"}>
                     <Button icon={<Add/>} label={"Add"} style={{width: '150px'}} onClick={() => this.setState({popupType: "Add"})}/>
-                    <Button icon={<Trash/>} label={"Remove"} style={{width: '150px'}} onClick={() => {
-                    }}/>
+                    <Button icon={<Trash/>} label={"Remove"} style={{width: '150px'}} onClick={() => this.setState({popupType: "Remove"})}/>
                 </Box>
             );
         }
@@ -51,7 +51,6 @@ class RackView extends React.Component {
                             <Button label="Delete" icon={<Trash/>} onClick={() => {
                                 rackutils.deleteSingleRack(deleteID, status => {
                                     if (status) {
-                                        console.log(status)
                                         ToastsStore.success('Successfully deleted!');
                                         this.setState({
                                             popupType: "",
@@ -72,7 +71,14 @@ class RackView extends React.Component {
                 </Layer>
             )
         } else if (popupType === 'Remove') {
-
+            popup = (
+                <Layer onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+                    <DeleteRackView/>
+                    <Button label="Cancel" icon={<Close/>}
+                            onClick={() => this.setState({popupType: ""})}/>
+                </Layer>
+            )
         } else if (popupType === 'Add') {
             popup = (
                 <Layer onEsc={() => this.setState({popupType: undefined})}

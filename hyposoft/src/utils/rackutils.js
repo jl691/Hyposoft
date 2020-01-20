@@ -36,14 +36,9 @@ function addSingleRack(row, number, height, callback) {
 function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback) {
     //assume form validated
     let rowStartNumber = rowStart.charCodeAt(0);
-    console.log(rowStart);
-    console.log(rowStartNumber);
     let rowEndNumber = rowEnd.charCodeAt(0);
-    console.log(rowEnd);
-    console.log(rowEndNumber);
     for (let i = rowStartNumber; i <= rowEndNumber; i++) {
         let currLetter = String.fromCharCode(i);
-        console.log(currLetter);
         for (let j = numberStart; j <= numberEnd; j++) {
             racksRef.add({
                 letter: currLetter,
@@ -52,6 +47,22 @@ function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback
                 instances: []
             }).catch(function (error) {
                 callback(null);
+            })
+        }
+    }
+    callback(true);
+}
+
+function checkInstances(rowStart, rowEnd, numberStart, numberEnd, callback){
+    let rowStartNumber = rowStart.charCodeAt(0);
+    let rowEndNumber = rowEnd.charCodeAt(0);
+    for (let i = rowStartNumber; i <= rowEndNumber; i++) {
+        let currLetter = String.fromCharCode(i);
+        for (let j = numberStart; j <= numberEnd; j++) {
+            racksRef.where("letter", "==", currLetter).where("number", "==", j).get().then(function (querySnapshot) {
+                if(!querySnapshot.empty && querySnapshot.docs[0].data().instances && Object.keys(querySnapshot.docs[0].data().instances).length > 0){
+                    callback(null);
+                }
             })
         }
     }
@@ -77,4 +88,37 @@ function deleteSingleRack(id, callback) {
     })
 }
 
-export {getRacks, addSingleRack, addRackRange, deleteSingleRack}
+function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, callback){
+    //first check all racks for instances
+    //assume form validated
+    let rowStartNumber = rowStart.charCodeAt(0);
+    let rowEndNumber = rowEnd.charCodeAt(0);
+    checkInstances(rowStart, rowEnd, numberStart, numberEnd, status => {
+        if(status){
+            for (let i = rowStartNumber; i <= rowEndNumber; i++) {
+                let currLetter = String.fromCharCode(i);
+                for (let j = numberStart; j <= numberEnd; j++) {
+                    console.log("Checking for " + currLetter + j);
+                    console.log("the current value of j is" + j);
+                    racksRef.where("letter", "==", currLetter).where("number", "==", parseInt(j)).get().then(function (querySnapshot) {
+                        console.log(querySnapshot)
+                        if(!querySnapshot.empty){
+                            console.log(currLetter + j + "exists!")
+                            let docID;
+                            docID = querySnapshot.docs[0].id;
+                            racksRef.doc(docID).delete().catch(function (error) {
+                                callback(null);
+                            })
+                        }
+                    })
+                }
+            }
+            callback(true);
+        }
+        else {
+            callback(null);
+        }
+    })
+}
+
+export {getRacks, addSingleRack, addRackRange, deleteSingleRack, deleteRackRange}
