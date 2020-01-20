@@ -10,27 +10,40 @@ import DeleteRackView from "./DeleteRackView"
 
 class RackView extends React.Component {
 
+    startAfter = null;
+
     constructor(props) {
         super(props);
         this.state = {
             racks: [],
             popupType: "",
-            deleteID: ""
+            deleteID: "",
+            initialLoaded: false
         }
     }
 
     componentDidMount() {
-        rackutils.getRacks(racksdb => {
-            this.setState({racks: racksdb});
+
+        const startRacks = rackutils.getRacks((startAfterCallback, rackCallback) => {
+            if(startAfterCallback && rackCallback){
+                this.startAfter = startAfterCallback;
+                this.setState({racks: rackCallback, initialLoaded: true});
+            }
         })
+
+        /*        rackutils.getRacks(racksdb => {
+                    this.setState({racks: racksdb});
+                })*/
     }
 
     AdminTools() {
         if (userutils.isLoggedInUserAdmin()) {
             return (
                 <Box direction={"row"}>
-                    <Button icon={<Add/>} label={"Add"} style={{width: '150px'}} onClick={() => this.setState({popupType: "Add"})}/>
-                    <Button icon={<Trash/>} label={"Remove"} style={{width: '150px'}} onClick={() => this.setState({popupType: "Remove"})}/>
+                    <Button icon={<Add/>} label={"Add"} style={{width: '150px'}}
+                            onClick={() => this.setState({popupType: "Add"})}/>
+                    <Button icon={<Trash/>} label={"Remove"} style={{width: '150px'}}
+                            onClick={() => this.setState({popupType: "Remove"})}/>
                 </Box>
             );
         }
@@ -90,52 +103,63 @@ class RackView extends React.Component {
             )
         }
 
+        if(!this.state.initialLoaded){
+            return (<Text>Please wait...</Text>);
+        }
+
         return (
             <Grommet theme={theme}>
                 <Box border={{color: 'brand', size: 'medium'}} pad={"medium"}>
                     <Heading margin={"none"}>Racks</Heading>
                     {this.AdminTools()}
-                    <DataTable columns={[
-                        {
-                            property: "id",
-                            header: "ID",
-                            primary: true
-                        },
-                        {
-                            property: "letter",
-                            header: "Row",
-                        },
-                        {
-                            property: "number",
-                            header: "Position"
-                        },
-                        {
-                            property: "height",
-                            header: "Occupied",
-                            render: datum => (
-                                <Box pad={{vertical: 'xsmall'}}>
-                                    <Meter
-                                        values={[{value: datum.instances / 42 * 100}]}
-                                        thickness="small"
-                                        size="small"
-                                    />
-                                </Box>
-                            )
-                        },
-                        {
-                            property: "instances",
-                            header: "Instances"
-                        },
-                        {
-                            property: "modify",
-                            header: "Modify",
-                            render: datum => (
-                                <Button icon={<Trash/>} label="Delete" onClick={() => {
-                                    this.setState({popupType: 'Delete', deleteID: datum.id});
-                                }}/>
-                            )
-                        }
-                    ]} data={this.state.racks}/>
+                    <DataTable step={25}
+                               onMore={() => {
+                                       rackutils.getRackAt(this.startAfter, (newStartAfter, newRacks) => {
+                                           this.startAfter = newStartAfter
+                                           this.setState({racks: this.state.racks.concat(newRacks)})
+                                       });
+                               }}
+                               columns={[
+                                   {
+                                       property: "id",
+                                       header: "ID",
+                                       primary: true
+                                   },
+                                   {
+                                       property: "letter",
+                                       header: "Row",
+                                   },
+                                   {
+                                       property: "number",
+                                       header: "Position"
+                                   },
+                                   {
+                                       property: "height",
+                                       header: "Occupied",
+                                       render: datum => (
+                                           <Box pad={{vertical: 'xsmall'}}>
+                                               <Meter
+                                                   values={[{value: datum.instances / 42 * 100}]}
+                                                   thickness="small"
+                                                   size="small"
+                                               />
+                                           </Box>
+                                       )
+                                   },
+                                   {
+                                       property: "instances",
+                                       header: "Instances"
+                                   },
+                                   {
+                                       property: "modify",
+                                       header: "Modify",
+                                       render: datum => (
+                                           <Button icon={<Trash/>} label="Delete" onClick={() => {
+                                               this.setState({popupType: 'Delete', deleteID: datum.id});
+                                           }}/>
+                                       )
+                                   }
+                               ]} data={this.state.racks}/>
                 </Box>
                 {popup}
                 <ToastsContainer store={ToastsStore}/>
