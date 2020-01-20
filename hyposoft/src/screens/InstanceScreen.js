@@ -10,7 +10,7 @@ import HomeButton from '../components/HomeButton'
 import UserMenu from '../components/UserMenu'
 import FilterBarInstances from '../components/FilterBarInstances'
 import SearchInstances from '../components/SearchInstances'
-import AddModelButton from '../components/AddModelButton'
+import AddInstanceButton from '../components/AddInstanceButton'
 import InstanceTable from '../components/InstanceTable'
 
 class InstanceScreen extends Component {
@@ -26,14 +26,9 @@ class InstanceScreen extends Component {
                     <UserMenu alignSelf='end' this={this} />
                 </AppBar>
                 <FilterBarInstances>
-                    <SearchInstances>
-                
-                    </SearchInstances>
-                    <AddModelButton>
+                    <SearchInstances/>
+                    {/* <AddInstanceButton/> */}
 
-                    </AddModelButton>
-
-                
                 </FilterBarInstances>
                 
                 <InstanceTable>

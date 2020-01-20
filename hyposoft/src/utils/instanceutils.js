@@ -1,5 +1,6 @@
 import { instanceRef }  from './firebaseutils'
 
+//TODO: admin vs. user privileges
 
 function getInstance(callback) {
     const instanceArray = [];
@@ -23,7 +24,7 @@ function getInstance(callback) {
     });
 }
 
-// //TODO: Add Model??
+
 // function addSingleRack(row, number, height, callback) {
 //     //assume from validated
 //     racksRef.add({
@@ -38,4 +39,20 @@ function getInstance(callback) {
 //     })
 // }
 
-export { getInstance}
+function addInstance(model, hostname, rack, racku, owner, comment, callback) {
+    instanceRef.add({
+        Model: model,
+        Hostname: hostname,
+        Rack: rack,
+        RackU: racku,
+        Owner: owner,
+        Comment: comment
+
+    }).then(function (docRef) {
+            callback(docRef.id);
+    }).catch(function (error) {
+            callback(null);
+    })
+}
+
+export { getInstance, addInstance}
