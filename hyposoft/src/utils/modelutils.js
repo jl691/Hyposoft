@@ -70,10 +70,10 @@ function doesModelDocExist(vendor, modelNumber, callback) {
 
 function getSuggestedVendors(userInput, callback) {
   // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
-    var beginningInput = userInput.slice(0,userInput.length-1)
-    var endInput = userInput.slice(userInput.length-1,userInput.length)
-    var upperBound = beginningInput + String.fromCharCode(endInput.charCodeAt(0)+1)
-    var query = firebaseutils.modelsRef.where("vendor",">=",userInput).where("vendor","<",upperBound)
+    var query = userInput
+                ? firebaseutils.modelsRef.where("vendor",">=",userInput).where("vendor","<",userInput.slice(0,userInput.length-1)
+                  + String.fromCharCode(userInput.slice(userInput.length-1,userInput.length).charCodeAt(0)+1))
+                : firebaseutils.modelsRef.orderBy('vendor')
 
     var vendorArray = []
     query.get().then(querySnapshot => {
