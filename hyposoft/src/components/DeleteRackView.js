@@ -1,8 +1,9 @@
 import React from "react";
 import theme from "../theme";
-import {Box, Button, Form, Grommet, Text, TextInput} from "grommet";
+import {Box, Button, Form, Grommet, Heading, Layer, Text, TextInput} from "grommet";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as rackutils from "../utils/rackutils";
+import {Close, Trash} from "grommet-icons";
 
 class DeleteRackView extends React.Component {
     constructor(props) {
@@ -12,6 +13,7 @@ class DeleteRackView extends React.Component {
             rangeLetterEnd: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
+            confirm: false
         }
 
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -27,6 +29,7 @@ class DeleteRackView extends React.Component {
                     rangeLetterEnd: "",
                     rangeNumberStart: "",
                     rangeNumberEnd: "",
+                    confirm: false
                 })
             } else {
                 ToastsStore.error('Error deleting racks. Ensure none of them contain instances.');
@@ -40,11 +43,32 @@ class DeleteRackView extends React.Component {
         });
     }
 
+
+
     render() {
+        const {confirm} = this.state;
+        let confirmPopup;
+        if(confirm){
+            confirmPopup = (confirmPopup = (
+                <Layer onEsc={() => this.setState({confirm: false})}
+                       onClickOutside={() => this.setState({confirm: false})}>
+                    <Box pad="medium" align="center">
+                        <Heading level="3" margin="none">Confirm deletion</Heading>
+                        <Text>Are you sure you want to delete racks {this.state.rangeLetterStart} - {this.state.rangeLetterEnd}, {this.state.rangeNumberStart} - {this.state.rangeNumberEnd}? This can't be reversed.</Text>
+                        <Box direction="row">
+                            <Button label="Delete" icon={<Trash/>} onClick={this.handleSubmit}/>
+                            <Button label="Cancel" icon={<Close/>}
+                                    onClick={() => this.setState({confirm: false})}/>
+                        </Box>
+                    </Box>
+                </Layer>
+            ))
+        }
+
         return (
             <Grommet theme={theme}>
                 <Box pad="medium">
-                    <Form onSubmit={this.handleSubmit} name="range">
+                    <Form onSubmit={() => this.setState({confirm: true})} name="range">
                         <Text>Row range</Text>
                         <Box direction="row">
                             <TextInput name="rangeLetterStart" placeholder="eg. A, B, C" onChange={this.handleChange} />
@@ -60,6 +84,7 @@ class DeleteRackView extends React.Component {
                         <Button type="submit" primary label="Submit"/>
                     </Form>
                 </Box>
+                {confirmPopup}
                 <ToastsContainer store={ToastsStore}/>
             </Grommet>
         )
