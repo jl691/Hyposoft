@@ -24,16 +24,12 @@ class RackView extends React.Component {
 
     componentDidMount() {
 
-        const startRacks = rackutils.getRacks((startAfterCallback, rackCallback) => {
+        rackutils.getRacks((startAfterCallback, rackCallback) => {
             if(startAfterCallback && rackCallback){
                 this.startAfter = startAfterCallback;
                 this.setState({racks: rackCallback, initialLoaded: true});
             }
         })
-
-        /*        rackutils.getRacks(racksdb => {
-                    this.setState({racks: racksdb});
-                })*/
     }
 
     AdminTools() {
