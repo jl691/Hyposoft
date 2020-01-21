@@ -38,36 +38,52 @@ function getRacks(callback) {
 
 function addSingleRack(row, number, height, callback) {
     //assume from validated
-    firebaseutils.racksRef.add({
-        letter: row,
-        number: number,
-        height: height,
-        instances: []
-    }).then(function (docRef) {
-        callback(docRef.id);
-    }).catch(function (error) {
-        callback(null);
+    checkRackExists(row, number, status => {
+        if (!status) {
+            firebaseutils.racksRef.add({
+                letter: row,
+                number: number,
+                height: height,
+                instances: []
+            }).then(function (docRef) {
+                callback(docRef.id);
+            }).catch(function (error) {
+                callback(null);
+            })
+        } else {
+            callback(null)
+        }
     })
 }
 
 function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback) {
     //assume form validated
+    let dbPromises = [];
     let rowStartNumber = rowStart.charCodeAt(0);
     let rowEndNumber = rowEnd.charCodeAt(0);
     for (let i = rowStartNumber; i <= rowEndNumber; i++) {
         let currLetter = String.fromCharCode(i);
         for (let j = numberStart; j <= numberEnd; j++) {
-            firebaseutils.racksRef.add({
-                letter: currLetter,
-                number: j,
-                height: height,
-                instances: []
-            }).catch(function (error) {
-                callback(null);
+            checkRackExists(currLetter, j, status => {
+                if(!status){
+                    dbPromises.push(firebaseutils.racksRef.add({
+                        letter: currLetter,
+                        number: j,
+                        height: height,
+                        instances: []
+                    }).catch(function (error) {
+                        callback(null);
+                    }));
+                }
+                else {
+                    console.log("not adding " + currLetter + j + " bc it already exists!")
+                }
             })
         }
     }
-    callback(true);
+    Promise.all(dbPromises).then(() => {
+        callback(true);
+    })
 }
 
 function checkInstances(rowStart, rowEnd, numberStart, numberEnd, callback) {
@@ -128,6 +144,19 @@ function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, callback) {
             callback(true);
         } else {
             callback(null);
+        }
+    })
+}
+
+function checkRackExists(letter, number, callback) {
+    let parsedNumber = parseInt(number);
+    firebaseutils.racksRef.where("letter", "==", letter).where("number", "==", parsedNumber).get().then(function (querySnapshot) {
+        if (!querySnapshot.empty) {
+            console.log(letter + number + " exists!")
+            console.log(querySnapshot.docs[0].id)
+            callback(true);
+        } else {
+            callback(false);
         }
     })
 }
