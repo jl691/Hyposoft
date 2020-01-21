@@ -8,7 +8,7 @@ function getInstance(callback) {
         querySnapshot.forEach(function (doc) {
             instanceArray.push({
 
-                id: doc.id,
+                doc_id: doc.id,
                 model: doc.data().Model,
                 hostname: doc.data().Hostname,
                 rack: doc.data().Rack,
@@ -24,23 +24,9 @@ function getInstance(callback) {
     });
 }
 
-
-// function addSingleRack(row, number, height, callback) {
-//     //assume from validated
-//     racksRef.add({
-//         letter: row,
-//         number: number,
-//         height: height,
-//         instances: []
-//     }).then(function (docRef) {
-//         callback(docRef.id);
-//     }).catch(function (error) {
-//         callback(null);
-//     })
-// }
-
-function addInstance(model, hostname, rack, racku, owner, comment, callback) {
+function addInstance(id, model, hostname, rack, racku, owner, comment, callback) {
     instanceRef.add({
+        ID: id,
         Model: model,
         Hostname: hostname,
         Rack: rack,
