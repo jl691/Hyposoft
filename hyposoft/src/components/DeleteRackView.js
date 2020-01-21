@@ -24,13 +24,7 @@ class DeleteRackView extends React.Component {
         rackutils.deleteRackRange(this.state.rangeLetterStart, this.state.rangeLetterEnd, this.state.rangeNumberStart, this.state.rangeNumberEnd, status => {
             if (status) {
                 ToastsStore.success('Successfully deleted racks!');
-                this.setState({
-                    rangeLetterStart: "",
-                    rangeLetterEnd: "",
-                    rangeNumberStart: "",
-                    rangeNumberEnd: "",
-                    confirm: false
-                })
+                this.props.parentCallback(true);
             } else {
                 ToastsStore.error('Error deleting racks. Ensure none of them contain instances.');
             }
