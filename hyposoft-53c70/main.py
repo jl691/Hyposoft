@@ -16,7 +16,7 @@ class AddUserHandler(webapp2.RequestHandler):
 			subject="You've been added to HypoSoft",
 			body="""Hello!
 
-Your HypoSoft administrator has just added you to the system. Please click here to set up your account. If this was unexpected, you may safely disregard this email, or click here to let us know that something's wrong.
+You've just been added to HypoSoft. Please click here to set up your account. If this was unexpected, you may safely disregard this email, or click here to let us know that something's wrong.
 
 Have fun!
 The HypoSoft Team""",
