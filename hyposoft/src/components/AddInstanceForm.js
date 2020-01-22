@@ -32,7 +32,7 @@ export default class AddInstanceButton extends Component {
     handleSubmit(event) {
         if (event.target.name === "addInst") {
             instutils.addInstance(this.state.id, this.state.model, this.state.hostname, this.state.rack, parseInt(this.state.rackU), this.state.owner, this.state.comment, status => {
-// TODO: why isnt the toaststore notificaiton popping up?
+// TODO: why isnt the toaststore notification popping up?
                 if (status) {
                     console.log(this.state)
                     ToastsStore.success('Successfully added instance!');
@@ -108,11 +108,13 @@ export default class AddInstanceButton extends Component {
                             type="submit"
                             primary label="Submit"
                         />
-                            {/* TODO: need a callback to pass state from child to parent for popuptype */}
                         <Button
                             margin="small"
                             label="Cancel"
-                            onClick={() => this.setState({ popupType: "" })} />
+                            onClick={() => this.props.cancelCallbackFromParent()}  
+                          
+                            />
+                           
                     </Form >
                 </Box>
 

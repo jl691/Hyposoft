@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Text, Button, Layer, Grommet, Heading } from 'grommet'
+import { Text, Button, Layer, Grommet, Heading, Box } from 'grommet'
 import { Close, Add } from 'grommet-icons'
 import AddInstanceForm from '../components/AddInstanceForm'
 
@@ -21,34 +21,38 @@ class InstanceScreen extends Component {
             popupType: "",
             deleteID: ""
         }
+
+        this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
     }
 
-    // AdminTools() {
-    //     if (userutils.isLoggedInUserAdmin()) {
-    //         return (
-    //             <Box direction={"row"}>
-    //                 <Button icon={<Add/>} label={"Add"} style={{width: '150px'}} onClick={() => this.setState({popupType: "Add"})}/>
-    //                 {/* <Button icon={<Trash/>} label={"Remove"} style={{width: '150px'}} onClick={() => this.setState({popupType: "Remove"})}/> */}
-    //             </Box>
-    //         );
-    //     }
-    // }
+
+    handleCancelPopupChange(event) {
+        console.log(this.state)
+        this.setState({
+            popupType: ""
+        });
+   
+    }
 
     render() {
-        
+
         const { popupType } = this.state;
         let popup;
 
+
         if (popupType === 'Add') {
+            console.log(this.state)
             popup = (
                 <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
                     onClickOutside={() => this.setState({ popupType: undefined })}>
-                    <AddInstanceForm />
+                        
+                    <AddInstanceForm cancelCallbackFromParent={this.handleCancelPopupChange}
                     
+                    />
+
                 </Layer>
             )
         }
-
         return (
             <Grommet theme={theme} full className='fade'>
                 {popup}
