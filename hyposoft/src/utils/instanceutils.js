@@ -1,4 +1,6 @@
-import { instanceRef }  from './firebaseutils'
+import { instanceRef } from './firebaseutils'
+
+//Need to merge with allen for racksRef
 
 //TODO: admin vs. user privileges
 
@@ -15,7 +17,7 @@ function getInstance(callback) {
                 rackU: doc.data().RackU,
                 owner: doc.data().Owner,
                 comment: doc.data().Comment,
-               
+
             });
         });
         if (callback) {
@@ -24,6 +26,9 @@ function getInstance(callback) {
     });
 }
 
+//TODO: go into racks document, need to add a rackID.
+//So change the form, and change the backend.
+//Data table ID needs to be changed too
 function addInstance(id, model, hostname, rack, racku, owner, comment, callback) {
     instanceRef.add({
         ID: id,
@@ -35,10 +40,32 @@ function addInstance(id, model, hostname, rack, racku, owner, comment, callback)
         Comment: comment
 
     }).then(function (docRef) {
-            callback(docRef.id);
+        callback(docRef.id);
     }).catch(function (error) {
-            callback(null);
+        callback(null);
     })
 }
 
-export { getInstance, addInstance}
+function deleteInstance(id, callback) {
+
+   instanceRef.doc(id).get().then(function (doc) {
+        if (doc.exists) {
+            if (doc.data().instances && Object.keys(doc.data().instances).length > 0) {
+                callback(null)
+            } else {
+                instanceRef.doc(id).delete().then(function () {
+                    callback(id);
+                }).catch(function (error) {
+                    callback(null);
+                })
+            }
+        } else {
+            callback(null);
+        }
+    })
+
+
+}
+//Function for autocomplete: query the database and 
+
+export { getInstance, addInstance, deleteInstance }

@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { Button, Grommet, Form, FormField, Heading, TextInput, Box } from 'grommet'
-import { ToastsStore } from 'react-toasts';
+import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as instutils from '../utils/instanceutils'
 
 
@@ -32,10 +32,11 @@ export default class AddInstanceButton extends Component {
     handleSubmit(event) {
         if (event.target.name === "addInst") {
             instutils.addInstance(this.state.id, this.state.model, this.state.hostname, this.state.rack, parseInt(this.state.rackU), this.state.owner, this.state.comment, status => {
-// TODO: why isnt the toaststore notification popping up?
                 if (status) {
                     console.log(this.state)
                     ToastsStore.success('Successfully added instance!');
+                     //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
+                    //this.props.parentCallbackRefresh(true);
                     this.setState({
                         id: "",
                         model: "",
@@ -111,15 +112,15 @@ export default class AddInstanceButton extends Component {
                         <Button
                             margin="small"
                             label="Cancel"
-                            onClick={() => this.props.cancelCallbackFromParent()}  
-                          
-                            />
-                           
+                            onClick={() => this.props.cancelCallbackFromParent()}
+
+                        />
+
                     </Form >
                 </Box>
 
 
-
+                <ToastsContainer store={ToastsStore} />
             </Grommet>
 
 

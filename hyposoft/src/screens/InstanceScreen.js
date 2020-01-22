@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
-import { Text, Button, Layer, Grommet, Heading, Box } from 'grommet'
-import { Close, Add } from 'grommet-icons'
+import { Text, Button, Layer, Grommet, Heading} from 'grommet'
+import { Add } from 'grommet-icons'
 import AddInstanceForm from '../components/AddInstanceForm'
+import DeleteInstancePopup from '../components/DeleteInstancePopup'
 
 import theme from '../theme'
 import AppBar from '../components/AppBar'
@@ -14,12 +15,15 @@ import * as userutils from "../utils/userutils";
 
 class InstanceScreen extends Component {
 
+
+
     constructor(props) {
         super(props);
         this.state = {
             instances: [],
             popupType: "",
-            deleteID: ""
+            deleteID: "",
+            initialLoaded: false
         }
 
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
@@ -27,11 +31,10 @@ class InstanceScreen extends Component {
 
 
     handleCancelPopupChange(event) {
-        console.log(this.state)
         this.setState({
             popupType: ""
         });
-   
+
     }
 
     render() {
@@ -41,18 +44,39 @@ class InstanceScreen extends Component {
 
 
         if (popupType === 'Add') {
-            console.log(this.state)
+
             popup = (
                 <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
                     onClickOutside={() => this.setState({ popupType: undefined })}>
-                        
-                    <AddInstanceForm cancelCallbackFromParent={this.handleCancelPopupChange}
-                    
+
+                    <AddInstanceForm
+                        cancelCallbackFromParent={this.handleCancelPopupChange}
+                    //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
+                    // parentCallbackRefresh={this.callbackFunctionRefresh}
                     />
 
                 </Layer>
             )
         }
+        else if (popupType === 'Delete') {
+            console.log(this.state)
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
+                    onClickOutside={() => this.setState({ popupType: undefined })}>
+
+                    <DeleteInstancePopup
+                        //cancelCallbackFromParent={this.handleCancelPopupChange}
+              
+                    />
+
+                </Layer>
+            )
+
+
+
+        }
+
+
         return (
             <Grommet theme={theme} full className='fade'>
                 {popup}
