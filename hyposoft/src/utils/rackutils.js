@@ -37,7 +37,7 @@ function getRacks(callback) {
 }
 
 function addSingleRack(row, number, height, callback) {
-    //assume from validated
+    //assume form validated
     checkRackExists(row, number, status => {
         if (!status) {
             firebaseutils.racksRef.add({
@@ -73,10 +73,7 @@ function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback
                         instances: []
                     }).catch(function (error) {
                         callback(null);
-                    }));
-                }
-                else {
-                    console.log("not adding " + currLetter + j + " bc it already exists!")
+                    }))
                 }
             })
         }
@@ -123,6 +120,7 @@ function deleteSingleRack(id, callback) {
 function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, callback) {
     //first check all racks for instances
     //assume form validated
+    let dbPromises = [];
     let rowStartNumber = rowStart.charCodeAt(0);
     let rowEndNumber = rowEnd.charCodeAt(0);
     checkInstances(rowStart, rowEnd, numberStart, numberEnd, status => {
@@ -130,7 +128,7 @@ function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, callback) {
             for (let i = rowStartNumber; i <= rowEndNumber; i++) {
                 let currLetter = String.fromCharCode(i);
                 for (let j = numberStart; j <= numberEnd; j++) {
-                    firebaseutils.racksRef.where("letter", "==", currLetter).where("number", "==", parseInt(j)).get().then(function (querySnapshot) {
+                    dbPromises.push(firebaseutils.racksRef.where("letter", "==", currLetter).where("number", "==", parseInt(j)).get().then(function (querySnapshot) {
                         if (!querySnapshot.empty) {
                             let docID;
                             docID = querySnapshot.docs[0].id;
@@ -138,10 +136,12 @@ function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, callback) {
                                 callback(null);
                             })
                         }
-                    })
+                    }));
                 }
             }
-            callback(true);
+            Promise.all(dbPromises).then(() => {
+                callback(true);
+            })
         } else {
             callback(null);
         }
