@@ -26,6 +26,10 @@ const db = firebase.firestore()
 var usersRef = db.collection('users')
 var instanceRef = db.collection('instances')
 var racksRef = db.collection('racks')
+var modelsRef = db.collection('models')
 
-export { hashAndSalt, usersRef, racksRef, instanceRef }
+export { hashAndSalt, usersRef, racksRef, instanceRef, modelsRef }
+
+
+
 
