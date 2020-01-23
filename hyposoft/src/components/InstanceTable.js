@@ -41,11 +41,11 @@ export default class InstanceTable extends Component {
                         header: <Text>Instance ID</Text>,
                         primary: true,
                     },
-                    {
-                        property: 'rack_id',
-                        header: <Text>Rack ID</Text>,
+                    // {
+                    //     property: 'rack_id',
+                    //     header: <Text>Rack ID</Text>,
 
-                    },
+                    // },
                     {
                         property: 'model',
                         header: <Text>Model</Text>,
@@ -71,11 +71,11 @@ export default class InstanceTable extends Component {
                         header: <Text>Owner</Text>,
 
                     },
-                    {
-                        property: 'comment',
-                        header: <Text>Comment</Text>,
+                    // {
+                    //     property: 'comment',
+                    //     header: <Text>Comment</Text>,
 
-                    },
+                    // },
 
                     {
                         property: "delete",

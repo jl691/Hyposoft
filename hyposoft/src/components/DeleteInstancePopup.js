@@ -39,7 +39,7 @@ export default class DeleteInstancePopup extends Component {
 
         return (
             <Grommet>
-                <Box height="300px" width="medium" pad="medium" gap="xxsmall" overflow="auto" margin="medium">
+                <Box height="250px" width="medium" pad="medium" gap="xxsmall" overflow="auto" margin="medium">
                     <Heading
                         size="small"
                         margin="small"

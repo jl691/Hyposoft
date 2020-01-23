@@ -6,19 +6,45 @@ import { instanceRef, racksRef } from './firebaseutils'
 
 function getInstance(callback) {
     const instanceArray = [];
+    //We want to display the rack ID
+    //This means, depending on the rack we get from doc.data().rack of instanceRef, we then need to 
+
+
+
+
     instanceRef.get().then(function (querySnapshot) {
         querySnapshot.forEach(function (doc) {
+            let splitRackArray = doc.data().rack.split(/(\d+)/).filter(Boolean)
+            let rackRow = splitRackArray[0]
+            let rackNum = parseInt(splitRackArray[1])
+
+            // Here is the query to get the rack ID that the instance is related to
+            // let getRackQuery = racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(snapshot => {
+            //     if (snapshot.empty) {
+            //         console.log('ERROR INSTANCE IS ON NONEXISTANT RACK.');
+            //         return;
+            //     }
+            //     snapshot.forEach(doc => {
+            //         console.log(doc.id, '=>', doc.data());
+            //     });
+
+            // })
+            //     .catch(err => {
+            //         console.log('Error getting documents', err);
+            //     });
+            //=======================================
+
+    //          console.log(getRackQuery)
 
             instanceArray.push({
 
                 instance_id: doc.id,
-                //need to reference rack id
-                model: doc.data().Model,
-                hostname: doc.data().Hostname,
-                rack: doc.data().Rack,
-                rackU: doc.data().RackU,
-                owner: doc.data().Owner,
-                comment: doc.data().Comment,
+                model: doc.data().model,
+                hostname: doc.data().hostname,
+                rack: doc.data().rack,
+                rackU: doc.data().rackU,
+                owner: doc.data().owner,
+                comment: doc.data().comment,
 
             });
         });
@@ -27,27 +53,8 @@ function getInstance(callback) {
         if (callback) {
             callback(instanceArray);
         }
-    },
-    // IMPORTANT ===========================================
-    //Uhh...this is super buggy. Need to look at add requirements again to modify add form fields and table
-    // racksRef.get().then( function (querySnapshot){
-    //     querySnapshot.forEach(function (document) {
+    }
 
-    //         instanceArray.push({
-
-    //             //need to reference rack id
-    //             rack_id:document.id
-  
-
-    //         });
-    //     });
-
-
-    //     if (callback) {
-    //         callback(instanceArray);
-    //     }
-
-    // })
     );
 }
 
@@ -55,27 +62,38 @@ function getInstance(callback) {
 //So change the form, and change the backend.
 //Data table ID needs to be changed too
 function addInstance(instanceid, rackid, model, hostname, rack, racku, owner, comment, callback) {
-    instanceRef.add({
-        // This needs to refer to the rack ID
-        InstanceID:instanceid,
-        RackID: rackid,
-        Model: model,
-        Hostname: hostname,
-        Rack: rack,
-        RackU: racku,
-        Owner: owner,
-        Comment: comment
+    checkRackExists(rack, status => {
 
-    }).then(function (docRef) {
-        callback(docRef.id);
-    }).catch(function (error) {
-        callback(null);
+        if (!status) {
+            instanceRef.add({
+                // This needs to refer to the rack ID
+                instance_id: instanceid,
+                rack_id: rackid,
+                model: model,
+                hostname: hostname,
+                rack: rack,
+                rackU: racku,
+                owner: owner,
+                comment: comment
+
+            }).then(function (docRef) {
+                callback(docRef.id);
+            }).catch(function (error) {
+                callback(null);
+            })
+
+
+        }
+        else {
+            callback(null)
+        }
     })
+
 }
 
 function deleteInstance(instanceid, callback) {
 
-   instanceRef.doc(instanceid).get().then(function (doc) {
+    instanceRef.doc(instanceid).get().then(function (doc) {
         if (doc.exists) {
             if (doc.data().instances && Object.keys(doc.data().instances).length > 0) {
                 callback(null)
@@ -93,6 +111,33 @@ function deleteInstance(instanceid, callback) {
 
 
 }
+
+//Need to get rack information as well
+function checkRackExists(rack, callback) {
+    let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
+    let rackRow = splitRackArray[0]
+    let rackNum = parseInt(splitRackArray[1])
+    //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
+
+    racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
+        if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number)
+        //&& Object.keys(querySnapshot.docs[0].data().letter).length > 0 && Object.keys(querySnapshot.docs[0].data().number).length > 0) 
+        {
+            callback(null);
+        }
+        else {
+            callback(true);
+        }
+    })
+
+}
+
+function checkInstanceFitsOnRack(rackU, callback) {
+    //need to go into models collection to get the height of model
+}
+
+
+
 //Function for autocomplete: query the database and 
 
-export { getInstance, addInstance, deleteInstance }
+export { getInstance, addInstance, deleteInstance, checkRackExists }
