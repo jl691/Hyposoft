@@ -15,8 +15,6 @@ import * as userutils from "../utils/userutils";
 
 class InstanceScreen extends Component {
 
-
-
     constructor(props) {
         super(props);
         this.state = {
@@ -27,6 +25,9 @@ class InstanceScreen extends Component {
         }
 
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
+        this.handleDeleteButton = this.handleDeleteButton.bind(this);
+
+
     }
 
 
@@ -36,12 +37,21 @@ class InstanceScreen extends Component {
         });
 
     }
+    //This handles the delete screen popping up from pressing on the trash can, not the actual backend of what happens when the delete is confirmed
+    handleDeleteButton = (datumID) => {
+        this.setState({
+            popupType: 'Delete',
+            deleteID: datumID
+
+           
+        });
+    }
+
 
     render() {
 
         const { popupType } = this.state;
         let popup;
-
 
         if (popupType === 'Add') {
 
@@ -59,20 +69,22 @@ class InstanceScreen extends Component {
             )
         }
         else if (popupType === 'Delete') {
-            console.log(this.state)
+           
             popup = (
                 <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <DeleteInstancePopup
-                        //cancelCallbackFromParent={this.handleCancelPopupChange}
+                     cancelCallbackFromParent={this.handleCancelPopupChange}
+                    
+                     deleteIDFromParent={this.state.deleteID}
               
                     />
 
                 </Layer>
             )
 
-
+            console.log(this.state)
 
         }
 
@@ -94,7 +106,7 @@ class InstanceScreen extends Component {
                         icon={<Add />}
                         label={
                             <Text>
-                                <strong>Add Instance</strong>
+                                Add Instance
                             </Text>
                         }
 
@@ -104,9 +116,11 @@ class InstanceScreen extends Component {
 
                 </FilterBarInstances>
 
-                <InstanceTable>
-
-                </InstanceTable>
+                <InstanceTable
+                    deleteButtonCallbackFromParent={this.handleDeleteButton}
+                    passDeleteIDCallbackFromParent={this.passDeleteID}
+                   
+                />
 
 
             </Grommet>

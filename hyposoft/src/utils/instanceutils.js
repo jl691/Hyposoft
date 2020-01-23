@@ -1,16 +1,18 @@
-import { instanceRef } from './firebaseutils'
+import { instanceRef, racksRef } from './firebaseutils'
 
-//Need to merge with allen for racksRef
 
 //TODO: admin vs. user privileges
+
 
 function getInstance(callback) {
     const instanceArray = [];
     instanceRef.get().then(function (querySnapshot) {
         querySnapshot.forEach(function (doc) {
+
             instanceArray.push({
 
-                doc_id: doc.id,
+                instance_id: doc.id,
+                //need to reference rack id
                 model: doc.data().Model,
                 hostname: doc.data().Hostname,
                 rack: doc.data().Rack,
@@ -20,18 +22,43 @@ function getInstance(callback) {
 
             });
         });
+
+
         if (callback) {
             callback(instanceArray);
         }
-    });
+    },
+    // IMPORTANT ===========================================
+    //Uhh...this is super buggy. Need to look at add requirements again to modify add form fields and table
+    // racksRef.get().then( function (querySnapshot){
+    //     querySnapshot.forEach(function (document) {
+
+    //         instanceArray.push({
+
+    //             //need to reference rack id
+    //             rack_id:document.id
+  
+
+    //         });
+    //     });
+
+
+    //     if (callback) {
+    //         callback(instanceArray);
+    //     }
+
+    // })
+    );
 }
 
 //TODO: go into racks document, need to add a rackID.
 //So change the form, and change the backend.
 //Data table ID needs to be changed too
-function addInstance(id, model, hostname, rack, racku, owner, comment, callback) {
+function addInstance(instanceid, rackid, model, hostname, rack, racku, owner, comment, callback) {
     instanceRef.add({
-        ID: id,
+        // This needs to refer to the rack ID
+        InstanceID:instanceid,
+        RackID: rackid,
         Model: model,
         Hostname: hostname,
         Rack: rack,
@@ -46,15 +73,15 @@ function addInstance(id, model, hostname, rack, racku, owner, comment, callback)
     })
 }
 
-function deleteInstance(id, callback) {
+function deleteInstance(instanceid, callback) {
 
-   instanceRef.doc(id).get().then(function (doc) {
+   instanceRef.doc(instanceid).get().then(function (doc) {
         if (doc.exists) {
             if (doc.data().instances && Object.keys(doc.data().instances).length > 0) {
                 callback(null)
             } else {
-                instanceRef.doc(id).delete().then(function () {
-                    callback(id);
+                instanceRef.doc(instanceid).delete().then(function () {
+                    callback(instanceid);
                 }).catch(function (error) {
                     callback(null);
                 })

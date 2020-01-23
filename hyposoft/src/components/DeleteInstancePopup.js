@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form,  Heading, Text, Box } from 'grommet'
+import { Button, Grommet, Form, Heading, Text, Box } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as instutils from '../utils/instanceutils'
 
@@ -10,27 +10,22 @@ export default class DeleteInstancePopup extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            id: "",
-            model: "",
-            hostname: "",
-            rack: "",
-            rackU: "",
-            owner: "",
-            comment: ""
+            // deleteID:"",
 
         }
-        this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleDelete = this.handleDelete.bind(this);
     }
 
 
 
-    handleSubmit(event) {
+    handleDelete(event) {
+        console.log(this.props.deleteIDFromParent)
         if (event.target.name === "deleteInst") {
-            instutils.deleteInstance(this.state.id, status => {
+            instutils.deleteInstance(this.props.deleteIDFromParent, status => {
                 if (status) {
-                    console.log(this.state)
+
                     ToastsStore.success('Deleted instance');
-           
+
                 } else {
                     ToastsStore.error('Error deleting instance.');
                 }
@@ -44,22 +39,27 @@ export default class DeleteInstancePopup extends Component {
 
         return (
             <Grommet>
-                <Box height="medium" width="medium" pad="medium" gap="xxsmall" overflow="auto">
+                <Box height="300px" width="medium" pad="medium" gap="xxsmall" overflow="auto" margin="medium">
                     <Heading
                         size="small"
                         margin="small"
                         level="4"
                     >Delete Instance</Heading>
-                    <Form onSubmit={this.handleSubmit} name="deleteInst" >
+                    <Form onSubmit={this.handleDelete}
+                        name="deleteInst"
+                    >
 
-                        <Text>Are you sure you want to delete this instance?</Text>
+                        <Text>Are you sure you want to delete instance <strong>{this.props.deleteIDFromParent}</strong>? This cannot be undone. </Text>
 
                         <Button
-                            margin="small"
+
+                            alignSelf="center"
+                            margin="medium"
                             type="submit"
-                            primary label="Submit"
+                            primary label="Yes"
                         />
                         <Button
+                            alignSelf="center"
                             margin="small"
                             label="Cancel"
                             //TODO: make sure this is the correct callback

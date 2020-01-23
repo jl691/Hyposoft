@@ -6,11 +6,11 @@ import * as instutils from '../utils/instanceutils'
 
 //Instance table has a layer, that holds the button to add instance and the form
 
-export default class AddInstanceButton extends Component {
+export default class AddInstanceForm extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            id: "",
+            instance_id: "",
             model: "",
             hostname: "",
             rack: "",
@@ -31,14 +31,14 @@ export default class AddInstanceButton extends Component {
 
     handleSubmit(event) {
         if (event.target.name === "addInst") {
-            instutils.addInstance(this.state.id, this.state.model, this.state.hostname, this.state.rack, parseInt(this.state.rackU), this.state.owner, this.state.comment, status => {
+            instutils.addInstance(this.state.instance_id, "TODO: RACKID",this.state.model, this.state.hostname, this.state.rack, parseInt(this.state.rackU), this.state.owner, this.state.comment, status => {
                 if (status) {
                     console.log(this.state)
                     ToastsStore.success('Successfully added instance!');
                      //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
                     //this.props.parentCallbackRefresh(true);
                     this.setState({
-                        id: "",
+                        instance_id: "",
                         model: "",
                         hostname: "",
                         rack: "",

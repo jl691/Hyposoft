@@ -20,24 +20,6 @@ export default class InstanceTable extends Component {
     //TODO: need to change getInstance function in utils for infinite scroll and refresh (see issue #28)
 
 
-
-    // callbackFunctionRefresh = (data) => {
-    //     this.forceRefresh();
-    // }
-
-    //  //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
-
-    // forceRefresh() {
-    //     this.startAfter = null;
-    //     this.setState({initialLoaded: false, instances: [], popupType: "", deleteID: ""});
-    //     instutils.getInstance((startAfterCallback, rackCallback) => {
-    //         if (startAfterCallback && rackCallback) {
-    //             this.startAfter = startAfterCallback;
-    //             this.setState({racks: rackCallback, initialLoaded: true});
-    //         }
-    //     })
-    // }
-
     componentDidMount() {
         instutils.getInstance(instancesdb => {
             this.setState({ instances: instancesdb })
@@ -51,13 +33,18 @@ export default class InstanceTable extends Component {
 
             // LIST OF INSTANCES =============================================== 
             <DataTable
-                pad="20px"
+                pad="17px"
                 sortable="true"
                 columns={[
                     {
-                        property: 'doc_id',
-                        header: <Text>ID</Text>,
+                        property: 'instance_id',
+                        header: <Text>Instance ID</Text>,
                         primary: true,
+                    },
+                    {
+                        property: 'rack_id',
+                        header: <Text>Rack ID</Text>,
+
                     },
                     {
                         property: 'model',
@@ -93,16 +80,24 @@ export default class InstanceTable extends Component {
                     {
                         property: "delete",
                         header: "Delete",
+
                         render: datum => (
                             <Button
                                 icon={<Trash />}
                                 margin="small"
                                 onClick={() => {
-                                    this.setState({ popupType: 'Delete', deleteID: datum.id });
+                                    //TODO: need to pass up popuptype state to parent InstanceScreen
+                                    //this.setState({ popupType: 'Delete', deleteID: datum.id });
+                                    this.props.deleteButtonCallbackFromParent(datum.instance_id)
+                                    console.log(this.state)
+                                    //Need to pass the deleteID up to parent InstanceScreen
+
+                                    
                                 }} />
                         )
                     }
                 ]}
+                
                 data={this.state.instances}
 
 
