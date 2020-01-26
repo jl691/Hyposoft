@@ -1,4 +1,5 @@
-import { instanceRef, racksRef } from './firebaseutils'
+import { instanceRef, racksRef, modelsRef } from './firebaseutils'
+import * as firebase from 'firebase/app'
 
 
 //TODO: admin vs. user privileges
@@ -6,36 +7,10 @@ import { instanceRef, racksRef } from './firebaseutils'
 
 function getInstance(callback) {
     const instanceArray = [];
-    //We want to display the rack ID
-    //This means, depending on the rack we get from doc.data().rack of instanceRef, we then need to 
-
-
-
 
     instanceRef.get().then(function (querySnapshot) {
         querySnapshot.forEach(function (doc) {
-            let splitRackArray = doc.data().rack.split(/(\d+)/).filter(Boolean)
-            let rackRow = splitRackArray[0]
-            let rackNum = parseInt(splitRackArray[1])
-
-            // Here is the query to get the rack ID that the instance is related to
-            // let getRackQuery = racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(snapshot => {
-            //     if (snapshot.empty) {
-            //         console.log('ERROR INSTANCE IS ON NONEXISTANT RACK.');
-            //         return;
-            //     }
-            //     snapshot.forEach(doc => {
-            //         console.log(doc.id, '=>', doc.data());
-            //     });
-
-            // })
-            //     .catch(err => {
-            //         console.log('Error getting documents', err);
-            //     });
-            //=======================================
-
-    //          console.log(getRackQuery)
-
+            //TODO: make sure instance is linked with the correct model. So in the model column on the InstanceTable, should show either modelID or the model name
             instanceArray.push({
 
                 instance_id: doc.id,
@@ -58,17 +33,12 @@ function getInstance(callback) {
     );
 }
 
-//TODO: go into racks document, need to add a rackID.
-//So change the form, and change the backend.
-//Data table ID needs to be changed too
-function addInstance(instanceid, rackid, model, hostname, rack, racku, owner, comment, callback) {
+function addInstance(instanceid,  model, hostname, rack, racku, owner, comment, callback) {
     checkRackExists(rack, status => {
 
         if (!status) {
             instanceRef.add({
-                // This needs to refer to the rack ID
                 instance_id: instanceid,
-                rack_id: rackid,
                 model: model,
                 hostname: hostname,
                 rack: rack,
@@ -112,7 +82,6 @@ function deleteInstance(instanceid, callback) {
 
 }
 
-//Need to get rack information as well
 function checkRackExists(rack, callback) {
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
@@ -123,7 +92,9 @@ function checkRackExists(rack, callback) {
         if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number)
         //&& Object.keys(querySnapshot.docs[0].data().letter).length > 0 && Object.keys(querySnapshot.docs[0].data().number).length > 0) 
         {
+            console.log(querySnapshot.docs[0].data().height)
             callback(null);
+            
         }
         else {
             callback(true);
@@ -132,12 +103,79 @@ function checkRackExists(rack, callback) {
 
 }
 
-function checkInstanceFitsOnRack(rackU, callback) {
+// This will check if the instance fits on rack: fits within in the height of rack, and does not conflict with other instances 
+
+function instanceFitsOnRack(instanceRack, rackU, model, callback) {
     //need to go into models collection to get the height of model
+    //need to go into racks to get total height of rack. Then, need to do
+    // rackheight <= rackU + modelHeight 
+    let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
+    let rackRow = splitRackArray[0]
+    let rackNum = parseInt(splitRackArray[1])
+
+   
+    //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
+
+    racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
+        if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number)
+        {
+            let rackHeight = querySnapshot.docs[0].data().height
+
+            //console.log(modelsRef.where(modelsRef.id, "==", model))
+            var docRef = modelsRef.doc(String(model))
+            docRef.get().then(doc => {
+                console.log(parseInt(rackU) + doc.data().height)
+                if(rackHeight >= parseInt(rackU) + doc.data().height){
+                    console.log("Bitch i made it")
+                    callback(true)
+                }
+                else{
+                    console.log("Instance of this model at this rackU will not fit on the rack")
+                    callback(false)
+
+                }
+
+            })
+            .catch( error => {
+              console.log("Error getting documents: ", error)
+              callback(null)
+            })
+
+         
+        }
+        else {
+            console.log("Rack didn't exist, should be caught in checkRackExists function")
+            callback(false); 
+        }
+    })
+    
+}
+
+function updateInstance(instanceid, model, hostname, rack, racku, owner, comment, callback){
+    console.log(instanceRef.doc(String(instanceid)))
+    
+    instanceRef.doc(String(instanceid)).update({
+        
+        model: model,
+        hostname: hostname,
+        rack: rack,
+        rackU: racku,
+        owner: owner,
+        comment: comment
+        
+        
+
+    }).then(function (docRef) {
+        callback(docRef.id);
+    }).catch(function (error) {
+        callback(null);
+    })
+    console.log("in updateInstance backend method")
+  
+
 }
 
 
+//Function for autocomplete: query the database 
 
-//Function for autocomplete: query the database and 
-
-export { getInstance, addInstance, deleteInstance, checkRackExists }
+export { getInstance, addInstance, deleteInstance, checkRackExists, instanceFitsOnRack, updateInstance }
