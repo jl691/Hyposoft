@@ -36,7 +36,7 @@ function getModel(vendor, modelNumber, callback) {
     firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).get().then(doc => callback(doc.data()))
 }
 
-function getModelsWithShortFormFields(startAfter, callback) {
+function getModels(startAfter, callback) {
     firebaseutils.modelsRef.orderBy('vendor').orderBy('modelNumber').limit(25).startAfter(startAfter).get()
     .then( docSnaps => {
       // added this in from anshu
@@ -46,8 +46,7 @@ function getModelsWithShortFormFields(startAfter, callback) {
       }
 
       const models = docSnaps.docs.map( doc => (
-        {vendor: doc.data().vendor, modelNumber: doc.data().modelNumber, height: doc.data().height,
-          cpu: doc.data().cpu, storage: doc.data().storage}
+        {data: doc.data()}
       ))
       callback(models,newStartAfter)
     })
@@ -90,4 +89,4 @@ function getSuggestedVendors(userInput, callback) {
     })
 }
 
-export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModelsWithShortFormFields }
+export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels }
