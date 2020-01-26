@@ -30,11 +30,7 @@ class AddRackView extends React.Component {
             rackutils.addSingleRack(this.state.singleLetter, parseInt(this.state.singleNumber), parseInt(this.state.singleHeight), status => {
                 if (status) {
                     ToastsStore.success('Successfully added rack!');
-                    this.setState({
-                        singleLetter: "",
-                        singleNumber: "",
-                        singleHeight: ""
-                    })
+                    this.props.parentCallback(true);
                 } else {
                     ToastsStore.error('Error adding rack.');
                 }
@@ -43,13 +39,7 @@ class AddRackView extends React.Component {
             rackutils.addRackRange(this.state.rangeLetterStart, this.state.rangeLetterEnd, parseInt(this.state.rangeNumberStart), parseInt(this.state.rangeNumberEnd), parseInt(this.state.rangeHeight), status => {
                 if (status) {
                     ToastsStore.success('Successfully added racks!');
-                    this.setState({
-                        rangeLetterStart: "",
-                        rangeLetterEnd: "",
-                        rangeNumberStart: "",
-                        rangeNumberEnd: "",
-                        rangeHeight: ""
-                    })
+                    this.props.parentCallback(true);
                 } else {
                     ToastsStore.error('Error adding racks.');
                 }

@@ -22,10 +22,24 @@ class RackView extends React.Component {
         }
     }
 
-    componentDidMount() {
+    callbackFunction = (data) => {
+        this.forceRefresh();
+    }
 
+    componentDidMount() {
         rackutils.getRacks((startAfterCallback, rackCallback) => {
-            if(startAfterCallback && rackCallback){
+            if (startAfterCallback && rackCallback) {
+                this.startAfter = startAfterCallback;
+                this.setState({racks: rackCallback, initialLoaded: true});
+            }
+        })
+    }
+
+    forceRefresh() {
+        this.startAfter = null;
+        this.setState({initialLoaded: false, racks: [], popupType: "", deleteID: ""});
+        rackutils.getRacks((startAfterCallback, rackCallback) => {
+            if (startAfterCallback && rackCallback) {
                 this.startAfter = startAfterCallback;
                 this.setState({racks: rackCallback, initialLoaded: true});
             }
@@ -60,13 +74,8 @@ class RackView extends React.Component {
                             <Button label="Delete" icon={<Trash/>} onClick={() => {
                                 rackutils.deleteSingleRack(deleteID, status => {
                                     if (status) {
+                                        this.forceRefresh();
                                         ToastsStore.success('Successfully deleted!');
-                                        this.setState({
-                                            popupType: "",
-                                            racks: this.state.racks.filter(function (rack) {
-                                                return rack.id !== deleteID;
-                                            })
-                                        })
                                     } else {
                                         ToastsStore.error('Failed to delete rack. Please insure that it contains no instances and try again.');
                                         this.setState({popupType: ""})
@@ -83,7 +92,7 @@ class RackView extends React.Component {
             popup = (
                 <Layer onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
-                    <DeleteRackView/>
+                    <DeleteRackView parentCallback={this.callbackFunction}/>
                     <Button label="Cancel" icon={<Close/>}
                             onClick={() => this.setState({popupType: ""})}/>
                 </Layer>
@@ -92,14 +101,14 @@ class RackView extends React.Component {
             popup = (
                 <Layer onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
-                    <AddRackView/>
+                    <AddRackView parentCallback={this.callbackFunction}/>
                     <Button label="Cancel" icon={<Close/>}
                             onClick={() => this.setState({popupType: ""})}/>
                 </Layer>
             )
         }
 
-        if(!this.state.initialLoaded){
+        if (!this.state.initialLoaded) {
             return (<Text>Please wait...</Text>);
         }
 
@@ -110,10 +119,10 @@ class RackView extends React.Component {
                     {this.AdminTools()}
                     <DataTable step={25}
                                onMore={() => {
-                                       rackutils.getRackAt(this.startAfter, (newStartAfter, newRacks) => {
-                                           this.startAfter = newStartAfter
-                                           this.setState({racks: this.state.racks.concat(newRacks)})
-                                       });
+                                   rackutils.getRackAt(this.startAfter, (newStartAfter, newRacks) => {
+                                       this.startAfter = newStartAfter
+                                       this.setState({racks: this.state.racks.concat(newRacks)})
+                                   });
                                }}
                                columns={[
                                    {
