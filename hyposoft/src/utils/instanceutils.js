@@ -90,11 +90,11 @@ function checkRackExists(rack, callback) {
 
     racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
         if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number)
-        //&& Object.keys(querySnapshot.docs[0].data().letter).length > 0 && Object.keys(querySnapshot.docs[0].data().number).length > 0) 
+        //&& Object.keys(querySnapshot.docs[0].data().letter).length > 0 && Object.keys(querySnapshot.docs[0].data().number).length > 0)
         {
             console.log(querySnapshot.docs[0].data().height)
             callback(null);
-            
+
         }
         else {
             callback(true);
@@ -103,17 +103,17 @@ function checkRackExists(rack, callback) {
 
 }
 
-// This will check if the instance fits on rack: fits within in the height of rack, and does not conflict with other instances 
+// This will check if the instance fits on rack: fits within in the height of rack, and does not conflict with other instances
 
 function instanceFitsOnRack(instanceRack, rackU, model, callback) {
     //need to go into models collection to get the height of model
     //need to go into racks to get total height of rack. Then, need to do
-    // rackheight <= rackU + modelHeight 
+    // rackheight <= rackU + modelHeight
     let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
-   
+
     //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
 
     racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
@@ -141,29 +141,29 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
               callback(null)
             })
 
-         
+
         }
         else {
             console.log("Rack didn't exist, should be caught in checkRackExists function")
-            callback(false); 
+            callback(false);
         }
     })
-    
+
 }
 
 function updateInstance(instanceid, model, hostname, rack, racku, owner, comment, callback){
     console.log(instanceRef.doc(String(instanceid)))
-    
+
     instanceRef.doc(String(instanceid)).update({
-        
+
         model: model,
         hostname: hostname,
         rack: rack,
         rackU: racku,
         owner: owner,
         comment: comment
-        
-        
+
+
 
     }).then(function (docRef) {
         callback(docRef.id);
@@ -171,11 +171,26 @@ function updateInstance(instanceid, model, hostname, rack, racku, owner, comment
         callback(null);
     })
     console.log("in updateInstance backend method")
-  
+
 
 }
 
+function sortByKeyword(keyword,callback) {
+    // maybe add limit by later similar to modelutils.getModels()
+    instanceRef.orderBy(keyword).get().then(
+      docSnaps => {
+        const instances = docSnaps.docs.map( doc => (
+          {id: doc.id}
+        ))
+        callback(instances)
+      })
+      .catch(error => {
+        console.log("Error getting documents: ", error)
+        callback(null)
+      })
+}
 
-//Function for autocomplete: query the database 
 
-export { getInstance, addInstance, deleteInstance, checkRackExists, instanceFitsOnRack, updateInstance }
+//Function for autocomplete: query the database
+
+export { getInstance, addInstance, deleteInstance, checkRackExists, instanceFitsOnRack, updateInstance, sortByKeyword }
