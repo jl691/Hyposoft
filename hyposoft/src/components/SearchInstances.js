@@ -6,7 +6,7 @@ export default class SearchInstances extends Component {
     render() {
         return (
           
-            <Form>
+            <Form margin = 'small'> 
                 <FormField label="Search Instances">
                     <TextInput placeholder="Type here" />
                 </FormField>

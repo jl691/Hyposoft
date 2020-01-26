@@ -21,7 +21,13 @@ const FilterBarInstances = (props) => (
         elevation='medium'
         style={{ zIndex: '1' }} >
         {props.children}
+       
     </Box>
+
+    //need a sort by (all fields)
+    //need to find range of racks
+ 
+    
 )
 
 export default FilterBarInstances

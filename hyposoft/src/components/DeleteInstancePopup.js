@@ -10,7 +10,6 @@ export default class DeleteInstancePopup extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            // deleteID:"",
 
         }
         this.handleDelete = this.handleDelete.bind(this);

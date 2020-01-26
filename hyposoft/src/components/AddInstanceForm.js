@@ -31,24 +31,40 @@ export default class AddInstanceForm extends Component {
 
     handleSubmit(event) {
         if (event.target.name === "addInst") {
-            instutils.addInstance(this.state.instance_id, "TODO: RACKID",this.state.model, this.state.hostname, this.state.rack, parseInt(this.state.rackU), this.state.owner, this.state.comment, status => {
-                if (status) {
-                    console.log(this.state)
-                    ToastsStore.success('Successfully added instance!');
-                     //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
-                    //this.props.parentCallbackRefresh(true);
-                    this.setState({
-                        instance_id: "",
-                        model: "",
-                        hostname: "",
-                        rack: "",
-                        rackU: "",
-                        owner: "",
-                        comment: ""
-                    })
-                } else {
-                    ToastsStore.error('Error adding instance.');
-                }
+            instutils.addInstance(this.state.instance_id, this.state.model, this.state.hostname, this.state.rack, parseInt(this.state.rackU), this.state.owner, this.state.comment, status => {
+                instutils.instanceFitsOnRack(this.state.rack, this.state.rackU, this.state.model, fitStatus => {
+                    console.log(fitStatus)
+                    if (status && fitStatus) { 
+                        console.log(this.state)
+                        ToastsStore.success('Successfully added instance!');
+                        //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
+                        //this.props.parentCallbackRefresh(true);
+                        this.setState({
+                            instance_id: "",
+                            model: "",
+                            hostname: "",
+                            rack: "",
+                            rackU: "",
+                            owner: "",
+                            comment: ""
+                        })
+                    } else if(!status){
+                        ToastsStore.error('Error adding instance: rack entered does not exist')
+                    } 
+                    else if(!fitStatus){
+                        //TODO: get model height, for error message:
+                        //A X_HEIGHT model at racked at U_Y will not fit. Rack height is Z_HEIGHT 
+                        ToastsStore.error('Error adding instance: this instance racked here will not fit on rack')
+                    } 
+                    
+                    else {
+                        ToastsStore.error('Error adding instance: idk what happening');
+                    }
+
+
+
+                })
+
             }
             );
         }

@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { DataTable, Button, Text } from 'grommet'
-import { Trash } from 'grommet-icons'
+import { Trash, Edit } from 'grommet-icons'
 import * as instutils from '../utils/instanceutils'
 
 
@@ -91,6 +91,25 @@ export default class InstanceTable extends Component {
                                     this.props.deleteButtonCallbackFromParent(datum.instance_id)
                                     console.log(this.state)
                                     //Need to pass the deleteID up to parent InstanceScreen
+
+                                    
+                                }} />
+                        )
+                    },
+
+                    {
+                        property: "update",
+                        header: "Update",
+
+                        render: data => (
+                            <Button
+                                icon={< Edit />}
+                                margin="small"
+                                onClick={() => {
+                              
+                                    this.props.UpdateButtonCallbackFromParent(data.instance_id
+                                    , data.model, data.hostname, data.rack, data.rackU, data.owner, data.comment)
+                                    console.log(data)
 
                                     
                                 }} />
