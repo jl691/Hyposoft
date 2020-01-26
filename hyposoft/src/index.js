@@ -7,6 +7,7 @@ import DashboardScreen from './screens/DashboardScreen'
 import * as serviceWorker from './serviceWorker'
 import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import './utils/firebaseutils'
+import RackDiagram from "./components/RackDiagram";
 
 ReactDOM.render((
             <BrowserRouter>
@@ -14,6 +15,7 @@ ReactDOM.render((
                     <Route exact path='/' component={HomeScreen} />
                     <Route exact path='/racks' component={RackView} />
                     <Route exact path='/addrack' component={AddRackView} />
+                    <Route exact path='/rackdiagram' component={RackDiagram} />
                     <Route exact path='/dashboard' component={DashboardScreen} />
                 </Switch>
             </BrowserRouter>

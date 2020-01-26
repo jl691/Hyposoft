@@ -1,6 +1,6 @@
 import React from "react";
 import theme from "../theme";
-import {Box, Heading, Grommet, Button, DataTable, Meter, Layer, Text} from "grommet";
+import {Box, Heading, Grommet, Button, DataTable, Meter, Layer, Text, CheckBox} from "grommet";
 import {Add, Trash, Close} from "grommet-icons";
 import * as userutils from "../utils/userutils";
 import * as rackutils from "../utils/rackutils";
@@ -18,7 +18,8 @@ class RackView extends React.Component {
             racks: [],
             popupType: "",
             deleteID: "",
-            initialLoaded: false
+            initialLoaded: false,
+            checkedBoxes: []
         }
     }
 
@@ -27,12 +28,22 @@ class RackView extends React.Component {
     }
 
     componentDidMount() {
+        console.log(typeof this.state.checkedBoxes)
+        console.log(Array.isArray(this.state.checkedBoxes))
         rackutils.getRacks((startAfterCallback, rackCallback) => {
             if (startAfterCallback && rackCallback) {
                 this.startAfter = startAfterCallback;
                 this.setState({racks: rackCallback, initialLoaded: true});
             }
         })
+        rackutils.generateRackDiagram("09ZXdZyFzu7TQY0GCGN3", result => {
+            if(result){
+                console.log("success!")
+                console.log(result);
+            } else {
+                console.log("error")
+            }
+        });
     }
 
     forceRefresh() {
@@ -125,6 +136,21 @@ class RackView extends React.Component {
                                    });
                                }}
                                columns={[
+                                   {
+                                     property: "checkbox",
+                                     render: datum => (
+                                         <CheckBox key={datum.id}
+                                                   checked={this.state.checkedBoxes.includes(datum.id)}
+                                   onChange={e => {
+                                       if(this.state.checkedBoxes.includes(datum.id)){
+                                            this.state.checkedBoxes.splice(this.state.checkedBoxes.indexOf(datum.id), 1);
+                                       } else {
+                                           console.log("kmsssss")
+                                           this.state.checkedBoxes.push(datum.id);
+                                       }
+                                   }}/>
+                                     )
+                                   },
                                    {
                                        property: "id",
                                        header: "ID",
