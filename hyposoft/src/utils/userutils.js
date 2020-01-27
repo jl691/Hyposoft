@@ -84,7 +84,7 @@ function loadUsers(startAfter, callback) {
         if (docSnaps.docs.length === 25) {
             newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
         }
-        
+
         const users = docSnaps.docs.map(doc => (
             {dummy: true, username: doc.data().username, name: doc.data().displayName,
                  role: (doc.data().username === 'admin' ? 'Admin' : 'User')}
@@ -93,5 +93,36 @@ function loadUsers(startAfter, callback) {
     })
 }
 
+/**
+* Adds a claim document to the claimsRef with the fields above + secret
+* Assumes all validation (existing username, email etc.) have been done
+*/
+function addClaim(username, displayName, email, callback) {
+    if (!isLoggedInUserAdmin()) {
+        callback(false); // They're doing something fishy
+    } else {
+        firebaseutils.claimsRef.doc(email).set({
+            username: username,
+            displayName: displayName,
+            email: email,
+            secret: firebaseutils.hashAndSalt(username+email+new Date().getTime().toString())
+        }).then(() => callback(true))
+    }
+}
+
+/**
+* Also simultaneously functions as validateClaim()
+*/
+function fetchClaim(username, email, secret, callback) {
+    firebaseutils.claimsRef.doc(email).get().then(doc => {
+        if (doc.exists && doc.data().username === username && doc.data().secret === secret) {
+            callback(doc.data())
+        } else {
+            callback(null)
+        }
+    })
+}
+
 export { isUserLoggedIn, createUser, modifyUser, deleteUser, isLoggedInUserAdmin,
-isLoginValid, logUserIn, logout, getUser, changePassword, loadUsers }
+isLoginValid, logUserIn, logout, getUser, changePassword, loadUsers, addClaim,
+fetchClaim }
