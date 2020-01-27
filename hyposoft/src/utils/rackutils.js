@@ -117,6 +117,17 @@ function deleteSingleRack(id, callback) {
     })
 }
 
+function getRackID(row, number, callback){
+    firebaseutils.racksRef.where("letter", "==", row).where("number", "==", parseInt(number)).get().then(function (querySnapshot) {
+        if(!querySnapshot.empty){
+            console.log(row + number + " exists!")
+            callback(querySnapshot.docs[0].id);
+        } else {
+            callback(null);
+        }
+    })
+}
+
 function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, callback) {
     //first check all racks for instances
     //assume form validated
@@ -225,4 +236,4 @@ function getModelHeightColor(model, callback) {
     })
 }
 
-export {getRackAt, getRacks, addSingleRack, addRackRange, deleteSingleRack, deleteRackRange, generateRackDiagram}
+export {getRackAt, getRacks, addSingleRack, addRackRange, deleteSingleRack, deleteRackRange, generateRackDiagram, getRackID}
