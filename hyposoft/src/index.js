@@ -9,6 +9,7 @@ import HomeScreen from './screens/HomeScreen'
 import DashboardScreen from './screens/DashboardScreen'
 import SettingsScreen from './screens/SettingsScreen'
 import UsersScreen from './screens/UsersScreen'
+import ClaimScreen from './screens/ClaimScreen'
 
 ReactDOM.render((
             <BrowserRouter>
@@ -17,6 +18,7 @@ ReactDOM.render((
                     <Route exact path='/dashboard' component={DashboardScreen} />
                     <Route exact path='/settings' component={SettingsScreen} />
                     <Route exact path='/users' component={UsersScreen} />
+                    <Route path='/signup/:secret/:username/:email' component={ClaimScreen} />
                 </Switch>
             </BrowserRouter>
         ), document.getElementById('root'))
