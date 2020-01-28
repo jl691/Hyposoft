@@ -120,7 +120,6 @@ function deleteSingleRack(id, callback) {
 function getRackID(row, number, callback){
     firebaseutils.racksRef.where("letter", "==", row).where("number", "==", parseInt(number)).get().then(function (querySnapshot) {
         if(!querySnapshot.empty){
-            console.log(row + number + " exists!")
             callback(querySnapshot.docs[0].id);
         } else {
             callback(null);
@@ -183,20 +182,24 @@ function generateRackDiagram(rackID, callback){
         let letter = docRefRack.data().letter;
         let number = docRefRack.data().number;
         console.log(letter + number);
-        docRefRack.data().instances.forEach(instanceID => {
-            getInstanceData(instanceID, result => {
-                console.log(result)
-                if(result) {
-                    console.log("pushing")
-                    rackInstances.push(result);
-                    if(rackInstances.length === docRefRack.data().instances.length){
-                        callback(letter, number, rackInstances);
+        if(docRefRack.data().instances.length){
+            docRefRack.data().instances.forEach(instanceID => {
+                getInstanceData(instanceID, result => {
+                    console.log(result)
+                    if(result) {
+                        console.log("pushing")
+                        rackInstances.push(result);
+                        if(rackInstances.length === docRefRack.data().instances.length){
+                            callback(letter, number, rackInstances);
+                        }
+                    } else {
+                        console.log("4");
                     }
-                } else {
-                    console.log("4");
-                }
+                })
             })
-        })
+        } else {
+            callback(letter, number, []);
+        }
     }).catch(function (error) {
         console.log("3");
         callback(null);

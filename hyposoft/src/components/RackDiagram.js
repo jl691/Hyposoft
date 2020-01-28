@@ -13,11 +13,7 @@ class RackDiagram extends React.Component {
         let rowEndNumber = this.props.location.state.letterEnd.charCodeAt(0);
         for(let i=rowStartNumber;i<=rowEndNumber;i++){
             let currLetter = String.fromCharCode(i);
-            console.log("current letter is " + currLetter)
-            console.log(this.props.location.state.numberStart);
-            console.log(this.props.location.state.numberEnd)
             for(let j=parseInt(this.props.location.state.numberStart); j<=parseInt(this.props.location.state.numberEnd); j++){
-                console.log("current number is " + j)
                 rackutils.getRackID(currLetter, j, result => {
                     console.log(result)
                     if(result){
@@ -48,6 +44,7 @@ class RackDiagram extends React.Component {
     generateRackFill(x, y, canvas, rackID){
         rackutils.generateRackDiagram(rackID, (letter, number, result) => {
             if(result) {
+                console.log(letter + number + " yeet")
                 let header = new fabric.Text(letter + number, {
                     fill: 'white',
                     fontFamily: 'Arial',
