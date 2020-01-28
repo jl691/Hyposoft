@@ -256,7 +256,7 @@ function checkInstanceFits(position, height, rack, callback) { //rackU, modelHei
                     //find height
                     console.log(instanceID);
                     console.log(docRefInstance.data())
-                    getModelHeightColor(docRefInstance.data().model, (height, color) => {
+                    getModelHeightColor((docRefInstance.data().model + " " + docRefInstance.data().modelNumber), (height, color) => {
                         let instPositions = [];
                         for(let i=docRefInstance.data().rackU;i<=docRefInstance.data().rackU+height;i++){
                             instPositions.push(i);
