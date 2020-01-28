@@ -239,7 +239,7 @@ function getModelHeightColor(model, callback) {
     })
 }
 
-function checkInstanceFits(position, height, rack, callback) {
+function checkInstanceFits(position, height, rack, callback) { //rackU, modelHeight, rack
     //create promise array
     let dbPromises = [];
     //create array of conflicting instances
@@ -270,12 +270,16 @@ function checkInstanceFits(position, height, rack, callback) {
                 }));
             });
             Promise.all(dbPromises).then(() => {
+                console.log(conflicting)
                 callback(conflicting);
             })
         } else {
-            callback([]);
+            console.log("No conflicts found")
+            callback(null);
+
         }
     }).catch(function (error) {
+        console.log("No matching racks")
         callback(null);
     })
 }
