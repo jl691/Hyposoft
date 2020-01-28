@@ -107,9 +107,16 @@ export default class InstanceTable extends Component {
                                 margin="small"
                                 onClick={() => {
                               
-                                    this.props.UpdateButtonCallbackFromParent(data.instance_id
-                                    , data.model, data.hostname, data.rack, data.rackU, data.owner, data.comment)
-                                    console.log(data)
+                                    this.props.UpdateButtonCallbackFromParent(
+                                        data.instance_id,
+                                        data.model, 
+                                        data.hostname, 
+                                        data.rack, 
+                                        data.rackU, 
+                                        data.owner, 
+                                        data.comment)
+
+                                    console.log(data.model)
 
                                     
                                 }} />

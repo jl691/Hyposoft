@@ -34,9 +34,10 @@ function getInstance(callback) {
 }
 
 function addInstance(instanceid,  model, hostname, rack, racku, owner, comment, callback) {
-    checkRackExists(rack, status => {
+    instanceFitsOnRack(rack, racku, model, function(status, errorMessage) { 
 
-        if (!status) {
+        //Allen wants me to add a vendor and modelname field to my document
+        if (status) {
             instanceRef.add({
                 instance_id: instanceid,
                 model: model,
@@ -50,17 +51,73 @@ function addInstance(instanceid,  model, hostname, rack, racku, owner, comment, 
                 callback(docRef.id);
             }).catch(function (error) {
                 callback(null);
+              
             })
 
 
         }
+        //The rack doesn't exist, or it doesn't fit on the rack at rackU
         else {
-            callback(null)
+            callback(null, errorMessage)
+            console.log(errorMessage)
         }
-    })
+    
+    }
+    )
 
 }
 
+
+// This will check if the instance fits on rack: fits within in the height of rack, and does not conflict with other instances 
+
+function instanceFitsOnRack(instanceRack, rackU, model, callback) {
+    //need to go into models collection to get the height of model
+    //need to go into racks to get total height of rack. Then, need to do
+    // rackheight <= rackU + modelHeight 
+    let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
+    let rackRow = splitRackArray[0]
+    let rackNum = parseInt(splitRackArray[1])
+
+    //this already checks if the rack exists
+   
+    //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
+
+    racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
+        if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number)
+        {
+            let rackHeight = querySnapshot.docs[0].data().height
+
+            //console.log(modelsRef.where(modelsRef.id, "==", model))
+            var docRef = modelsRef.doc(String(model))
+            docRef.get().then(doc => {
+                console.log(parseInt(rackU) + doc.data().height)
+                if(rackHeight >= parseInt(rackU) + doc.data().height){
+                    console.log("Instance fits on rack")
+                    callback(true)
+                }
+                else{
+                    console.log("Instance of this model at this rackU will not fit on the rack")
+                    var errMessage = "Instance of this model at this RackU will not fit on this rack"
+                    callback(false, errMessage)
+
+                }
+
+            })
+            .catch( error => {
+              console.log("Error getting documents: ", error)
+              callback(null)
+            })
+
+         
+        }
+        else {
+            console.log("Rack doesn't exist")
+            var errMessage = "Error adding instance: rack does not exist"
+            callback(false, errMessage)
+        }
+    })
+    
+}
 function deleteInstance(instanceid, callback) {
 
     instanceRef.doc(instanceid).get().then(function (doc) {
@@ -82,77 +139,30 @@ function deleteInstance(instanceid, callback) {
 
 }
 
-function checkRackExists(rack, callback) {
-    let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
-    let rackRow = splitRackArray[0]
-    let rackNum = parseInt(splitRackArray[1])
-    //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
+//check rackExistence already in instanceFitsOnRack, essentially the same query
+// function checkRackExists(rack, callback) {
+//     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
+//     let rackRow = splitRackArray[0]
+//     let rackNum = parseInt(splitRackArray[1])
+//     //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
 
-    racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
-        if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number)
-        //&& Object.keys(querySnapshot.docs[0].data().letter).length > 0 && Object.keys(querySnapshot.docs[0].data().number).length > 0) 
-        {
-            console.log(querySnapshot.docs[0].data().height)
-            callback(null);
+//     racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
+//         if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number)
+//         //&& Object.keys(querySnapshot.docs[0].data().letter).length > 0 && Object.keys(querySnapshot.docs[0].data().number).length > 0) 
+//         {
+//             console.log(querySnapshot.docs[0].data().height)
+//             callback(null);
             
-        }
-        else {
-            callback(true);
-        }
-    })
+//         }
+//         else {
+//             callback(true);
+//         }
+//     })
 
-}
+// }
 
-// This will check if the instance fits on rack: fits within in the height of rack, and does not conflict with other instances 
-
-function instanceFitsOnRack(instanceRack, rackU, model, callback) {
-    //need to go into models collection to get the height of model
-    //need to go into racks to get total height of rack. Then, need to do
-    // rackheight <= rackU + modelHeight 
-    let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
-    let rackRow = splitRackArray[0]
-    let rackNum = parseInt(splitRackArray[1])
-
-   
-    //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
-
-    racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
-        if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number)
-        {
-            let rackHeight = querySnapshot.docs[0].data().height
-
-            //console.log(modelsRef.where(modelsRef.id, "==", model))
-            var docRef = modelsRef.doc(String(model))
-            docRef.get().then(doc => {
-                console.log(parseInt(rackU) + doc.data().height)
-                if(rackHeight >= parseInt(rackU) + doc.data().height){
-                    console.log("Bitch i made it")
-                    callback(true)
-                }
-                else{
-                    console.log("Instance of this model at this rackU will not fit on the rack")
-                    callback(false)
-
-                }
-
-            })
-            .catch( error => {
-              console.log("Error getting documents: ", error)
-              callback(null)
-            })
-
-         
-        }
-        else {
-            console.log("Rack didn't exist, should be caught in checkRackExists function")
-            callback(false); 
-        }
-    })
-    
-}
 
 function updateInstance(instanceid, model, hostname, rack, racku, owner, comment, callback){
-    console.log(instanceRef.doc(String(instanceid)))
     
     instanceRef.doc(String(instanceid)).update({
         
@@ -178,4 +188,4 @@ function updateInstance(instanceid, model, hostname, rack, racku, owner, comment
 
 //Function for autocomplete: query the database 
 
-export { getInstance, addInstance, deleteInstance, checkRackExists, instanceFitsOnRack, updateInstance }
+export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance }

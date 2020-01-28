@@ -198,10 +198,6 @@ class InstanceScreen extends Component {
 
                         onClick={() => this.setState({ popupType: "Add" })}
                     />
-
-
-
-
                 </FilterBarInstances>
 
                 <InstanceTable
