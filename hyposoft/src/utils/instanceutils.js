@@ -68,17 +68,39 @@ function addInstance(instanceid, model, hostname, rack, racku, owner, comment, c
 }
 
 
-// This will check if the instance fits on rack: fits within in the height of rack, and does not conflict with other instances 
+function checkRackExists(rack, callback) {
+    let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
+    let rackRow = splitRackArray[0]
+    let rackNum = parseInt(splitRackArray[1])
+    //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
+
+    racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
+        if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number)
+        //&& Object.keys(querySnapshot.docs[0].data().letter).length > 0 && Object.keys(querySnapshot.docs[0].data().number).length > 0)
+        {
+            console.log(querySnapshot.docs[0].data().height)
+            callback(null);
+
+        }
+        else {
+            callback(true);
+        }
+    })
+
+}
+
+// This will check if the instance fits on rack: fits within in the height of rack, and does not conflict with other instances
 
 function instanceFitsOnRack(instanceRack, rackU, model, callback) {
     //need to go into models collection to get the height of model
     //need to go into racks to get total height of rack. Then, need to do
-    // rackheight <= rackU + modelHeight 
+    // rackheight <= rackU + modelHeight
     let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
     //this already checks if the rack exists
+
 
     //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
 
@@ -107,12 +129,12 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                     callback("Error")
                 })
 
-
         }
         else {
             console.log("Rack doesn't exist")
             var errMessage = "Error adding instance: rack does not exist"
             callback(errMessage)
+
         }
     })
 
@@ -161,7 +183,8 @@ function deleteInstance(instanceid, callback) {
 // }
 
 
-function updateInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
+function updateInstance(instanceid, model, hostname, rack, racku, owner, comment, callback){
+    console.log(instanceRef.doc(String(instanceid)))
 
     instanceRef.doc(String(instanceid)).update({
 
@@ -181,10 +204,26 @@ function updateInstance(instanceid, model, hostname, rack, racku, owner, comment
     })
     console.log("in updateInstance backend method")
 
+}
 
+function sortByKeyword(keyword,callback) {
+    // maybe add limit by later similar to modelutils.getModels()
+    instanceRef.orderBy(keyword).get().then(
+      docSnaps => {
+        const instances = docSnaps.docs.map( doc => (
+          {id: doc.id}
+        ))
+        callback(instances)
+      })
+      .catch(error => {
+        console.log("Error getting documents: ", error)
+        callback(null)
+      })
 }
 
 
-//Function for autocomplete: query the database 
+//Function for autocomplete: query the database
 
-export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance }
+
+export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword }
+

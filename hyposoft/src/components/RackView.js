@@ -1,12 +1,16 @@
 import React from "react";
 import theme from "../theme";
-import {Box, Heading, Grommet, Button, DataTable, Meter, Layer, Text} from "grommet";
-import {Add, Trash, Close} from "grommet-icons";
+import {Box, Heading, Grommet, Button, DataTable, Meter, Layer, Text, CheckBox, Form, TextInput} from "grommet";
+import {Add, Trash, Close, View} from "grommet-icons";
 import * as userutils from "../utils/userutils";
 import * as rackutils from "../utils/rackutils";
 import AddRackView from "./AddRackView";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import DeleteRackView from "./DeleteRackView"
+import {Link} from "react-router-dom";
+import HomeButton from "./HomeButton";
+import UserMenu from "./UserMenu";
+import AppBar from "./AppBar";
 
 class RackView extends React.Component {
 
@@ -18,8 +22,22 @@ class RackView extends React.Component {
             racks: [],
             popupType: "",
             deleteID: "",
-            initialLoaded: false
+            initialLoaded: false,
+            checkedBoxes: [],
+            letterStart: "",
+            letterEnd: "",
+            numberStart: "",
+            numberEnd: ""
         }
+
+        //this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleChange = this.handleChange.bind(this);
+    }
+
+    handleChange(event) {
+        this.setState({
+            [event.target.name]: event.target.value
+        });
     }
 
     callbackFunction = (data) => {
@@ -32,7 +50,10 @@ class RackView extends React.Component {
                 this.startAfter = startAfterCallback;
                 this.setState({racks: rackCallback, initialLoaded: true});
             }
-        })
+        });
+/*        rackutils.checkInstanceFits(1, 27, "09ZXdZyFzu7TQY0GCGN3", result => {
+            console.log(result);
+        })*/
     }
 
     forceRefresh() {
@@ -54,6 +75,8 @@ class RackView extends React.Component {
                             onClick={() => this.setState({popupType: "Add"})}/>
                     <Button icon={<Trash/>} label={"Remove"} style={{width: '150px'}}
                             onClick={() => this.setState({popupType: "Remove"})}/>
+                    <Button icon={<View/>} label={"View"} style={{width: '150px'}}
+                            onClick={() => this.setState({popupType: "Diagram"})}/>
                 </Box>
             );
         }
@@ -106,6 +129,39 @@ class RackView extends React.Component {
                             onClick={() => this.setState({popupType: ""})}/>
                 </Layer>
             )
+        } else if (popupType === 'Diagram') {
+            popup = (
+                <Layer onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+                    <Box pad="medium" background="light-2">
+                        <Form onSubmit={this.handleSubmit} name="range">
+                            <Text>Row range</Text>
+                            <Box direction="row">
+                                <TextInput name="letterStart" placeholder="eg. A, B, C" onChange={this.handleChange}/>
+                                to
+                                <TextInput name="letterEnd" placeholder="eg. D, E, F" onChange={this.handleChange}/>
+                            </Box>
+                            <Text>Number range</Text>
+                            <Box direction="row">
+                                <TextInput name="numberStart" placeholder="eg. 6, 12, 22" onChange={this.handleChange}/>
+                                to
+                                <TextInput name="numberEnd" placeholder="eg. 24, 36, 48" onChange={this.handleChange}/>
+                            </Box>
+                            <Link to={{
+                                pathname: '/rackdiagram', state: {
+                                    letterStart: this.state.letterStart,
+                                    letterEnd: this.state.letterEnd,
+                                    numberStart: this.state.numberStart,
+                                    numberEnd: this.state.numberEnd
+                                }
+                            }}>
+                                <Button type="submit" primary label="Submit"/>
+                            </Link>
+                        </Form>
+                    </Box>
+                    <Button label="Cancel" icon={<Close/>}/>
+                </Layer>
+            )
         }
 
         if (!this.state.initialLoaded) {
@@ -113,8 +169,15 @@ class RackView extends React.Component {
         }
 
         return (
-            <Grommet theme={theme}>
-                <Box border={{color: 'brand', size: 'medium'}} pad={"medium"}>
+            <Grommet theme={theme} >
+                <Box fill background='light-2'>
+                    <AppBar>
+                        <HomeButton alignSelf='start' this={this} />
+                        <Heading alignSelf='center' level='4' margin={{
+                            top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
+                        }} >Racks</Heading>
+                        <UserMenu alignSelf='end' this={this} />
+                    </AppBar>
                     <Heading margin={"none"}>Racks</Heading>
                     {this.AdminTools()}
                     <DataTable step={25}
@@ -125,6 +188,20 @@ class RackView extends React.Component {
                                    });
                                }}
                                columns={[
+                                   {
+                                       property: "checkbox",
+                                       render: datum => (
+                                           <CheckBox key={datum.id}
+                                                     checked={this.state.checkedBoxes.includes(datum.id)}
+                                                     onChange={e => {
+                                                         if (e.target.checked) {
+                                                             this.state.checkedBoxes.push(datum.id);
+                                                         } else {
+                                                             this.setState({checkedBoxes: this.state.checkedBoxes.filter(item => item !== datum.id)})
+                                                         }
+                                                     }}/>
+                                       )
+                                   },
                                    {
                                        property: "id",
                                        header: "ID",

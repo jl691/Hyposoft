@@ -117,6 +117,16 @@ function deleteSingleRack(id, callback) {
     })
 }
 
+function getRackID(row, number, callback){
+    firebaseutils.racksRef.where("letter", "==", row).where("number", "==", parseInt(number)).get().then(function (querySnapshot) {
+        if(!querySnapshot.empty){
+            callback(querySnapshot.docs[0].id);
+        } else {
+            callback(null);
+        }
+    })
+}
+
 function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, callback) {
     //first check all racks for instances
     //assume form validated
@@ -161,4 +171,113 @@ function checkRackExists(letter, number, callback) {
     })
 }
 
-export {getRackAt, getRacks, addSingleRack, addRackRange, deleteSingleRack, deleteRackRange}
+function generateRackDiagram(rackID, callback){
+    //first get all instances on rack
+    //for each instance:
+    //find position of instance
+    //height as defined by model, hostname
+    //find model vendor name
+    let rackInstances = [];
+    firebaseutils.racksRef.doc(rackID).get().then(function (docRefRack) {
+        let letter = docRefRack.data().letter;
+        let number = docRefRack.data().number;
+        console.log(letter + number);
+        if(docRefRack.data().instances.length){
+            docRefRack.data().instances.forEach(instanceID => {
+                getInstanceData(instanceID, result => {
+                    console.log(result)
+                    if(result) {
+                        console.log("pushing")
+                        rackInstances.push(result);
+                        if(rackInstances.length === docRefRack.data().instances.length){
+                            callback(letter, number, rackInstances);
+                        }
+                    } else {
+                        console.log("4");
+                    }
+                })
+            })
+        } else {
+            callback(letter, number, []);
+        }
+    }).catch(function (error) {
+        console.log("3");
+        callback(null);
+    })
+}
+
+function getInstanceData(instanceID, callback){
+    let position, model, hostname;
+    firebaseutils.instanceRef.doc(instanceID.trim()).get().then(function (docRefInstance) {
+        model = docRefInstance.data().model;
+        hostname = docRefInstance.data().hostname;
+        position = docRefInstance.data().rackU;
+        getModelHeightColor(model, (height, color) => {
+            if(height){
+                callback({
+                    model: model,
+                    hostname: hostname,
+                    height: height,
+                    color: color,
+                    position: position
+                });
+            } else {
+                callback(null);
+            }
+        })
+    }).catch(function (error) {
+        callback(null);
+    })
+}
+
+function getModelHeightColor(model, callback) {
+    firebaseutils.modelsRef.doc(model).get().then(function (docRefModel) {
+        callback(docRefModel.data().height, docRefModel.data().displayColor);
+    }).catch(function (error) {
+        console.log("1");
+        callback(null);
+    })
+}
+
+function checkInstanceFits(position, height, rack, callback) {
+    //create promise array
+    let dbPromises = [];
+    //create array of conflicting instances
+    let conflicting = [];
+    //generate all positions occupied in tentative instance
+    let tentPositions = [];
+    for(let i=position;i<=position+height;i++){
+        tentPositions.push(i);
+    }
+    firebaseutils.racksRef.doc(rack).get().then(function (docRefRack) {
+        if(docRefRack.data().instances.length){
+            docRefRack.data().instances.forEach(instanceID => {
+                dbPromises.push(firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
+                    //find height
+                    console.log(instanceID);
+                    console.log(docRefInstance.data())
+                    getModelHeightColor(docRefInstance.data().model, (height, color) => {
+                        let instPositions = [];
+                        for(let i=docRefInstance.data().rackU;i<=docRefInstance.data().rackU+height;i++){
+                            instPositions.push(i);
+                        }
+                        //check for intersection
+                        let intersection = tentPositions.filter(value => instPositions.includes(value));
+                        if(intersection.length){
+                            conflicting.push(docRefInstance.id);
+                        }
+                    })
+                }));
+            });
+            Promise.all(dbPromises).then(() => {
+                callback(conflicting);
+            })
+        } else {
+            callback([]);
+        }
+    }).catch(function (error) {
+        callback(null);
+    })
+}
+
+export {getRackAt, getRacks, addSingleRack, addRackRange, deleteSingleRack, deleteRackRange, generateRackDiagram, getRackID, checkInstanceFits}
