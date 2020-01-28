@@ -239,4 +239,45 @@ function getModelHeightColor(model, callback) {
     })
 }
 
-export {getRackAt, getRacks, addSingleRack, addRackRange, deleteSingleRack, deleteRackRange, generateRackDiagram, getRackID}
+function checkInstanceFits(position, height, rack, callback) {
+    //create promise array
+    let dbPromises = [];
+    //create array of conflicting instances
+    let conflicting = [];
+    //generate all positions occupied in tentative instance
+    let tentPositions = [];
+    for(let i=position;i<=position+height;i++){
+        tentPositions.push(i);
+    }
+    firebaseutils.racksRef.doc(rack).get().then(function (docRefRack) {
+        if(docRefRack.data().instances.length){
+            docRefRack.data().instances.forEach(instanceID => {
+                dbPromises.push(firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
+                    //find height
+                    console.log(instanceID);
+                    console.log(docRefInstance.data())
+                    getModelHeightColor(docRefInstance.data().model, (height, color) => {
+                        let instPositions = [];
+                        for(let i=docRefInstance.data().rackU;i<=docRefInstance.data().rackU+height;i++){
+                            instPositions.push(i);
+                        }
+                        //check for intersection
+                        let intersection = tentPositions.filter(value => instPositions.includes(value));
+                        if(intersection.length){
+                            conflicting.push(docRefInstance.id);
+                        }
+                    })
+                }));
+            });
+            Promise.all(dbPromises).then(() => {
+                callback(conflicting);
+            })
+        } else {
+            callback([]);
+        }
+    }).catch(function (error) {
+        callback(null);
+    })
+}
+
+export {getRackAt, getRacks, addSingleRack, addRackRange, deleteSingleRack, deleteRackRange, generateRackDiagram, getRackID, checkInstanceFits}

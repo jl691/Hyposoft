@@ -45,22 +45,15 @@ class RackView extends React.Component {
     }
 
     componentDidMount() {
-        console.log(typeof this.state.checkedBoxes)
-        console.log(Array.isArray(this.state.checkedBoxes))
         rackutils.getRacks((startAfterCallback, rackCallback) => {
             if (startAfterCallback && rackCallback) {
                 this.startAfter = startAfterCallback;
                 this.setState({racks: rackCallback, initialLoaded: true});
             }
-        })
-        rackutils.generateRackDiagram("09ZXdZyFzu7TQY0GCGN3", result => {
-            if (result) {
-                console.log("success!")
-                console.log(result);
-            } else {
-                console.log("error")
-            }
         });
+/*        rackutils.checkInstanceFits(1, 27, "09ZXdZyFzu7TQY0GCGN3", result => {
+            console.log(result);
+        })*/
     }
 
     forceRefresh() {
@@ -204,7 +197,6 @@ class RackView extends React.Component {
                                                          if (e.target.checked) {
                                                              this.state.checkedBoxes.push(datum.id);
                                                          } else {
-                                                             console.log("kmsssss")
                                                              this.setState({checkedBoxes: this.state.checkedBoxes.filter(item => item !== datum.id)})
                                                          }
                                                      }}/>
