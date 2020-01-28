@@ -239,7 +239,8 @@ function getModelHeightColor(model, callback) {
     })
 }
 
-function checkInstanceFits(position, height, rack, callback) { //rackU, modelHeight, rack
+function checkInstanceFits(position, height, rack, callback) { //rackU, modelHeight, rackID
+    console.log("attempting to find rack with id " + rack)
     //create promise array
     let dbPromises = [];
     //create array of conflicting instances
@@ -275,7 +276,7 @@ function checkInstanceFits(position, height, rack, callback) { //rackU, modelHei
             })
         } else {
             console.log("No conflicts found")
-            callback(null);
+            callback([]); //maybe push conflicting anyway, since I will check the length regardless in instanceutils
 
         }
     }).catch(function (error) {

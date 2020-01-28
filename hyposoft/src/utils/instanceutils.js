@@ -1,6 +1,5 @@
-import { instanceRef, racksRef, modelsRef } from './firebaseutils'
+import { instanceRef, racksRef, modelsRef, db, firebase} from './firebaseutils'
 import * as rackutils from './rackutils'
-
 
 //TODO: admin vs. user privileges
 
@@ -34,14 +33,13 @@ function getInstance(callback) {
 }
 
 function addInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
-    instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum) {
-        //Allen wants me to add a vendor and modelname field to my document
+    instanceFitsOnRack(rack, racku, model, function (errorMessage, modelNum, modelVendor, rackID) {
+
         if (errorMessage) {
             callback(errorMessage)
             console.log(errorMessage)
 
         }
-        //The rack doesn't exist, or it doesn't fit on the rack at rackU
         else {
 
             instanceRef.add({
@@ -54,42 +52,49 @@ function addInstance(instanceid, model, hostname, rack, racku, owner, comment, c
                 comment: comment,
 
                 //This is for rack usage reports
+                modelNumber: modelNum,
                 vendor: modelVendor,
-                modelNumber: modelNum
 
-
-            }).then(function (docRef) {
+            }
+            ).then(function (docRef) {
                 callback(null);
+                
             }).catch(function (error) {
-               // callback("Error");
+                // callback("Error");
                 console.log(error)
+            })
+            console.log(racksRef.doc(String(rackID)))
+            console.log(racksRef.doc(String(rackID)).collection('instances'))
+            console.log(instanceid)
+            racksRef.doc(String(rackID)).update({
+                instances: firebase.firestore.FieldValue.arrayUnion(instanceid)
+
             })
         }
     })
 
 }
 
-// This will check if the instance fits on rack: fits within in the height of rack, and does not conflict with other instances
+// This will check if the instance fits on rack (after checking rack exists): fits within in the height of rack, and does not conflict with other instances
 
 function instanceFitsOnRack(instanceRack, rackU, model, callback) {
- 
+
     let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
     let rackID = null;
-    
-    rackutils.getRackID(rackRow, rackNum, id =>{
-        if(id){
+
+    rackutils.getRackID(rackRow, rackNum, id => {
+        if (id) {
             console.log(id)
             rackID = id
             //console.log(rackID)
         }
-        else{
+        else {
             console.log("Error: no rack for this letter and number")
         }
     })
-
 
     //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
 
@@ -99,30 +104,34 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
 
             var docRef = modelsRef.doc(String(model))
             docRef.get().then(doc => {
-               
+
                 //doc.data().height refers to model height
                 if (rackHeight >= parseInt(rackU) + doc.data().height) {
                     //We know the instance will fit on the rack, but now does it conflict with anything?
                     console.log(rackID)
-                    rackutils.checkInstanceFits(parseInt(rackU), parseInt(doc.data().height), rackID , function(status) {
-                        console.log(rackU)
-                        if(status){ //means that there are conflicts. 
+                    rackutils.checkInstanceFits(rackU, (doc.data().height), String(rackID), function (status) {
+                        //can check length. If length > 0, then conflicting instances were returned
+                        //means that there are conflicts. 
+                        if (status.length) {
                             var height = doc.data().height
                             var rackedAt = rackU
-                            var conflicts = "";
-                            // status.forEach(conflInstance => {
-                            //     conflicts = conflicts + conflInstance + " , "
-                            // })
-                            console.log(status)
-                            var errMessage = "Error adding instance: instance of height " + height + " racked at " + rackedAt +  " conflicts with instance(s) "// + conflicts;
+                
+                            var arrayLength = status.length;
+                            for (var i = 0; i < arrayLength; i++) {
+                                console.log(status[i]);
+                                
+                            }
+                            
+                            var errMessage = "Error adding instance: instance of height " + height + " racked at " + rackedAt + " conflicts with instance(s) "// + conflicts;
                             callback(errMessage)
                         }
-                        else{//status callback is null, no conflits
+                        else {//status callback is null, no conflits
                             console.log("Instance fits in rack with no conflicts")
-                            callback(null, doc.data().modelNumber, doc.data().vendor)
+                            //racksRef.doc(String(rackID)).collection('instances').arrayUnion(instanceid)
+                            callback(null, doc.data().modelNumber, doc.data().vendor, rackID)
 
                         }
-                    })                                
+                    })
                 }
                 else {
                     console.log("Instance of this model at this rackU will not fit on the rack")
@@ -163,7 +172,7 @@ function deleteInstance(instanceid, callback) {
     })
 }
 
-function updateInstance(instanceid, model, hostname, rack, racku, owner, comment, callback){
+function updateInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
     console.log(instanceRef.doc(String(instanceid)))
 
     instanceRef.doc(String(instanceid)).update({
@@ -186,41 +195,41 @@ function updateInstance(instanceid, model, hostname, rack, racku, owner, comment
 
 }
 
-function sortByKeyword(keyword,callback) {
+function sortByKeyword(keyword, callback) {
     // maybe add limit by later similar to modelutils.getModels()
     instanceRef.orderBy(keyword).get().then(
-      docSnaps => {
-        const instances = docSnaps.docs.map( doc => (
-          {id: doc.id}
-        ))
-        callback(instances)
-      })
-      .catch(error => {
-        console.log("Error getting documents: ", error)
-        callback(null)
-      })
+        docSnaps => {
+            const instances = docSnaps.docs.map(doc => (
+                { id: doc.id }
+            ))
+            callback(instances)
+        })
+        .catch(error => {
+            console.log("Error getting documents: ", error)
+            callback(null)
+        })
 }
 
 function getSuggestedModels(userInput, callback) {
-  // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
     var query = userInput
-                ? instanceRef.where("model",">=",userInput).where("model","<",userInput.slice(0,userInput.length-1)
-                  + String.fromCharCode(userInput.slice(userInput.length-1,userInput.length).charCodeAt(0)+1))
-                : instanceRef.orderBy('model')
+        ? instanceRef.where("model", ">=", userInput).where("model", "<", userInput.slice(0, userInput.length - 1)
+            + String.fromCharCode(userInput.slice(userInput.length - 1, userInput.length).charCodeAt(0) + 1))
+        : instanceRef.orderBy('model')
 
     var modelArray = []
     query.get().then(querySnapshot => {
-      querySnapshot.forEach( doc => {
-        if (!modelArray.includes(doc.data().model)) {
-          modelArray.push(doc.data().model)
-        }
-      })
-      callback(modelArray)
+        querySnapshot.forEach(doc => {
+            if (!modelArray.includes(doc.data().model)) {
+                modelArray.push(doc.data().model)
+            }
+        })
+        callback(modelArray)
     })
-    .catch( error => {
-      console.log("Error getting documents: ", error)
-      callback(null)
-    })
+        .catch(error => {
+            console.log("Error getting documents: ", error)
+            callback(null)
+        })
 }
 
 //Function for autocomplete: query the database
