@@ -31,10 +31,14 @@ export default class AddInstanceForm extends Component {
 
     handleSubmit(event) {
         if (event.target.name === "addInst") {
-            instutils.addInstance(this.state.instance_id, this.state.model, this.state.hostname, this.state.rack, parseInt(this.state.rackU), this.state.owner, this.state.comment, function (status, errorMessage) {
+            instutils.addInstance(this.state.instance_id, this.state.model, this.state.hostname, this.state.rack, parseInt(this.state.rackU), this.state.owner, this.state.comment, function (errorMessage) {
 
-                if (status) {
-                    console.log(this.state)
+                if (errorMessage) {
+                    ToastsStore.error(errorMessage)
+
+                }
+                else {
+                   
                     ToastsStore.success('Successfully added instance!');
                     //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
                     //this.props.parentCallbackRefresh(true);
@@ -47,14 +51,11 @@ export default class AddInstanceForm extends Component {
                         owner: "",
                         comment: ""
                     })
-                }
-                else {
-                    console.log(status)
-                    ToastsStore.error(errorMessage)
+
 
                 }
             });
-            
+
         }
 
     }

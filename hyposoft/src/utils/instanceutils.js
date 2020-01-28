@@ -33,11 +33,17 @@ function getInstance(callback) {
     );
 }
 
-function addInstance(instanceid,  model, hostname, rack, racku, owner, comment, callback) {
-    instanceFitsOnRack(rack, racku, model, function(status, errorMessage) { 
-
+function addInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
+    instanceFitsOnRack(rack, racku, model, function (errorMessage) {
         //Allen wants me to add a vendor and modelname field to my document
-        if (status) {
+        if (errorMessage) {
+            callback(errorMessage)
+            console.log(errorMessage)
+
+        }
+        //The rack doesn't exist, or it doesn't fit on the rack at rackU
+        else {
+
             instanceRef.add({
                 instance_id: instanceid,
                 model: model,
@@ -48,20 +54,14 @@ function addInstance(instanceid,  model, hostname, rack, racku, owner, comment, 
                 comment: comment
 
             }).then(function (docRef) {
-                callback(docRef.id);
-            }).catch(function (error) {
                 callback(null);
-              
+            }).catch(function (error) {
+               // callback("Error");
+                console.log(error)
+
             })
-
-
         }
-        //The rack doesn't exist, or it doesn't fit on the rack at rackU
-        else {
-            callback(null, errorMessage)
-            console.log(errorMessage)
-        }
-    
+
     }
     )
 
@@ -79,44 +79,43 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
     let rackNum = parseInt(splitRackArray[1])
 
     //this already checks if the rack exists
-   
+
     //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
 
     racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
-        if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number)
-        {
+        if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number) {
             let rackHeight = querySnapshot.docs[0].data().height
 
             //console.log(modelsRef.where(modelsRef.id, "==", model))
             var docRef = modelsRef.doc(String(model))
             docRef.get().then(doc => {
                 console.log(parseInt(rackU) + doc.data().height)
-                if(rackHeight >= parseInt(rackU) + doc.data().height){
+                if (rackHeight >= parseInt(rackU) + doc.data().height) {
                     console.log("Instance fits on rack")
-                    callback(true)
+                    callback(null)
                 }
-                else{
+                else {
                     console.log("Instance of this model at this rackU will not fit on the rack")
                     var errMessage = "Instance of this model at this RackU will not fit on this rack"
-                    callback(false, errMessage)
+                    callback(errMessage)
 
                 }
 
             })
-            .catch( error => {
-              console.log("Error getting documents: ", error)
-              callback(null)
-            })
+                .catch(error => {
+                    console.log("Error getting documents: ", error)
+                    callback("Error")
+                })
 
-         
+
         }
         else {
             console.log("Rack doesn't exist")
             var errMessage = "Error adding instance: rack does not exist"
-            callback(false, errMessage)
+            callback(errMessage)
         }
     })
-    
+
 }
 function deleteInstance(instanceid, callback) {
 
@@ -152,7 +151,7 @@ function deleteInstance(instanceid, callback) {
 //         {
 //             console.log(querySnapshot.docs[0].data().height)
 //             callback(null);
-            
+
 //         }
 //         else {
 //             callback(true);
@@ -162,18 +161,18 @@ function deleteInstance(instanceid, callback) {
 // }
 
 
-function updateInstance(instanceid, model, hostname, rack, racku, owner, comment, callback){
-    
+function updateInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
+
     instanceRef.doc(String(instanceid)).update({
-        
+
         model: model,
         hostname: hostname,
         rack: rack,
         rackU: racku,
         owner: owner,
         comment: comment
-        
-        
+
+
 
     }).then(function (docRef) {
         callback(docRef.id);
@@ -181,7 +180,7 @@ function updateInstance(instanceid, model, hostname, rack, racku, owner, comment
         callback(null);
     })
     console.log("in updateInstance backend method")
-  
+
 
 }
 
