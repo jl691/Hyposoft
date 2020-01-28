@@ -51,9 +51,9 @@ class RackView extends React.Component {
                 this.setState({racks: rackCallback, initialLoaded: true});
             }
         });
-/*        rackutils.checkInstanceFits(1, 27, "09ZXdZyFzu7TQY0GCGN3", result => {
+        rackutils.checkInstanceFits(1, 27, "09ZXdZyFzu7TQY0GCGN3", result => {
             console.log(result);
-        })*/
+        })
     }
 
     forceRefresh() {
