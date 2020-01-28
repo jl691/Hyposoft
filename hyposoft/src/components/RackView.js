@@ -1,6 +1,6 @@
 import React from "react";
 import theme from "../theme";
-import {Box, Heading, Grommet, Button, DataTable, Meter, Layer, Text, CheckBox, Form, TextInput} from "grommet";
+import {Box, Heading, Grommet, Button, DataTable, Layer, Text, Form, TextInput} from "grommet";
 import {Add, Trash, Close, View, Analytics} from "grommet-icons";
 import * as userutils from "../utils/userutils";
 import * as rackutils from "../utils/rackutils";
