@@ -4,10 +4,14 @@ import HomeScreen from './screens/HomeScreen'
 import RackView from "./components/RackView";
 import AddRackView from "./components/AddRackView";
 import DashboardScreen from './screens/DashboardScreen'
+import InstanceScreen from './screens/InstanceScreen'
 import * as serviceWorker from './serviceWorker'
 import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import './utils/firebaseutils'
 import RackDiagram from "./components/RackDiagram";
+
+
+
 
 ReactDOM.render((
             <BrowserRouter>
@@ -17,6 +21,9 @@ ReactDOM.render((
                     <Route exact path='/addrack' component={AddRackView} />
                     <Route exact path='/rackdiagram' component={RackDiagram} />
                     <Route exact path='/dashboard' component={DashboardScreen} />
+                    {/* TODO: implement a functionality to take you to instance screen vs http://localhost:3000/instances*/}
+                    <Route path='/instances' component={InstanceScreen} />
+
                 </Switch>
             </BrowserRouter>
         ), document.getElementById('root'))
