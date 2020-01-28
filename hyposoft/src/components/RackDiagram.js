@@ -50,8 +50,12 @@ class RackDiagram extends React.Component {
                     fontFamily: 'Arial',
                     fontSize: 20,
                     top: (1113*y)+5,
-                    left: 400*x
+                    //left: 400*x + (350-Math.round(header.getScaledWidth()))/2
                 });
+                header.set({
+                    left: 400*x + (350-Math.round(header.getScaledWidth()))/2
+                })
+                console.log("yeeters " + header.getScaledWidth())
                 canvas.add(header);
                 //header.centerH();
                 result.forEach(instance => {
