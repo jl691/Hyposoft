@@ -1,7 +1,7 @@
 import React from "react";
 import theme from "../theme";
 import {Box, Heading, Grommet, Button, DataTable, Meter, Layer, Text, CheckBox, Form, TextInput} from "grommet";
-import {Add, Trash, Close, View} from "grommet-icons";
+import {Add, Trash, Close, View, Analytics} from "grommet-icons";
 import * as userutils from "../utils/userutils";
 import * as rackutils from "../utils/rackutils";
 import AddRackView from "./AddRackView";
@@ -11,6 +11,7 @@ import {Link} from "react-router-dom";
 import HomeButton from "./HomeButton";
 import UserMenu from "./UserMenu";
 import AppBar from "./AppBar";
+import RackUsageReport from "./RackUsageReport";
 
 class RackView extends React.Component {
 
@@ -22,6 +23,7 @@ class RackView extends React.Component {
             racks: [],
             popupType: "",
             deleteID: "",
+            rackReport: "",
             initialLoaded: false,
             checkedBoxes: [],
             letterStart: "",
@@ -51,9 +53,6 @@ class RackView extends React.Component {
                 this.setState({racks: rackCallback, initialLoaded: true});
             }
         });
-        rackutils.checkInstanceFits(1, 27, "09ZXdZyFzu7TQY0GCGN3", result => {
-            console.log(result);
-        })
     }
 
     forceRefresh() {
@@ -162,6 +161,15 @@ class RackView extends React.Component {
                     <Button label="Cancel" icon={<Close/>}/>
                 </Layer>
             )
+        } else if (popupType === 'Report'){
+            popup = (
+                <Layer onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+                    <RackUsageReport rack={this.state.rackReport}/>
+                    <Button label="Cancel" icon={<Close/>}
+                            onClick={() => this.setState({popupType: ""})}/>
+                </Layer>
+            )
         }
 
         if (!this.state.initialLoaded) {
@@ -188,7 +196,7 @@ class RackView extends React.Component {
                                    });
                                }}
                                columns={[
-                                   {
+ /*                                  {
                                        property: "checkbox",
                                        render: datum => (
                                            <CheckBox key={datum.id}
@@ -201,7 +209,7 @@ class RackView extends React.Component {
                                                          }
                                                      }}/>
                                        )
-                                   },
+                                   },*/
                                    {
                                        property: "id",
                                        header: "ID",
@@ -215,7 +223,7 @@ class RackView extends React.Component {
                                        property: "number",
                                        header: "Position"
                                    },
-                                   {
+/*                                   {
                                        property: "height",
                                        header: "Occupied",
                                        render: datum => (
@@ -227,7 +235,7 @@ class RackView extends React.Component {
                                                />
                                            </Box>
                                        )
-                                   },
+                                   },*/
                                    {
                                        property: "instances",
                                        header: "Instances"
@@ -236,10 +244,15 @@ class RackView extends React.Component {
                                        property: "modify",
                                        header: "Modify",
                                        render: datum => (
-                                           <Button icon={<Trash/>} label="Delete" onClick={() => {
-                                               this.setState({popupType: 'Delete', deleteID: datum.id});
-                                           }}/>
-                                       )
+                                           <Box direction="row">
+                                               <Button icon={<Trash/>} label="Delete" onClick={() => {
+                                                   this.setState({popupType: 'Delete', deleteID: datum.id});
+                                               }}/>
+                                               <Button icon={<Analytics/>} label="Report" onClick={() => {
+                                                   this.setState({popupType: 'Report', rackReport: datum.id})
+                                               }}/>
+                                           </Box>
+                                   )
                                    }
                                ]} data={this.state.racks}/>
                 </Box>
