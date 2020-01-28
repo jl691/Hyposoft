@@ -208,7 +208,7 @@ function generateRackDiagram(rackID, callback){
 
 function getInstanceData(instanceID, callback){
     let position, model, hostname;
-    firebaseutils.instancesRef.doc(instanceID.trim()).get().then(function (docRefInstance) {
+    firebaseutils.instanceRef.doc(instanceID.trim()).get().then(function (docRefInstance) {
         model = docRefInstance.data().model;
         hostname = docRefInstance.data().hostname;
         position = docRefInstance.data().rackU;

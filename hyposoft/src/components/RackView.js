@@ -8,6 +8,9 @@ import AddRackView from "./AddRackView";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import DeleteRackView from "./DeleteRackView"
 import {Link} from "react-router-dom";
+import HomeButton from "./HomeButton";
+import UserMenu from "./UserMenu";
+import AppBar from "./AppBar";
 
 class RackView extends React.Component {
 
@@ -173,8 +176,15 @@ class RackView extends React.Component {
         }
 
         return (
-            <Grommet theme={theme}>
-                <Box border={{color: 'brand', size: 'medium'}} pad={"medium"}>
+            <Grommet theme={theme} >
+                <Box fill background='light-2'>
+                    <AppBar>
+                        <HomeButton alignSelf='start' this={this} />
+                        <Heading alignSelf='center' level='4' margin={{
+                            top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
+                        }} >Racks</Heading>
+                        <UserMenu alignSelf='end' this={this} />
+                    </AppBar>
                     <Heading margin={"none"}>Racks</Heading>
                     {this.AdminTools()}
                     <DataTable step={25}
