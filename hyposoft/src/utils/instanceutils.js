@@ -190,7 +190,7 @@ function sortByKeyword(keyword,callback) {
       })
 }
 
-function getSuggestedModels(modelInput, callback) {
+function getSuggestedModels(userInput, callback) {
   // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
     var query = userInput
                 ? instanceRef.where("model",">=",userInput).where("model","<",userInput.slice(0,userInput.length-1)
