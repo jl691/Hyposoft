@@ -25,10 +25,8 @@ export default class AddInstanceForm extends Component {
     }
 
     callAutocompleteResults(event) {
-      var suggestions = []
       instutils.getSuggestedModels(event.target.value, d => {
-        suggestions = d
-        console.log(suggestions)
+        console.log(d)
       })
       this.setState({
           [event.target.name]: event.target.value

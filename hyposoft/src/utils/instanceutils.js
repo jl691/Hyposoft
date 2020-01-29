@@ -186,6 +186,19 @@ function updateInstance(instanceid, model, hostname, rack, racku, owner, comment
 
 }
 
+function getInstancesFromModel(model,callback) {
+  instanceRef.where('model','==',model).get().then( docSnaps => {
+    const instances = docSnaps.docs.map( doc => (
+      {id: doc.id, ...doc.data()}
+    ))
+    callback(instances)
+  })
+  .catch( error => {
+    console.log("Error getting documents: ", error)
+    callback(null)
+  })
+}
+
 function sortByKeyword(keyword,callback) {
     // maybe add limit by later similar to modelutils.getModels()
     instanceRef.orderBy(keyword).get().then(
@@ -223,4 +236,4 @@ function getSuggestedModels(userInput, callback) {
 
 //Function for autocomplete: query the database
 
-export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels }
+export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstancesFromModel }
