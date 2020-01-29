@@ -82,6 +82,16 @@ class RackView extends React.Component {
         }
     }
 
+    RackDeleteButton(datum) {
+        if(userutils.isLoggedInUserAdmin()) {
+            return (
+                <Button icon={<Trash/>} label="Delete" onClick={() => {
+                    this.setState({popupType: 'Delete', deleteID: datum.id});
+                }}/>
+            )
+        }
+    }
+
     handleSubmit(event) {
         if (!this.state.letterStart || !this.state.letterEnd || !this.state.numberStart || !this.state.numberEnd) {
             //invalid length
@@ -264,12 +274,10 @@ class RackView extends React.Component {
                                    },
                                    {
                                        property: "modify",
-                                       header: "Modify",
+                                       header: "Actions",
                                        render: datum => (
                                            <Box direction="row">
-                                               <Button icon={<Trash/>} label="Delete" onClick={() => {
-                                                   this.setState({popupType: 'Delete', deleteID: datum.id});
-                                               }}/>
+                                               {this.RackDeleteButton(datum)}
                                                <Button icon={<Analytics/>} label="Report" onClick={() => {
                                                    this.setState({popupType: 'Report', rackReport: datum.id})
                                                }}/>
