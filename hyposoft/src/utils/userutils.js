@@ -46,6 +46,16 @@ function modifyUser(displayName, username, email) {
     firebaseutils.usersRef.doc(email).update(packageUser(displayName, username, email))
 }
 
+function updateUsername(oldUsername, newUsername, callback) {
+    firebaseutils.usersRef.where('username', '==', oldUsername).get().then(qs => {
+        if (!qs.empty) {
+            qs.docs[0].ref.update({
+                username: newUsername
+            }).then(() => callback())
+        }
+    })
+}
+
 function deleteUser(username, callback) {
     firebaseutils.usersRef.where('username', '==', username).get().then(qs => {
         if (!qs.empty) {
@@ -149,4 +159,4 @@ function removeClaim(secret) {
 
 export { isUserLoggedIn, createUser, modifyUser, deleteUser, isLoggedInUserAdmin,
 isLoginValid, logUserIn, logout, getUser, changePassword, loadUsers, addClaim,
-fetchClaim, usernameTaken, validEmail, removeClaim }
+fetchClaim, usernameTaken, validEmail, removeClaim, updateUsername }

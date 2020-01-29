@@ -169,7 +169,39 @@ class UsersScreen extends Component {
     }
 
     editUser() {
+        if (!userutils.isLoggedInUserAdmin()) {
+            ToastsStore.info('Only admins can do that', 3000, 'burntToast')
+            this.onCloseDelete()
+            return
+        }
 
+        if (this.state.editUsername === 'admin') {
+            ToastsStore.info("Can't change admin's username", 3000, 'burntToast')
+            return
+        }
+        
+        var newUsername = this.state.editUserNewUsername
+        while (newUsername.startsWith('@')) {
+            newUsername = newUsername.substring(1)
+        }
+
+        if (newUsername === '') {
+            ToastsStore.info('New username required', 3000, 'burntToast')
+            return
+        }
+
+        userutils.usernameTaken(newUsername, taken => {
+            if (taken) {
+                ToastsStore.info('Username taken', 3000, 'burntToast')
+            } else {
+                userutils.updateUsername(this.state.editUsername, newUsername, () => {
+                    ToastsStore.info("Changes saved", 3000, 'burntToast')
+                    this.onCloseEdit()
+
+                    this.init()
+                })
+            }
+        })
     }
 
     render() {
@@ -339,7 +371,7 @@ class UsersScreen extends Component {
                                         />
                                 </Box>
                                 <Box
-                                    margin={{top: 'small'}}
+                                    margin={{top: 'medium'}}
                                     as="footer"
                                     gap="small"
                                     direction="row"
@@ -376,6 +408,46 @@ class UsersScreen extends Component {
                                     onClick={this.onCloseDelete}
                                     />
                             </Box>
+                        </Box>
+                    </Layer>
+                )}
+
+                {this.state.showEditDialog && (
+                    <Layer position="center" modal onClickOutside={this.onCloseEdit} onEsc={this.onCloseEdit}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Edit user
+                            </Heading>
+                            <p>You can only change users' usernames, as they can't do that. All other profile details must be changed by the user themselves.</p>
+                            <Form>
+                                <Box direction="column" gap="small" margin={{top: 'small'}}>
+                                    <TextInput style={{
+                                            borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
+                                            width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
+                                        }}
+                                        placeholder="New username"
+                                        onChange={e => {
+                                            const value = e.target.value
+                                            this.setState(oldState => ({...oldState, editUserNewUsername: value}))
+                                        }}
+                                        value={this.state.editUserNewUsername}
+                                        title='Email'
+                                        />
+                                </Box>
+                                <Box
+                                    margin={{top: 'medium'}}
+                                    as="footer"
+                                    gap="small"
+                                    direction="row"
+                                    align="center"
+                                    justify="end" >
+                                    <Button label="Save" type='submit' primary onClick={() => this.editUser()} />
+                                    <Button
+                                        label="Cancel"
+                                        onClick={this.onCloseEdit}
+                                        />
+                                </Box>
+                            </Form>
                         </Box>
                     </Layer>
                 )}
