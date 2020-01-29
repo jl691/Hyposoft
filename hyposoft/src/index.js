@@ -13,7 +13,7 @@ import UsersScreen from './screens/UsersScreen'
 import ClaimScreen from './screens/ClaimScreen'
 import UnclaimScreen from './screens/UnclaimScreen'
 import ResetPasswordScreen from './screens/ResetPasswordScreen'
-
+import ModelsScreen from './screens/ModelsScreen'
 
 import RackView from "./components/RackView";
 import InstanceScreen from './screens/InstanceScreen'
@@ -31,6 +31,7 @@ ReactDOM.render((
                     <Route path='/signup/:secret' component={ClaimScreen} />
                     <Route path='/badsignup/:secret' component={UnclaimScreen} />
                     <Route path='/resetpassword/:secret' component={ResetPasswordScreen} />
+                    <Route exact path='/models' component={ModelsScreen} />
                     {/* TODO: implement a functionality to take you to instance screen vs http://localhost:3000/instances*/}
                     <Route path='/instances' component={InstanceScreen} />
                 </Switch>

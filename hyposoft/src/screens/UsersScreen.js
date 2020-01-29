@@ -179,7 +179,7 @@ class UsersScreen extends Component {
             ToastsStore.info("Can't change admin's username", 3000, 'burntToast')
             return
         }
-        
+
         var newUsername = this.state.editUserNewUsername
         while (newUsername.startsWith('@')) {
             newUsername = newUsername.substring(1)
@@ -299,7 +299,7 @@ class UsersScreen extends Component {
                                                             ].map(col => ({ ...col }))
                                                         }
                                                         data={this.state.users}
-                                                        sortable
+                                                        sortable={true}
                                                         size="medium"
                                                     />
                                                 </Box>

@@ -46,7 +46,7 @@ function getModels(startAfter, callback) {
       }
 
       const models = docSnaps.docs.map( doc => (
-        {data: doc.data()}
+        {...doc.data()}
       ))
       callback(models,newStartAfter)
     })
