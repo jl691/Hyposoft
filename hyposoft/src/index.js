@@ -11,6 +11,7 @@ import SettingsScreen from './screens/SettingsScreen'
 import UsersScreen from './screens/UsersScreen'
 import ClaimScreen from './screens/ClaimScreen'
 import UnclaimScreen from './screens/UnclaimScreen'
+import ResetPasswordScreen from './screens/ResetPasswordScreen'
 
 ReactDOM.render((
             <BrowserRouter>
@@ -21,6 +22,7 @@ ReactDOM.render((
                     <Route exact path='/users' component={UsersScreen} />
                     <Route path='/signup/:secret' component={ClaimScreen} />
                     <Route path='/badsignup/:secret' component={UnclaimScreen} />
+                    <Route path='/resetpassword/:secret' component={ResetPasswordScreen} />
                 </Switch>
             </BrowserRouter>
         ), document.getElementById('root'))

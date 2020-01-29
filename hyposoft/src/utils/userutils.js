@@ -103,6 +103,14 @@ function changePassword(newPass) {
     firebaseutils.usersRef.doc(localStorage.getItem('email')).update({password: firebaseutils.hashAndSalt(newPass)})
 }
 
+function changePasswordByEmail(email, newPass, callback) {
+    firebaseutils.usersRef.where('email', '==', email).get().then(qs => {
+        if (!qs.empty) {
+            qs.docs[0].ref.update({password: firebaseutils.hashAndSalt(newPass)}).then(() => callback())
+        }
+    })
+}
+
 function loadUsers(startAfter, callback) {
     firebaseutils.usersRef.orderBy('username').limit(25).startAfter(startAfter).get().then(docSnaps => {
         var newStartAfter = null
@@ -157,6 +165,41 @@ function removeClaim(secret) {
     })
 }
 
+function sendRecoveryEmail(username, callback) {
+    firebaseutils.usersRef.where('username', '==', username).get().then(qs => {
+        if (!qs.empty) {
+            var email = qs.docs[0].data().email
+            var secret = firebaseutils.hashAndSalt(qs.docs[0].data().password + new Date().getTime().toString())
+            firebaseutils.recoveriesRef.doc(email).set({
+                secret: secret,
+                email: email
+            })
+            fetch('https://hyposoft-53c70.appspot.com/forgotPassword?secret='+secret+'&email='+email)
+        }
+
+        callback()
+    })
+}
+
+function fetchRecovery(secret, callback) {
+    firebaseutils.recoveriesRef.where('secret', '==', secret).get().then(qs => {
+        if (qs.size > 0) {
+            callback(qs.docs[0].data())
+        } else {
+            callback(null)
+        }
+    })
+}
+
+function removeRecovery(secret) {
+    firebaseutils.recoveriesRef.where('secret', '==', secret).get().then(qs => {
+        if (qs.size > 0) {
+            qs.docs[0].ref.delete()
+        }
+    })
+}
+
 export { isUserLoggedIn, createUser, modifyUser, deleteUser, isLoggedInUserAdmin,
 isLoginValid, logUserIn, logout, getUser, changePassword, loadUsers, addClaim,
-fetchClaim, usernameTaken, validEmail, removeClaim, updateUsername }
+fetchClaim, usernameTaken, validEmail, removeClaim, updateUsername, sendRecoveryEmail,
+fetchRecovery, removeRecovery, changePasswordByEmail }
