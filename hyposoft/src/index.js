@@ -2,7 +2,6 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import HomeScreen from './screens/HomeScreen'
 import RackView from "./components/RackView";
-import AddRackView from "./components/AddRackView";
 import DashboardScreen from './screens/DashboardScreen'
 import InstanceScreen from './screens/InstanceScreen'
 import * as serviceWorker from './serviceWorker'

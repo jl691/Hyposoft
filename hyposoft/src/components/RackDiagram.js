@@ -55,7 +55,6 @@ class RackDiagram extends React.Component {
                 header.set({
                     left: 400*x + (350-Math.round(header.getScaledWidth()))/2
                 })
-                console.log("yeeters " + header.getScaledWidth())
                 canvas.add(header);
                 //header.centerH();
                 result.forEach(instance => {

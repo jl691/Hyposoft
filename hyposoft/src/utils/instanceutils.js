@@ -1,4 +1,4 @@
-import { instanceRef, racksRef, modelsRef, db, firebase} from './firebaseutils'
+import { instanceRef, racksRef, modelsRef, db, firebase } from './firebaseutils'
 import * as rackutils from './rackutils'
 
 //TODO: admin vs. user privileges
@@ -58,7 +58,7 @@ function addInstance(instanceid, model, hostname, rack, racku, owner, comment, c
             }
             ).then(function (docRef) {
                 callback(null);
-                
+
             }).catch(function (error) {
                 // callback("Error");
                 console.log(error)
@@ -88,7 +88,7 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
 
     rackutils.getRackID(rackRow, rackNum, id => {
         if (id) {
-            
+
             rackID = id
             console.log(rackID)
         }
@@ -107,23 +107,24 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                 //doc.data().height refers to model height
                 if (rackHeight >= parseInt(rackU) + doc.data().height) {
                     //We know the instance will fit on the rack, but now does it conflict with anything?
-                    
-                    rackutils.checkInstanceFits(parseInt(rackU), parseInt(doc.data().height), rackID, function(status) {
-                 
+
+                    rackutils.checkInstanceFits(parseInt(rackU), parseInt(doc.data().height), rackID, function (status) {
+
                         //can check length. If length > 0, then conflicting instances were returned
                         //means that there are conflicts. 
-                    
+                        console.log(status)
+
                         if (status.length) {
                             console.log("Conflicts found on rack")
                             // var height = doc.data().height
                             // var rackedAt = rackU
-                
+
                             // var arrayLength = status.length;
                             // for (var i = 0; i < arrayLength; i++) {
                             //     console.log(status[i]);
-                                
+
                             // }
-                            
+
                             // var errMessage = "Error adding instance: instance of height " + height + " racked at " + rackedAt + " conflicts with instance(s) ";// + conflicts;
                             var errMessage = "Conflicts found on the rack work this out pls"
                             callback(errMessage);
@@ -134,7 +135,10 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                             callback(null, doc.data().modelNumber, doc.data().vendor, rackID);
 
                         }
-                    
+
+
+
+
                     })
                 }
                 else {
