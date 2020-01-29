@@ -72,13 +72,13 @@ function addInstance(instanceid, model, hostname, rack, racku, owner, comment, c
 // This will check if the instance fits on rack: fits within in the height of rack, and does not conflict with other instances
 
 function instanceFitsOnRack(instanceRack, rackU, model, callback) {
- 
+
     let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
     let rackID = null;
-    
+
     rackutils.getRackID(rackRow, rackNum, id =>{
         if(id){
             console.log(id)
@@ -99,14 +99,14 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
 
             var docRef = modelsRef.doc(String(model))
             docRef.get().then(doc => {
-               
+
                 //doc.data().height refers to model height
                 if (rackHeight >= parseInt(rackU) + doc.data().height) {
                     //We know the instance will fit on the rack, but now does it conflict with anything?
                     console.log(rackID)
                     rackutils.checkInstanceFits(parseInt(rackU), parseInt(doc.data().height), rackID , function(status) {
                         console.log(rackU)
-                        if(status){ //means that there are conflicts. 
+                        if(status){ //means that there are conflicts.
                             var height = doc.data().height
                             var rackedAt = rackU
                             var conflicts = "";
@@ -122,7 +122,7 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                             callback(null, doc.data().modelNumber, doc.data().vendor)
 
                         }
-                    })                                
+                    })
                 }
                 else {
                     console.log("Instance of this model at this rackU will not fit on the rack")
@@ -203,16 +203,14 @@ function sortByKeyword(keyword,callback) {
 
 function getSuggestedModels(userInput, callback) {
   // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
-    var query = userInput
-                ? instanceRef.where("model",">=",userInput).where("model","<",userInput.slice(0,userInput.length-1)
-                  + String.fromCharCode(userInput.slice(userInput.length-1,userInput.length).charCodeAt(0)+1))
-                : instanceRef.orderBy('model')
-
     var modelArray = []
-    query.get().then(querySnapshot => {
+    modelsRef.get().then(querySnapshot => {
       querySnapshot.forEach( doc => {
-        if (!modelArray.includes(doc.data().model)) {
-          modelArray.push(doc.data().model)
+        if (!userInput
+          || (doc.id.localeCompare(userInput) >= 0
+              && doc.id.localeCompare(userInput.slice(0,userInput.length-1)
+                  + String.fromCharCode(userInput.slice(userInput.length-1,userInput.length).charCodeAt(0)+1)) < 0)) {
+          modelArray.push(doc.id)
         }
       })
       callback(modelArray)
