@@ -45,7 +45,7 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
         else {
 
             instanceRef.add({
-                
+
                 model: model,
                 hostname: hostname,
                 rack: rack,
@@ -59,7 +59,7 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
 
             }).then(function (docRef) {
                 racksRef.doc(String(rackID)).update({
-                         instances: firebase.firestore.FieldValue.arrayUnion(docRef.id)
+                    instances: firebase.firestore.FieldValue.arrayUnion(docRef.id)
                 })
                 callback(null);
 
@@ -67,7 +67,7 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                 // callback("Error");
                 console.log(error)
             })
-     
+
         }
     })
 
@@ -119,7 +119,7 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                             var arrayLength = status.length;
                             for (var i = 0; i < arrayLength; i++) {
                                 console.log(status[i]);
-                                conflicts = conflicts + ", " +status[i]
+                                conflicts = conflicts + ", " + status[i]
 
                             }
 
@@ -157,17 +157,42 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
 function deleteInstance(instanceid, callback) {
 
     instanceRef.doc(instanceid).get().then(function (doc) {
+
+        //This is so I can go into racks collection and delete instances associated with the rack
         if (doc.exists) {
-            if (doc.data().instances && Object.keys(doc.data().instances).length > 0) {
-                callback(null)
-            } else {
-                instanceRef.doc(instanceid).delete().then(function () {
-                    callback(instanceid);
-                }).catch(function (error) {
-                    callback(null);
+            let instanceRack = doc.data().rack
+            let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
+            let rackRow = splitRackArray[0]
+            let rackNum = parseInt(splitRackArray[1])
+        
+            let rackID = null;
+        
+            rackutils.getRackID(rackRow, rackNum, id => {
+                if (id) {
+        
+                    rackID = id
+                    console.log(rackID)
+                }
+                else {
+                    console.log("Error: no rack for this letter and number")
+                }
+            })
+
+
+            instanceRef.doc(instanceid).delete().then(function () {
+                console.log("Deleting. This is the rackID: " + rackID)
+                console.log("removing from database instace ID: " + instanceid)
+                racksRef.doc(String(rackID)).update({
+                   
+                    instances: firebase.firestore.FieldValue.arrayRemove(instanceid)
                 })
-            }
+
+                callback(instanceid);
+            }).catch(function (error) {
+                callback(null);
+            })
         } else {
+            console.log("Trying to delete instance that somehow isn't there??")
             callback(null);
         }
     })
