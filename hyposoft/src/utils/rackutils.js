@@ -261,7 +261,9 @@ function checkInstanceFits(position, height, rack, callback) { //rackU, modelHei
 
                     console.log("7. height from getModelHeightcolor: " + height)
 
-                    for (let i = docRefInstance.data().rackU; i <= docRefInstance.data().rackU + height; i++) {
+                    //TODO: double check if < or <=
+                    for (let i = docRefInstance.data().rackU; i < docRefInstance.data().rackU + height; i++) {
+                        console.log("Pushing instance positions: " + i)
                         instPositions.push(i);
                     }
                     //check for intersection
