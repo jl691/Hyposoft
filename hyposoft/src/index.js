@@ -19,8 +19,8 @@ ReactDOM.render((
                     <Route exact path='/dashboard' component={DashboardScreen} />
                     <Route exact path='/settings' component={SettingsScreen} />
                     <Route exact path='/users' component={UsersScreen} />
-                    <Route path='/signup/:secret/:username/:email' component={ClaimScreen} />
-                    <Route path='/badsignup/:secret/:username/:email' component={UnclaimScreen} />
+                    <Route path='/signup/:secret' component={ClaimScreen} />
+                    <Route path='/badsignup/:secret' component={UnclaimScreen} />
                 </Switch>
             </BrowserRouter>
         ), document.getElementById('root'))

@@ -9,15 +9,21 @@ function isUserLoggedIn() {
     return firebaseutils.hashAndSalt(displayName+username+email) === loginCheck
 }
 
+function validEmail(email) {
+    var re = /^([a-zA-Z0-9._-]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(String(email).toLowerCase());
+}
+
 function isLoggedInUserAdmin() {
     return isUserLoggedIn() && (localStorage.getItem('username') === 'admin')
 }
 
-function packageUser(displayName, username, email) {
+function packageUser(displayName, username, email, password) {
     const user = {
         displayName: displayName.trim(),
         username: username.trim(),
-        email: email.trim()
+        email: email.trim(),
+        password: firebaseutils.hashAndSalt(password)
     }
 
     return user
@@ -27,8 +33,9 @@ function packageUser(displayName, username, email) {
 * This function assumes validation (such as taken usernames etc.) has been done
 * It also assumes that we've already validated that the logged in user is the admin
 */
-function createUser(displayName, username, email) {
-    firebaseutils.usersRef.doc(email).set(packageUser(displayName, username, email))
+function createUser(displayName, username, email, password, callback) {
+    firebaseutils.usersRef.doc(email).set(packageUser(displayName, username, email, password))
+    callback(packageUser(displayName, username, email, password))
 }
 
 /**
@@ -71,7 +78,13 @@ function logout() {
 }
 
 function getUser(email, callback) {
-    firebaseutils.usersRef.doc(email).get().then(doc => callback(doc.data()))
+    firebaseutils.usersRef.doc(email).get().then(doc => callback(doc.exists ? doc.data() : null))
+}
+
+function usernameTaken(username, callback) {
+    firebaseutils.usersRef.where('username', '==', username).get().then(qs => {
+        callback(qs.size > 0)
+    })
 }
 
 function changePassword(newPass) {
@@ -101,28 +114,37 @@ function addClaim(username, displayName, email, callback) {
     if (!isLoggedInUserAdmin()) {
         callback(false); // They're doing something fishy
     } else {
+        const secret = firebaseutils.hashAndSalt(username+email+new Date().getTime().toString())
         firebaseutils.claimsRef.doc(email).set({
             username: username,
             displayName: displayName,
             email: email,
-            secret: firebaseutils.hashAndSalt(username+email+new Date().getTime().toString())
-        }).then(() => callback(true))
+            secret: secret
+        }).then(() => callback(secret))
     }
 }
 
 /**
 * Also simultaneously functions as validateClaim()
 */
-function fetchClaim(username, email, secret, callback) {
-    firebaseutils.claimsRef.doc(email).get().then(doc => {
-        if (doc.exists && doc.data().username === username && doc.data().secret === secret) {
-            callback(doc.data())
+function fetchClaim(secret, callback) {
+    firebaseutils.claimsRef.where('secret', '==', secret).get().then(qs => {
+        if (qs.size > 0) {
+            callback(qs.docs[0].data())
         } else {
             callback(null)
         }
     })
 }
 
+function removeClaim(secret) {
+    firebaseutils.claimsRef.where('secret', '==', secret).get().then(qs => {
+        if (qs.size > 0) {
+            qs.docs[0].ref.delete()
+        }
+    })
+}
+
 export { isUserLoggedIn, createUser, modifyUser, deleteUser, isLoggedInUserAdmin,
 isLoginValid, logUserIn, logout, getUser, changePassword, loadUsers, addClaim,
-fetchClaim }
+fetchClaim, usernameTaken, validEmail, removeClaim }

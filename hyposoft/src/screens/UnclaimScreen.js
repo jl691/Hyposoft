@@ -79,7 +79,7 @@ class ClaimScreen extends React.Component {
                         <Box direction='column' justify='center' width='42em' align='stretch' margin={{top: 'medium'}}>
                             <div style={{margin: '0'}}>
                                 <TextInput style={styles.TIStyle}
-                                    placeholder={this.props.match.params.secret+"|"+this.props.match.params.username+"|"+this.props.match.params.email}
+                                    placeholder={this.props.match.params.secret}
                                     onChange={e => {
                                         const value = e.target.value
                                         this.setState(oldState => ({...oldState, displayName: value}))

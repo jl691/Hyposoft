@@ -15,16 +15,19 @@ import {
     Heading,
     Layer,
     Text,
-    TextInput } from 'grommet'
+    TextInput,
+    Form } from 'grommet'
 
-import { Add, FormTrash } from "grommet-icons"
+import { Add, FormEdit, FormTrash } from "grommet-icons"
 import theme from '../theme'
 
 class UsersScreen extends Component {
     state = {
         redirect: '',
         users: [
-        ]
+        ],
+        newUserEmail: '',
+        newUserUsername: ''
     }
 
     startAfter = null
@@ -33,6 +36,12 @@ class UsersScreen extends Component {
         super()
         this.onClose = this.onClose.bind(this)
         this.addUserDialog = this.addUserDialog.bind(this)
+        this.onCloseEdit = this.onCloseEdit.bind(this)
+        this.onCloseDelete = this.onCloseDelete.bind(this)
+        this.deleteUser = this.deleteUser.bind(this)
+        this.editUser = this.editUser.bind(this)
+        this.showEditDialog = this.showEditDialog.bind(this)
+        this.showDeleteDialog = this.showDeleteDialog.bind(this)
     }
 
     componentWillMount() {
@@ -47,6 +56,48 @@ class UsersScreen extends Component {
         })
     }
 
+    addUser() {
+        var username = this.state.newUserUsername.trim()
+        while (username.startsWith('@')) {
+            username = username.substring(1)
+        }
+
+        var email = this.state.newUserEmail.trim()
+
+        if (username === '') {
+            ToastsStore.info('Username required', 3000, 'burntToast')
+            return
+        }
+
+        if (email === '') {
+            ToastsStore.info('Email required', 3000, 'burntToast')
+            return
+        }
+
+        if (!userutils.validEmail(email)) {
+            ToastsStore.info('Email invalid', 3000, 'burntToast')
+            return
+        }
+
+        userutils.usernameTaken(username, taken => {
+            if (taken) {
+                ToastsStore.info('Username taken', 3000, 'burntToast')
+            } else {
+                userutils.getUser(email, user => {
+                    if (user) {
+                        ToastsStore.info('Email taken', 3000, 'burntToast')
+                    } else {
+                        userutils.addClaim(username, '', email, secret => {
+                            fetch('https://hyposoft-53c70.appspot.com/addUser?claimCode='+secret+'&email='+email)
+                            ToastsStore.info('Invite sent', 3000, 'burntToast')
+                            this.onClose()
+                        })
+                    }
+                })
+            }
+        })
+    }
+
     addUserDialog() {
         this.setState(currState => (
             {...currState, showAddDialog: true}
@@ -57,6 +108,58 @@ class UsersScreen extends Component {
         this.setState(currState => (
             {...currState, showAddDialog: false}
         ))
+    }
+
+    showDeleteDialog(username) {
+        if (userutils.isLoggedInUserAdmin()) {
+            this.setState(currState => (
+                {...currState, showDeleteDialog: true, deleteUsername: username}
+            ))
+        } else {
+            ToastsStore.info('Only admins can do that', 3000, 'burntToast')
+        }
+    }
+
+    onCloseDelete() {
+        this.setState(currState => (
+            {...currState, showDeleteDialog: false}
+        ))
+    }
+
+    showEditDialog(username) {
+        if (userutils.isLoggedInUserAdmin()) {
+            this.setState(currState => (
+                {...currState, showEditDialog: true, editUsername: username}
+            ))
+        } else {
+            ToastsStore.info('Only admins can do that', 3000, 'burntToast')
+        }
+    }
+
+    onCloseEdit() {
+        this.setState(currState => (
+            {...currState, showEditDialog: false}
+        ))
+    }
+
+    deleteUser() {
+        if (!userutils.isLoggedInUserAdmin()) {
+            ToastsStore.info('Only admins can do that', 3000, 'burntToast')
+            this.onCloseDelete()
+            return
+        }
+
+        if (this.state.deleteUsername === 'admin') {
+            ToastsStore.info("Can't delete an admin", 3000, 'burntToast')
+            this.onCloseDelete()
+            return
+        }
+
+
+    }
+
+    editUser() {
+
     }
 
     render() {
@@ -93,7 +196,7 @@ class UsersScreen extends Component {
                                            id='containerBox'
                                            direction='row'
                                            background='#FFFFFF'
-                                           margin={{top: 'medium', bottom: (this.props.lastCard && 'medium')}}
+                                           margin={{top: 'medium', bottom: 'medium'}}
                                            flex={{
                                                grow: 0,
                                                shrink: 0
@@ -110,7 +213,7 @@ class UsersScreen extends Component {
                                                                 userutils.loadUsers(this.startAfter, (users, newStartAfter) => {
                                                                     this.startAfter = newStartAfter
                                                                     this.setState(oldState => (
-                                                                        {users: [...oldState.users, ...users]}
+                                                                        {...oldState, users: [...oldState.users, ...users]}
                                                                     ))
                                                                 })
                                                             }
@@ -136,7 +239,16 @@ class UsersScreen extends Component {
                                                                 {
                                                                     property: 'dummy',
                                                                     render: datum => (
-                                                                    <FormTrash style={{cursor: 'pointer'}} onClick={() => {}} />
+                                                                    <FormEdit style={{cursor: 'pointer'}} onClick={() => this.showEditDialog(datum.username)} />
+                                                                ),
+                                                                    align: 'center',
+                                                                    header: <Text>Edit</Text>,
+                                                                    sortable: false
+                                                                },
+                                                                {
+                                                                    property: 'dummy',
+                                                                    render: datum => (
+                                                                    <FormTrash style={{cursor: 'pointer'}} onClick={() => this.showDeleteDialog(datum.username)} />
                                                                 ),
                                                                     align: 'center',
                                                                     header: <Text>Delete</Text>,
@@ -188,32 +300,59 @@ class UsersScreen extends Component {
                                 Add User
                             </Heading>
                             <p>Assign them a username, and give us an email address to send them their invitation.</p>
-                            <Box direction="column" gap="small">
-                                <TextInput style={{
-                                        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                        width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal'
-                                    }}
-                                    placeholder="Username"
-                                    onChange={e => {
-                                        const value = e.target.value
-                                        this.setState(oldState => ({...oldState, newUserUsername: value}))
-                                    }}
-                                    value={this.state.newUserUsername}
-                                    title='Display name'
-                                    />
-                                <TextInput style={{
-                                        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                        width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                    }}
-                                    placeholder="Email"
-                                    onChange={e => {
-                                        const value = e.target.value
-                                        this.setState(oldState => ({...oldState, newUserEmail: value}))
-                                    }}
-                                    value={this.state.newUserEmail}
-                                    title='Display name'
-                                    />
-                            </Box>
+
+                            <Form>
+                                <Box direction="column" gap="small">
+                                    <TextInput style={{
+                                            borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
+                                            width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal'
+                                        }}
+                                        placeholder="Username"
+                                        onChange={e => {
+                                            const value = e.target.value
+                                            this.setState(oldState => ({...oldState, newUserUsername: value}))
+                                        }}
+                                        value={this.state.newUserUsername}
+                                        title='Username'
+                                        />
+                                    <TextInput style={{
+                                            borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
+                                            width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
+                                        }}
+                                        placeholder="Email"
+                                        onChange={e => {
+                                            const value = e.target.value
+                                            this.setState(oldState => ({...oldState, newUserEmail: value}))
+                                        }}
+                                        value={this.state.newUserEmail}
+                                        title='Email'
+                                        />
+                                </Box>
+                                <Box
+                                    margin={{top: 'small'}}
+                                    as="footer"
+                                    gap="small"
+                                    direction="row"
+                                    align="center"
+                                    justify="end" >
+                                    <Button label="Add" type='submit' primary onClick={() => this.addUser()} />
+                                    <Button
+                                        label="Close"
+                                        onClick={this.onClose}
+                                        />
+                                </Box>
+                            </Form>
+                        </Box>
+                    </Layer>
+                )}
+
+                {this.state.showDeleteDialog && (
+                    <Layer position="center" modal onClickOutside={this.onCloseDelete} onEsc={this.onCloseDelete}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Are you sure?
+                            </Heading>
+                            <p>Deleting @{this.state.deleteUsername}'s account is an action that cannot be reversed.</p>
                             <Box
                                 margin={{top: 'small'}}
                                 as="footer"
@@ -221,10 +360,10 @@ class UsersScreen extends Component {
                                 direction="row"
                                 align="center"
                                 justify="end" >
-                                <Button label="Add" primary onClick={() => {}} />
+                                <Button label="Yes" type='submit' primary onClick={() => this.deleteUser()} />
                                 <Button
-                                    label="Close"
-                                    onClick={this.onClose}
+                                    label="No"
+                                    onClick={this.onCloseDelete}
                                     />
                             </Box>
                         </Box>
