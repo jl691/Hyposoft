@@ -32,7 +32,9 @@ function getInstance(callback) {
     );
 }
 
-function addInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
+//check: when you delete an isntance, need to delete the ID from rackRef as well
+function addInstance(model, hostname, rack, racku, owner, comment, callback) {
+    //whenever there's a function, it's like a new 'thread', which is why print statements may be out of order
     instanceFitsOnRack(rack, racku, model, function (errorMessage, modelNum, modelVendor, rackID) {
 
         if (errorMessage) {
@@ -43,7 +45,7 @@ function addInstance(instanceid, model, hostname, rack, racku, owner, comment, c
         else {
 
             instanceRef.add({
-                instance_id: instanceid,
+                
                 model: model,
                 hostname: hostname,
                 rack: rack,
@@ -55,22 +57,17 @@ function addInstance(instanceid, model, hostname, rack, racku, owner, comment, c
                 modelNumber: modelNum,
                 vendor: modelVendor,
 
-            }
-            ).then(function (docRef) {
+            }).then(function (docRef) {
+                racksRef.doc(String(rackID)).update({
+                         instances: firebase.firestore.FieldValue.arrayUnion(docRef.id)
+                })
                 callback(null);
 
             }).catch(function (error) {
                 // callback("Error");
                 console.log(error)
             })
-            // console.log(racksRef.doc(String(rackID)))
-            // console.log(racksRef.doc(String(rackID)).collection('instances'))
-            // console.log(instanceid)
-            //TODO: instanceid is blank. Until this is fixed, will not find conflicts 
-            racksRef.doc(String(rackID)).update({
-                instances: firebase.firestore.FieldValue.arrayUnion(instanceid)
-
-            })
+     
         }
     })
 
@@ -116,28 +113,24 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
 
                         if (status.length) {
                             console.log("Conflicts found on rack")
-                            // var height = doc.data().height
-                            // var rackedAt = rackU
+                            var height = doc.data().height
+                            var rackedAt = rackU
+                            var conflicts = ""
+                            var arrayLength = status.length;
+                            for (var i = 0; i < arrayLength; i++) {
+                                console.log(status[i]);
+                                conflicts = conflicts + ", " +status[i]
 
-                            // var arrayLength = status.length;
-                            // for (var i = 0; i < arrayLength; i++) {
-                            //     console.log(status[i]);
+                            }
 
-                            // }
-
-                            // var errMessage = "Error adding instance: instance of height " + height + " racked at " + rackedAt + " conflicts with instance(s) ";// + conflicts;
-                            var errMessage = "Conflicts found on the rack work this out pls"
+                            var errMessage = "Error adding instance: instance of height " + height + " racked at " + rackedAt + "U conflicts with instance(s) " + conflicts;
                             callback(errMessage);
                         }
                         else {//status callback is empty array, no conflits
                             console.log("Instance fits in rack with no conflicts");
-                            //racksRef.doc(String(rackID)).collection('instances').arrayUnion(instanceid)
                             callback(null, doc.data().modelNumber, doc.data().vendor, rackID);
 
                         }
-
-
-
 
                     })
                 }
