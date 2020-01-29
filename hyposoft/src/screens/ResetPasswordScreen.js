@@ -1,7 +1,6 @@
 import React from 'react'
-import { Anchor, Box, Button, Form, Grommet, Heading, TextInput } from 'grommet'
+import {  Box, Button, Form, Grommet, Heading, TextInput } from 'grommet'
 import * as userutils from '../utils/userutils'
-import * as firebaseutils from '../utils/firebaseutils'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import { Redirect } from 'react-router-dom'
 import theme from '../theme'

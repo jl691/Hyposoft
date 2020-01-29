@@ -1,5 +1,5 @@
 import React from 'react'
-import { Anchor, Box, Button, Grommet, Heading, TextInput } from 'grommet'
+import { Box, Grommet, Heading } from 'grommet'
 import * as userutils from '../utils/userutils'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import theme from '../theme'
