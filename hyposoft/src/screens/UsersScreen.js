@@ -42,9 +42,10 @@ class UsersScreen extends Component {
         this.editUser = this.editUser.bind(this)
         this.showEditDialog = this.showEditDialog.bind(this)
         this.showDeleteDialog = this.showDeleteDialog.bind(this)
+        this.init = this.init.bind(this)
     }
 
-    componentWillMount() {
+    init() {
         firebaseutils.usersRef.orderBy('username').limit(25).get().then(docSnaps => {
             if (docSnaps.docs.length === 25) {
                 this.startAfter = docSnaps.docs[docSnaps.docs.length-1]
@@ -54,6 +55,10 @@ class UsersScreen extends Component {
                      role: (doc.data().username === 'admin' ? 'Admin' : 'User')}
             ))})
         })
+    }
+
+    componentWillMount() {
+        this.init()
     }
 
     addUser() {
@@ -122,7 +127,7 @@ class UsersScreen extends Component {
 
     onCloseDelete() {
         this.setState(currState => (
-            {...currState, showDeleteDialog: false}
+            {...currState, showDeleteDialog: false, deleteUsername: ''}
         ))
     }
 
@@ -138,7 +143,7 @@ class UsersScreen extends Component {
 
     onCloseEdit() {
         this.setState(currState => (
-            {...currState, showEditDialog: false}
+            {...currState, showEditDialog: false, editUsername: ''}
         ))
     }
 
@@ -155,7 +160,12 @@ class UsersScreen extends Component {
             return
         }
 
+        userutils.deleteUser(this.state.deleteUsername, () => {
+            ToastsStore.info("Deleted @"+this.state.deleteUsername, 3000, 'burntToast')
+            this.onCloseDelete()
 
+            this.init()
+        })
     }
 
     editUser() {

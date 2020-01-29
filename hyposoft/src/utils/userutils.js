@@ -46,12 +46,14 @@ function modifyUser(displayName, username, email) {
     firebaseutils.usersRef.doc(email).update(packageUser(displayName, username, email))
 }
 
-/**
-* This function assumes validation (such as taken usernames etc.) has been done
-* It also assumes that we've already validated that the logged in user is the admin
-*/
-function deleteUser(email) {
-    firebaseutils.usersRef.doc(email).delete()
+function deleteUser(username, callback) {
+    firebaseutils.usersRef.where('username', '==', username).get().then(qs => {
+        if (!qs.empty) {
+            qs.docs[0].ref.delete().then(() => {
+                callback()
+            })
+        }
+    })
 }
 
 function isLoginValid(username, password, callback) {
