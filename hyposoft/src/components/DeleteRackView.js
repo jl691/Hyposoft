@@ -4,6 +4,7 @@ import {Box, Button, Form, Grommet, Heading, Layer, Text, TextInput} from "gromm
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as rackutils from "../utils/rackutils";
 import {Close, Trash} from "grommet-icons";
+import * as formvalidationutils from "../utils/formvalidationutils";
 
 class DeleteRackView extends React.Component {
     constructor(props) {
@@ -21,14 +22,31 @@ class DeleteRackView extends React.Component {
     }
 
     handleSubmit(event) {
-        rackutils.deleteRackRange(this.state.rangeLetterStart, this.state.rangeLetterEnd, this.state.rangeNumberStart, this.state.rangeNumberEnd, status => {
-            if (status) {
-                ToastsStore.success('Successfully deleted racks!');
-                this.props.parentCallback(true);
-            } else {
-                ToastsStore.error('Error deleting racks. Ensure none of them contain instances.');
-            }
-        })
+        if(!this.state.rangeLetterStart || !this.state.rangeLetterEnd || !this.state.rangeNumberStart || !this.state.rangeNumberEnd) {
+            //invalid length
+            ToastsStore.error('Please fill out all fields.');
+        } else if (!parseInt(this.state.rangeNumberStart) || !parseInt(this.state.rangeNumberEnd)){
+            //invalid numbrt
+            ToastsStore.error('Invalid number.');
+        } else if (!formvalidationutils.checkPositive(this.state.rangeNumberStart) || !formvalidationutils.checkPositive(this.state.rangeNumberEnd)){
+            //non positive number
+            ToastsStore.error('Numbers most be positive.');
+        } else if(!formvalidationutils.checkUppercaseLetter(this.state.rangeLetterStart) || !formvalidationutils.checkUppercaseLetter(this.state.rangeLetterEnd)){
+            //non uppercase letter
+            ToastsStore.error('Rows must be a single uppercase letter.');
+        } else if (!formvalidationutils.checkNumberOrder(this.state.rangeNumberStart, this.state.rangeNumberEnd) || !formvalidationutils.checkLetterOrder(this.state.rangeLetterStart, this.state.rangeLetterEnd)) {
+            //ranges incorrect
+            ToastsStore.error('The starting row or number must come before the ending row or number.');
+        } else {
+            rackutils.deleteRackRange(this.state.rangeLetterStart, this.state.rangeLetterEnd, this.state.rangeNumberStart, this.state.rangeNumberEnd, status => {
+                if (status) {
+                    ToastsStore.success('Successfully deleted racks!');
+                    this.props.parentCallback(true);
+                } else {
+                    ToastsStore.error('Error deleting racks. Ensure none of them contain instances.');
+                }
+            })
+        }
     }
 
     handleChange(event) {

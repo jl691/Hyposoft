@@ -200,9 +200,10 @@ function generateRackDiagram(rackID, callback){
 
 function getInstanceData(instanceID, callback){
     let position, model, hostname;
-    firebaseutils.instanceRef.doc(instanceID.trim()).get().then(function (docRefInstance) {
+    firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
         hostname = docRefInstance.data().hostname;
         position = docRefInstance.data().rackU;
+        model = docRefInstance.data().model;
         getModelHeightColor(model, (height, color) => {
             if(height){
                 callback({

@@ -2,6 +2,7 @@ import React from "react";
 import theme from "../theme";
 import {Accordion, AccordionPanel, Box, Button, Form, Grommet, Text, TextInput} from "grommet";
 import * as rackutils from "../utils/rackutils";
+import * as formvalidationutils from "../utils/formvalidationutils";
 import {ToastsContainer, ToastsStore} from 'react-toasts';
 
 class AddRackView extends React.Component {
@@ -25,25 +26,56 @@ class AddRackView extends React.Component {
     }
 
     handleSubmit(event) {
-        //TODO: FORM VALIDATION
         if (event.target.name === "single") {
-            rackutils.addSingleRack(this.state.singleLetter, parseInt(this.state.singleNumber), parseInt(this.state.singleHeight), status => {
-                if (status) {
-                    ToastsStore.success('Successfully added rack!');
-                    this.props.parentCallback(true);
-                } else {
-                    ToastsStore.error('Error adding rack.');
-                }
-            });
+            if(!this.state.singleLetter || !this.state.singleHeight || !this.state.singleNumber){
+                //invalid length
+                ToastsStore.error('Please fill out all fields.');
+            } else if (!parseInt(this.state.singleHeight) || !parseInt(this.state.singleNumber)){
+                //invalid numbrt
+                ToastsStore.error('Invalid number or height.');
+            } else if (!formvalidationutils.checkPositive(this.state.singleNumber) || !formvalidationutils.checkPositive(this.state.singleHeight)){
+                //non positive number
+                ToastsStore.error('Number or height most be positive.');
+            } else if (!formvalidationutils.checkUppercaseLetter(this.state.singleLetter)) {
+                //non an uppercase letter
+                ToastsStore.error('Row must be a single uppercase letter.');
+            } else {
+                //all good
+                rackutils.addSingleRack(this.state.singleLetter, parseInt(this.state.singleNumber), parseInt(this.state.singleHeight), status => {
+                    if (status) {
+                        ToastsStore.success('Successfully added rack!');
+                        this.props.parentCallback(true);
+                    } else {
+                        ToastsStore.error('Error adding rack.');
+                    }
+                });
+            }
         } else if (event.target.name === "range") {
-            rackutils.addRackRange(this.state.rangeLetterStart, this.state.rangeLetterEnd, parseInt(this.state.rangeNumberStart), parseInt(this.state.rangeNumberEnd), parseInt(this.state.rangeHeight), status => {
-                if (status) {
-                    ToastsStore.success('Successfully added racks!');
-                    this.props.parentCallback(true);
-                } else {
-                    ToastsStore.error('Error adding racks.');
-                }
-            })
+            if(!this.state.rangeLetterStart || !this.state.rangeLetterEnd || !this.state.rangeNumberStart || !this.state.rangeNumberEnd || !this.state.rangeHeight) {
+                //invalid length
+                ToastsStore.error('Please fill out all fields.');
+            } else if (!parseInt(this.state.rangeNumberStart) || !parseInt(this.state.rangeNumberEnd) || !parseInt(this.state.rangeHeight)){
+                //invalid numbrt
+                ToastsStore.error('Invalid number or height.');
+            } else if (!formvalidationutils.checkPositive(this.state.rangeNumberStart) || !formvalidationutils.checkPositive(this.state.rangeNumberEnd) || !formvalidationutils.checkPositive(this.state.rangeHeight)){
+                //non positive number
+                ToastsStore.error('Numbers or height most be positive.');
+            } else if(!formvalidationutils.checkUppercaseLetter(this.state.rangeLetterStart) || !formvalidationutils.checkUppercaseLetter(this.state.rangeLetterEnd)){
+                //non uppercase letter
+                ToastsStore.error('Rows must be a single uppercase letter.');
+            } else if (!formvalidationutils.checkNumberOrder(this.state.rangeNumberStart, this.state.rangeNumberEnd) || !formvalidationutils.checkLetterOrder(this.state.rangeLetterStart, this.state.rangeLetterEnd)) {
+                //ranges incorrect
+                ToastsStore.error('The starting row or number must come before the ending row or number.');
+            } else {
+                rackutils.addRackRange(this.state.rangeLetterStart, this.state.rangeLetterEnd, parseInt(this.state.rangeNumberStart), parseInt(this.state.rangeNumberEnd), parseInt(this.state.rangeHeight), status => {
+                    if (status) {
+                        ToastsStore.success('Successfully added racks!');
+                        this.props.parentCallback(true);
+                    } else {
+                        ToastsStore.error('Error adding racks.');
+                    }
+                })
+            }
         } else {
             ToastsStore.error('Error adding rack!');
         }

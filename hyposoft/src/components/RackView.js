@@ -12,6 +12,7 @@ import HomeButton from "./HomeButton";
 import UserMenu from "./UserMenu";
 import AppBar from "./AppBar";
 import RackUsageReport from "./RackUsageReport";
+import * as formvalidationutils from "../utils/formvalidationutils";
 
 class RackView extends React.Component {
 
@@ -32,7 +33,7 @@ class RackView extends React.Component {
             numberEnd: ""
         }
 
-        //this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
     }
 
@@ -78,6 +79,36 @@ class RackView extends React.Component {
                             onClick={() => this.setState({popupType: "Diagram"})}/>
                 </Box>
             );
+        }
+    }
+
+    handleSubmit(event) {
+        if (!this.state.letterStart || !this.state.letterEnd || !this.state.numberStart || !this.state.numberEnd) {
+            //invalid length
+            ToastsStore.error('Please fill out all fields.');
+        } else if (!parseInt(this.state.numberStart) || !parseInt(this.state.numberEnd)) {
+            //invalid numbrt
+            ToastsStore.error('Invalid number.');
+        } else if (!formvalidationutils.checkPositive(this.state.numberStart) || !formvalidationutils.checkPositive(this.state.numberEnd)) {
+            //non positive number
+            ToastsStore.error('Numbers most be positive.');
+        } else if (!formvalidationutils.checkUppercaseLetter(this.state.letterStart) || !formvalidationutils.checkUppercaseLetter(this.state.letterEnd)) {
+            //non uppercase letter
+            ToastsStore.error('Rows must be a single uppercase letter.');
+        } else if (!formvalidationutils.checkNumberOrder(this.state.numberStart, this.state.numberEnd) || !formvalidationutils.checkLetterOrder(this.state.letterStart, this.state.letterEnd)) {
+            //ranges incorrect
+            ToastsStore.error('The starting row or number must come before the ending row or number.');
+        } else {
+            //we gucci
+            this.props.history.push({
+                pathname: '/rackdiagram',
+                state: {
+                    letterStart: this.state.letterStart,
+                    letterEnd: this.state.letterEnd,
+                    numberStart: this.state.numberStart,
+                    numberEnd: this.state.numberEnd
+                }
+            })
         }
     }
 
@@ -146,27 +177,18 @@ class RackView extends React.Component {
                                 to
                                 <TextInput name="numberEnd" placeholder="eg. 24, 36, 48" onChange={this.handleChange}/>
                             </Box>
-                            <Link to={{
-                                pathname: '/rackdiagram', state: {
-                                    letterStart: this.state.letterStart,
-                                    letterEnd: this.state.letterEnd,
-                                    numberStart: this.state.numberStart,
-                                    numberEnd: this.state.numberEnd
-                                }
-                            }}>
-                                <Button type="submit" primary label="Submit"/>
-                            </Link>
+                            <Button type="submit" primary label="Submit"/>
                         </Form>
                     </Box>
-                    <Button label="Cancel" icon={<Close/>}/>
+                    <Button label="Cancel" icon={<Close/>} onClick={() => this.setState({popupType: ""})}/>
                 </Layer>
             )
-        } else if (popupType === 'Report'){
+        } else if (popupType === 'Report') {
             popup = (
                 <Layer onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
                     <RackUsageReport rack={this.state.rackReport}/>
-                    <Button label="Cancel" icon={<Close/>}
+                    <Button label="Close" icon={<Close/>}
                             onClick={() => this.setState({popupType: ""})}/>
                 </Layer>
             )
@@ -177,14 +199,14 @@ class RackView extends React.Component {
         }
 
         return (
-            <Grommet theme={theme} >
+            <Grommet theme={theme}>
                 <Box fill background='light-2'>
                     <AppBar>
-                        <HomeButton alignSelf='start' this={this} />
+                        <HomeButton alignSelf='start' this={this}/>
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
-                        }} >Racks</Heading>
-                        <UserMenu alignSelf='end' this={this} />
+                        }}>Racks</Heading>
+                        <UserMenu alignSelf='end' this={this}/>
                     </AppBar>
                     <Heading margin={"none"}>Racks</Heading>
                     {this.AdminTools()}
@@ -196,20 +218,20 @@ class RackView extends React.Component {
                                    });
                                }}
                                columns={[
- /*                                  {
-                                       property: "checkbox",
-                                       render: datum => (
-                                           <CheckBox key={datum.id}
-                                                     checked={this.state.checkedBoxes.includes(datum.id)}
-                                                     onChange={e => {
-                                                         if (e.target.checked) {
-                                                             this.state.checkedBoxes.push(datum.id);
-                                                         } else {
-                                                             this.setState({checkedBoxes: this.state.checkedBoxes.filter(item => item !== datum.id)})
-                                                         }
-                                                     }}/>
-                                       )
-                                   },*/
+                                   /*                                  {
+                                                                         property: "checkbox",
+                                                                         render: datum => (
+                                                                             <CheckBox key={datum.id}
+                                                                                       checked={this.state.checkedBoxes.includes(datum.id)}
+                                                                                       onChange={e => {
+                                                                                           if (e.target.checked) {
+                                                                                               this.state.checkedBoxes.push(datum.id);
+                                                                                           } else {
+                                                                                               this.setState({checkedBoxes: this.state.checkedBoxes.filter(item => item !== datum.id)})
+                                                                                           }
+                                                                                       }}/>
+                                                                         )
+                                                                     },*/
                                    {
                                        property: "id",
                                        header: "ID",
@@ -223,19 +245,19 @@ class RackView extends React.Component {
                                        property: "number",
                                        header: "Position"
                                    },
-/*                                   {
-                                       property: "height",
-                                       header: "Occupied",
-                                       render: datum => (
-                                           <Box pad={{vertical: 'xsmall'}}>
-                                               <Meter
-                                                   values={[{value: datum.instances / 42 * 100}]}
-                                                   thickness="small"
-                                                   size="small"
-                                               />
-                                           </Box>
-                                       )
-                                   },*/
+                                   /*                                   {
+                                                                          property: "height",
+                                                                          header: "Occupied",
+                                                                          render: datum => (
+                                                                              <Box pad={{vertical: 'xsmall'}}>
+                                                                                  <Meter
+                                                                                      values={[{value: datum.instances / 42 * 100}]}
+                                                                                      thickness="small"
+                                                                                      size="small"
+                                                                                  />
+                                                                              </Box>
+                                                                          )
+                                                                      },*/
                                    {
                                        property: "instances",
                                        header: "Instances"
@@ -252,7 +274,7 @@ class RackView extends React.Component {
                                                    this.setState({popupType: 'Report', rackReport: datum.id})
                                                }}/>
                                            </Box>
-                                   )
+                                       )
                                    }
                                ]} data={this.state.racks}/>
                 </Box>
