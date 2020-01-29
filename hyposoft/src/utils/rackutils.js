@@ -234,7 +234,7 @@ function getModelHeightColor(model, callback) {
     firebaseutils.modelsRef.doc(model).get().then(function (docRefModel) {
         callback(docRefModel.data().height, docRefModel.data().displayColor);
     }).catch(function (error) {
-        console.log("1");
+        console.log("1 error: " + error);
         callback(null);
     })
 }
@@ -250,21 +250,25 @@ function checkInstanceFits(position, height, rack, callback) { //rackU, modelHei
     for(let i=position;i<=position+height;i++){
         tentPositions.push(i);
     }
+    
     firebaseutils.racksRef.doc(rack).get().then(function (docRefRack) {
         if(docRefRack.data().instances.length){
+            console.log("found rack with ID with instances on it")
             docRefRack.data().instances.forEach(instanceID => {
                 dbPromises.push(firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
                     //find height
                     console.log(instanceID);
                     console.log(docRefInstance.data())
-                    getModelHeightColor((docRefInstance.data().model + " " + docRefInstance.data().modelNumber), (height, color) => {
+                    getModelHeightColor((docRefInstance.data().model //+ " " + docRefInstance.data().modelNumber
+                    ), (height, color) => {
                         let instPositions = [];
-                        for(let i=docRefInstance.data().rackU;i<=docRefInstance.data().rackU+height;i++){
+                        for(let i=docRefInstance.data().rackU; i<=docRefInstance.data().rackU+height; i++){
                             instPositions.push(i);
                         }
                         //check for intersection
                         let intersection = tentPositions.filter(value => instPositions.includes(value));
                         if(intersection.length){
+                            console.log("Conflicts were found, now pushing to array")
                             conflicting.push(docRefInstance.id);
                         }
                     })
@@ -276,13 +280,15 @@ function checkInstanceFits(position, height, rack, callback) { //rackU, modelHei
             })
         } else {
             console.log("No conflicts found")
-            callback([]); //maybe push conflicting anyway, since I will check the length regardless in instanceutils
+            callback(null);
 
-        }
-    }).catch(function (error) {
-        console.log("No matching racks")
-        callback(null);
-    })
+         }
+ 
+     })
+     // .catch(function (error) {
+    //     console.log("No matching racks" + error)
+    //     callback(error);
+    // })
 }
 
 export {getRackAt, getRacks, addSingleRack, addRackRange, deleteSingleRack, deleteRackRange, generateRackDiagram, getRackID, checkInstanceFits}

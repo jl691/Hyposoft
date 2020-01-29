@@ -63,9 +63,10 @@ function addInstance(instanceid, model, hostname, rack, racku, owner, comment, c
                 // callback("Error");
                 console.log(error)
             })
-            console.log(racksRef.doc(String(rackID)))
-            console.log(racksRef.doc(String(rackID)).collection('instances'))
-            console.log(instanceid)
+            // console.log(racksRef.doc(String(rackID)))
+            // console.log(racksRef.doc(String(rackID)).collection('instances'))
+            // console.log(instanceid)
+            //TODO: instanceid is blank. Until this is fixed, will not find conflicts 
             racksRef.doc(String(rackID)).update({
                 instances: firebase.firestore.FieldValue.arrayUnion(instanceid)
 
@@ -87,16 +88,14 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
 
     rackutils.getRackID(rackRow, rackNum, id => {
         if (id) {
-            console.log(id)
+            
             rackID = id
-            //console.log(rackID)
+            console.log(rackID)
         }
         else {
             console.log("Error: no rack for this letter and number")
         }
     })
-
-    //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
 
     racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
         if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number) {
@@ -108,35 +107,40 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                 //doc.data().height refers to model height
                 if (rackHeight >= parseInt(rackU) + doc.data().height) {
                     //We know the instance will fit on the rack, but now does it conflict with anything?
-                    console.log(rackID)
-                    rackutils.checkInstanceFits(rackU, (doc.data().height), String(rackID), function (status) {
+                    
+                    rackutils.checkInstanceFits(parseInt(rackU), parseInt(doc.data().height), rackID, function(status) {
+                 
                         //can check length. If length > 0, then conflicting instances were returned
                         //means that there are conflicts. 
+                    
                         if (status.length) {
-                            var height = doc.data().height
-                            var rackedAt = rackU
+                            console.log("Conflicts found on rack")
+                            // var height = doc.data().height
+                            // var rackedAt = rackU
                 
-                            var arrayLength = status.length;
-                            for (var i = 0; i < arrayLength; i++) {
-                                console.log(status[i]);
+                            // var arrayLength = status.length;
+                            // for (var i = 0; i < arrayLength; i++) {
+                            //     console.log(status[i]);
                                 
-                            }
+                            // }
                             
-                            var errMessage = "Error adding instance: instance of height " + height + " racked at " + rackedAt + " conflicts with instance(s) "// + conflicts;
-                            callback(errMessage)
+                            // var errMessage = "Error adding instance: instance of height " + height + " racked at " + rackedAt + " conflicts with instance(s) ";// + conflicts;
+                            var errMessage = "Conflicts found on the rack work this out pls"
+                            callback(errMessage);
                         }
-                        else {//status callback is null, no conflits
-                            console.log("Instance fits in rack with no conflicts")
+                        else {//status callback is empty array, no conflits
+                            console.log("Instance fits in rack with no conflicts");
                             //racksRef.doc(String(rackID)).collection('instances').arrayUnion(instanceid)
-                            callback(null, doc.data().modelNumber, doc.data().vendor, rackID)
+                            callback(null, doc.data().modelNumber, doc.data().vendor, rackID);
 
                         }
+                    
                     })
                 }
                 else {
                     console.log("Instance of this model at this rackU will not fit on the rack")
-                    var errMessage = "Instance of this model at this RackU will not fit on this rack"
-                    callback(errMessage)
+                    var errMessage = "Instance of this model at this RackU will not fit on this rack";
+                    callback(errMessage);
 
                 }
 
