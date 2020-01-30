@@ -8,6 +8,7 @@ import * as serviceWorker from './serviceWorker'
 import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import './utils/firebaseutils'
 import RackDiagram from "./components/RackDiagram";
+import DetailedInstanceScreen from './screens/DetailedInstanceScreen'
 
 
 
@@ -19,6 +20,9 @@ ReactDOM.render((
                     <Route exact path='/racks' component={RackView} />
                     <Route exact path='/rackdiagram' component={RackDiagram} />
                     <Route exact path='/dashboard' component={DashboardScreen} />
+
+                    {/* TODO: have url be the ID of the instance */}
+                    <Route exact path='/instanceDetails' component={DetailedInstanceScreen}/>
                     {/* TODO: implement a functionality to take you to instance screen vs http://localhost:3000/instances*/}
                     <Route path='/instances' component={InstanceScreen} />
                 </Switch>

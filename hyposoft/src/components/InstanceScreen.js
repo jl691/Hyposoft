@@ -37,7 +37,7 @@ class InstanceScreen extends Component {
         this.handleDeleteButton = this.handleDeleteButton.bind(this);
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
 
-        this.instanceTable = React.createRef();
+
     }
     handleChange(event) {
         this.setState({
@@ -45,12 +45,12 @@ class InstanceScreen extends Component {
         });
     }
 
-    handleCancelPopupChange(){
+
+    handleCancelPopupChange(event) {
         this.setState({
             popupType: ""
         });
-        //TODO: READ https://stackoverflow.com/questions/37949981/call-child-method-from-parent
-        this.instanceTable.current.forceRefresh();
+
     }
     //This handles the delete screen popping up from pressing on the trash can, not the actual backend of what happens when the delete is confirmed
     handleDeleteButton = (datumID) => {
@@ -81,20 +81,7 @@ class InstanceScreen extends Component {
 
     }
 
-    addButton() {
-        if(userutils.isLoggedInUserAdmin()){
-            return (<Button
-                icon={<Add />}
-                label={
-                    <Text>
-                        Add Instance
-                    </Text>
-                }
 
-                onClick={() => this.setState({ popupType: "Add" })}
-            />);
-        }
-    }
 
     render() {
         //  const [value, setValue] = React.useState('medium');
@@ -108,15 +95,9 @@ class InstanceScreen extends Component {
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <AddInstanceForm
-                        parentCallback={this.handleCancelPopupChange}
+                        cancelCallbackFromParent={this.handleCancelPopupChange}
                     //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
                     // parentCallbackRefresh={this.callbackFunctionRefresh}
-                    />
-                    <Button
-                        margin="small"
-                        label="Cancel"
-                        onClick={() => this.setState({popupType: ""})}
-
                     />
 
                 </Layer>
@@ -129,17 +110,12 @@ class InstanceScreen extends Component {
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <DeleteInstancePopup
-                        parentCallback={this.handleCancelPopupChange}
+                        cancelCallbackFromParent={this.handleCancelPopupChange}
 
                         deleteIDFromParent={this.state.deleteID}
 
                     />
-                    <Button
-                        margin="small"
-                        label="Cancel"
-                        onClick={() => this.setState({popupType: ""})}
 
-                    />
                 </Layer>
             )
 
@@ -156,7 +132,7 @@ class InstanceScreen extends Component {
 
                     
                     <EditInstanceForm
-                        parentCallback={this.handleCancelPopupChange}
+                        cancelCallbackFromParent={this.handleCancelPopupChange}
 
                         //need to pass in all the data though for the update
 
@@ -169,12 +145,6 @@ class InstanceScreen extends Component {
                         updateCommentFromParent={this.state.updateComment}
 
 
-
-                    />
-                    <Button
-                        margin="small"
-                        label="Cancel"
-                        onClick={() => this.setState({popupType: ""})}
 
                     />
 
@@ -220,15 +190,26 @@ class InstanceScreen extends Component {
 
 
                     {/* Button to Add an Instance: */}
-                    {this.addButton()}
+                    <Button
+                        icon={<Add />}
+                        label={
+                            <Text>
+                                Add Instance
+                            </Text>
+                        }
+
+                        onClick={() => this.setState({ popupType: "Add" })}
+                    />
                 </FilterBarInstances>
 
                 <InstanceTable
                     deleteButtonCallbackFromParent={this.handleDeleteButton}
 
                     UpdateButtonCallbackFromParent={this.handleUpdateButton}
-                
-                    ref={this.instanceTable}
+
+                    
+
+
                 />
 
 

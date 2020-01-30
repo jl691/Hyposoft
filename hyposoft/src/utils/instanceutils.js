@@ -1,6 +1,5 @@
-import {instanceRef, racksRef, modelsRef} from './firebaseutils'
+import { instanceRef, racksRef, modelsRef, db, firebase } from './firebaseutils'
 import * as rackutils from './rackutils'
-
 
 //TODO: admin vs. user privileges
 
@@ -46,66 +45,68 @@ function getInstanceAt(start, callback) {
 }
 
 
-function addInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
-    console.log(rack + " blah " + racku)
-	instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum) {
-		//Allen wants me to add a vendor and modelname field to my document
-		if (errorMessage) {
-			callback(errorMessage)
-			console.log(errorMessage)
+function addInstance(model, hostname, rack, racku, owner, comment, callback) {
+    //whenever there's a function, it's like a new 'thread', which is why print statements may be out of order
+    instanceFitsOnRack(rack, racku, model, function (errorMessage, modelNum, modelVendor, rackID) {
 
-		}
-		//The rack doesn't exist, or it doesn't fit on the rack at rackU
-		else {
+        if (errorMessage) {
+            callback(errorMessage)
+            console.log(errorMessage)
 
-			instanceRef.add({
-				instance_id: instanceid,
-				model: model,
-				hostname: hostname,
-				rack: rack,
-				rackU: racku,
-				owner: owner,
-				comment: comment,
+        }
+        else {
 
-				//This is for rack usage reports
-				vendor: modelVendor,
-				modelNumber: modelNum
+            instanceRef.add({
 
+                model: model,
+                hostname: hostname,
+                rack: rack,
+                rackU: racku,
+                owner: owner,
+                comment: comment,
 
-			}).then(function (docRef) {
-				callback(null);
-			}).catch(function (error) {
-				// callback("Error");
-				console.log(error)
-			})
-		}
-	})
+                //This is for rack usage reports
+                modelNumber: modelNum,
+                vendor: modelVendor,
+
+            }).then(function (docRef) {
+                racksRef.doc(String(rackID)).update({
+                    instances: firebase.firestore.FieldValue.arrayUnion(docRef.id)
+                })
+                callback(null);
+
+            }).catch(function (error) {
+                // callback("Error");
+                console.log(error)
+            })
+
+        }
+    })
 
 }
 
-// This will check if the instance fits on rack: fits within in the height of rack, and does not conflict with other instances
+
+// This will check if the instance fits on rack (after checking rack exists): fits within in the height of rack, and does not conflict with other instances
 
 function instanceFitsOnRack(instanceRack, rackU, model, callback) {
+
     let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
     let rackID = null;
 
-    rackutils.getRackID(rackRow, rackNum, id =>{
-        if(id){
-            console.log(id)
+    rackutils.getRackID(rackRow, rackNum, id => {
+        if (id) {
+
             rackID = id
-            //console.log(rackID)
+            console.log(rackID)
         }
-        else{
+        else {
             console.log("Error: no rack for this letter and number")
         }
     })
 
-
-    //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
-    console.log("trying for " + rackRow + rackNum + " instancerack " + instanceRack)
     racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
         if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number) {
             let rackHeight = querySnapshot.docs[0].data().height
@@ -116,31 +117,42 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                 //doc.data().height refers to model height
                 if (rackHeight >= parseInt(rackU) + doc.data().height) {
                     //We know the instance will fit on the rack, but now does it conflict with anything?
+
+                    console.log(rackU)
+                    console.log(doc.data().height)
                     console.log(rackID)
-                    rackutils.checkInstanceFits(parseInt(rackU), parseInt(doc.data().height), rackID , function(status) {
-                        console.log(rackU)
-                        if(status){ //means that there are conflicts.
+                    rackutils.checkInstanceFits(rackU, doc.data().height, rackID, function (status) {
+
+                        //can check length. If length > 0, then conflicting instances were returned
+                        //means that there are conflicts. 
+                
+                        if (status.length) {
+                            console.log("Conflicts found on rack")
                             var height = doc.data().height
                             var rackedAt = rackU
-                            var conflicts = "";
-                            // status.forEach(conflInstance => {
-                            //     conflicts = conflicts + conflInstance + " , "
-                            // })
-                            console.log(status)
-                            var errMessage = "Error adding instance: instance of height " + height + " racked at " + rackedAt +  " conflicts with instance(s) "// + conflicts;
-                            callback(errMessage)
+                            var conflicts = ""
+                            var arrayLength = status.length;
+                            for (var i = 0; i < arrayLength; i++) {
+                                console.log(status[i]);
+                                conflicts = conflicts + ", " + status[i]
+
+                            }
+
+                            var errMessage = "Error adding instance: instance of height " + height + " racked at " + rackedAt + "U conflicts with instance(s) " + conflicts;
+                            callback(errMessage);
                         }
-                        else{//status callback is null, no conflits
-                            console.log("Instance fits in rack with no conflicts")
-                            callback(null, doc.data().modelNumber, doc.data().vendor)
+                        else {//status callback is empty array, no conflits
+                            console.log("Instance fits in rack with no conflicts");
+                            callback(null, doc.data().modelNumber, doc.data().vendor, rackID);
 
                         }
+
                     })
                 }
                 else {
                     console.log("Instance of this model at this rackU will not fit on the rack")
-                    var errMessage = "Instance of this model at this RackU will not fit on this rack"
-                    callback(errMessage)
+                    var errMessage = "Instance of this model at this RackU will not fit on this rack";
+                    callback(errMessage);
 
                 }
 
@@ -160,44 +172,82 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
 
 function deleteInstance(instanceid, callback) {
 
-	instanceRef.doc(instanceid).get().then(function (doc) {
-		if (doc.exists) {
-			if (doc.data().instances && Object.keys(doc.data().instances).length > 0) {
-				callback(null)
-			} else {
-				instanceRef.doc(instanceid).delete().then(function () {
-					callback(instanceid);
-				}).catch(function (error) {
-					callback(null);
-				})
-			}
-		} else {
-			callback(null);
-		}
-	})
+    instanceRef.doc(instanceid).get().then(function (doc) {
+
+        //This is so I can go into racks collection and delete instances associated with the rack
+        if (doc.exists) {
+            let instanceRack = doc.data().rack
+            let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
+            let rackRow = splitRackArray[0]
+            let rackNum = parseInt(splitRackArray[1])
+
+            let rackID = null;
+
+            rackutils.getRackID(rackRow, rackNum, id => {
+                if (id) {
+
+                    rackID = id
+                    console.log(rackID)
+                }
+                else {
+                    console.log("Error: no rack for this letter and number")
+                }
+            })
+
+
+            instanceRef.doc(instanceid).delete().then(function () {
+                console.log("Deleting. This is the rackID: " + rackID)
+                console.log("removing from database instace ID: " + instanceid)
+                racksRef.doc(String(rackID)).update({
+
+                    instances: firebase.firestore.FieldValue.arrayRemove(instanceid)
+                })
+
+                callback(instanceid);
+            }).catch(function (error) {
+                callback(null);
+            })
+        } else {
+            console.log("Trying to delete instance that somehow isn't there??")
+            callback(null);
+        }
+    })
 }
 
-function updateInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
-	console.log(instanceRef.doc(String(instanceid)))
+function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment, callback) {
 
-	instanceRef.doc(String(instanceid)).update({
+    instanceFitsOnRack(rack, rackU, model, stat => {
 
-		model: model,
-		hostname: hostname,
-		rack: rack,
-		rackU: racku,
-		owner: owner,
-		comment: comment
+        console.log(stat)
+        //returned an error message
+        if (stat) {
 
+            var errMessage = stat
+            //need to pass up errormessage if model updated and instance no longer fits
+            callback(errMessage)
+        }
+        //returns null if no issues/conflicts.
+        else {
+            instanceRef.doc(String(instanceid)).update({
+                model,
+                hostname,
+                rack,
+                rackU,
+                owner,
+                comment
+                //these are the fields in the document to update
 
-	}).then(function (docRef) {
-		callback(docRef.id);
-	}).catch(function (error) {
-		callback(null);
-	})
-	console.log("in updateInstance backend method")
-
+            }).then(function () {
+                console.log("Updated model successfully")
+                callback(null);
+            }).catch(function (error) {
+                console.log(error)
+                callback(error);
+            })
+        }
+    })
 }
+
 
 function getInstancesFromModel(model,callback) {
   instanceRef.where('model','==',model).get().then( docSnaps => {
@@ -212,19 +262,19 @@ function getInstancesFromModel(model,callback) {
   })
 }
 
-function sortByKeyword(keyword,callback) {
+function sortByKeyword(keyword, callback) {
     // maybe add limit by later similar to modelutils.getModels()
     instanceRef.orderBy(keyword).get().then(
-      docSnaps => {
-        const instances = docSnaps.docs.map( doc => (
-          {id: doc.id}
-        ))
-        callback(instances)
-      })
-      .catch(error => {
-        console.log("Error getting documents: ", error)
-        callback(null)
-      })
+        docSnaps => {
+            const instances = docSnaps.docs.map(doc => (
+                { id: doc.id }
+            ))
+            callback(instances)
+        })
+        .catch(error => {
+            console.log("Error getting documents: ", error)
+            callback(null)
+        })
 }
 
 function getSuggestedModels(userInput, callback) {
@@ -245,8 +295,33 @@ function getSuggestedModels(userInput, callback) {
       console.log("Error getting documents: ", error)
       callback(null)
     })
+        .catch(error => {
+            console.log("Error getting documents: ", error)
+            callback(null)
+        })
 }
 
-//Function for autocomplete: query the database
+function getInstanceDetails(instanceID, callback) {
 
-export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstancesFromModel, getInstanceAt }
+    let instanceHardCoded='tOb88GOvzFSOABHdvkN6'
+
+    instanceRef.doc(instanceHardCoded).get().then((doc) => {
+        let inst = {
+            instanceID: instanceHardCoded, //instanceID
+            model: doc.data().model.trim(),
+            hostname: doc.data().hostname.trim(),
+            rack: doc.data().rack.trim(),
+            rackU: doc.data().rackU,
+            owner: doc.data().owner.trim(),
+            comment: doc.data().comment.trim()
+
+
+        }
+        callback(inst)
+    }
+
+    );
+
+}
+
+export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstanceDetails, getInstancesFromModel, getInstanceAt }

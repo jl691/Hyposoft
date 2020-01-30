@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box } from 'grommet'
+import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Text } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as instutils from '../utils/instanceutils'
+import RequiredFormField from './RequiredFormField'
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -25,12 +26,12 @@ export default class AddInstanceForm extends Component {
     }
 
     callAutocompleteResults(event) {
-      instutils.getSuggestedModels(event.target.value, d => {
-        console.log(d)
-      })
-      this.setState({
-          [event.target.name]: event.target.value
-      });
+        instutils.getSuggestedModels(event.target.value, d => {
+            console.log(d)
+        })
+        this.setState({
+            [event.target.name]: event.target.value
+        });
     }
 
     handleChange(event) {
@@ -43,33 +44,42 @@ export default class AddInstanceForm extends Component {
         console.log(" yeet ")
         console.log(this.props)
         if (event.target.name === "addInst") {
-            instutils.addInstance(this.state.instance_id, this.state.model, this.state.hostname, this.state.rack, parseInt(this.state.rackU), this.state.owner, this.state.comment, errorMessage => {
-                if (errorMessage) {
-                    ToastsStore.error(errorMessage)
+            instutils.addInstance(
+                this.state.model,
+                this.state.hostname,
+                this.state.rack,
+                parseInt(this.state.rackU),
+                this.state.owner,
+                this.state.comment,
+                errorMessage => {
 
-                }
-                else {
+                    if (errorMessage) {
+                        ToastsStore.error(errorMessage)
 
-                    ToastsStore.success('Successfully added instance!');
-                    //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
-                    this.props.parentCallback(true);
-                    /*this.setState({
-                        instance_id: "",
-                        model: "",
-                        hostname: "",
-                        rack: "",
-                        rackU: "",
-                        owner: "",
-                        comment: ""
-                    })*/
+                    }
+                    else {
+
+                        ToastsStore.success('Successfully added instance!');
+                        // this.setState({
+                        //     instance_id: "",
+                        //     model: "",
+                        //     hostname: "",
+                        //     rack: "",
+                        //     rackU: "",
+                        //     owner: "",
+                        //     comment: ""
+                        // })
+                        this.props.parentCallback(true);
+                      
 
 
-                }
-            });
+                    }
+                });
 
         }
 
     }
+
 
 
     render() {
@@ -86,7 +96,7 @@ export default class AddInstanceForm extends Component {
 
                         <FormField name="model" label="Model">
 
-                            <TextInput name="model" placeholder="eg. R710" onChange={this.callAutocompleteResults}
+                            <TextInput name="model" placeholder="eg. Dell R710" onChange={this.callAutocompleteResults}
                                 value={this.state.model} />
                         </FormField>
 

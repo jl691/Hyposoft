@@ -1,7 +1,9 @@
 import React, { Component } from 'react'
 import { DataTable, Button, Text } from 'grommet'
-import { Trash, Edit } from 'grommet-icons'
+import { Trash, Edit, Book } from 'grommet-icons'
 import * as instutils from '../utils/instanceutils'
+import DetailedInstanceScreen from '../screens/DetailedInstanceScreen'
+
 import * as rackutils from "../utils/rackutils";
 import * as userutils from "../utils/userutils";
 
