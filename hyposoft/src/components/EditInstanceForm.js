@@ -129,12 +129,6 @@ export default class EditInstanceForm extends Component {
                             type="submit"
                             primary label="Update"
                         />
-                        <Button
-                            margin="small"
-                            label="Cancel"
-                            onClick={() => this.props.cancelCallbackFromParent()}
-
-                        />
 
                     </Form >
                 </Box>
