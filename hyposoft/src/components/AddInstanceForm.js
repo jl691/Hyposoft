@@ -22,6 +22,16 @@ export default class AddInstanceForm extends Component {
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
+        this.callAutocompleteResults = this.callAutocompleteResults.bind(this)
+    }
+
+    callAutocompleteResults(event) {
+      instutils.getSuggestedModels(event.target.value, d => {
+        console.log(d)
+      })
+      this.setState({
+          [event.target.name]: event.target.value
+      });
     }
 
     handleChange(event) {
@@ -31,40 +41,32 @@ export default class AddInstanceForm extends Component {
     }
 
     handleSubmit(event) {
-
+        console.log(" yeet ")
+        console.log(this.props)
         if (event.target.name === "addInst") {
-            instutils.addInstance(
-                //this.state.instance_id
-                this.state.model,
-                this.state.hostname,
-                this.state.rack,
-                parseInt(this.state.rackU),
-                this.state.owner,
-                this.state.comment,
-                function (errorMessage) {
+            instutils.addInstance(this.state.instance_id, this.state.model, this.state.hostname, this.state.rack, parseInt(this.state.rackU), this.state.owner, this.state.comment, errorMessage => {
+                if (errorMessage) {
+                    ToastsStore.error(errorMessage)
 
-                    if (errorMessage) {
-                        ToastsStore.error(errorMessage, 10000)
+                }
+                else {
 
-                    }
-                    else {
-
-                        ToastsStore.success('Successfully added instance!');
-                        //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
-                        //this.props.parentCallbackRefresh(true);
-                        this.setState({
-                            //instance_id: "",
-                            model: "",
-                            hostname: "",
-                            rack: "",
-                            rackU: "",
-                            owner: "",
-                            comment: ""
-                        })
+                    ToastsStore.success('Successfully added instance!');
+                    //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
+                    this.props.parentCallback(true);
+                    /*this.setState({
+                        instance_id: "",
+                        model: "",
+                        hostname: "",
+                        rack: "",
+                        rackU: "",
+                        owner: "",
+                        comment: ""
+                    })*/
 
 
-                    }
-                });
+                }
+            });
 
         }
 
@@ -86,7 +88,7 @@ export default class AddInstanceForm extends Component {
 
                         <FormField name="model" label="Model">
 
-                            <TextInput name="model" placeholder="eg. Dell R710" onChange={this.handleChange}
+                            <TextInput name="model" placeholder="eg. Dell R710" onChange={this.callAutocompleteResults}
                                 value={this.state.model} />
                         </FormField>
 
@@ -192,8 +194,3 @@ export default class AddInstanceForm extends Component {
     }
 
 }
-
-
-
-
-

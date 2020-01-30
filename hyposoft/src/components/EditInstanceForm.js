@@ -54,8 +54,8 @@ export default class EditInstanceForm extends Component {
                     ToastsStore.success('Successfully updated instance!');
                     //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
                     //this.props.parentCallbackRefresh(true);
-
-                    this.setState({
+                    this.props.parentCallback(true);
+                    /*this.setState({
                         instance_id: "",
                         model: "",
                         hostname: "",
@@ -63,7 +63,7 @@ export default class EditInstanceForm extends Component {
                         rackU: "",
                         owner: "",
                         comment: ""
-                    })
+                    })*/
                 }
                 else {
                     ToastsStore.error('Error updating instance: ' + status);

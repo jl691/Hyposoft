@@ -3,33 +3,45 @@ import * as rackutils from './rackutils'
 
 //TODO: admin vs. user privileges
 
-
 function getInstance(callback) {
-    const instanceArray = [];
-
-    instanceRef.get().then(function (querySnapshot) {
-        querySnapshot.forEach(function (doc) {
-            //TODO: make sure instance is linked with the correct model. So in the model column on the InstanceTable, should show either modelID or the model name
-            instanceArray.push({
-
-                instance_id: doc.id.trim(),
-                model: doc.data().model.trim(),
-                hostname: doc.data().hostname.trim(),
-                rack: doc.data().rack.trim(),
+    instanceRef.limit(25).get().then(docSnaps => {
+        const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
+        const instances = docSnaps.docs.map(doc => (
+            {
+                instance_id: doc.id,
+                mode: doc.data().model,
+                hostname: doc.data().hostname,
+                rack: doc.data().rack,
                 rackU: doc.data().rackU,
-                owner: doc.data().owner.trim(),
-                comment: doc.data().comment.trim()
+                owner: doc.data().owner,
+                comment: doc.data().comment
+            }
+        ))
+        callback(startAfter, instances);
+    }).catch(function (error) {
+        callback(null, null)
+    })
+}
 
-            });
-        });
 
-
-        if (callback) {
-            callback(instanceArray);
-        }
-    }
-
-    );
+function getInstanceAt(start, callback) {
+    console.log("the start after is " + start)
+	instanceRef.startAfter(start).limit(25).get().then(docSnaps => {
+		const newStart = docSnaps.docs[docSnaps.docs.length - 1];
+		const instances = docSnaps.docs.map(doc => (
+			{
+				instance_id: doc.id,
+				model: doc.data().model,
+				hostname: doc.data().hostname,
+				rack: doc.data().rack,
+				rackU: doc.data().rackU,
+				owner: doc.data().owner,
+				comment: doc.data().comment
+			}))
+		callback(newStart, instances)
+	}).catch(function (error) {
+		callback(null, null);
+	})
 }
 
 
@@ -77,16 +89,14 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
 // This will check if the instance fits on rack (after checking rack exists): fits within in the height of rack, and does not conflict with other instances
 
 function instanceFitsOnRack(instanceRack, rackU, model, callback) {
-
     let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
     let rackID = null;
 
-    rackutils.getRackID(rackRow, rackNum, id => {
-        if (id) {
-
+    rackutils.getRackID(rackRow, rackNum, id =>{
+        if(id){
             rackID = id
             console.log(rackID)
         }
@@ -95,6 +105,9 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
         }
     })
 
+
+    //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
+    console.log("trying for " + rackRow + rackNum + " instancerack " + instanceRack)
     racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
         if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number) {
             let rackHeight = querySnapshot.docs[0].data().height
@@ -155,6 +168,7 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
         }
     })
 }
+
 function deleteInstance(instanceid, callback) {
 
     instanceRef.doc(instanceid).get().then(function (doc) {
@@ -231,8 +245,20 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
             })
         }
     })
+}
 
 
+function getInstancesFromModel(model,callback) {
+  instanceRef.where('model','==',model).get().then( docSnaps => {
+    const instances = docSnaps.docs.map( doc => (
+      {id: doc.id, ...doc.data()}
+    ))
+    callback(instances)
+  })
+  .catch( error => {
+    console.log("Error getting documents: ", error)
+    callback(null)
+  })
 }
 
 function sortByKeyword(keyword, callback) {
@@ -251,20 +277,22 @@ function sortByKeyword(keyword, callback) {
 }
 
 function getSuggestedModels(userInput, callback) {
-    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
-    var query = userInput
-        ? instanceRef.where("model", ">=", userInput).where("model", "<", userInput.slice(0, userInput.length - 1)
-            + String.fromCharCode(userInput.slice(userInput.length - 1, userInput.length).charCodeAt(0) + 1))
-        : instanceRef.orderBy('model')
-
+  // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
     var modelArray = []
-    query.get().then(querySnapshot => {
-        querySnapshot.forEach(doc => {
-            if (!modelArray.includes(doc.data().model)) {
-                modelArray.push(doc.data().model)
-            }
-        })
-        callback(modelArray)
+    modelsRef.get().then(querySnapshot => {
+      querySnapshot.forEach( doc => {
+        if (!userInput
+          || (doc.id.localeCompare(userInput) >= 0
+              && doc.id.localeCompare(userInput.slice(0,userInput.length-1)
+                  + String.fromCharCode(userInput.slice(userInput.length-1,userInput.length).charCodeAt(0)+1)) < 0)) {
+          modelArray.push(doc.id)
+        }
+      })
+      callback(modelArray)
+    })
+    .catch( error => {
+      console.log("Error getting documents: ", error)
+      callback(null)
     })
         .catch(error => {
             console.log("Error getting documents: ", error)
@@ -295,4 +323,4 @@ function getInstanceDetails(instanceID, callback) {
 
 }
 
-export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstanceDetails }
+export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstanceDetails, getInstancesFromModel, getInstanceAt }

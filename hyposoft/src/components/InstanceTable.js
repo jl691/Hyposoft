@@ -4,155 +4,156 @@ import { Trash, Edit, Book } from 'grommet-icons'
 import * as instutils from '../utils/instanceutils'
 import DetailedInstanceScreen from '../screens/DetailedInstanceScreen'
 
+import * as rackutils from "../utils/rackutils";
+import * as userutils from "../utils/userutils";
 
 //TODO: refactor for components
 
 export default class InstanceTable extends Component {
 
     startAfter = null;
+    columns = [
+        {
+            property: 'instance_id',
+            header: <Text>Instance ID</Text>,
+            primary: true,
+        },
+        // {
+        //     property: 'rack_id',
+        //     header: <Text>Rack ID</Text>,
+
+        // },
+        {
+            property: 'model',
+            header: <Text>Model</Text>,
+
+        },
+        {
+            property: 'hostname',
+            header: <Text>Hostname</Text>,
+
+        },
+        {
+            property: 'rack',
+            header: <Text>Rack</Text>,
+
+        },
+        {
+            property: 'rackU',
+            header: <Text>RackU</Text>,
+
+        },
+        {
+            property: 'owner',
+            header: <Text>Owner</Text>,
+
+        }
+    ];
 
     constructor(props) {
         super(props);
         this.state = {
-            instances: []
-
+            instances: [],
+            initialLoaded: false
         }
     }
     //TODO: need to change getInstance function in utils for infinite scroll and refresh (see issue #28)
 
 
     componentDidMount() {
-        instutils.getInstance(instancesdb => {
-            this.setState({ instances: instancesdb })
+        instutils.getInstance((newStartAfter, instancesdb) => {
+            if(newStartAfter && instancesdb){
+                this.startAfter = newStartAfter;
+                this.setState({ instances: instancesdb, initialLoaded: true })
+            }
         })
+        this.adminButtons();
+    }
+
+    adminButtons() {
+        if(userutils.isLoggedInUserAdmin()) {
+            this.columns.push({
+                property: "delete",
+                header: "Delete",
+
+                render: datum => (
+                    <Button
+                        icon={<Trash />}
+                        margin="small"
+                        onClick={() => {
+                            //TODO: need to pass up popuptype state to parent InstanceScreen
+                            //this.setState({ popupType: 'Delete', deleteID: datum.id });
+                            this.props.deleteButtonCallbackFromParent(datum.instance_id)
+                            console.log(this.state)
+                            //Need to pass the deleteID up to parent InstanceScreen
+
+
+                        }} />
+                )
+            });
+            this.columns.push({
+                property: "update",
+                header: "Update",
+
+                render: data => (
+                    <Button
+                        icon={< Edit />}
+                        margin="small"
+                        onClick={() => {
+
+                            this.props.UpdateButtonCallbackFromParent(
+                                data.instance_id,
+                                data.model,
+                                data.hostname,
+                                data.rack,
+                                data.rackU,
+                                data.owner,
+                                data.comment)
+
+                            console.log(data.model)
+
+
+                        }} />
+                )
+            })
+        }
 
     }
 
+    forceRefresh() {
+        this.startAfter = null;
+        this.setState({
+            instances: [],
+            initialLoaded: false
+        });
+        instutils.getInstance((newStartAfter, instancesdb) => {
+            if(newStartAfter && instancesdb){
+                this.startAfter = newStartAfter;
+                this.setState({ instances: instancesdb, initialLoaded: true })
+            }
+        })
+    }
+
     render() {
+
+        if (!this.state.initialLoaded) {
+            return (<Text>Please wait...</Text>);
+        }
 
         return (
 
             // LIST OF INSTANCES =============================================== 
             <DataTable
+                step={5}
+                onMore={() => {
+                    instutils.getInstanceAt(this.startAfter, (newStartAfter, newInstances) => {
+                        this.startAfter = newStartAfter
+                        this.setState({instances: this.state.instances.concat(newInstances)})
+                    });
+                }}
                 pad="17px"
-                sortable="true"
-                columns={[
-                    {
-                        property: 'instance_id',
-                        header: <Text>Instance ID</Text>,
-                        primary: true,
-                    },
-                    // {
-                    //     property: 'rack_id',
-                    //     header: <Text>Rack ID</Text>,
-
-                    // },
-                    {
-                        property: 'model',
-                        header: <Text>Model</Text>,
-
-                    },
-                    {
-                        property: 'hostname',
-                        header: <Text>Hostname</Text>,
-
-                    },
-                    {
-                        property: 'rack',
-                        header: <Text>Rack</Text>,
-
-                    },
-                    {
-                        property: 'rackU',
-                        header: <Text>RackU</Text>,
-
-                    },
-                    {
-                        property: 'owner',
-                        header: <Text>Owner</Text>,
-
-                    },
-                    // {
-                    //     property: 'comment',
-                    //     header: <Text>Comment</Text>,
-
-                    // },
-
-                    {
-                        property: "delete",
-                        header: "Delete",
-
-                        render: datum => (
-                            <Button
-                                icon={<Trash />}
-                                margin="small"
-                                onClick={() => {
-                                    //TODO: need to pass up popuptype state to parent InstanceScreen
-                                    //this.setState({ popupType: 'Delete', deleteID: datum.id });
-                                    this.props.deleteButtonCallbackFromParent(datum.instance_id)
-                                    console.log(this.state)
-                                    //Need to pass the deleteID up to parent InstanceScreen
-
-                                    
-                                }} />
-                        )
-                    },
-
-                    {
-                        property: "update",
-                        header: "Update",
-
-                        render: data => (
-                            <Button
-                                icon={< Edit />}
-                                margin="small"
-                                onClick={() => {
-                              
-                                    this.props.UpdateButtonCallbackFromParent(
-                                        data.instance_id,
-                                        data.model, 
-                                        data.hostname, 
-                                        data.rack, 
-                                        data.rackU, 
-                                        data.owner, 
-                                        data.comment)
-
-
-                                    
-                                }} />
-                        )
-                    },
-
-                    {
-                        property: "details",
-                        header: "Details",
-
-                        render: data => (
-                            <Button
-                                icon={< Book />}
-                                margin="small"
-                                onClick={() => {
-
-                                    // <DetailedInstanceScreen>
-                                    //     instanceIDFromParent={this.data.instance_id}
-
-                                    // </DetailedInstanceScreen>
-                              
-                                    // this.props.UpdateButtonCallbackFromParent(
-                                    //     data.instance_id)
-                                        // data.model, 
-                                        // data.hostname, 
-                                        // data.rack, 
-                                        // data.rackU, 
-                                        // data.owner, 
-                                        // data.comment)
-
-
-                                    
-                                }} />
-                        )
-                    }
-                ]}
+                sortable={true}
+                columns={this.columns}
                 
                 data={this.state.instances}
 
