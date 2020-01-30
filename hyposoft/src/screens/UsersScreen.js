@@ -288,7 +288,7 @@ class UsersScreen extends Component {
                                                                     sortable: false
                                                                 },
                                                                 {
-                                                                    property: 'dummy',
+                                                                    property: 'dummy2',
                                                                     render: datum => (
                                                                     <FormTrash style={{cursor: 'pointer'}} onClick={() => this.showDeleteDialog(datum.username)} />
                                                                 ),
@@ -296,7 +296,7 @@ class UsersScreen extends Component {
                                                                     header: <Text>Delete</Text>,
                                                                     sortable: false
                                                                 }
-                                                            ].map(col => ({ ...col }))
+                                                            ]
                                                         }
                                                         data={this.state.users}
                                                         sortable={true}

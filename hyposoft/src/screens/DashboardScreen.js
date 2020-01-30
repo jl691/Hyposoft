@@ -38,6 +38,12 @@ class DashboardScreen extends Component {
             case 1:
                 this.setState({redirect: '/models'})
                 break
+            case 2:
+                this.setState({redirect: '/instances'})
+                break
+            case 3:
+                this.setState({redirect: '/racks'})
+                break
             default:
                 alert(action)
         }
