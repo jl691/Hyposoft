@@ -9,7 +9,7 @@ function getInstance(callback) {
         const instances = docSnaps.docs.map(doc => (
             {
                 instance_id: doc.id,
-                mode: doc.data().model,
+                model: doc.data().model,
                 hostname: doc.data().hostname,
                 rack: doc.data().rack,
                 rackU: doc.data().rackU,
