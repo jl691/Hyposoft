@@ -239,6 +239,9 @@ function checkInstanceFits(position, height, rack, callback) { //rackU, modelHei
     let conflicting = [];
     //generate all positions occupied in tentative instance
     let tentPositions = [];
+
+    var thisInstanceHeight = null;
+   
     for (let i = position; i < position + height; i++) {
         console.log("2. Pushing to tent positions: " + i)
         tentPositions.push(i);
@@ -249,19 +252,25 @@ function checkInstanceFits(position, height, rack, callback) { //rackU, modelHei
             console.log("3. found rack with ID with instances on it")
             docRefRack.data().instances.forEach(instanceID => {
                 console.log("4. In the for each")
-
+                
                 dbPromises.push(firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
                     //find height
+                    //getModelHeightColor
+                    // firebaseutils.modelsRef.doc(docRefInstance.data().model).get().then(function (modelDoc) {
+                    //     console.log(modelDoc.data().height)
+                    //     var thisInstanceHeight=modelDoc.data().height
 
+
+                    // })
+                   
                     //For debugging
                     console.log("5. InstanceID: " + instanceID)
                     console.log("6. Model: " + docRefInstance.data().model)
+                    console.log("7. height from query: " + thisInstanceHeight)
 
                     let instPositions = [];
 
-                    console.log("7. height from getModelHeightcolor: " + height)
-
-                    //TODO: double check if < or <=
+                    //TODO:  thisInstanceHeight works??
                     for (let i = docRefInstance.data().rackU; i < docRefInstance.data().rackU + height; i++) {
                         console.log("Pushing instance positions: " + i)
                         instPositions.push(i);

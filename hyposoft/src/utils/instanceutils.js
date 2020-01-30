@@ -12,13 +12,13 @@ function getInstance(callback) {
             //TODO: make sure instance is linked with the correct model. So in the model column on the InstanceTable, should show either modelID or the model name
             instanceArray.push({
 
-                instance_id: doc.id,
-                model: doc.data().model,
-                hostname: doc.data().hostname,
-                rack: doc.data().rack,
+                instance_id: doc.id.trim(),
+                model: doc.data().model.trim(),
+                hostname: doc.data().hostname.trim(),
+                rack: doc.data().rack.trim(),
                 rackU: doc.data().rackU,
-                owner: doc.data().owner,
-                comment: doc.data().comment
+                owner: doc.data().owner.trim(),
+                comment: doc.data().comment.trim()
 
             });
         });
@@ -201,21 +201,37 @@ function deleteInstance(instanceid, callback) {
 
 function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment, callback) {
 
-        instanceRef.doc(String(instanceid)).update({ 
-            model,
-            hostname,
-            rack,
-            rackU,
-            owner,
-            comment
-            //these are the fields in the document to update
-           
-        }).then(function() {
-        callback(true);
-    }).catch(function (error) {
-        console.log(error)
-        callback(null);
-    })
+    instanceFitsOnRack(rack, rackU, model, stat =>{
+
+        console.log(stat)
+        //returned an error message
+        if(stat){
+
+            var errMessage = stat 
+            //need to pass up errormessage if model updated and instance no longer fits
+            callback(errMessage)
+        }
+        //returns null if no issues/conflicts.
+        else{
+            instanceRef.doc(String(instanceid)).update({ 
+                model,
+                hostname,
+                rack,
+                rackU,
+                owner,
+                comment
+                //these are the fields in the document to update
+               
+            }).then(function() {
+                console.log("Updated model successfully")
+            callback(null);
+        }).catch(function (error) {
+            console.log(error)
+            callback(error);
+        })
+        }
+    } )
+        
 
 }
 

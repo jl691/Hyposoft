@@ -43,7 +43,7 @@ export default class AddInstanceForm extends Component {
                 function (errorMessage) {
 
                 if (errorMessage) {
-                    ToastsStore.error(errorMessage)
+                    ToastsStore.error(errorMessage, 10000)
 
                 }
                 else {

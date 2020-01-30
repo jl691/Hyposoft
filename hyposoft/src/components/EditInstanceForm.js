@@ -48,7 +48,8 @@ export default class EditInstanceForm extends Component {
                 this.state.comment, 
                 status => {
                     console.log(status)
-                if (status) {
+                    //returned a null in instanceutils updateInstance function. Means no errormessage
+                if (!status) {
                     console.log(this.state)
                     ToastsStore.success('Successfully updated instance!');
                     //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
@@ -65,7 +66,7 @@ export default class EditInstanceForm extends Component {
                     })
                 }
                 else {
-                    ToastsStore.error('Error updating instance');
+                    ToastsStore.error('Error updating instance: ' + status);
                 }
 
             })
