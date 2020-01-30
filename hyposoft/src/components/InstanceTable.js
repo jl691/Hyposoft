@@ -116,7 +116,6 @@ export default class InstanceTable extends Component {
                                         data.owner, 
                                         data.comment)
 
-                                    console.log(data.model)
 
                                     
                                 }} />

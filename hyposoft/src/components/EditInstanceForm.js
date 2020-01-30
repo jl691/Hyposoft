@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box } from 'grommet'
+import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Text } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as instutils from '../utils/instanceutils'
+import { checkInstanceFits } from '../utils/rackutils';
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -10,13 +11,13 @@ export default class EditInstanceForm extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            instance_id: "",
-            model: "",
-            hostname: "",
-            rack: "",
-            rackU: "",
-            owner: "",
-            comment: ""
+            //instance_id: "",
+            model: this.props.updateModelFromParent,
+            hostname: this.props.updateHostnameFromParent,
+            rack: this.props.updateRackFromParent,
+            rackU: this.props.updateRackUFromParent,
+            owner: this.props.updateOwnerFromParent,
+            comment: this.props.updateCommentFromParent
 
         }
         this.handleUpdate = this.handleUpdate.bind(this);
@@ -27,22 +28,24 @@ export default class EditInstanceForm extends Component {
     handleChange(event) {
         this.setState({
             [event.target.name]: event.target.value
+           
+            
         });
     }
 
     handleUpdate(event) {
         if (event.target.name === "updateInst") {
-            //Change this to backend method
-            //this is where you pass in props updateData from InstanceScreen 
-        
+            //this is where you pass in props updateData from InstanceScreen . Want to keep old unchanged data, ow
+
             instutils.updateInstance(
+
                 this.props.updateIDFromParent, 
-                this.props.updateModelFromParent, 
-                this.props.updateHostnameFromParent, 
-                this.props.updateRackFromParent, 
-                parseInt(this.props.updateRackUFromParent), 
-                this.props.updateOwnerFromParent, 
-                this.props.updateCommentFromParent, 
+                this.state.model, 
+                this.state.hostname,
+                this.state.rack, 
+                parseInt(this.state.rackU), 
+                this.state.owner, 
+                this.state.comment, 
                 status => {
                     console.log(status)
                 if (status) {
@@ -65,15 +68,10 @@ export default class EditInstanceForm extends Component {
                     ToastsStore.error('Error updating instance');
                 }
 
-
-
             })
-
-
         }
 
     }
-
 
     render() {
         return (
@@ -91,7 +89,9 @@ export default class EditInstanceForm extends Component {
                         <FormField name="model" label="Model">
                             {/* change placeholders to what the original values were? */}
                             <TextInput name="model" placeholder="Update Model" onChange={this.handleChange}
-                                value={this.state.model} />
+                                value={this.state.model} /> 
+                                {/* or value can be */}
+                                {/* this.props.updateModelFromParent */}
                         </FormField>
 
                         <FormField name="hostname" label="Hostname" >

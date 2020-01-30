@@ -84,7 +84,7 @@ export default class AddInstanceForm extends Component {
 
                         <FormField name="model" label="Model">
 
-                            <TextInput name="model" placeholder="eg. R710" onChange={this.handleChange}
+                            <TextInput name="model" placeholder="eg. Dell R710" onChange={this.handleChange}
                                 value={this.state.model} />
                         </FormField>
 

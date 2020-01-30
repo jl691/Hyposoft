@@ -22,15 +22,15 @@ class InstanceScreen extends Component {
             instances: [],
             popupType: "",
             deleteID: "",
-            updateID:"",
+            updateID: "",
             initialLoaded: false,
-            updateModel:"",
-            updateHostname:"",
-            updateRack:"",
-            updateRackU:"",
-            updateOwner:"",
-            updateComment:""
-            
+            updateModel: "",
+            updateHostname: "",
+            updateRack: "",
+            updateRackU: "",
+            updateOwner: "",
+            updateComment: ""
+
         }
 
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
@@ -57,7 +57,7 @@ class InstanceScreen extends Component {
         this.setState({
             popupType: 'Delete',
             deleteID: datumID,
-     
+
 
 
         });
@@ -66,20 +66,19 @@ class InstanceScreen extends Component {
 
     handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment) => {
         //then go into editInstanceForm to make sure you pass in correct data to child for backend method
-       
         this.setState({
             popupType: 'Update',
             updateID: datumID,
-            updateModel:datumModel,
-            updateHostname:datumHostname,
-            updateRack:datumRack,
-            updateRackU:datumRackU,
-            updateOwner:datumOwner,
-            updateComment:datumComment
-           
-        });
+            updateModel: datumModel,
+            updateHostname: datumHostname,
+            updateRack: datumRack,
+            updateRackU: datumRackU,
+            updateOwner: datumOwner,
+            updateComment: datumComment
 
+        });
       
+
     }
 
 
@@ -124,15 +123,19 @@ class InstanceScreen extends Component {
         }
 
         else if (popupType === 'Update') {
-           
+            console.log("In parent: updateID is " + this.state.updateID)
+
             popup = (
+                
                 <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
+                    
                     <EditInstanceForm
                         cancelCallbackFromParent={this.handleCancelPopupChange}
 
                         //need to pass in all the data though for the update
+
                         updateIDFromParent={this.state.updateID}
                         updateModelFromParent={this.state.updateModel}
                         updateHostnameFromParent={this.state.updateHostname}
@@ -140,8 +143,8 @@ class InstanceScreen extends Component {
                         updateRackUFromParent={this.state.updateRackU}
                         updateOwnerFromParent={this.state.updateOwner}
                         updateCommentFromParent={this.state.updateComment}
-                        
-                        
+
+
 
                     />
 
@@ -151,7 +154,6 @@ class InstanceScreen extends Component {
 
 
         }
-        console.log(this.state.updateModel)
 
 
         return (
@@ -204,14 +206,19 @@ class InstanceScreen extends Component {
                     deleteButtonCallbackFromParent={this.handleDeleteButton}
 
                     UpdateButtonCallbackFromParent={this.handleUpdateButton}
-                
+
+                    
+
 
                 />
 
 
             </Grommet>
-
+            
+           
         )
+       
+
     }
 }
 

@@ -32,6 +32,7 @@ function getInstance(callback) {
     );
 }
 
+
 //check: when you delete an isntance, need to delete the ID from rackRef as well
 function addInstance(model, hostname, rack, racku, owner, comment, callback) {
     //whenever there's a function, it's like a new 'thread', which is why print statements may be out of order
@@ -198,26 +199,23 @@ function deleteInstance(instanceid, callback) {
     })
 }
 
-function updateInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
-    console.log(instanceRef.doc(String(instanceid)))
+function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment, callback) {
 
-    instanceRef.doc(String(instanceid)).update({
-
-        model: model,
-        hostname: hostname,
-        rack: rack,
-        rackU: racku,
-        owner: owner,
-        comment: comment
-
-
-
-    }).then(function (docRef) {
-        callback(docRef.id);
+        instanceRef.doc(String(instanceid)).update({ 
+            model,
+            hostname,
+            rack,
+            rackU,
+            owner,
+            comment
+            //these are the fields in the document to update
+           
+        }).then(function() {
+        callback(true);
     }).catch(function (error) {
+        console.log(error)
         callback(null);
     })
-    console.log("in updateInstance backend method")
 
 }
 
