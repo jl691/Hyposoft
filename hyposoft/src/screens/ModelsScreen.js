@@ -2,12 +2,13 @@ import React, { Component } from 'react'
 import AppBar from '../components/AppBar'
 import HomeButton from '../components/HomeButton'
 import UserMenu from '../components/UserMenu'
+import ModelSettingsLayer from '../components/ModelSettingsLayer'
 import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import * as modelutils from '../utils/modelutils'
 import * as firebaseutils from '../utils/firebaseutils'
+import * as userutils from '../utils/userutils'
 
-import { SketchPicker } from 'react-color'
 
 import {
     Box,
@@ -15,11 +16,8 @@ import {
     DataTable,
     Grommet,
     Heading,
-    Layer,
     Text,
     TextInput,
-    TextArea,
-    Form,
     RangeSelector,
     Stack } from 'grommet'
 
@@ -57,6 +55,11 @@ class ModelsScreen extends React.Component {
     }
 
     showAddModelDialog() {
+        if (!userutils.isLoggedInUserAdmin()) {
+            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+            return
+        }
+
         this.setState(currState => (
             {...currState, showAddDialog: true}
         ))
@@ -345,151 +348,7 @@ class ModelsScreen extends React.Component {
                 </Box>
                 <ToastsContainer store={ToastsStore} lightBackground/>
                 {this.state.showAddDialog && (
-                    <Layer position="center" modal onClickOutside={this.hideAddModelDialog} onEsc={this.hideAddModelDialog}>
-                        <Box pad="medium" gap="small" width="large">
-                            <Heading level={4} margin="none">
-                                Add Model
-                            </Heading>
-                            <p>Add a new model (uniquely identified by a vendor + model number combo) to the databse using this form.</p>
-
-                            <Form>
-                                <Box direction='row' justify='center' gap='medium'>
-                                    <Box direction="column" pad='xsmall' gap="small" flex height={{max: 'medium'}} overflow={{vertical: 'scroll'}}>
-                                        <TextInput style={{
-                                                borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                                width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal'
-                                            }}
-                                            placeholder="Vendor"
-                                            onChange={e => {
-                                                const value = e.target.value
-                                                this.setState(oldState => ({...oldState, vendor: value}))
-                                            }}
-                                            value={this.state.newUserUsername}
-                                            title='Vendor'
-                                            />
-                                        <TextInput style={{
-                                                borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                                width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                            }}
-                                            placeholder="Model number"
-                                            onChange={e => {
-                                                const value = e.target.value
-                                                this.setState(oldState => ({...oldState, modelNumber: value}))
-                                            }}
-                                            value={this.state.newUserEmail}
-                                            title='Model number'
-                                            />
-                                        <TextInput style={{
-                                                borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                                width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                            }}
-                                            placeholder="Height"
-                                            onChange={e => {
-                                                const value = e.target.value
-                                                this.setState(oldState => ({...oldState, height: value}))
-                                            }}
-                                            value={this.state.newUserEmail}
-                                            title='Height'
-                                            />
-                                        <TextInput style={{
-                                                borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                                width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                            }}
-                                            placeholder="Ethernet ports"
-                                            onChange={e => {
-                                                const value = e.target.value
-                                                this.setState(oldState => ({...oldState, ethernetPorts: value}))
-                                            }}
-                                            value={this.state.ethernetPorts}
-                                            title='Ethernet ports'
-                                            />
-                                        <TextInput style={{
-                                                borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                                width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                            }}
-                                            placeholder="Power ports"
-                                            onChange={e => {
-                                                const value = e.target.value
-                                                this.setState(oldState => ({...oldState, powerPorts: value}))
-                                            }}
-                                            value={this.state.powerPorts}
-                                            title='Power ports'
-                                            />
-                                        <TextInput style={{
-                                                borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                                width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                            }}
-                                            placeholder="CPU"
-                                            onChange={e => {
-                                                const value = e.target.value
-                                                this.setState(oldState => ({...oldState, CPU: value}))
-                                            }}
-                                            value={this.state.CPU}
-                                            title='CPU'
-                                            />
-                                        <TextInput style={{
-                                                borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                                width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                            }}
-                                            placeholder="Memory"
-                                            onChange={e => {
-                                                const value = e.target.value
-                                                this.setState(oldState => ({...oldState, memory: value}))
-                                            }}
-                                            value={this.state.memory}
-                                            title='Memory'
-                                            />
-                                        <TextInput style={{
-                                                borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                                width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                            }}
-                                            placeholder="Storage"
-                                            onChange={e => {
-                                                const value = e.target.value
-                                                this.setState(oldState => ({...oldState, storage: value}))
-                                            }}
-                                            value={this.state.storage}
-                                            title='Storage'
-                                            />
-                                        <TextArea style={{
-                                                borderRadius: 20, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                                width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                                minHeight: 100, marginBottom: 20
-                                            }}
-                                            placeholder="Comment"
-                                            onChange={e => {
-                                                const value = e.target.value
-                                                this.setState(oldState => ({...oldState, comment: value}))
-                                            }}
-                                            value={this.state.comment}
-                                            resize={false}
-                                            title='Comment'
-                                            />
-                                    </Box>
-                                    <Box>
-                                        <SketchPicker disableAlpha
-                                            color={ this.state.modelColor }
-                                            onChange={color => {
-                                                this.setState(oldState => ({...oldState, modelColor: color.hex}))
-                                              }} />
-                                    </Box>
-                                </Box>
-                                <Box
-                                    margin={{top: 'medium'}}
-                                    as="footer"
-                                    gap="small"
-                                    direction="row"
-                                    align="center"
-                                    justify="end" >
-                                    <Button label="Add" type='submit' primary onClick={() => this.addModel()} />
-                                    <Button
-                                        label="Cancel"
-                                        onClick={this.hideAddModelDialog}
-                                        />
-                                </Box>
-                            </Form>
-                        </Box>
-                    </Layer>
+                    <ModelSettingsLayer type='add' parent={this} />
                 )}
             </Grommet>
         )

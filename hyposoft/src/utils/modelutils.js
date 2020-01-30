@@ -21,19 +21,37 @@ function combineVendorAndModelNumber(vendor, modelNumber) {
 }
 
 function createModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment) {
-    firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).set(packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment))
+    firebaseutils.modelsRef.add(packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment))
 }
 
 function modifyModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment) {
-    firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).update(packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment))
+    firebaseutils.modelsRef.where('vendor', '==', vendor)
+    .where('modelNumber', '==', modelNumber)
+    .get().then(qs => {
+        if (!qs.empty) {
+            qs.docs[0].ref.update(packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment))
+        }
+    })
 }
 
 function deleteModel(vendor, modelNumber) {
-    firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).delete()
+    firebaseutils.modelsRef.where('vendor', '==', vendor)
+    .where('modelNumber', '==', modelNumber)
+    .get().then(qs => {
+        if (!qs.empty) {
+            qs.docs[0].ref.delete()
+        }
+    })
 }
 
 function getModel(vendor, modelNumber, callback) {
-    firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).get().then(doc => callback(doc.data()))
+    firebaseutils.modelsRef.where('vendor', '==', vendor)
+    .where('modelNumber', '==', modelNumber)
+    .get().then(qs => {
+        if (!qs.empty) {
+            callback(qs.docs[0].data())
+        }
+    })
 }
 
 function getModels(startAfter, callback) {
