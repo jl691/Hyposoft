@@ -58,14 +58,6 @@ export default class DeleteInstancePopup extends Component {
                             type="submit"
                             primary label="Yes"
                         />
-                        <Button
-                            alignSelf="center"
-                            margin="small"
-                            label="Cancel"
-                            //TODO: make sure this is the correct callback
-                            onClick={() => this.props.cancelCallbackFromParent()}
-
-                        />
 
                     </Form >
                 </Box>
