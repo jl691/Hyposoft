@@ -1,78 +1,89 @@
-import { instanceRef, racksRef, modelsRef } from './firebaseutils'
+import {instanceRef, racksRef, modelsRef} from './firebaseutils'
 import * as rackutils from './rackutils'
 
 
 //TODO: admin vs. user privileges
 
-
 function getInstance(callback) {
-    const instanceArray = [];
-
-    instanceRef.get().then(function (querySnapshot) {
-        querySnapshot.forEach(function (doc) {
-            //TODO: make sure instance is linked with the correct model. So in the model column on the InstanceTable, should show either modelID or the model name
-            instanceArray.push({
-
+    instanceRef.limit(25).get().then(docSnaps => {
+        const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
+        const instances = docSnaps.docs.map(doc => (
+            {
                 instance_id: doc.id,
-                model: doc.data().model,
+                mode: doc.data().model,
                 hostname: doc.data().hostname,
                 rack: doc.data().rack,
                 rackU: doc.data().rackU,
                 owner: doc.data().owner,
                 comment: doc.data().comment
-
-            });
-        });
-
-
-        if (callback) {
-            callback(instanceArray);
-        }
-    }
-
-    );
+            }
+        ))
+        callback(startAfter, instances);
+    }).catch(function (error) {
+        callback(null, null)
+    })
 }
 
+function getInstanceAt(start, callback) {
+    console.log("the start after is " + start)
+	instanceRef.startAfter(start).limit(25).get().then(docSnaps => {
+		const newStart = docSnaps.docs[docSnaps.docs.length - 1];
+		const instances = docSnaps.docs.map(doc => (
+			{
+				instance_id: doc.id,
+				model: doc.data().model,
+				hostname: doc.data().hostname,
+				rack: doc.data().rack,
+				rackU: doc.data().rackU,
+				owner: doc.data().owner,
+				comment: doc.data().comment
+			}))
+		callback(newStart, instances)
+	}).catch(function (error) {
+		callback(null, null);
+	})
+}
+
+
 function addInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
-    instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum) {
-        //Allen wants me to add a vendor and modelname field to my document
-        if (errorMessage) {
-            callback(errorMessage)
-            console.log(errorMessage)
+	instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum) {
+		//Allen wants me to add a vendor and modelname field to my document
+		if (errorMessage) {
+			callback(errorMessage)
+			console.log(errorMessage)
 
-        }
-        //The rack doesn't exist, or it doesn't fit on the rack at rackU
-        else {
+		}
+		//The rack doesn't exist, or it doesn't fit on the rack at rackU
+		else {
 
-            instanceRef.add({
-                instance_id: instanceid,
-                model: model,
-                hostname: hostname,
-                rack: rack,
-                rackU: racku,
-                owner: owner,
-                comment: comment,
+			instanceRef.add({
+				instance_id: instanceid,
+				model: model,
+				hostname: hostname,
+				rack: rack,
+				rackU: racku,
+				owner: owner,
+				comment: comment,
 
-                //This is for rack usage reports
-                vendor: modelVendor,
-                modelNumber: modelNum
+				//This is for rack usage reports
+				vendor: modelVendor,
+				modelNumber: modelNum
 
 
-            }).then(function (docRef) {
-                callback(null);
-            }).catch(function (error) {
-               // callback("Error");
-                console.log(error)
-            })
-        }
-    })
+			}).then(function (docRef) {
+				callback(null);
+			}).catch(function (error) {
+				// callback("Error");
+				console.log(error)
+			})
+		}
+	})
 
 }
 
 // This will check if the instance fits on rack: fits within in the height of rack, and does not conflict with other instances
 
 function instanceFitsOnRack(instanceRack, rackU, model, callback) {
-
     let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
@@ -144,45 +155,45 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
         }
     })
 }
+
 function deleteInstance(instanceid, callback) {
 
-    instanceRef.doc(instanceid).get().then(function (doc) {
-        if (doc.exists) {
-            if (doc.data().instances && Object.keys(doc.data().instances).length > 0) {
-                callback(null)
-            } else {
-                instanceRef.doc(instanceid).delete().then(function () {
-                    callback(instanceid);
-                }).catch(function (error) {
-                    callback(null);
-                })
-            }
-        } else {
-            callback(null);
-        }
-    })
+	instanceRef.doc(instanceid).get().then(function (doc) {
+		if (doc.exists) {
+			if (doc.data().instances && Object.keys(doc.data().instances).length > 0) {
+				callback(null)
+			} else {
+				instanceRef.doc(instanceid).delete().then(function () {
+					callback(instanceid);
+				}).catch(function (error) {
+					callback(null);
+				})
+			}
+		} else {
+			callback(null);
+		}
+	})
 }
 
-function updateInstance(instanceid, model, hostname, rack, racku, owner, comment, callback){
-    console.log(instanceRef.doc(String(instanceid)))
+function updateInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
+	console.log(instanceRef.doc(String(instanceid)))
 
-    instanceRef.doc(String(instanceid)).update({
+	instanceRef.doc(String(instanceid)).update({
 
-        model: model,
-        hostname: hostname,
-        rack: rack,
-        rackU: racku,
-        owner: owner,
-        comment: comment
+		model: model,
+		hostname: hostname,
+		rack: rack,
+		rackU: racku,
+		owner: owner,
+		comment: comment
 
 
-
-    }).then(function (docRef) {
-        callback(docRef.id);
-    }).catch(function (error) {
-        callback(null);
-    })
-    console.log("in updateInstance backend method")
+	}).then(function (docRef) {
+		callback(docRef.id);
+	}).catch(function (error) {
+		callback(null);
+	})
+	console.log("in updateInstance backend method")
 
 }
 
@@ -236,4 +247,4 @@ function getSuggestedModels(userInput, callback) {
 
 //Function for autocomplete: query the database
 
-export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstancesFromModel }
+export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstancesFromModel, getInstanceAt }

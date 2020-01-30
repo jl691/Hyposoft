@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { DataTable, Button, Text } from 'grommet'
 import { Trash, Edit } from 'grommet-icons'
 import * as instutils from '../utils/instanceutils'
+import * as rackutils from "../utils/rackutils";
 
 
 //TODO: refactor for components
@@ -13,28 +14,42 @@ export default class InstanceTable extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            instances: []
-
+            instances: [],
+            initialLoaded: false
         }
     }
     //TODO: need to change getInstance function in utils for infinite scroll and refresh (see issue #28)
 
 
     componentDidMount() {
-        instutils.getInstance(instancesdb => {
-            this.setState({ instances: instancesdb })
+        instutils.getInstance((newStartAfter, instancesdb) => {
+            if(newStartAfter && instancesdb){
+                this.startAfter = newStartAfter;
+                this.setState({ instances: instancesdb, initialLoaded: true })
+            }
         })
 
     }
 
     render() {
 
+        if (!this.state.initialLoaded) {
+            return (<Text>Please wait...</Text>);
+        }
+
         return (
 
             // LIST OF INSTANCES =============================================== 
             <DataTable
+                step={5}
+                onMore={() => {
+                    instutils.getInstanceAt(this.startAfter, (newStartAfter, newInstances) => {
+                        this.startAfter = newStartAfter
+                        this.setState({instances: this.state.instances.concat(newInstances)})
+                    });
+                }}
                 pad="17px"
-                sortable="true"
+                sortable={true}
                 columns={[
                     {
                         property: 'instance_id',
