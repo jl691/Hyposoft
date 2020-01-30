@@ -240,8 +240,6 @@ function getModelHeightColor(model, callback) {
 //     let conflicting = [];
 //     //generate all positions occupied in tentative instance
 //     let tentPositions = [];
-
-//     var thisInstanceHeight = null;
    
 //     for (let i = position; i < position + height; i++) {
 //         console.log("2. Pushing to tent positions: " + i)
@@ -263,7 +261,6 @@ function getModelHeightColor(model, callback) {
 
 
 //                     // })
-                   
 //                     //For debugging
 //                     console.log("5. InstanceID: " + instanceID)
 //                     console.log("6. Model: " + docRefInstance.data().model)
@@ -304,7 +301,7 @@ function getModelHeightColor(model, callback) {
 // }
 
 
-//========================= OG
+//========================= OG function allen wrote
 
 function checkInstanceFits(position, height, rack, callback) { //rackU, modelHeight, rack
     //create promise array
@@ -319,11 +316,12 @@ function checkInstanceFits(position, height, rack, callback) { //rackU, modelHei
     firebaseutils.racksRef.doc(rack).get().then(function (docRefRack) {
         if(docRefRack.data().instances.length){
             docRefRack.data().instances.forEach(instanceID => {
+
                 dbPromises.push(firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
                     //find height
                     console.log(instanceID);
                     console.log(docRefInstance.data())
-                    getModelHeightColor((docRefInstance.data().model + " " + docRefInstance.data().modelNumber), (height, color) => {
+                    getModelHeightColor((docRefInstance.data().model), (height, color) => {
                         let instPositions = [];
                         for(let i=docRefInstance.data().rackU;i<=docRefInstance.data().rackU+height;i++){
                             instPositions.push(i);
@@ -342,7 +340,7 @@ function checkInstanceFits(position, height, rack, callback) { //rackU, modelHei
             })
         } else {
             console.log("No conflicts found")
-            callback(null);
+            callback([]);
 
         }
     }).catch(function (error) {
@@ -350,6 +348,8 @@ function checkInstanceFits(position, height, rack, callback) { //rackU, modelHei
         callback(null);
     })
 }
+
+//============================
 
 function generateRackUsageReport(rack, callback) {
     let used = 0;

@@ -26,12 +26,12 @@ export default class AddInstanceForm extends Component {
     }
 
     callAutocompleteResults(event) {
-      instutils.getSuggestedModels(event.target.value, d => {
-        console.log(d)
-      })
-      this.setState({
-          [event.target.name]: event.target.value
-      });
+        instutils.getSuggestedModels(event.target.value, d => {
+            console.log(d)
+        })
+        this.setState({
+            [event.target.name]: event.target.value
+        });
     }
 
     handleChange(event) {
@@ -44,29 +44,37 @@ export default class AddInstanceForm extends Component {
         console.log(" yeet ")
         console.log(this.props)
         if (event.target.name === "addInst") {
-            instutils.addInstance(this.state.instance_id, this.state.model, this.state.hostname, this.state.rack, parseInt(this.state.rackU), this.state.owner, this.state.comment, errorMessage => {
-                if (errorMessage) {
-                    ToastsStore.error(errorMessage)
+            instutils.addInstance(
+                this.state.model,
+                this.state.hostname,
+                this.state.rack,
+                parseInt(this.state.rackU),
+                this.state.owner,
+                this.state.comment,
+                errorMessage => {
 
-                }
-                else {
+                    if (errorMessage) {
+                        ToastsStore.error(errorMessage)
 
-                    ToastsStore.success('Successfully added instance!');
-                    //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
-                    this.props.parentCallback(true);
-                    /*this.setState({
-                        instance_id: "",
-                        model: "",
-                        hostname: "",
-                        rack: "",
-                        rackU: "",
-                        owner: "",
-                        comment: ""
-                    })*/
+                    }
+                    else {
+
+                        ToastsStore.success('Successfully added instance!');
+                        // this.setState({
+                        //     instance_id: "",
+                        //     model: "",
+                        //     hostname: "",
+                        //     rack: "",
+                        //     rackU: "",
+                        //     owner: "",
+                        //     comment: ""
+                        // })
+                        this.props.parentCallback(true);
+                      
 
 
-                }
-            });
+                    }
+                });
 
         }
 
@@ -123,60 +131,22 @@ export default class AddInstanceForm extends Component {
                         </FormField>
 
 
-
-                        {/* <RequiredFormField name="model" label="Model" required>
-
-<TextInput name="model" placeholder="eg. Dell R710" onChange={this.handleChange}
-    value={this.state.model} />
-</RequiredFormField>
-
-<RequiredFormField name="hostname" label="Hostname"  required>
-
-<TextInput padding="medium" name="hostname" placeholder="eg. server9" onChange={this.handleChange}
-    value={this.state.hostname} />
-</RequiredFormField>
-
-<RequiredFormField name="rack" label="Rack" required>
-
-<TextInput name="rack" placeholder="eg. B12" onChange={this.handleChange}
-    value={this.state.rack} />
-</RequiredFormField>
-
-<RequiredFormField name="rackU" label="RackU" required>
-
-<TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
-    value={this.state.rackU} />
-</RequiredFormField>
-
-<RequiredFormField name="owner" label="Owner" required>
-
-<TextInput name="owner" placeholder="eg. Jan" onChange={this.handleChange}
-    value={this.state.owner} />
-</RequiredFormField>
-
-<FormField name="comment" label="Comment" >
-
-<TextInput name="comment" placeholder="" onChange={this.handleChange}
-    value={this.state.comment} />
-</FormField> */}
-
-
-                        <Text margin={{ left: "small" }} size="small" color="status-critical">
+                        {/* <Text margin={{ left: "small" }} size="small" color="status-critical">
                             * Required Field
-                        </Text>
+                        </Text> */}
 
                         <Box direction="row">
-                        <Button
-                            margin="small"
-                            type="submit"
-                            primary label="Submit"
-                        />
-                        <Button
-                            margin="small"
-                            label="Cancel"
-                            onClick={() => this.props.cancelCallbackFromParent()}
+                            <Button
+                                margin="small"
+                                type="submit"
+                                primary label="Submit"
+                            />
+                            <Button
+                                margin="small"
+                                label="Cancel"
+                                onClick={() => this.props.cancelCallbackFromParent()}
 
-                        />
+                            />
                         </Box>
 
                     </Form >

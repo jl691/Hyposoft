@@ -45,7 +45,6 @@ function getInstanceAt(start, callback) {
 }
 
 
-//check: when you delete an isntance, need to delete the ID from rackRef as well
 function addInstance(model, hostname, rack, racku, owner, comment, callback) {
     //whenever there's a function, it's like a new 'thread', which is why print statements may be out of order
     instanceFitsOnRack(rack, racku, model, function (errorMessage, modelNum, modelVendor, rackID) {
@@ -86,17 +85,20 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
 
 }
 
+
 // This will check if the instance fits on rack (after checking rack exists): fits within in the height of rack, and does not conflict with other instances
 
 function instanceFitsOnRack(instanceRack, rackU, model, callback) {
+
     let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
     let rackID = null;
 
-    rackutils.getRackID(rackRow, rackNum, id =>{
-        if(id){
+    rackutils.getRackID(rackRow, rackNum, id => {
+        if (id) {
+
             rackID = id
             console.log(rackID)
         }
@@ -105,9 +107,6 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
         }
     })
 
-
-    //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
-    console.log("trying for " + rackRow + rackNum + " instancerack " + instanceRack)
     racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
         if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number) {
             let rackHeight = querySnapshot.docs[0].data().height
@@ -119,12 +118,14 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                 if (rackHeight >= parseInt(rackU) + doc.data().height) {
                     //We know the instance will fit on the rack, but now does it conflict with anything?
 
-                    rackutils.checkInstanceFits(parseInt(rackU), parseInt(doc.data().height), rackID, function (status) {
+                    console.log(rackU)
+                    console.log(doc.data().height)
+                    console.log(rackID)
+                    rackutils.checkInstanceFits(rackU, doc.data().height, rackID, function (status) {
 
                         //can check length. If length > 0, then conflicting instances were returned
                         //means that there are conflicts. 
-                        console.log(status)
-
+                
                         if (status.length) {
                             console.log("Conflicts found on rack")
                             var height = doc.data().height
