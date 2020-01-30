@@ -7,7 +7,6 @@ import * as rackutils from "../utils/rackutils";
 import AddRackView from "./AddRackView";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import DeleteRackView from "./DeleteRackView"
-import {Link} from "react-router-dom";
 import HomeButton from "./HomeButton";
 import UserMenu from "./UserMenu";
 import AppBar from "./AppBar";
