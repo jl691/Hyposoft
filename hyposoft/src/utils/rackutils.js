@@ -231,73 +231,122 @@ function getModelHeightColor(model, callback) {
     })
 }
 
-function checkInstanceFits(position, height, rack, callback) { //rackU, modelHeight, rackID
-    console.log("1. attempting to find rack with id " + rack)
+//========= modified function
+// function checkInstanceFits(position, height, rack, callback) { //rackU, modelHeight, rackID
+//     console.log("1. attempting to find rack with id " + rack)
+//     //create promise array
+//     let dbPromises = [];
+//     //create array of conflicting instances
+//     let conflicting = [];
+//     //generate all positions occupied in tentative instance
+//     let tentPositions = [];
+
+//     var thisInstanceHeight = null;
+   
+//     for (let i = position; i < position + height; i++) {
+//         console.log("2. Pushing to tent positions: " + i)
+//         tentPositions.push(i);
+//     }
+
+//     firebaseutils.racksRef.doc(rack).get().then(function (docRefRack) {
+//         if (docRefRack.data().instances.length) {
+//             console.log("3. found rack with ID with instances on it")
+//             docRefRack.data().instances.forEach(instanceID => {
+//                 console.log("4. In the for each")
+                
+//                 dbPromises.push(firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
+//                     //find height
+//                     //getModelHeightColor
+//                     // firebaseutils.modelsRef.doc(docRefInstance.data().model).get().then(function (modelDoc) {
+//                     //     console.log(modelDoc.data().height)
+//                     //     var thisInstanceHeight=modelDoc.data().height
+
+
+//                     // })
+                   
+//                     //For debugging
+//                     console.log("5. InstanceID: " + instanceID)
+//                     console.log("6. Model: " + docRefInstance.data().model)
+//                     console.log("7. height from query: " + thisInstanceHeight)
+
+//                     let instPositions = [];
+
+//                     //TODO:  thisInstanceHeight works??
+//                     for (let i = docRefInstance.data().rackU; i < docRefInstance.data().rackU + height; i++) {
+//                         console.log("Pushing instance positions: " + i)
+//                         instPositions.push(i);
+//                     }
+//                     //check for intersection
+//                     let intersection = tentPositions.filter(value => instPositions.includes(value));
+//                     console.log("8. Intersection length: " + intersection.length)
+
+//                     if (intersection.length) {
+//                         console.log("9. Conflicts were found, now pushing to array: " + docRefInstance.id)
+//                         conflicting.push(docRefInstance.id);
+//                     }
+//                 }
+
+//                 ));
+//             });
+//             Promise.all(dbPromises).then(() => {
+//                 console.log("10. Please end my life. Conflicting instances: " + conflicting)
+//                 callback(conflicting);
+//             })
+//         } else {
+//             console.log("11. no conflicting instances were found")
+//             callback([]);
+//         }
+//     }).catch(function (error) {
+
+//         console.log("12. Error in checkInstanceFits in rackutils: " + error)
+//         callback(null);
+//     })
+// }
+
+
+//========================= OG
+
+function checkInstanceFits(position, height, rack, callback) { //rackU, modelHeight, rack
     //create promise array
     let dbPromises = [];
     //create array of conflicting instances
     let conflicting = [];
     //generate all positions occupied in tentative instance
     let tentPositions = [];
-
-    var thisInstanceHeight = null;
-   
-    for (let i = position; i < position + height; i++) {
-        console.log("2. Pushing to tent positions: " + i)
+    for(let i=position;i<=position+height;i++){
         tentPositions.push(i);
     }
-
     firebaseutils.racksRef.doc(rack).get().then(function (docRefRack) {
-        if (docRefRack.data().instances.length) {
-            console.log("3. found rack with ID with instances on it")
+        if(docRefRack.data().instances.length){
             docRefRack.data().instances.forEach(instanceID => {
-                console.log("4. In the for each")
-                
                 dbPromises.push(firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
                     //find height
-                    //getModelHeightColor
-                    // firebaseutils.modelsRef.doc(docRefInstance.data().model).get().then(function (modelDoc) {
-                    //     console.log(modelDoc.data().height)
-                    //     var thisInstanceHeight=modelDoc.data().height
-
-
-                    // })
-                   
-                    //For debugging
-                    console.log("5. InstanceID: " + instanceID)
-                    console.log("6. Model: " + docRefInstance.data().model)
-                    console.log("7. height from query: " + thisInstanceHeight)
-
-                    let instPositions = [];
-
-                    //TODO:  thisInstanceHeight works??
-                    for (let i = docRefInstance.data().rackU; i < docRefInstance.data().rackU + height; i++) {
-                        console.log("Pushing instance positions: " + i)
-                        instPositions.push(i);
-                    }
-                    //check for intersection
-                    let intersection = tentPositions.filter(value => instPositions.includes(value));
-                    console.log("8. Intersection length: " + intersection.length)
-
-                    if (intersection.length) {
-                        console.log("9. Conflicts were found, now pushing to array: " + docRefInstance.id)
-                        conflicting.push(docRefInstance.id);
-                    }
-                }
-
-                ));
+                    console.log(instanceID);
+                    console.log(docRefInstance.data())
+                    getModelHeightColor((docRefInstance.data().model + " " + docRefInstance.data().modelNumber), (height, color) => {
+                        let instPositions = [];
+                        for(let i=docRefInstance.data().rackU;i<=docRefInstance.data().rackU+height;i++){
+                            instPositions.push(i);
+                        }
+                        //check for intersection
+                        let intersection = tentPositions.filter(value => instPositions.includes(value));
+                        if(intersection.length){
+                            conflicting.push(docRefInstance.id);
+                        }
+                    })
+                }));
             });
             Promise.all(dbPromises).then(() => {
-                console.log("10. Please end my life. Conflicting instances: " + conflicting)
+                console.log(conflicting)
                 callback(conflicting);
             })
         } else {
-            console.log("11. no conflicting instances were found")
-            callback([]);
+            console.log("No conflicts found")
+            callback(null);
+
         }
     }).catch(function (error) {
-
-        console.log("12. Error in checkInstanceFits in rackutils: " + error)
+        console.log("No matching racks")
         callback(null);
     })
 }

@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
 import { DataTable, Button, Text } from 'grommet'
-import { Trash, Edit } from 'grommet-icons'
+import { Trash, Edit, Book } from 'grommet-icons'
 import * as instutils from '../utils/instanceutils'
+import DetailedInstanceScreen from '../screens/DetailedInstanceScreen'
 
 
 //TODO: refactor for components
@@ -115,6 +116,36 @@ export default class InstanceTable extends Component {
                                         data.rackU, 
                                         data.owner, 
                                         data.comment)
+
+
+                                    
+                                }} />
+                        )
+                    },
+
+                    {
+                        property: "details",
+                        header: "Details",
+
+                        render: data => (
+                            <Button
+                                icon={< Book />}
+                                margin="small"
+                                onClick={() => {
+
+                                    // <DetailedInstanceScreen>
+                                    //     instanceIDFromParent={this.data.instance_id}
+
+                                    // </DetailedInstanceScreen>
+                              
+                                    // this.props.UpdateButtonCallbackFromParent(
+                                    //     data.instance_id)
+                                        // data.model, 
+                                        // data.hostname, 
+                                        // data.rack, 
+                                        // data.rackU, 
+                                        // data.owner, 
+                                        // data.comment)
 
 
                                     

@@ -165,12 +165,12 @@ function deleteInstance(instanceid, callback) {
             let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
             let rackRow = splitRackArray[0]
             let rackNum = parseInt(splitRackArray[1])
-        
+
             let rackID = null;
-        
+
             rackutils.getRackID(rackRow, rackNum, id => {
                 if (id) {
-        
+
                     rackID = id
                     console.log(rackID)
                 }
@@ -184,7 +184,7 @@ function deleteInstance(instanceid, callback) {
                 console.log("Deleting. This is the rackID: " + rackID)
                 console.log("removing from database instace ID: " + instanceid)
                 racksRef.doc(String(rackID)).update({
-                   
+
                     instances: firebase.firestore.FieldValue.arrayRemove(instanceid)
                 })
 
@@ -201,19 +201,19 @@ function deleteInstance(instanceid, callback) {
 
 function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment, callback) {
 
-    instanceFitsOnRack(rack, rackU, model, stat =>{
+    instanceFitsOnRack(rack, rackU, model, stat => {
 
         console.log(stat)
         //returned an error message
-        if(stat){
+        if (stat) {
 
-            var errMessage = stat 
+            var errMessage = stat
             //need to pass up errormessage if model updated and instance no longer fits
             callback(errMessage)
         }
         //returns null if no issues/conflicts.
-        else{
-            instanceRef.doc(String(instanceid)).update({ 
+        else {
+            instanceRef.doc(String(instanceid)).update({
                 model,
                 hostname,
                 rack,
@@ -221,17 +221,17 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                 owner,
                 comment
                 //these are the fields in the document to update
-               
-            }).then(function() {
+
+            }).then(function () {
                 console.log("Updated model successfully")
-            callback(null);
-        }).catch(function (error) {
-            console.log(error)
-            callback(error);
-        })
+                callback(null);
+            }).catch(function (error) {
+                console.log(error)
+                callback(error);
+            })
         }
-    } )
-        
+    })
+
 
 }
 
@@ -272,6 +272,27 @@ function getSuggestedModels(userInput, callback) {
         })
 }
 
-//Function for autocomplete: query the database
+function getInstanceDetails(instanceID, callback) {
 
-export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels }
+    let instanceHardCoded='tOb88GOvzFSOABHdvkN6'
+
+    instanceRef.doc(instanceHardCoded).get().then((doc) => {
+        let inst = {
+            instanceID: instanceHardCoded, //instanceID
+            model: doc.data().model.trim(),
+            hostname: doc.data().hostname.trim(),
+            rack: doc.data().rack.trim(),
+            rackU: doc.data().rackU,
+            owner: doc.data().owner.trim(),
+            comment: doc.data().comment.trim()
+
+
+        }
+        callback(inst)
+    }
+
+    );
+
+}
+
+export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstanceDetails }
