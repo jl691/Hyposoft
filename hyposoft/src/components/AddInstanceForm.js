@@ -130,24 +130,11 @@ export default class AddInstanceForm extends Component {
                                 value={this.state.comment} />
                         </FormField>
 
-
-                        {/* <Text margin={{ left: "small" }} size="small" color="status-critical">
-                            * Required Field
-                        </Text> */}
-
-                        <Box direction="row">
-                            <Button
-                                margin="small"
-                                type="submit"
-                                primary label="Submit"
-                            />
-                            <Button
-                                margin="small"
-                                label="Cancel"
-                                onClick={() => this.props.cancelCallbackFromParent()}
-
-                            />
-                        </Box>
+                        <Button
+                            margin="small"
+                            type="submit"
+                            primary label="Submit"
+                        />
 
                     </Form >
                 </Box>
