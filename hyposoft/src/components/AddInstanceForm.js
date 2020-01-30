@@ -21,6 +21,16 @@ export default class AddInstanceForm extends Component {
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
+        this.callAutocompleteResults = this.callAutocompleteResults.bind(this)
+    }
+
+    callAutocompleteResults(event) {
+      instutils.getSuggestedModels(event.target.value, d => {
+        console.log(d)
+      })
+      this.setState({
+          [event.target.name]: event.target.value
+      });
     }
 
     handleChange(event) {
@@ -38,7 +48,7 @@ export default class AddInstanceForm extends Component {
 
                 }
                 else {
-                   
+
                     ToastsStore.success('Successfully added instance!');
                     //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
                     //this.props.parentCallbackRefresh(true);
@@ -75,7 +85,7 @@ export default class AddInstanceForm extends Component {
 
                         <FormField name="model" label="Model">
 
-                            <TextInput name="model" placeholder="eg. R710" onChange={this.handleChange}
+                            <TextInput name="model" placeholder="eg. R710" onChange={this.callAutocompleteResults}
                                 value={this.state.model} />
                         </FormField>
 
@@ -136,8 +146,3 @@ export default class AddInstanceForm extends Component {
     }
 
 }
-
-
-
-
-
