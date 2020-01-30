@@ -113,6 +113,12 @@ class InstanceScreen extends Component {
                     //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
                     // parentCallbackRefresh={this.callbackFunctionRefresh}
                     />
+                    <Button
+                        margin="small"
+                        label="Cancel"
+                        onClick={() => this.setState({popupType: ""})}
+
+                    />
 
                 </Layer>
             )
@@ -129,7 +135,12 @@ class InstanceScreen extends Component {
                         deleteIDFromParent={this.state.deleteID}
 
                     />
+                    <Button
+                        margin="small"
+                        label="Cancel"
+                        onClick={() => this.setState({popupType: ""})}
 
+                    />
                 </Layer>
             )
 
@@ -155,6 +166,12 @@ class InstanceScreen extends Component {
                         updateCommentFromParent={this.state.updateComment}
                         
                         
+
+                    />
+                    <Button
+                        margin="small"
+                        label="Cancel"
+                        onClick={() => this.setState({popupType: ""})}
 
                     />
 
