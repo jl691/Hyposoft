@@ -82,7 +82,20 @@ class InstanceScreen extends Component {
       
     }
 
+    addButton() {
+        if(userutils.isLoggedInUserAdmin()){
+            return (<Button
+                icon={<Add />}
+                label={
+                    <Text>
+                        Add Instance
+                    </Text>
+                }
 
+                onClick={() => this.setState({ popupType: "Add" })}
+            />);
+        }
+    }
 
     render() {
         //  const [value, setValue] = React.useState('medium');
@@ -188,16 +201,7 @@ class InstanceScreen extends Component {
 
 
                     {/* Button to Add an Instance: */}
-                    <Button
-                        icon={<Add />}
-                        label={
-                            <Text>
-                                Add Instance
-                            </Text>
-                        }
-
-                        onClick={() => this.setState({ popupType: "Add" })}
-                    />
+                    {this.addButton()}
                 </FilterBarInstances>
 
                 <InstanceTable
