@@ -46,6 +46,7 @@ function getInstanceAt(start, callback) {
 
 
 function addInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
+    console.log(rack + " blah " + racku)
 	instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum) {
 		//Allen wants me to add a vendor and modelname field to my document
 		if (errorMessage) {
@@ -103,7 +104,7 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
 
 
     //https://stackoverflow.com/questions/46554793/are-cloud-firestore-queries-still-case-sensitive
-
+    console.log("trying for " + rackRow + rackNum + " instancerack " + instanceRack)
     racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).get().then(function (querySnapshot) {
         if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number) {
             let rackHeight = querySnapshot.docs[0].data().height

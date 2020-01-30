@@ -24,6 +24,7 @@ export default class DeleteInstancePopup extends Component {
                 if (status) {
 
                     ToastsStore.success('Deleted instance');
+                    this.props.parentCallback(true);
 
                 } else {
                     ToastsStore.error('Error deleting instance.');

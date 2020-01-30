@@ -31,6 +31,20 @@ export default class InstanceTable extends Component {
 
     }
 
+    forceRefresh() {
+        this.startAfter = null;
+        this.setState({
+            instances: [],
+            initialLoaded: false
+        });
+        instutils.getInstance((newStartAfter, instancesdb) => {
+            if(newStartAfter && instancesdb){
+                this.startAfter = newStartAfter;
+                this.setState({ instances: instancesdb, initialLoaded: true })
+            }
+        })
+    }
+
     render() {
 
         if (!this.state.initialLoaded) {
