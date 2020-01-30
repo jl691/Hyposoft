@@ -24,6 +24,7 @@ function getInstance(callback) {
     })
 }
 
+
 function getInstanceAt(start, callback) {
     console.log("the start after is " + start)
 	instanceRef.startAfter(start).limit(25).get().then(docSnaps => {
