@@ -22,16 +22,6 @@ export default class AddInstanceForm extends Component {
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
-        this.callAutocompleteResults = this.callAutocompleteResults.bind(this)
-    }
-
-    callAutocompleteResults(event) {
-        instutils.getSuggestedModels(event.target.value, d => {
-            console.log(d)
-        })
-        this.setState({
-            [event.target.name]: event.target.value
-        });
     }
 
     handleChange(event) {
@@ -70,7 +60,7 @@ export default class AddInstanceForm extends Component {
                         //     comment: ""
                         // })
                         this.props.parentCallback(true);
-                      
+
 
 
                     }
@@ -96,8 +86,21 @@ export default class AddInstanceForm extends Component {
 
                         <FormField name="model" label="Model">
 
-                            <TextInput name="model" placeholder="eg. Dell R710" onChange={this.callAutocompleteResults}
-                                value={this.state.model} />
+                            <TextInput name="model"
+                                placeholder="eg. Dell R710"
+                                onChange={e => {
+                                    const value = e.target.value
+                                    this.setState(oldState => ({...oldState, model: value}))
+                                    instutils.getSuggestedModels(value, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))
+                                }}
+                                onSelect={e => {
+                                    this.setState(oldState => ({...oldState, model: e.suggestion}))
+                                }}
+                                value={this.state.model}
+                                suggestions={this.state.modelSuggestions}
+                                onClick={() => instutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))}
+                                title='Model'
+                                />
                         </FormField>
 
                         <FormField name="hostname" label="Hostname" >
