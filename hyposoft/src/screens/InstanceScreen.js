@@ -1,9 +1,13 @@
 import React, { Component } from 'react'
+import { BrowserRouter as Router, Route } from 'react-router-dom'
+import { Link} from 'react-router-dom'
+
 import { Text, Button, Layer, Grommet, Heading, Box, TextInput, Select } from 'grommet'
 import { Add } from 'grommet-icons'
 import AddInstanceForm from '../components/AddInstanceForm'
 import DeleteInstancePopup from '../components/DeleteInstancePopup'
 import EditInstanceForm from '../components/EditInstanceForm'
+import DetailedInstanceScreen from './DetailedInstanceScreen'
 
 import theme from '../theme'
 import AppBar from '../components/AppBar'
@@ -117,12 +121,12 @@ class InstanceScreen extends Component {
             updateComment: datumComment
 
         });
-      
+
 
     }
 
     addButton() {
-        if(userutils.isLoggedInUserAdmin()){
+        if (userutils.isLoggedInUserAdmin()) {
             return (<Button
                 icon={<Add />}
                 label={
@@ -155,7 +159,7 @@ class InstanceScreen extends Component {
                     <Button
                         margin="small"
                         label="Cancel"
-                        onClick={() => this.setState({popupType: ""})}
+                        onClick={() => this.setState({ popupType: "" })}
 
                     />
 
@@ -177,7 +181,7 @@ class InstanceScreen extends Component {
                     <Button
                         margin="small"
                         label="Cancel"
-                        onClick={() => this.setState({popupType: ""})}
+                        onClick={() => this.setState({ popupType: "" })}
 
                     />
                 </Layer>
@@ -190,11 +194,11 @@ class InstanceScreen extends Component {
             console.log("In parent: updateID is " + this.state.updateID)
 
             popup = (
-                
+
                 <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
-                    
+
                     <EditInstanceForm
                         parentCallback={this.handleCancelPopupChange}
 
@@ -214,7 +218,7 @@ class InstanceScreen extends Component {
                     <Button
                         margin="small"
                         label="Cancel"
-                        onClick={() => this.setState({popupType: ""})}
+                        onClick={() => this.setState({ popupType: "" })}
 
                     />
 
@@ -227,57 +231,80 @@ class InstanceScreen extends Component {
 
 
         return (
-            <Grommet theme={theme} full className='fade'>
-                {popup}
-                <AppBar>
-                    <HomeButton alignSelf='start' this={this} />
-                    <Heading alignSelf='center' level='4' margin={{
-                        top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
-                    }} >Instances</Heading>
-                    <UserMenu alignSelf='end' this={this} />
-                </AppBar>
-                <FilterBarInstances>
-                    <SearchInstances />
 
-                    <Box gap='small' direction="column" margin='small'>
-                        <Text> Range of Racks </Text>
-                        <TextInput name="rangeNumberStart" placeholder="eg. B1" onChange={this.handleChangeRange} />
-                        to
-                        <TextInput name="rangeNumberEnd" placeholder="eg. C21" onChange={this.handleChangeRange} />
-                    </Box>
+            <Router>
 
-                    <Box gap='small' margin='small'>
-                        <Text  > Sort By </Text>
-                        <Select
-                            //TODO: this allows you to sort by short form fields. Need backend
-                            options={['Model', 'Hostname', 'Rack and RackU', 'Owner']}
-                        // value={value}
-                        //onChange={({ option }) => setValue(option)} //see line 54
+                <Route
+                     exact path="/instances" render={props => (
+                        <React.Fragment>
+                            <Grommet theme={theme} full className='fade'>
+                                {popup}
+                                <AppBar>
+                                    
+                                    <HomeButton alignSelf='start' this={this} />
+                                    <Heading alignSelf='center' level='4' margin={{
+                                        top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
+                                    }} >Instances</Heading>
+                                    <UserMenu alignSelf='end' this={this} />
+                                </AppBar>
+                                <FilterBarInstances>
+                                    <SearchInstances />
 
-                        />
+                                    <Box gap='small' direction="column" margin='small'>
+                                        <Text> Range of Racks </Text>
+                                        <TextInput name="rangeNumberStart" placeholder="eg. B1" onChange={this.handleChange} />
+                                        to
+                        <TextInput name="rangeNumberEnd" placeholder="eg. C21" onChange={this.handleChange} />
+                                    </Box>
 
-                    </Box>
+                                    <Box gap='small' margin='small'>
+                                        <Text  > Sort By </Text>
+                                        <Select
+                                            //TODO: this allows you to sort by short form fields. Need backend
+                                            options={['Model', 'Hostname', 'Rack and RackU', 'Owner']}
+                                        // value={value}
+                                        //onChange={({ option }) => setValue(option)} //see line 54
+
+                                        />
+
+                                    </Box>
 
 
-                    {/* Button to Add an Instance: */}
-                    {this.addButton()}
-                </FilterBarInstances>
+                                    {/* Button to Add an Instance: */}
+                                    {this.addButton()}
+                                </FilterBarInstances>
 
-                <InstanceTable
-                    deleteButtonCallbackFromParent={this.handleDeleteButton}
+                                <InstanceTable
+                                    deleteButtonCallbackFromParent={this.handleDeleteButton}
 
-                    UpdateButtonCallbackFromParent={this.handleUpdateButton}
-                
-                    ref={this.instanceTable}
+                                    UpdateButtonCallbackFromParent={this.handleUpdateButton}
+
+
+
+                                    ref={this.instanceTable}
+
+                                />
+
+
+                            </Grommet>
+
+
+
+
+                        </React.Fragment>
+
+
+
+                    )}
 
                 />
 
 
-            </Grommet>
-            
-           
+            </Router>
+
+
         )
-       
+
 
     }
 }
