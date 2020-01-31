@@ -6,7 +6,7 @@ import * as rackutils from "../utils/rackutils";
 
 class RackDiagram extends React.Component {
     generateDiagrams() {
-        const canvas = new fabric.StaticCanvas('canvas');
+        const canvas = new fabric.Canvas('canvas');
         let currX = 0;
         let currY = 0;
         let rowStartNumber = this.props.location.state.letterStart.charCodeAt(0);
@@ -50,37 +50,49 @@ class RackDiagram extends React.Component {
                     fontFamily: 'Arial',
                     fontSize: 20,
                     top: (1113*y)+5,
+                    selectable: false
                     //left: 400*x + (350-Math.round(header.getScaledWidth()))/2
                 });
                 header.set({
                     left: 400*x + (350-Math.round(header.getScaledWidth()))/2
-                })
+                });
                 canvas.add(header);
                 //header.centerH();
                 result.forEach(instance => {
-                    canvas.add(new fabric.Rect({
+                    let instanceBox = new fabric.Rect({
                         left: (400*x)+30,
                         top: (1113*y) + 10 + (20*(42-instance.position)),
                         fill: '#' + instance.color,
                         width: 290,
                         height: (20*instance.height),
                         stroke: 'black',
-                        strokeWidth: 1
-                    }));
-                    canvas.add(new fabric.Text(instance.model, {
+                        strokeWidth: 1,
+                        selectable: false
+                    });
+
+                    let instanceText = new fabric.Text(instance.model, {
                         fill: this.getContrastYIQ(instance.color),
                         fontFamily: 'Arial',
                         fontSize: 15,
                         top: (1113*y) + 10 + (20*(42-instance.position)) + (20*(instance.height-1)),
-                        left: (400*x) + 35
-                    }));
-                    canvas.add(new fabric.Text(instance.hostname, {
+                        left: (400*x) + 35,
+                        selectable: false
+                    });
+
+                    let instanceHostname = new fabric.Text(instance.hostname, {
                         fill: this.getContrastYIQ(instance.color),
                         fontFamily: 'Arial',
                         fontSize: 15,
                         top: (1113*y) + 10 + (20*(42-instance.position)) + (20*(instance.height-1)),
-                        left: (400*x) + 200
-                    }));
+                        left: (400*x) + 200,
+                        selectable: false
+                    });
+
+                    canvas.add(instanceBox, instanceText, instanceHostname);
+
+                    instanceBox.on("mousedown", function (options) {
+                        window.location.href = "/instances/" + instance.id;
+                    })
                 })
             } else {
                 console.log("error");
@@ -90,39 +102,43 @@ class RackDiagram extends React.Component {
 
     generateBorders(x, y, canvas){
         // left banner
-        const rect = new fabric.Rect({
+        let rect = new fabric.Rect({
             left: 400*x,
             top: 1113*y,
             fill: 'black',
             width: 30,
-            height: 900
+            height: 900,
+            selectable: false
         });
 
         // right banner
-        const rect2 = new fabric.Rect({
+        let rect2 = new fabric.Rect({
             left: (400*x)+320,
             top: 1113*y,
             fill: 'black',
             width: 30,
-            height: 900
+            height: 900,
+            selectable: false
         });
 
         //top banner
-        const rect3 = new fabric.Rect({
+        let rect3 = new fabric.Rect({
             left: 400*x,
             top: 1113*y,
             fill: 'black',
             width: 350,
-            height: 30
+            height: 30,
+            selectable: false
         });
 
         //bottom banner
-        const rect4 = new fabric.Rect({
+        let rect4 = new fabric.Rect({
             left: 400*x,
             top: (1113*y)+870,
             fill: 'black',
             width: 350,
-            height: 30
+            height: 30,
+            selectable: false
         });
 
         canvas.add(rect, rect2, rect3, rect4);
@@ -135,7 +151,8 @@ class RackDiagram extends React.Component {
                     fontFamily: 'Arial',
                     fontSize: 15,
                     top: (1113*y) + 10 + (20*count),
-                    left: (400*x) + 5
+                    left: (400*x) + 5,
+                    selectable: false
                 }));
             canvas.add(
                 new fabric.Text((43-count).toString(), {
@@ -143,7 +160,8 @@ class RackDiagram extends React.Component {
                     fontFamily: 'Arial',
                     fontSize: 15,
                     top: (1113*y) + 10 + (20*count),
-                    left: (400*x)+325
+                    left: (400*x)+325,
+                    selectable: false
                 }));
         }
     }
