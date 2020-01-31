@@ -1,15 +1,13 @@
 import React, { Component } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
 import { Link } from 'react-router-dom'
-import { DataTable, Button, Text } from 'grommet'
+import { DataTable, Button, Text, Box } from 'grommet'
 import { Trash, Edit, Book } from 'grommet-icons'
 import * as instutils from '../utils/instanceutils'
 import DetailedInstanceScreen from '../screens/DetailedInstanceScreen'
 
-import * as rackutils from "../utils/rackutils";
 import * as userutils from "../utils/userutils";
 
-//TODO: refactor for components
 
 export default class InstanceTable extends Component {
 
@@ -52,11 +50,10 @@ export default class InstanceTable extends Component {
         super(props);
         this.state = {
             instances: [],
-            initialLoaded: false
+            initialLoaded: false,
+     
         }
     }
-    //TODO: need to change getInstance function in utils for infinite scroll and refresh (see issue #28)
-
 
     componentDidMount() {
         instutils.getInstance((newStartAfter, instancesdb) => {
@@ -73,26 +70,29 @@ export default class InstanceTable extends Component {
             header: "Details",
 
             render: data => (
-              
+
 
                 //need to pass down instance_id to know which page to display to detailedInstanceScreen
                 <React.Fragment>
                     <Link to={`/instances/${data.instance_id}`} >
-                   
+
                         <Button icon={< Book />}
-                            margin="small" renderAs="button">
-                        </Button>
+                            margin="small"
+                            onClick={new DetailedInstanceScreen}
+
+                        />
+
                         {/* this.props.history.push */}
                     </Link>
-                    
-                </React.Fragment>
 
+                </React.Fragment>
             )
-            
+
         })
-        
 
     }
+
+
 
     adminButtons() {
         if (userutils.isLoggedInUserAdmin()) {
@@ -105,11 +105,8 @@ export default class InstanceTable extends Component {
                         icon={<Trash />}
                         margin="small"
                         onClick={() => {
-                            //TODO: need to pass up popuptype state to parent InstanceScreen
-                            //this.setState({ popupType: 'Delete', deleteID: datum.id });
+                       
                             this.props.deleteButtonCallbackFromParent(datum.instance_id)
-                            console.log(this.state)
-                            //Need to pass the deleteID up to parent InstanceScreen
 
 
                         }} />
@@ -168,23 +165,25 @@ export default class InstanceTable extends Component {
 
         return (
 
-            // LIST OF INSTANCES =============================================== 
-            <DataTable
-                step={5}
-                onMore={() => {
-                    instutils.getInstanceAt(this.startAfter, (newStartAfter, newInstances) => {
-                        this.startAfter = newStartAfter
-                        this.setState({ instances: this.state.instances.concat(newInstances) })
-                    });
-                }}
-                pad="17px"
-                sortable={true}
-                columns={this.columns}
+            // LIST OF INSTANCES ===============================================
+       
+                <DataTable
+                    step={5}
+                    onMore={() => {
+                        instutils.getInstanceAt(this.startAfter, (newStartAfter, newInstances) => {
+                            this.startAfter = newStartAfter
+                            this.setState({ instances: this.state.instances.concat(newInstances) })
+                        });
+                    }}
+                    pad="17px"
+                    sortable={true}
+                    columns={this.columns}
 
-                data={this.state.instances}
+                    data={this.state.instances}
 
 
-            />
+                />
+    
 
 
         );

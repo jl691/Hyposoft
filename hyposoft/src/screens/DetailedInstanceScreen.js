@@ -5,7 +5,7 @@ import { Button, Grommet, Form, FormField, Heading, TextInput, Box, List } from 
 import * as instutils from '../utils/instanceutils'
 import theme from '../theme'
 
-export default class InstanceDetailView extends Component {
+export default class DetailedInstanceScreen extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -15,9 +15,12 @@ export default class InstanceDetailView extends Component {
         }
     }
     componentDidMount() {
+        console.log("DetailedInstanceScreen")
+        this.setState({
+            instance: ""
+        })
         instutils.getInstanceDetails(
-            "",
-            //this.props.instanceIDFromParent, 
+            this.props.match.params.instanceID,
             instancesdb => {
                 this.setState({
                     instance: instancesdb
@@ -29,16 +32,18 @@ export default class InstanceDetailView extends Component {
     }
 
     render() {
-  
+        console.log(this.props.match.params.instanceID)
         return (
-            
+
             <Router>
                 <React.Fragment>
+                 
                     {/* CHange exact path to be custom, also call this.props.InstanceIDFromparent */}
-                    <Route exact path={`/instances/${this.props.match.params.instanceID}`} />
-            
+                    <Route path={`/instances/${this.props.match.params.instanceID}`} />
+
                     <Grommet theme={theme} full className='fade'>
                         <Box>
+
                             <Heading level="2"> Detailed Instance View </Heading>
                             <List
                                 //TODO: clicking on model should lead to a detailed model view. Add "View model details button"
