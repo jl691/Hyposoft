@@ -127,9 +127,9 @@ function getModels(startAfter, callback) {
 }
 
 function doesModelDocExist(vendor, modelNumber, callback) {
-    var docRef = firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber))
-    docRef.get().then(doc => {
-      callback(doc.exists)
+    firebaseutils.modelsRef.where('modelName','==',vendor+' '+modelNumber).get()
+    .then(qs => {
+      callback(!qs.empty)  
     })
     .catch( error => {
       console.log("Error getting documents: ", error)

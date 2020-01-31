@@ -274,26 +274,24 @@ function sortByKeyword(keyword, callback) {
 
 function getSuggestedModels(userInput, callback) {
   // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
-    var modelArray = []
-    modelsRef.get().then(querySnapshot => {
-      querySnapshot.forEach( doc => {
-        if (!userInput
-          || (doc.id.localeCompare(userInput) >= 0
-              && doc.id.localeCompare(userInput.slice(0,userInput.length-1)
-                  + String.fromCharCode(userInput.slice(userInput.length-1,userInput.length).charCodeAt(0)+1)) < 0)) {
-          modelArray.push(doc.id)
-        }
-      })
-      callback(modelArray)
+  var query = userInput
+              ? modelsRef.where("modelName",">=",userInput).where("modelName","<",userInput.slice(0,userInput.length-1)
+                + String.fromCharCode(userInput.slice(userInput.length-1,userInput.length).charCodeAt(0)+1))
+              : modelsRef.orderBy('modelName')
+
+  var modelArray = []
+  query.get().then(querySnapshot => {
+    querySnapshot.forEach( doc => {
+      if (!modelArray.includes(doc.data().modelName)) {
+        modelArray.push(doc.data().modelName)
+      }
     })
-    .catch( error => {
-      console.log("Error getting documents: ", error)
-      callback(null)
-    })
-        .catch(error => {
-            console.log("Error getting documents: ", error)
-            callback(null)
-        })
+    callback(modelArray)
+  })
+  .catch( error => {
+    console.log("Error getting documents: ", error)
+    callback(null)
+  })
 }
 
 function getInstanceDetails(instanceID, callback) {
