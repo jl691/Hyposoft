@@ -73,14 +73,8 @@ function modifyModel(id, vendor, modelNumber, height, displayColor, ethernetPort
     })
 }
 
-function deleteModel(vendor, modelNumber) {
-    firebaseutils.modelsRef.where('vendor', '==', vendor)
-    .where('modelNumber', '==', modelNumber)
-    .get().then(qs => {
-        if (!qs.empty) {
-            qs.docs[0].ref.delete()
-        }
-    })
+function deleteModel(modelId, callback) {
+    firebaseutils.modelsRef.doc(modelId).delete().then(() => callback())
 }
 
 function getModel(vendor, modelNumber, callback) {
@@ -137,6 +131,12 @@ function doesModelDocExist(vendor, modelNumber, callback) {
     })
 }
 
+function doesModelHaveInstances(modelId, callback) {
+    firebaseutils.instanceRef.where('modelId', '==', modelId).get().then(qs => {
+        callback(!qs.empty)
+    })
+}
+
 function getSuggestedVendors(userInput, callback) {
   // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
     var query = userInput
@@ -160,4 +160,4 @@ function getSuggestedVendors(userInput, callback) {
 }
 
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
-getModelByModelname, isNewHeightOk }
+getModelByModelname, isNewHeightOk, doesModelHaveInstances }

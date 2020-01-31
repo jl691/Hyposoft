@@ -44,8 +44,11 @@ class ModelSettingsLayer extends React.Component {
             this.dbFunction = modelutils.modifyModel
 
             this.setState({
-                ...this.props.model, height: ''+this.props.model.height, ethernetPorts: ''+this.props.model.ethernetPorts,
-                powerPorts: ''+this.props.model.powerPorts, memory: ''+this.props.model.memory
+                ...this.props.model,
+                height: ''+this.props.model.height,
+                ethernetPorts: (this.props.model.ethernetPorts ? ''+this.props.model.ethernetPorts : ''),
+                powerPorts: (this.props.model.powerPorts ? ''+this.props.model.powerPorts : ''),
+                memory: (this.props.model.memory ? ''+this.props.model.memory : '')
             })
         }
     }

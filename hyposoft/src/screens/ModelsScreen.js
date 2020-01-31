@@ -16,6 +16,7 @@ import {
     DataTable,
     Grommet,
     Heading,
+    Layer,
     Text,
     TextInput,
     RangeSelector,
@@ -53,6 +54,9 @@ class ModelsScreen extends React.Component {
         this.hideAddModelDialog = this.hideAddModelDialog.bind(this)
         this.showEditDialog = this.showEditDialog.bind(this)
         this.hideEditDialog = this.hideEditDialog.bind(this)
+        this.showDeleteDialog = this.showDeleteDialog.bind(this)
+        this.hideDeleteDialog = this.hideDeleteDialog.bind(this)
+
         this.init = this.init.bind(this)
     }
 
@@ -90,6 +94,47 @@ class ModelsScreen extends React.Component {
         this.setState(currState => (
             {...currState, showEditDialog: false}
         ))
+    }
+
+    showDeleteDialog(itemNo) {
+        if (!userutils.isLoggedInUserAdmin()) {
+            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+            return
+        }
+
+        this.modelToDelete = this.state.models[itemNo-1]
+
+        this.setState(currState => (
+            {...currState, showEditDialog: false, showAddDialog: false, showDeleteDialog: true}
+        ))
+    }
+
+    hideDeleteDialog() {
+        this.setState(currState => (
+            {...currState, showDeleteDialog: false}
+        ))
+    }
+
+    deleteModel() {
+        if (!userutils.isLoggedInUserAdmin()) {
+            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+            return
+        }
+
+        modelutils.doesModelHaveInstances(this.modelToDelete.id, yes => {
+            if (yes) {
+                ToastsStore.info("Can't delete model with live instances", 3000, 'burntToast')
+                this.hideDeleteDialog()
+                return
+            }
+
+            modelutils.deleteModel(this.modelToDelete.id, () => {
+                ToastsStore.info("Model deleted", 3000, 'burntToast')
+                this.init()
+                this.hideDeleteDialog()
+            })
+
+        })
     }
 
     render() {
@@ -207,7 +252,7 @@ class ModelsScreen extends React.Component {
                                                                 {
                                                                     property: 'dummy2',
                                                                     render: datum => (
-                                                                    <FormTrash style={{cursor: 'pointer'}} onClick={() => this.showDeleteDialog(datum.username)} />
+                                                                    <FormTrash style={{cursor: 'pointer'}} onClick={() => this.showDeleteDialog(datum.itemNo)} />
                                                                 ),
                                                                     align: 'center',
                                                                     header: <Text size='small'>Delete</Text>,
@@ -374,6 +419,29 @@ class ModelsScreen extends React.Component {
 
                 {this.state.showEditDialog && (
                     <ModelSettingsLayer type='edit' parent={this} model={this.modelToEdit} />
+                )}
+
+                {this.state.showDeleteDialog && (
+                    <Layer position="center" modal onClickOutside={this.hideDeleteDialog} onEsc={this.hideDeleteDialog}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Are you sure?
+                            </Heading>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="end" >
+                                <Button label="Yes" type='submit' primary onClick={() => this.deleteModel()} />
+                                <Button
+                                    label="No"
+                                    onClick={this.hideDeleteDialog}
+                                    />
+                            </Box>
+                        </Box>
+                    </Layer>
                 )}
             </Grommet>
         )
