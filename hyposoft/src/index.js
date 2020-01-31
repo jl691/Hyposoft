@@ -1,17 +1,26 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import HomeScreen from './screens/HomeScreen'
-import RackView from "./components/RackView";
-import DashboardScreen from './screens/DashboardScreen'
-import InstanceScreen from './screens/InstanceScreen'
+
 import * as serviceWorker from './serviceWorker'
 import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import './utils/firebaseutils'
+
+import './animation.css'
 import RackDiagram from "./components/RackDiagram";
 import DetailedInstanceScreen from './screens/DetailedInstanceScreen'
 
 
+import HomeScreen from './screens/HomeScreen'
+import DashboardScreen from './screens/DashboardScreen'
+import SettingsScreen from './screens/SettingsScreen'
+import UsersScreen from './screens/UsersScreen'
+import ClaimScreen from './screens/ClaimScreen'
+import UnclaimScreen from './screens/UnclaimScreen'
+import ResetPasswordScreen from './screens/ResetPasswordScreen'
+import ModelsScreen from './screens/ModelsScreen'
 
+import RackView from "./components/RackView";
+import InstanceScreen from './screens/InstanceScreen'
 
 ReactDOM.render((
             <BrowserRouter>
@@ -20,7 +29,12 @@ ReactDOM.render((
                     <Route exact path='/racks' component={RackView} />
                     <Route exact path='/rackdiagram' component={RackDiagram} />
                     <Route exact path='/dashboard' component={DashboardScreen} />
-
+                    <Route exact path='/settings' component={SettingsScreen} />
+                    <Route exact path='/users' component={UsersScreen} />
+                    <Route path='/signup/:secret' component={ClaimScreen} />
+                    <Route path='/badsignup/:secret' component={UnclaimScreen} />
+                    <Route path='/resetpassword/:secret' component={ResetPasswordScreen} />
+                    <Route exact path='/models' component={ModelsScreen} />
                     {/* TODO: have url be the ID of the instance */}
                     <Route exact path='/instanceDetails' component={DetailedInstanceScreen}/>
                     {/* TODO: implement a functionality to take you to instance screen vs http://localhost:3000/instances*/}

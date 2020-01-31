@@ -1,4 +1,5 @@
 import * as firebaseutils from './firebaseutils'
+import * as rackutils from './rackutils'
 
 function packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment) {
     const model = {
@@ -11,7 +12,8 @@ function packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, 
         cpu: cpu.trim(),
         memory: memory,
         storage: storage.trim(),
-        comment: comment.trim()
+        comment: comment.trim(),
+        modelName: vendor.trim() + ' ' + modelNumber.trim()
     }
     return model
 }
@@ -20,20 +22,88 @@ function combineVendorAndModelNumber(vendor, modelNumber) {
     return vendor.concat(' ', modelNumber)
 }
 
-function createModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment) {
-    firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).set(packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment))
+function createModel(id, vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment, callback) {
+    // Ignore the first param
+    firebaseutils.modelsRef.add(packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)).then(() => {
+        callback()
+    })
 }
 
-function modifyModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment) {
-    firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).update(packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment))
+function isNewHeightOk(modelId, newHeight, callback) {
+    if (!modelId) {
+        callback(true)
+        return
+    }
+    firebaseutils.instanceRef.where('modelId', '==', modelId).get().then(qs => {
+        var modelsChecked = 0
+        var issuesFound = false
+        if (qs.size === 0) {
+            callback(true)
+        }
+        qs.forEach(doc => {
+            rackutils.checkInstanceFits(doc.data().racku, newHeight, doc.data().rackID , status => {
+                modelsChecked++
+                if (status) {
+                    callback(false)
+                    issuesFound = true
+                } else {
+                    if (modelsChecked === qs.size && !issuesFound) {
+                        callback(true)
+                    }
+                }
+            })
+        })
+    })
+}
+
+function modifyModel(id, vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment, callback) {
+    firebaseutils.modelsRef.doc(id).update(packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)).then(() => {
+        callback()
+    })
+
+    // Now update all instances of this model just in case the modelNumber or vendor changed
+    firebaseutils.instanceRef.where('modelId', '==', id).get().then(qs => {
+        qs.forEach(doc => {
+            doc.ref.update({
+                vendor: vendor,
+                modelNumber: modelNumber,
+                model: vendor+' '+modelNumber
+            })
+        })
+    })
 }
 
 function deleteModel(vendor, modelNumber) {
-    firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).delete()
+    firebaseutils.modelsRef.where('vendor', '==', vendor)
+    .where('modelNumber', '==', modelNumber)
+    .get().then(qs => {
+        if (!qs.empty) {
+            qs.docs[0].ref.delete()
+        }
+    })
 }
 
 function getModel(vendor, modelNumber, callback) {
-    firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber)).get().then(doc => callback(doc.data()))
+    firebaseutils.modelsRef.where('vendor', '==', vendor)
+    .where('modelNumber', '==', modelNumber)
+    .get().then(qs => {
+        if (!qs.empty) {
+            callback({...qs.docs[0].data(), id: qs.docs[0].id})
+        } else {
+            callback(null)
+        }
+    })
+}
+
+function getModelByModelname(modelName, callback) {
+    firebaseutils.modelsRef.where('modelName', '==', modelName)
+    .get().then(qs => {
+        if (!qs.empty) {
+            callback(qs.docs[0])
+        } else {
+            callback(null)
+        }
+    })
 }
 
 function getModels(startAfter, callback) {
@@ -46,7 +116,7 @@ function getModels(startAfter, callback) {
       }
 
       const models = docSnaps.docs.map( doc => (
-        {data: doc.data()}
+        {...doc.data(), id: doc.id}
       ))
       callback(models,newStartAfter)
     })
@@ -57,9 +127,9 @@ function getModels(startAfter, callback) {
 }
 
 function doesModelDocExist(vendor, modelNumber, callback) {
-    var docRef = firebaseutils.modelsRef.doc(combineVendorAndModelNumber(vendor, modelNumber))
-    docRef.get().then(doc => {
-      callback(doc.exists)
+    firebaseutils.modelsRef.where('modelName','==',vendor+' '+modelNumber).get()
+    .then(qs => {
+      callback(!qs.empty)  
     })
     .catch( error => {
       console.log("Error getting documents: ", error)
@@ -89,4 +159,5 @@ function getSuggestedVendors(userInput, callback) {
     })
 }
 
-export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels }
+export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
+getModelByModelname, isNewHeightOk }
