@@ -213,6 +213,7 @@ function getInstanceData(instanceID, callback) {
             if (height) {
                 console.log("got the height for " + instanceID)
                 callback({
+                    id: instanceID,
                     model: model,
                     hostname: hostname,
                     height: height,
