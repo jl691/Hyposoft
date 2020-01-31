@@ -23,10 +23,10 @@ class ModelSettingsLayer extends React.Component {
         vendor: '',
         modelNumber: '',
         height: '',
-        modelColor: 'BD10E0', // default colour that looks good enough
+        displayColor: 'BD10E0', // default colour that looks good enough
         ethernetPorts: '',
         powerPorts: '',
-        CPU: '',
+        cpu: '',
         memory: '',
         storage: '',
         comment: ''
@@ -34,9 +34,23 @@ class ModelSettingsLayer extends React.Component {
 
     componentWillMount() {
         // Change from add form to edit form depending on props
+        if (this.props.type === 'add') {
+            this.hideFunction = this.props.parent.hideAddModelDialog
+            this.layerTitle = 'Add Model'
+            this.dbFunction = modelutils.createModel
+        } else {
+            this.hideFunction = this.props.parent.hideEditDialog
+            this.layerTitle = 'Edit Model'
+            this.dbFunction = modelutils.modifyModel
+        }
+
+        this.setState({
+            ...this.props.model, height: ''+this.props.model.height, ethernetPorts: ''+this.props.model.ethernetPorts,
+            powerPorts: ''+this.props.model.powerPorts, memory: ''+this.props.model.memory
+        })
     }
 
-    addModel() {
+    saveModel() {
         if (!userutils.isLoggedInUserAdmin()) {
             ToastsStore.info('Only admins can do this', 3000, 'burntToast')
             return
@@ -62,6 +76,7 @@ class ModelSettingsLayer extends React.Component {
             return
         }
 
+
         if (this.state.ethernetPorts.trim() !== '' &&
          (isNaN(this.state.ethernetPorts.trim()) || !Number.isInteger(parseFloat(this.state.ethernetPorts.trim())) || parseInt(this.state.ethernetPorts.trim()) <= 0)) {
              ToastsStore.info('Ethernet ports should be a non-negative integer', 3000, 'burntToast')
@@ -79,25 +94,40 @@ class ModelSettingsLayer extends React.Component {
                ToastsStore.info('Memory should be a non-negative integer', 3000, 'burntToast')
                return
            }
+        modelutils.getModel(this.state.vendor.trim(), this.state.modelNumber.trim(), doc => {
+            if (doc && doc.id !== this.state.id) {
+                ToastsStore.info(this.state.modelNumber.trim() + ' by ' + this.state.vendor.trim() + ' exists', 3000, 'burntToast')
+                return
+            } else {
+                modelutils.isNewHeightOk(this.state.id, this.state.height, ok => {
+                    if (!ok) {
+                        ToastsStore.info('New height conflicts with existing instances')
+                        return
+                    }
+                    this.dbFunction(this.state.id, this.state.vendor,
+                        this.state.modelNumber, parseInt(this.state.height),
+                        this.state.displayColor, parseInt(this.state.ethernetPorts),
+                        parseInt(this.state.powerPorts), this.state.cpu,
+                        parseInt(this.state.memory), this.state.storage,
+                        this.state.comment, () => {
+                            ToastsStore.info('Model saved', 3000, 'burntToast')
+                            this.hideFunction()
+                            this.props.parent.init()
+                        })
+                })
+            }
+        })
 
-    }
-
-    saveModel() {
-        if (this.props.type === 'add') {
-            this.addModel()
-        } else {
-            this.updateModel()
-        }
     }
 
     render() {
         return (
-            <Layer position="center" modal onClickOutside={this.props.parent.hideAddModelDialog} onEsc={this.props.parent.hideAddModelDialog}>
+            <Layer position="center" modal onClickOutside={this.hideFunction} onEsc={this.hideFunction}>
                 <Box pad="medium" gap="small" width="large">
                     <Heading level={4} margin="none">
-                        Add Model
+                        {this.layerTitle}
                     </Heading>
-                    <p>Add a new model (uniquely identified by a vendor + model number combo) to the databse using this form.</p>
+                    <p>Models are uniquely identified by a model number for each given Vendor.</p>
 
                     <Form>
                         <Box direction='row' justify='center' gap='medium'>
@@ -172,13 +202,13 @@ class ModelSettingsLayer extends React.Component {
                                         borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                         width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                     }}
-                                    placeholder="CPU (Optional)"
+                                    placeholder="cpu (Optional)"
                                     onChange={e => {
                                         const value = e.target.value
-                                        this.setState(oldState => ({...oldState, CPU: value}))
+                                        this.setState(oldState => ({...oldState, cpu: value}))
                                     }}
-                                    value={this.state.CPU}
-                                    title='CPU'
+                                    value={this.state.cpu}
+                                    title='cpu'
                                     />
                                 <TextInput style={{
                                         borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
@@ -207,7 +237,7 @@ class ModelSettingsLayer extends React.Component {
                                 <TextArea style={{
                                         borderRadius: 20, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                         width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                        minHeight: 100, marginBottom: 20
+                                        minHeight: 100
                                     }}
                                     placeholder="Comment (Optional)"
                                     onChange={e => {
@@ -221,9 +251,9 @@ class ModelSettingsLayer extends React.Component {
                             </Box>
                             <Box>
                                 <SketchPicker disableAlpha
-                                    color={ this.state.modelColor }
+                                    color={ this.state.displayColor }
                                     onChange={color => {
-                                        this.setState(oldState => ({...oldState, modelColor: color.hex}))
+                                        this.setState(oldState => ({...oldState, displayColor: color.hex}))
                                       }} />
                                 <Text size='xsmall' alignSelf='center' margin={{top: 'medium'}}>Display color</Text>
                             </Box>
@@ -238,7 +268,7 @@ class ModelSettingsLayer extends React.Component {
                             <Button label="Save" type='submit' primary onClick={() => this.saveModel()} />
                             <Button
                                 label="Cancel"
-                                onClick={this.props.parent.hideAddModelDialog}
+                                onClick={this.hideFunction}
                                 />
                         </Box>
                     </Form>

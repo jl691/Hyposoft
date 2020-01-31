@@ -38,7 +38,7 @@ class ModelsScreen extends React.Component {
             }
             var i = 1
             this.setState({models: docSnaps.docs.map(doc => (
-                {...doc.data(), itemNo: i++}
+                {...doc.data(), id: doc.id, itemNo: i++}
             ))})
         })
     }
@@ -51,6 +51,8 @@ class ModelsScreen extends React.Component {
         super()
         this.showAddModelDialog = this.showAddModelDialog.bind(this)
         this.hideAddModelDialog = this.hideAddModelDialog.bind(this)
+        this.showEditDialog = this.showEditDialog.bind(this)
+        this.hideEditDialog = this.hideEditDialog.bind(this)
         this.init = this.init.bind(this)
     }
 
@@ -61,13 +63,32 @@ class ModelsScreen extends React.Component {
         }
 
         this.setState(currState => (
-            {...currState, showAddDialog: true}
+            {...currState, showAddDialog: true, showEditDialog: false}
         ))
     }
 
     hideAddModelDialog() {
         this.setState(currState => (
             {...currState, showAddDialog: false}
+        ))
+    }
+
+    showEditDialog(itemNo) {
+        if (!userutils.isLoggedInUserAdmin()) {
+            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+            return
+        }
+
+        this.modelToEdit = this.state.models[itemNo-1]
+
+        this.setState(currState => (
+            {...currState, showEditDialog: true, showAddDialog: false}
+        ))
+    }
+
+    hideEditDialog() {
+        this.setState(currState => (
+            {...currState, showEditDialog: false}
         ))
     }
 
@@ -177,7 +198,7 @@ class ModelsScreen extends React.Component {
                                                                 {
                                                                     property: 'dummy',
                                                                     render: datum => (
-                                                                    <FormEdit style={{cursor: 'pointer'}} onClick={() => this.showEditDialog(datum.username)} />
+                                                                    <FormEdit style={{cursor: 'pointer'}} onClick={() => this.showEditDialog(datum.itemNo)} />
                                                                 ),
                                                                     align: 'center',
                                                                     header: <Text size='small'>Edit</Text>,
@@ -349,6 +370,10 @@ class ModelsScreen extends React.Component {
                 <ToastsContainer store={ToastsStore} lightBackground/>
                 {this.state.showAddDialog && (
                     <ModelSettingsLayer type='add' parent={this} />
+                )}
+
+                {this.state.showEditDialog && (
+                    <ModelSettingsLayer type='edit' parent={this} model={this.modelToEdit} />
                 )}
             </Grommet>
         )

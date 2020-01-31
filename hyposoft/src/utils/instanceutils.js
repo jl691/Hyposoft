@@ -1,6 +1,6 @@
 import { instanceRef, racksRef, modelsRef } from './firebaseutils'
 import * as rackutils from './rackutils'
-
+import * as modelutils from './modelutils'
 
 //TODO: admin vs. user privileges
 
@@ -34,35 +34,41 @@ function getInstance(callback) {
 }
 
 function addInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
-    instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum) {
-        //Allen wants me to add a vendor and modelname field to my document
-        if (errorMessage) {
-            callback(errorMessage)
-            console.log(errorMessage)
+    modelutils.getModelByModelname(model, doc => {
+        if (!doc) {
+            callback('Model does not exist')
+        } else {
+            instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum, rackID) {
+                //Allen wants me to add a vendor and modelname field to my document
+                if (errorMessage) {
+                    callback(errorMessage)
+                    console.log(errorMessage)
 
-        }
-        //The rack doesn't exist, or it doesn't fit on the rack at rackU
-        else {
+                }
+                //The rack doesn't exist, or it doesn't fit on the rack at rackU
+                else {
+                    instanceRef.add({
+                        modelId: doc.id,
+                        instance_id: instanceid,
+                        model: model,
+                        hostname: hostname,
+                        rack: rack,
+                        rackU: racku,
+                        owner: owner,
+                        comment: comment,
+                        rackID: rackID,
+                        //This is for rack usage reports
+                        vendor: modelVendor,
+                        modelNumber: modelNum
 
-            instanceRef.add({
-                instance_id: instanceid,
-                model: model,
-                hostname: hostname,
-                rack: rack,
-                rackU: racku,
-                owner: owner,
-                comment: comment,
 
-                //This is for rack usage reports
-                vendor: modelVendor,
-                modelNumber: modelNum
-
-
-            }).then(function (docRef) {
-                callback(null);
-            }).catch(function (error) {
-               // callback("Error");
-                console.log(error)
+                    }).then(function (docRef) {
+                        callback(null);
+                    }).catch(function (error) {
+                       // callback("Error");
+                        console.log(error)
+                    })
+                }
             })
         }
     })
@@ -72,13 +78,13 @@ function addInstance(instanceid, model, hostname, rack, racku, owner, comment, c
 // This will check if the instance fits on rack: fits within in the height of rack, and does not conflict with other instances
 
 function instanceFitsOnRack(instanceRack, rackU, model, callback) {
- 
+
     let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
     let rackID = null;
-    
+
     rackutils.getRackID(rackRow, rackNum, id =>{
         if(id){
             console.log(id)
@@ -97,16 +103,14 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
         if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number) {
             let rackHeight = querySnapshot.docs[0].data().height
 
-            var docRef = modelsRef.doc(String(model))
-            docRef.get().then(doc => {
-               
+            modelutils.getModelByModelname(model, doc => {
                 //doc.data().height refers to model height
                 if (rackHeight >= parseInt(rackU) + doc.data().height) {
                     //We know the instance will fit on the rack, but now does it conflict with anything?
                     console.log(rackID)
                     rackutils.checkInstanceFits(parseInt(rackU), parseInt(doc.data().height), rackID , function(status) {
                         console.log(rackU)
-                        if(status){ //means that there are conflicts. 
+                        if(status){ //means that there are conflicts.
                             var height = doc.data().height
                             var rackedAt = rackU
                             var conflicts = "";
@@ -119,10 +123,10 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                         }
                         else{//status callback is null, no conflits
                             console.log("Instance fits in rack with no conflicts")
-                            callback(null, doc.data().modelNumber, doc.data().vendor)
+                            callback(null, doc.data().modelNumber, doc.data().vendor, rackID)
 
                         }
-                    })                                
+                    })
                 }
                 else {
                     console.log("Instance of this model at this rackU will not fit on the rack")
@@ -130,17 +134,12 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                     callback(errMessage)
 
                 }
-
             })
-                .catch(error => {
-                    console.log("Error getting documents: ", error)
-                    callback("Error")
-                })
         }
         else {
             console.log("Rack doesn't exist")
-            var errMessage = "Error adding instance: rack does not exist"
-            callback(errMessage)
+            var errMessage2 = "Error adding instance: rack does not exist"
+            callback(errMessage2)
         }
     })
 }
