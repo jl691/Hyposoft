@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { Button, Grommet, Form, FormField, Heading, TextInput, Box, List } from 'grommet'
 import * as instutils from '../utils/instanceutils'
 import theme from '../theme'
+import InstanceScreen from '../screens/InstanceScreen'
 
 export default class DetailedInstanceScreen extends Component {
     constructor(props) {
@@ -13,6 +14,9 @@ export default class DetailedInstanceScreen extends Component {
 
 
         }
+    }
+    static contextTypes = {
+        router: () => true, // replace with PropTypes.object if you use them
     }
     componentDidMount() {
         console.log("DetailedInstanceScreen")
@@ -37,7 +41,7 @@ export default class DetailedInstanceScreen extends Component {
 
             <Router>
                 <React.Fragment>
-                 
+
                     {/* CHange exact path to be custom, also call this.props.InstanceIDFromparent */}
                     <Route path={`/instances/${this.props.match.params.instanceID}`} />
 
@@ -62,13 +66,26 @@ export default class DetailedInstanceScreen extends Component {
 
                                 ]}
                             />
-                            <Box direction="row">
-                                <Button
-                                    margin="xlarge"
-                                    label="Back to all instances"
-                                    onClick={() => { }}
 
-                                />
+
+                            <Box direction="row">
+                                <Link to="/instances" >
+
+
+                                    <Button
+                                        margin="xlarge"
+                                        label="Go back to all instances"
+                                        onClick={new InstanceScreen}
+
+                                    />
+
+                                    {/* this.props.history.push */}
+                                </Link>
+
+
+
+
+                                {/* TODO: waiting for Anshu to have detailed model views */}
                                 <Button
                                     margin="xlarge"
                                     label="View model details"
