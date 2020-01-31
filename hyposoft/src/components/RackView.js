@@ -7,7 +7,6 @@ import * as rackutils from "../utils/rackutils";
 import AddRackView from "./AddRackView";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import DeleteRackView from "./DeleteRackView"
-import {Link} from "react-router-dom";
 import HomeButton from "./HomeButton";
 import UserMenu from "./UserMenu";
 import AppBar from "./AppBar";
@@ -79,6 +78,16 @@ class RackView extends React.Component {
                             onClick={() => this.setState({popupType: "Diagram"})}/>
                 </Box>
             );
+        }
+    }
+
+    RackDeleteButton(datum) {
+        if(userutils.isLoggedInUserAdmin()) {
+            return (
+                <Button icon={<Trash/>} label="Delete" onClick={() => {
+                    this.setState({popupType: 'Delete', deleteID: datum.id});
+                }}/>
+            )
         }
     }
 
@@ -264,12 +273,10 @@ class RackView extends React.Component {
                                    },
                                    {
                                        property: "modify",
-                                       header: "Modify",
+                                       header: "Actions",
                                        render: datum => (
                                            <Box direction="row">
-                                               <Button icon={<Trash/>} label="Delete" onClick={() => {
-                                                   this.setState({popupType: 'Delete', deleteID: datum.id});
-                                               }}/>
+                                               {this.RackDeleteButton(datum)}
                                                <Button icon={<Analytics/>} label="Report" onClick={() => {
                                                    this.setState({popupType: 'Report', rackReport: datum.id})
                                                }}/>

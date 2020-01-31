@@ -31,4 +31,4 @@ var instanceRef = db.collection('instances')
 var racksRef = db.collection('racks')
 var modelsRef = db.collection('models')
 
-export { hashAndSalt, usersRef, racksRef, instanceRef, modelsRef, claimsRef, recoveriesRef }
+export { hashAndSalt, usersRef, racksRef, instanceRef, modelsRef, claimsRef, recoveriesRef, db, firebase }

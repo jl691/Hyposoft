@@ -16,9 +16,6 @@ import * as userutils from "../utils/userutils";
 
 class InstanceScreen extends Component {
 
-    rangeStart;
-    rangeEnd;
-
     constructor(props) {
         super(props);
         this.state = {
@@ -32,18 +29,15 @@ class InstanceScreen extends Component {
             updateRack: "",
             updateRackU: "",
             updateOwner: "",
-            updateComment: "",
-            rangeNumberStart: "",
-            rangeNumberEnd: ""
+            updateComment: ""
+
         }
 
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
         this.handleDeleteButton = this.handleDeleteButton.bind(this);
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
-        this.handleChange = this.handleChange.bind(this);
-        this.handleChangeRange = this.handleChangeRange.bind(this);
 
-        this.instanceTable = React.createRef();
+
     }
     handleChange(event) {
         this.setState({
@@ -51,46 +45,12 @@ class InstanceScreen extends Component {
         });
     }
 
-    handleChangeRange(event) {
-/*        console.log("big booty" + event.target.name)
-        this.setState({
-            [event.target.name]: event.target.value
-        });
-        if(event.target.name === "rangeNumberStart"){
-            console.log("start")
-            if (/[A-Z]\d+/.test(event.target.value) && /[A-Z]\d+/.test(this.state.rangeNumberEnd)) {
-                this.instanceTable.current.handleFilter(event.target.value, this.state.rangeNumberEnd);
-            }
-        } else if(event.target.name === "rangeNumberEnd"){
-            console.log("end")
-            if (/[A-Z]\d+/.test(this.state.rangeNumberStart) && /[A-Z]\d+/.test(event.target.value)) {
-                this.instanceTable.current.handleFilter(this.state.rangeLetterStart, event.target.value);
-            }
-        }
-        this.setState({
-            [event.target.name]: event.target.value
-        });
-        console.log(this.state.rangeNumberStart + " yeeters " + this.state.rangeNumberEnd)*/
-        if(event.target.name === "rangeNumberStart"){
-            console.log("start")
-            this.rangeStart = event.target.value;
-        } else if(event.target.name === "rangeNumberEnd"){
-            console.log("end")
-            this.rangeEnd = event.target.value;
-        }
-        if (/[A-Z]\d+/.test(this.rangeStart) && /[A-Z]\d+/.test(this.rangeEnd)) {
-            this.instanceTable.current.handleFilter(this.rangeStart, this.rangeEnd);
-        } else {
-            this.instanceTable.current.restoreDefault();
-        }
-    }
 
-    handleCancelPopupChange(){
+    handleCancelPopupChange(event) {
         this.setState({
             popupType: ""
         });
-        //TODO: READ https://stackoverflow.com/questions/37949981/call-child-method-from-parent
-        this.instanceTable.current.forceRefresh();
+
     }
     //This handles the delete screen popping up from pressing on the trash can, not the actual backend of what happens when the delete is confirmed
     handleDeleteButton = (datumID) => {
@@ -121,20 +81,7 @@ class InstanceScreen extends Component {
 
     }
 
-    addButton() {
-        if(userutils.isLoggedInUserAdmin()){
-            return (<Button
-                icon={<Add />}
-                label={
-                    <Text>
-                        Add Instance
-                    </Text>
-                }
 
-                onClick={() => this.setState({ popupType: "Add" })}
-            />);
-        }
-    }
 
     render() {
         //  const [value, setValue] = React.useState('medium');
@@ -148,15 +95,9 @@ class InstanceScreen extends Component {
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <AddInstanceForm
-                        parentCallback={this.handleCancelPopupChange}
+                        cancelCallbackFromParent={this.handleCancelPopupChange}
                     //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
                     // parentCallbackRefresh={this.callbackFunctionRefresh}
-                    />
-                    <Button
-                        margin="small"
-                        label="Cancel"
-                        onClick={() => this.setState({popupType: ""})}
-
                     />
 
                 </Layer>
@@ -169,17 +110,12 @@ class InstanceScreen extends Component {
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <DeleteInstancePopup
-                        parentCallback={this.handleCancelPopupChange}
+                        cancelCallbackFromParent={this.handleCancelPopupChange}
 
                         deleteIDFromParent={this.state.deleteID}
 
                     />
-                    <Button
-                        margin="small"
-                        label="Cancel"
-                        onClick={() => this.setState({popupType: ""})}
 
-                    />
                 </Layer>
             )
 
@@ -196,7 +132,7 @@ class InstanceScreen extends Component {
 
                     
                     <EditInstanceForm
-                        parentCallback={this.handleCancelPopupChange}
+                        cancelCallbackFromParent={this.handleCancelPopupChange}
 
                         //need to pass in all the data though for the update
 
@@ -209,12 +145,6 @@ class InstanceScreen extends Component {
                         updateCommentFromParent={this.state.updateComment}
 
 
-
-                    />
-                    <Button
-                        margin="small"
-                        label="Cancel"
-                        onClick={() => this.setState({popupType: ""})}
 
                     />
 
@@ -241,9 +171,9 @@ class InstanceScreen extends Component {
 
                     <Box gap='small' direction="column" margin='small'>
                         <Text> Range of Racks </Text>
-                        <TextInput name="rangeNumberStart" placeholder="eg. B1" onChange={this.handleChangeRange} />
+                        <TextInput name="rangeNumberStart" placeholder="eg. B1" onChange={this.handleChange} />
                         to
-                        <TextInput name="rangeNumberEnd" placeholder="eg. C21" onChange={this.handleChangeRange} />
+                        <TextInput name="rangeNumberEnd" placeholder="eg. C21" onChange={this.handleChange} />
                     </Box>
 
                     <Box gap='small' margin='small'>
@@ -260,15 +190,25 @@ class InstanceScreen extends Component {
 
 
                     {/* Button to Add an Instance: */}
-                    {this.addButton()}
+                    <Button
+                        icon={<Add />}
+                        label={
+                            <Text>
+                                Add Instance
+                            </Text>
+                        }
+
+                        onClick={() => this.setState({ popupType: "Add" })}
+                    />
                 </FilterBarInstances>
 
                 <InstanceTable
                     deleteButtonCallbackFromParent={this.handleDeleteButton}
 
                     UpdateButtonCallbackFromParent={this.handleUpdateButton}
-                
-                    ref={this.instanceTable}
+
+                    
+
 
                 />
 

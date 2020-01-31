@@ -4,7 +4,11 @@ import ReactDOM from 'react-dom'
 import * as serviceWorker from './serviceWorker'
 import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import './utils/firebaseutils'
+
 import './animation.css'
+import RackDiagram from "./components/RackDiagram";
+import DetailedInstanceScreen from './screens/DetailedInstanceScreen'
+
 
 import HomeScreen from './screens/HomeScreen'
 import DashboardScreen from './screens/DashboardScreen'
@@ -17,7 +21,6 @@ import ModelsScreen from './screens/ModelsScreen'
 
 import RackView from "./components/RackView";
 import InstanceScreen from './screens/InstanceScreen'
-import RackDiagram from "./components/RackDiagram";
 
 ReactDOM.render((
             <BrowserRouter>
@@ -32,6 +35,8 @@ ReactDOM.render((
                     <Route path='/badsignup/:secret' component={UnclaimScreen} />
                     <Route path='/resetpassword/:secret' component={ResetPasswordScreen} />
                     <Route exact path='/models' component={ModelsScreen} />
+                    {/* TODO: have url be the ID of the instance */}
+                    <Route exact path='/instanceDetails' component={DetailedInstanceScreen}/>
                     {/* TODO: implement a functionality to take you to instance screen vs http://localhost:3000/instances*/}
                     <Route path='/instances' component={InstanceScreen} />
                 </Switch>

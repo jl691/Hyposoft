@@ -24,6 +24,7 @@ export default class DeleteInstancePopup extends Component {
                 if (status) {
 
                     ToastsStore.success('Deleted instance');
+                    this.props.parentCallback(true);
 
                 } else {
                     ToastsStore.error('Error deleting instance.');
@@ -56,14 +57,6 @@ export default class DeleteInstancePopup extends Component {
                             margin="medium"
                             type="submit"
                             primary label="Yes"
-                        />
-                        <Button
-                            alignSelf="center"
-                            margin="small"
-                            label="Cancel"
-                            //TODO: make sure this is the correct callback
-                            onClick={() => this.props.cancelCallbackFromParent()}
-
                         />
 
                     </Form >

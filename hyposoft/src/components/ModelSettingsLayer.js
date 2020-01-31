@@ -42,12 +42,12 @@ class ModelSettingsLayer extends React.Component {
             this.hideFunction = this.props.parent.hideEditDialog
             this.layerTitle = 'Edit Model'
             this.dbFunction = modelutils.modifyModel
-        }
 
-        this.setState({
-            ...this.props.model, height: ''+this.props.model.height, ethernetPorts: ''+this.props.model.ethernetPorts,
-            powerPorts: ''+this.props.model.powerPorts, memory: ''+this.props.model.memory
-        })
+            this.setState({
+                ...this.props.model, height: ''+this.props.model.height, ethernetPorts: ''+this.props.model.ethernetPorts,
+                powerPorts: ''+this.props.model.powerPorts, memory: ''+this.props.model.memory
+            })
+        }
     }
 
     saveModel() {
@@ -77,22 +77,33 @@ class ModelSettingsLayer extends React.Component {
         }
 
 
+        var ethernetPorts = null
         if (this.state.ethernetPorts.trim() !== '' &&
          (isNaN(this.state.ethernetPorts.trim()) || !Number.isInteger(parseFloat(this.state.ethernetPorts.trim())) || parseInt(this.state.ethernetPorts.trim()) <= 0)) {
              ToastsStore.info('Ethernet ports should be a non-negative integer', 3000, 'burntToast')
              return
-         }
+         } else if (this.state.ethernetPorts.trim() !== '') {
+            ethernetPorts=parseInt(this.state.ethernetPorts)
+        }
 
+        var powerPorts = null
          if (this.state.powerPorts.trim() !== '' &&
           (isNaN(this.state.powerPorts.trim()) || !Number.isInteger(parseFloat(this.state.powerPorts.trim())) || parseInt(this.state.powerPorts.trim()) <= 0)) {
               ToastsStore.info('Power ports should be a non-negative integer', 3000, 'burntToast')
               return
+          } else if (this.state.powerPorts.trim() !== '') {
+              powerPorts=parseInt(this.state.powerPorts)
           }
 
+
+
+          var memory = null
           if (this.state.memory.trim() !== '' &&
            (isNaN(this.state.memory.trim()) || !Number.isInteger(parseFloat(this.state.memory.trim())) || parseInt(this.state.memory.trim()) <= 0)) {
                ToastsStore.info('Memory should be a non-negative integer', 3000, 'burntToast')
                return
+           } else if (this.state.memory.trim() !== '') {
+               memory=parseInt(this.state.memory)
            }
         modelutils.getModel(this.state.vendor.trim(), this.state.modelNumber.trim(), doc => {
             if (doc && doc.id !== this.state.id) {
@@ -106,9 +117,9 @@ class ModelSettingsLayer extends React.Component {
                     }
                     this.dbFunction(this.state.id, this.state.vendor,
                         this.state.modelNumber, parseInt(this.state.height),
-                        this.state.displayColor, parseInt(this.state.ethernetPorts),
-                        parseInt(this.state.powerPorts), this.state.cpu,
-                        parseInt(this.state.memory), this.state.storage,
+                        this.state.displayColor, ethernetPorts,
+                        powerPorts, this.state.cpu,
+                        memory, this.state.storage,
                         this.state.comment, () => {
                             ToastsStore.info('Model saved', 3000, 'burntToast')
                             this.hideFunction()
