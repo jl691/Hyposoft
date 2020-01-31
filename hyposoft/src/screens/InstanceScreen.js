@@ -20,6 +20,9 @@ import * as userutils from "../utils/userutils";
 
 class InstanceScreen extends Component {
 
+    rangeStart;
+    rangeEnd;
+
     constructor(props) {
         super(props);
         this.state = {
@@ -33,13 +36,16 @@ class InstanceScreen extends Component {
             updateRack: "",
             updateRackU: "",
             updateOwner: "",
-            updateComment: ""
-
+            updateComment: "",
+            rangeNumberStart: "",
+            rangeNumberEnd: ""
         }
 
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
         this.handleDeleteButton = this.handleDeleteButton.bind(this);
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
+        this.handleChange = this.handleChange.bind(this);
+        this.handleChangeRange = this.handleChangeRange.bind(this);
 
         this.instanceTable = React.createRef();
     }
@@ -49,7 +55,41 @@ class InstanceScreen extends Component {
         });
     }
 
-    handleCancelPopupChange() {
+    handleChangeRange(event) {
+/*        console.log("big booty" + event.target.name)
+        this.setState({
+            [event.target.name]: event.target.value
+        });
+        if(event.target.name === "rangeNumberStart"){
+            console.log("start")
+            if (/[A-Z]\d+/.test(event.target.value) && /[A-Z]\d+/.test(this.state.rangeNumberEnd)) {
+                this.instanceTable.current.handleFilter(event.target.value, this.state.rangeNumberEnd);
+            }
+        } else if(event.target.name === "rangeNumberEnd"){
+            console.log("end")
+            if (/[A-Z]\d+/.test(this.state.rangeNumberStart) && /[A-Z]\d+/.test(event.target.value)) {
+                this.instanceTable.current.handleFilter(this.state.rangeLetterStart, event.target.value);
+            }
+        }
+        this.setState({
+            [event.target.name]: event.target.value
+        });
+        console.log(this.state.rangeNumberStart + " yeeters " + this.state.rangeNumberEnd)*/
+        if(event.target.name === "rangeNumberStart"){
+            console.log("start")
+            this.rangeStart = event.target.value;
+        } else if(event.target.name === "rangeNumberEnd"){
+            console.log("end")
+            this.rangeEnd = event.target.value;
+        }
+        if (/[A-Z]\d+/.test(this.rangeStart) && /[A-Z]\d+/.test(this.rangeEnd)) {
+            this.instanceTable.current.handleFilter(this.rangeStart, this.rangeEnd);
+        } else {
+            this.instanceTable.current.restoreDefault();
+        }
+    }
+
+    handleCancelPopupChange(){
         this.setState({
             popupType: ""
         });
@@ -259,8 +299,6 @@ class InstanceScreen extends Component {
 
                 />
 
-                {/* TODO: need a unique url, Use instanceid as part of route */}
-                <Route exact path="/instanceDetails" component={DetailedInstanceScreen}/>
 
             </Router>
 

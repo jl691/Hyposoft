@@ -13,6 +13,7 @@
     "js-sha256": "^0.9.0",
     "polished": "latest",
     "react": "^16.12.0",
+    "react-color": "^2.18.0",
     "react-dom": "^16.12.0",
     "react-router": "^5.1.2",
     "react-router-dom": "^5.1.2",
