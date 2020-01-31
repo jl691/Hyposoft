@@ -17,16 +17,35 @@ class RackUsageReport extends React.Component {
     }
 
     componentDidMount() {
-        rackutils.generateRackUsageReport(this.props.rack, (count, total, vendor, model, owner) => {
-            this.setState({
-                initialLoaded: true,
-                count: count,
-                total: total,
-                vendor: vendor,
-                model: model,
-                owner: owner
+        console.log(this.props.type)
+        if(this.props.type === "single"){
+            rackutils.generateRackUsageReport(this.props.rack, (count, total, vendor, model, owner) => {
+                this.setState({
+                    initialLoaded: true,
+                    count: count,
+                    total: total,
+                    vendor: vendor,
+                    model: model,
+                    owner: owner
+                })
             })
-        })
+        } else if(this.props.type === "all"){
+            console.log("made it ")
+            rackutils.generateAllRackUsageReports((count, total, vendor, model, owner) => {
+                console.log("count");
+                console.log(count);
+                console.log("vendor map");
+                console.log(vendor);
+                this.setState({
+                    initialLoaded: true,
+                    count: count,
+                    total: total,
+                    vendor: vendor,
+                    model: model,
+                    owner: owner
+                })
+            })
+        }
     }
 
     convertMapToData(map, name){

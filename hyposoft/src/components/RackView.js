@@ -76,13 +76,22 @@ class RackView extends React.Component {
                             onClick={() => this.setState({popupType: "Remove"})}/>
                     <Button icon={<View/>} label={"View"} style={{width: '150px'}}
                             onClick={() => this.setState({popupType: "Diagram"})}/>
+                    <Button icon={<Analytics/>} label={"Report"} style={{width: '150px'}}
+                            onClick={() => this.setState({popupType: "ReportAll"})}/>
                 </Box>
             );
+        } else {
+            return (
+                <Box direction={"row"}>
+                    <Button icon={<View/>} label={"View"} style={{width: '150px'}}
+                            onClick={() => this.setState({popupType: "ReportAll"})}/>
+                </Box>
+            )
         }
     }
 
     RackDeleteButton(datum) {
-        if(userutils.isLoggedInUserAdmin()) {
+        if (userutils.isLoggedInUserAdmin()) {
             return (
                 <Button icon={<Trash/>} label="Delete" onClick={() => {
                     this.setState({popupType: 'Delete', deleteID: datum.id});
@@ -196,7 +205,16 @@ class RackView extends React.Component {
             popup = (
                 <Layer onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
-                    <RackUsageReport rack={this.state.rackReport}/>
+                    <RackUsageReport rack={this.state.rackReport} type={"single"}/>
+                    <Button label="Close" icon={<Close/>}
+                            onClick={() => this.setState({popupType: ""})}/>
+                </Layer>
+            )
+        } else if (popupType === 'ReportAll') {
+            popup = (
+                <Layer onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+                    <RackUsageReport rack={this.state.rackReport} type={"all"}/>
                     <Button label="Close" icon={<Close/>}
                             onClick={() => this.setState({popupType: ""})}/>
                 </Layer>
@@ -283,7 +301,7 @@ class RackView extends React.Component {
                                            </Box>
                                        )
                                    }
-                               ]} data={this.state.racks}/>
+                               ]} data={this.state.racks} sortable={true}/>
                 </Box>
                 {popup}
                 <ToastsContainer store={ToastsStore}/>
