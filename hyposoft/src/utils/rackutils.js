@@ -1,4 +1,6 @@
 import * as firebaseutils from "./firebaseutils";
+import * as modelutils from "./modelutils";
+import {modelsRef} from "./firebaseutils";
 
 function getRackAt(start, callback) {
     firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).startAfter(start).get().then(docSnaps => {
@@ -181,8 +183,10 @@ function generateRackDiagram(rackID, callback) {
         let number = docRefRack.data().number;
         if (docRefRack.data().instances.length) {
             docRefRack.data().instances.forEach(instanceID => {
+                console.log("found instances for " + rackID)
                 getInstanceData(instanceID, result => {
                     if (result) {
+                        console.log("found instance data for " + instanceID)
                         rackInstances.push(result);
                         if (rackInstances.length === docRefRack.data().instances.length) {
                             callback(letter, number, rackInstances);
@@ -201,11 +205,13 @@ function generateRackDiagram(rackID, callback) {
 function getInstanceData(instanceID, callback) {
     let position, model, hostname;
     firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
+        console.log("found the instance doc for  " + instanceID)
         hostname = docRefInstance.data().hostname;
         position = docRefInstance.data().rackU;
         model = docRefInstance.data().model;
         getModelHeightColor(model, (height, color) => {
             if (height) {
+                console.log("got the height for " + instanceID)
                 callback({
                     model: model,
                     hostname: hostname,
@@ -218,16 +224,27 @@ function getInstanceData(instanceID, callback) {
             }
         })
     }).catch(function (error) {
+        console.log(error)
         callback(null);
     })
 }
 
 function getModelHeightColor(model, callback) {
-    firebaseutils.modelsRef.doc(model).get().then(function (docRefModel) {
-        callback(docRefModel.data().height, docRefModel.data().displayColor);
-    }).catch(function (error) {
-        console.log(error)
-        callback(null);
+    console.log("Attempting to get model " + model)
+    modelutils.getModelByModelname(model, result => {
+        if(result) {
+            console.log("get A RESULT OF " + result)
+            console.log(result.data());
+            firebaseutils.modelsRef.doc(result.id).get().then(function (docRefModel) {
+                callback(docRefModel.data().height, docRefModel.data().displayColor);
+            }).catch(function (error) {
+                console.log(error)
+                callback(null);
+            })
+        } else {
+            console.log("Couldn't find it")
+            callback(null, null);
+        }
     })
 }
 
@@ -321,25 +338,31 @@ function checkInstanceFits(position, height, rack, callback) { //rackU, modelHei
                 console.log("this rack contains " + instanceID);
                 firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
                     //find height
-                    getModelHeightColor((docRefInstance.data().model), (height, color) => {
-                        if(height){
-                            console.log("found the model height! " + height);
-                            let instPositions = [];
-                            for(let i=docRefInstance.data().rackU;i<docRefInstance.data().rackU+height;i++){
-                                instPositions.push(i);
-                            }
-                            //check for intersection
-                            let intersection = tentPositions.filter(value => instPositions.includes(value));
-                            if(intersection.length){
-                                console.log("conflicting!")
-                                conflicting.push(docRefInstance.id);
-                            }
-                            instanceCount++;
-                            if(instanceCount === docRefRack.data().instances.length){
-                                    console.log("done! calling back")
-                                    console.log("instancecount is " + instanceCount + " and length is " + docRefRack.data().instances.length)
-                                    callback(conflicting);
-                            }
+                    modelutils.getModelByModelname(docRefInstance.data().model, result => {
+                        if(result) {
+                            getModelHeightColor((docRefInstance.data().model), (height, color) => {
+                                if(height){
+                                    console.log("found the model height! " + height);
+                                    let instPositions = [];
+                                    for(let i=docRefInstance.data().rackU;i<docRefInstance.data().rackU+height;i++){
+                                        instPositions.push(i);
+                                    }
+                                    //check for intersection
+                                    let intersection = tentPositions.filter(value => instPositions.includes(value));
+                                    if(intersection.length){
+                                        console.log("conflicting!")
+                                        conflicting.push(docRefInstance.id);
+                                    }
+                                    instanceCount++;
+                                    if(instanceCount === docRefRack.data().instances.length){
+                                        console.log("done! calling back")
+                                        console.log("instancecount is " + instanceCount + " and length is " + docRefRack.data().instances.length)
+                                        callback(conflicting);
+                                    }
+                                }
+                            })
+                        } else {
+                            callback(null);
                         }
                     })
                 });
