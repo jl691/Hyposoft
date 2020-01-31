@@ -29,16 +29,14 @@ export default class InstanceDetailView extends Component {
     }
 
     render() {
-        console.log(this.state.instance)
-        console.log(this.props.instIDFromParent)
+  
         return (
             
             <Router>
                 <React.Fragment>
                     {/* CHange exact path to be custom, also call this.props.InstanceIDFromparent */}
-                    {/* <Route exact path={`/instanceDetails/${this.props.instIDFromParent}`} /> */}
-                    <Route exact path={`/instanceDetails/nUIqYpZqe0GIg1wBEdjh`} />
-                  
+                    <Route exact path={`/instances/${this.props.match.params.instanceID}`} />
+            
                     <Grommet theme={theme} full className='fade'>
                         <Box>
                             <Heading level="2"> Detailed Instance View </Heading>
@@ -49,7 +47,7 @@ export default class InstanceDetailView extends Component {
                                 secondaryKey="value"
                                 data={[
                                     //TODO: Need to make sure instanceID shows
-                                    { category: "Instance", value: this.state.instanceID },
+                                    { category: "Instance", value: this.props.match.params.instanceID },
                                     { category: "Model", value: this.state.instance.model },
                                     { category: "Hostname", value: this.state.instance.hostname },
                                     { category: "Rack", value: this.state.instance.rack },

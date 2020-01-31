@@ -22,7 +22,7 @@ ReactDOM.render((
                     <Route exact path='/dashboard' component={DashboardScreen} />
 
                     {/* TODO: have url be the ID of the instance */}
-                    <Route exact path='/instanceDetails' component={DetailedInstanceScreen}/>
+                    <Route exact path='/instances/:instanceID' component={DetailedInstanceScreen}/>
                     {/* TODO: implement a functionality to take you to instance screen vs http://localhost:3000/instances*/}
                     <Route path='/instances' component={InstanceScreen} />
                 </Switch>

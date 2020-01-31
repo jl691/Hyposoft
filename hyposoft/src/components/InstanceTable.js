@@ -77,13 +77,12 @@ export default class InstanceTable extends Component {
 
                 //need to pass down instance_id to know which page to display to detailedInstanceScreen
                 <React.Fragment>
-                    {/* <Link to="/instanceDetails"> */}
-                    <Link to={`/instanceDetails/${data.instance_id}`} instIDFromParent={data.instance_id}>
+                    <Link to={`/instances/${data.instance_id}`} >
                    
                         <Button icon={< Book />}
                             margin="small" renderAs="button">
-                            <span>Login</span>
                         </Button>
+                        {/* this.props.history.push */}
                     </Link>
                     
                 </React.Fragment>
