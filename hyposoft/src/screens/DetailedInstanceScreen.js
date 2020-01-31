@@ -74,7 +74,7 @@ export default class DetailedInstanceScreen extends Component {
 
                                     <Button
                                         margin="xlarge"
-                                        label="Go back to all instances"
+                                        label="Go to all instances"
                                         onClick={new InstanceScreen}
 
                                     />

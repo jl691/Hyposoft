@@ -54,23 +54,14 @@ export default class AddInstanceForm extends Component {
                 errorMessage => {
 
                     if (errorMessage) {
-                        ToastsStore.error(errorMessage)
+                        ToastsStore.error(errorMessage, 10000)
 
                     }
                     else {
 
                         ToastsStore.success('Successfully added instance!');
-                        // this.setState({
-                        //     instance_id: "",
-                        //     model: "",
-                        //     hostname: "",
-                        //     rack: "",
-                        //     rackU: "",
-                        //     owner: "",
-                        //     comment: ""
-                        // })
                         this.props.parentCallback(true);
-                      
+
 
 
                     }
@@ -80,13 +71,11 @@ export default class AddInstanceForm extends Component {
 
     }
 
-
-
     render() {
 
         return (
             <Grommet>
-                <Box height="575px" width="400px" pad="medium" gap="xxsmall" overflow="auto">
+                <Box height="575px" width="450px" pad="medium" gap="xxsmall" overflow="auto">
                     <Heading
                         size="small"
                         margin="small"
@@ -94,37 +83,40 @@ export default class AddInstanceForm extends Component {
                     >Add Instance</Heading>
                     <Form onSubmit={this.handleSubmit} name="addInst" >
 
-                        <FormField name="model" label="Model">
+                        <FormField name="model" label="Model" required="true" >
 
                             <TextInput name="model" placeholder="eg. Dell R710" onChange={this.callAutocompleteResults}
                                 value={this.state.model} />
                         </FormField>
 
-                        <FormField name="hostname" label="Hostname" >
+
+
+
+                        <FormField name="hostname" label="Hostname" required="true">
 
                             <TextInput padding="medium" name="hostname" placeholder="eg. server9" onChange={this.handleChange}
                                 value={this.state.hostname} />
                         </FormField>
 
-                        <FormField name="rack" label="Rack" >
+                        <FormField name="rack" label="Rack" required="true">
 
                             <TextInput name="rack" placeholder="eg. B12" onChange={this.handleChange}
                                 value={this.state.rack} />
                         </FormField>
 
-                        <FormField name="rackU" label="RackU" >
+                        <FormField name="rackU" label="RackU" required="true">
 
                             <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
                                 value={this.state.rackU} />
                         </FormField>
 
-                        <FormField name="owner" label="Owner" >
+                        <FormField name="owner" label="Owner" required="true">
 
                             <TextInput name="owner" placeholder="eg. Jan" onChange={this.handleChange}
                                 value={this.state.owner} />
                         </FormField>
 
-                        <FormField name="comment" label="Comment" >
+                        <FormField name="comment" label="Comment" required="false">
 
                             <TextInput name="comment" placeholder="" onChange={this.handleChange}
                                 value={this.state.comment} />

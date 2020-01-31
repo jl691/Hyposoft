@@ -45,10 +45,11 @@ function getInstanceAt(start, callback) {
 	})
 }
 
-function addInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
+function addInstance( model, hostname, rack, racku, owner, comment, callback) {
     modelutils.getModelByModelname(model, doc => {
         if (!doc) {
-            callback('Model does not exist')
+            var errMessage="Model does not exist"
+            callback(errMessage)
         } else {
             instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum, rackID) {
                 //Allen wants me to add a vendor and modelname field to my document
@@ -61,7 +62,6 @@ function addInstance(instanceid, model, hostname, rack, racku, owner, comment, c
                 else {
                     instanceRef.add({
                         modelId: doc.id,
-                        instance_id: instanceid,
                         model: model,
                         hostname: hostname,
                         rack: rack,
@@ -259,11 +259,12 @@ function getInstancesFromModel(model,callback) {
 
 function sortByKeyword(keyword, callback) {
     // maybe add limit by later similar to modelutils.getModels()
-    instanceRef.orderBy(keyword).get().then(
+    instanceRef.orderBy(keyword.toLowerCase()).get().then(
         docSnaps => {
             const instances = docSnaps.docs.map(doc => (
                 { id: doc.id }
             ))
+            console.log(instances)
             callback(instances)
         })
         .catch(error => {

@@ -1,8 +1,8 @@
 import React, { Component } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
-import { Link} from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
-import { Text, Button, Layer, Grommet, Heading, Box, TextInput, Select } from 'grommet'
+import { Text, Button, Layer, Grommet, Heading, Box, TextInput } from 'grommet'
 import { Add } from 'grommet-icons'
 import AddInstanceForm from '../components/AddInstanceForm'
 import DeleteInstancePopup from '../components/DeleteInstancePopup'
@@ -38,7 +38,8 @@ class InstanceScreen extends Component {
             updateOwner: "",
             updateComment: "",
             rangeNumberStart: "",
-            rangeNumberEnd: ""
+            rangeNumberEnd: "",
+           
         }
 
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
@@ -46,6 +47,7 @@ class InstanceScreen extends Component {
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleChangeRange = this.handleChangeRange.bind(this);
+       
 
         this.instanceTable = React.createRef();
     }
@@ -56,29 +58,29 @@ class InstanceScreen extends Component {
     }
 
     handleChangeRange(event) {
-/*        console.log("big booty" + event.target.name)
-        this.setState({
-            [event.target.name]: event.target.value
-        });
-        if(event.target.name === "rangeNumberStart"){
-            console.log("start")
-            if (/[A-Z]\d+/.test(event.target.value) && /[A-Z]\d+/.test(this.state.rangeNumberEnd)) {
-                this.instanceTable.current.handleFilter(event.target.value, this.state.rangeNumberEnd);
-            }
-        } else if(event.target.name === "rangeNumberEnd"){
-            console.log("end")
-            if (/[A-Z]\d+/.test(this.state.rangeNumberStart) && /[A-Z]\d+/.test(event.target.value)) {
-                this.instanceTable.current.handleFilter(this.state.rangeLetterStart, event.target.value);
-            }
-        }
-        this.setState({
-            [event.target.name]: event.target.value
-        });
-        console.log(this.state.rangeNumberStart + " yeeters " + this.state.rangeNumberEnd)*/
-        if(event.target.name === "rangeNumberStart"){
+        /*        console.log("big booty" + event.target.name)
+                this.setState({
+                    [event.target.name]: event.target.value
+                });
+                if(event.target.name === "rangeNumberStart"){
+                    console.log("start")
+                    if (/[A-Z]\d+/.test(event.target.value) && /[A-Z]\d+/.test(this.state.rangeNumberEnd)) {
+                        this.instanceTable.current.handleFilter(event.target.value, this.state.rangeNumberEnd);
+                    }
+                } else if(event.target.name === "rangeNumberEnd"){
+                    console.log("end")
+                    if (/[A-Z]\d+/.test(this.state.rangeNumberStart) && /[A-Z]\d+/.test(event.target.value)) {
+                        this.instanceTable.current.handleFilter(this.state.rangeLetterStart, event.target.value);
+                    }
+                }
+                this.setState({
+                    [event.target.name]: event.target.value
+                });
+                console.log(this.state.rangeNumberStart + " yeeters " + this.state.rangeNumberEnd)*/
+        if (event.target.name === "rangeNumberStart") {
             console.log("start")
             this.rangeStart = event.target.value;
-        } else if(event.target.name === "rangeNumberEnd"){
+        } else if (event.target.name === "rangeNumberEnd") {
             console.log("end")
             this.rangeEnd = event.target.value;
         }
@@ -89,27 +91,21 @@ class InstanceScreen extends Component {
         }
     }
 
-    handleCancelPopupChange(){
+    handleCancelPopupChange() {
         this.setState({
             popupType: ""
         });
         //TODO: READ https://stackoverflow.com/questions/37949981/call-child-method-from-parent
         this.instanceTable.current.forceRefresh();
     }
-    //This handles the delete screen popping up from pressing on the trash can, not the actual backend of what happens when the delete is confirmed
     handleDeleteButton = (datumID) => {
         this.setState({
             popupType: 'Delete',
             deleteID: datumID,
 
-
-
         });
     }
-
-
     handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment) => {
-        //then go into editInstanceForm to make sure you pass in correct data to child for backend method
         this.setState({
             popupType: 'Update',
             updateID: datumID,
@@ -121,7 +117,6 @@ class InstanceScreen extends Component {
             updateComment: datumComment
 
         });
-
 
     }
 
@@ -141,7 +136,6 @@ class InstanceScreen extends Component {
     }
 
     render() {
-        //  const [value, setValue] = React.useState('medium');
         const { popupType } = this.state;
         let popup;
 
@@ -153,8 +147,6 @@ class InstanceScreen extends Component {
 
                     <AddInstanceForm
                         parentCallback={this.handleCancelPopupChange}
-                    //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
-                    // parentCallbackRefresh={this.callbackFunctionRefresh}
                     />
                     <Button
                         margin="small"
@@ -174,7 +166,6 @@ class InstanceScreen extends Component {
 
                     <DeleteInstancePopup
                         parentCallback={this.handleCancelPopupChange}
-
                         deleteIDFromParent={this.state.deleteID}
 
                     />
@@ -186,8 +177,6 @@ class InstanceScreen extends Component {
                     />
                 </Layer>
             )
-
-
         }
 
         else if (popupType === 'Update') {
@@ -198,11 +187,8 @@ class InstanceScreen extends Component {
                 <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
-
                     <EditInstanceForm
                         parentCallback={this.handleCancelPopupChange}
-
-                        //need to pass in all the data though for the update
 
                         updateIDFromParent={this.state.updateID}
                         updateModelFromParent={this.state.updateModel}
@@ -211,9 +197,6 @@ class InstanceScreen extends Component {
                         updateRackUFromParent={this.state.updateRackU}
                         updateOwnerFromParent={this.state.updateOwner}
                         updateCommentFromParent={this.state.updateComment}
-
-
-
                     />
                     <Button
                         margin="small"
@@ -221,11 +204,8 @@ class InstanceScreen extends Component {
                         onClick={() => this.setState({ popupType: "" })}
 
                     />
-
                 </Layer>
             )
-
-
 
         }
 
@@ -235,12 +215,12 @@ class InstanceScreen extends Component {
             <Router>
 
                 <Route
-                     exact path="/instances" render={props => (
+                    exact path="/instances" render={props => (
                         <React.Fragment>
                             <Grommet theme={theme} full className='fade'>
                                 {popup}
                                 <AppBar>
-                                    
+
                                     <HomeButton alignSelf='start' this={this} />
                                     <Heading alignSelf='center' level='4' margin={{
                                         top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
@@ -252,24 +232,12 @@ class InstanceScreen extends Component {
 
                                     <Box gap='small' direction="column" margin='small'>
                                         <Text> Range of Racks </Text>
-                                        <TextInput name="rangeNumberStart" placeholder="eg. B1" onChange={this.handleChange} />
+                                        <TextInput name="rangeNumberStart" placeholder="eg. B1" onChange={this.handleChangeRange}/>
                                         to
-                        <TextInput name="rangeNumberEnd" placeholder="eg. C21" onChange={this.handleChange} />
+                                        <TextInput name="rangeNumberEnd" placeholder="eg. C21" onChange={this.handleChangeRange} />
                                     </Box>
 
-                                    <Box gap='small' margin='small'>
-                                        <Text  > Sort By </Text>
-                                        <Select
-                                            //TODO: this allows you to sort by short form fields. Need backend
-                                            options={['Model', 'Hostname', 'Rack and RackU', 'Owner']}
-                                        // value={value}
-                                        //onChange={({ option }) => setValue(option)} //see line 54
-
-                                        />
-
-                                    </Box>
-
-
+                                    
                                     {/* Button to Add an Instance: */}
                                     {this.addButton()}
                                 </FilterBarInstances>
@@ -279,33 +247,19 @@ class InstanceScreen extends Component {
 
                                     UpdateButtonCallbackFromParent={this.handleUpdateButton}
 
-
-
                                     ref={this.instanceTable}
 
                                 />
-
-
                             </Grommet>
 
-
-
-
                         </React.Fragment>
-
-
 
                     )}
 
                 />
 
-
             </Router>
-
-
         )
-
-
     }
 }
 

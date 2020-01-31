@@ -15,7 +15,7 @@ export default class InstanceTable extends Component {
     columns = [
         {
             property: 'instance_id',
-            header: <Text>Instance ID</Text>,
+            header:  <Text>Instance ID</Text>,
             primary: true,
         },
 
@@ -72,6 +72,7 @@ export default class InstanceTable extends Component {
         this.columns.push({
             property: "details",
             header: "Details",
+            sortable:false,
 
             render: data => (
 
@@ -103,11 +104,13 @@ export default class InstanceTable extends Component {
             this.columns.push({
                 property: "delete",
                 header: "Delete",
+                sortable:false,
 
                 render: datum => (
                     <Button
                         icon={<Trash/>}
                         margin="small"
+                        
                         onClick={() => {
                        
                             this.props.deleteButtonCallbackFromParent(datum.instance_id)
@@ -119,6 +122,7 @@ export default class InstanceTable extends Component {
             this.columns.push({
                 property: "update",
                 header: "Update",
+                sortable:false,
 
                 render: data => (
                     <Button
@@ -195,6 +199,7 @@ export default class InstanceTable extends Component {
 
         this.setState({instances: newInstances})
     }
+
 
     render() {
 
