@@ -279,11 +279,10 @@ function getSuggestedModels(userInput, callback) {
     querySnapshot.forEach( doc => {
       const modelName = doc.data().modelName.toLowerCase()
       const lowerUserInput = userInput.toLowerCase()
-      if (!userInput
-          || (!modelArray.includes(doc.data().modelName)
-              && modelName.localeCompare(lowerUserInput) >= 0
+      if (!modelArray.includes(doc.data().modelName) && (!userInput
+          || (modelName.localeCompare(lowerUserInput) >= 0
               && modelName.localeCompare(lowerUserInput.slice(0,lowerUserInput.length-1)
-                  + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length-1,lowerUserInput.length).charCodeAt(0)+1)) < 0)) {
+                  + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length-1,lowerUserInput.length).charCodeAt(0)+1)) < 0))) {
           modelArray.push(doc.data().modelName)
         }
     })

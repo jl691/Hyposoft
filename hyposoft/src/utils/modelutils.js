@@ -129,7 +129,7 @@ function getModels(startAfter, callback) {
 function doesModelDocExist(vendor, modelNumber, callback) {
     firebaseutils.modelsRef.where('modelName','==',vendor+' '+modelNumber).get()
     .then(qs => {
-      callback(!qs.empty)  
+      callback(!qs.empty)
     })
     .catch( error => {
       console.log("Error getting documents: ", error)
@@ -139,19 +139,19 @@ function doesModelDocExist(vendor, modelNumber, callback) {
 
 function getSuggestedVendors(userInput, callback) {
   // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
-    var query = userInput
-                ? firebaseutils.modelsRef.where("vendor",">=",userInput).where("vendor","<",userInput.slice(0,userInput.length-1)
-                  + String.fromCharCode(userInput.slice(userInput.length-1,userInput.length).charCodeAt(0)+1))
-                : firebaseutils.modelsRef.orderBy('vendor')
-
-    var vendorArray = []
-    query.get().then(querySnapshot => {
-      querySnapshot.forEach( doc => {
-        if (!vendorArray.includes(doc.data().vendor)) {
+  var vendorArray = []
+  firebaseutils.modelsRef.orderBy('vendor').get().then(querySnapshot => {
+    querySnapshot.forEach( doc => {
+      const vendorName = doc.data().vendor.toLowerCase()
+      const lowerUserInput = userInput.toLowerCase()
+      if (!vendorArray.includes(doc.data().vendor) && (!userInput
+          || (vendorName.localeCompare(lowerUserInput) >= 0
+              && vendorName.localeCompare(lowerUserInput.slice(0,lowerUserInput.length-1)
+                  + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length-1,lowerUserInput.length).charCodeAt(0)+1)) < 0))) {
           vendorArray.push(doc.data().vendor)
         }
-      })
-      callback(vendorArray)
+    })
+    callback(vendorArray)
     })
     .catch( error => {
       console.log("Error getting documents: ", error)
