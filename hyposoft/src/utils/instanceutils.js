@@ -45,11 +45,6 @@ function getInstanceAt(start, callback) {
 	})
 }
 
-
-function addInstance(model, hostname, rack, racku, owner, comment, callback) {
-    //whenever there's a function, it's like a new 'thread', which is why print statements may be out of order
-    instanceFitsOnRack(rack, racku, model, function (errorMessage, modelNum, modelVendor, rackID) {
-
 function addInstance(instanceid, model, hostname, rack, racku, owner, comment, callback) {
     modelutils.getModelByModelname(model, doc => {
         if (!doc) {
