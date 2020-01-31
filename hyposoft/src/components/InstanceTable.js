@@ -1,4 +1,6 @@
 import React, { Component } from 'react'
+import { BrowserRouter as Router, Route } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { DataTable, Button, Text } from 'grommet'
 import { Trash, Edit, Book } from 'grommet-icons'
 import * as instutils from '../utils/instanceutils'
@@ -18,11 +20,7 @@ export default class InstanceTable extends Component {
             header: <Text>Instance ID</Text>,
             primary: true,
         },
-        // {
-        //     property: 'rack_id',
-        //     header: <Text>Rack ID</Text>,
 
-        // },
         {
             property: 'model',
             header: <Text>Model</Text>,
@@ -62,16 +60,43 @@ export default class InstanceTable extends Component {
 
     componentDidMount() {
         instutils.getInstance((newStartAfter, instancesdb) => {
-            if(newStartAfter && instancesdb){
+            if (newStartAfter && instancesdb) {
                 this.startAfter = newStartAfter;
                 this.setState({ instances: instancesdb, initialLoaded: true })
             }
         })
         this.adminButtons();
+
+
+        this.columns.push({
+            property: "details",
+            header: "Details",
+
+            render: data => (
+              
+
+                //need to pass down instance_id to know which page to display to detailedInstanceScreen
+                <React.Fragment>
+                    {/* <Link to="/instanceDetails"> */}
+                    <Link to={`/instanceDetails/${data.instance_id}`} instIDFromParent={data.instance_id}>
+                   
+                        <Button icon={< Book />}
+                            margin="small" renderAs="button">
+                            <span>Login</span>
+                        </Button>
+                    </Link>
+                    
+                </React.Fragment>
+
+            )
+            
+        })
+        
+
     }
 
     adminButtons() {
-        if(userutils.isLoggedInUserAdmin()) {
+        if (userutils.isLoggedInUserAdmin()) {
             this.columns.push({
                 property: "delete",
                 header: "Delete",
@@ -120,6 +145,8 @@ export default class InstanceTable extends Component {
 
     }
 
+
+
     forceRefresh() {
         this.startAfter = null;
         this.setState({
@@ -127,7 +154,7 @@ export default class InstanceTable extends Component {
             initialLoaded: false
         });
         instutils.getInstance((newStartAfter, instancesdb) => {
-            if(newStartAfter && instancesdb){
+            if (newStartAfter && instancesdb) {
                 this.startAfter = newStartAfter;
                 this.setState({ instances: instancesdb, initialLoaded: true })
             }
@@ -148,13 +175,13 @@ export default class InstanceTable extends Component {
                 onMore={() => {
                     instutils.getInstanceAt(this.startAfter, (newStartAfter, newInstances) => {
                         this.startAfter = newStartAfter
-                        this.setState({instances: this.state.instances.concat(newInstances)})
+                        this.setState({ instances: this.state.instances.concat(newInstances) })
                     });
                 }}
                 pad="17px"
                 sortable={true}
                 columns={this.columns}
-                
+
                 data={this.state.instances}
 
 

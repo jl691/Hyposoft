@@ -303,7 +303,7 @@ function getSuggestedModels(userInput, callback) {
 
 function getInstanceDetails(instanceID, callback) {
 
-    let instanceHardCoded='tOb88GOvzFSOABHdvkN6'
+    let instanceHardCoded='nUIqYpZqe0GIg1wBEdjh'
 
     instanceRef.doc(instanceHardCoded).get().then((doc) => {
         let inst = {
