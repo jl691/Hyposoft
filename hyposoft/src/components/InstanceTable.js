@@ -1,6 +1,6 @@
-import React, { Component } from 'react'
-import { DataTable, Button, Text } from 'grommet'
-import { Trash, Edit, Book } from 'grommet-icons'
+import React, {Component} from 'react'
+import {DataTable, Button, Text} from 'grommet'
+import {Trash, Edit, Book} from 'grommet-icons'
 import * as instutils from '../utils/instanceutils'
 import DetailedInstanceScreen from '../screens/DetailedInstanceScreen'
 
@@ -11,6 +11,7 @@ import * as userutils from "../utils/userutils";
 
 export default class InstanceTable extends Component {
 
+    defaultInstances = [];
     startAfter = null;
     columns = [
         {
@@ -56,29 +57,34 @@ export default class InstanceTable extends Component {
             instances: [],
             initialLoaded: false
         }
+
+        this.handleFilter = this.handleFilter.bind(this);
+        this.restoreDefault = this.restoreDefault.bind(this);
     }
+
     //TODO: need to change getInstance function in utils for infinite scroll and refresh (see issue #28)
 
 
     componentDidMount() {
         instutils.getInstance((newStartAfter, instancesdb) => {
-            if(newStartAfter && instancesdb){
+            if (newStartAfter && instancesdb) {
                 this.startAfter = newStartAfter;
-                this.setState({ instances: instancesdb, initialLoaded: true })
+                this.defaultInstances = instancesdb;
+                this.setState({instances: instancesdb, initialLoaded: true})
             }
         })
         this.adminButtons();
     }
 
     adminButtons() {
-        if(userutils.isLoggedInUserAdmin()) {
+        if (userutils.isLoggedInUserAdmin()) {
             this.columns.push({
                 property: "delete",
                 header: "Delete",
 
                 render: datum => (
                     <Button
-                        icon={<Trash />}
+                        icon={<Trash/>}
                         margin="small"
                         onClick={() => {
                             //TODO: need to pass up popuptype state to parent InstanceScreen
@@ -88,7 +94,7 @@ export default class InstanceTable extends Component {
                             //Need to pass the deleteID up to parent InstanceScreen
 
 
-                        }} />
+                        }}/>
                 )
             });
             this.columns.push({
@@ -97,7 +103,7 @@ export default class InstanceTable extends Component {
 
                 render: data => (
                     <Button
-                        icon={< Edit />}
+                        icon={< Edit/>}
                         margin="small"
                         onClick={() => {
 
@@ -113,7 +119,7 @@ export default class InstanceTable extends Component {
                             console.log(data.model)
 
 
-                        }} />
+                        }}/>
                 )
             })
         }
@@ -127,11 +133,46 @@ export default class InstanceTable extends Component {
             initialLoaded: false
         });
         instutils.getInstance((newStartAfter, instancesdb) => {
-            if(newStartAfter && instancesdb){
+            if (newStartAfter && instancesdb) {
                 this.startAfter = newStartAfter;
-                this.setState({ instances: instancesdb, initialLoaded: true })
+                this.setState({instances: instancesdb, initialLoaded: true})
             }
         })
+    }
+
+    restoreDefault() {
+        this.setState({instances: this.defaultInstances});
+    }
+
+    handleFilter(start, end) {
+        console.log("triggered with " + start + " and " + end)
+        let splitRackArrayStart = start.split(/(\d+)/);
+        let rackRowStart = splitRackArrayStart[0];
+        let rackNumStart = parseInt(splitRackArrayStart[1]);
+
+        let splitRackArrayEnd = end.split(/(\d+)/);
+        let rackRowEnd = splitRackArrayEnd[0];
+        let rackNumEnd = parseInt(splitRackArrayEnd[1]);
+
+        let newInstances = [];
+        let splitRackArrayTemp, rackRowTemp, rackNumTemp;
+        this.state.instances.forEach(instance => {
+            splitRackArrayTemp = instance.rack.split(/(\d+)/);
+            rackRowTemp = splitRackArrayTemp[0];
+            rackNumTemp = parseInt(splitRackArrayTemp[1]);
+            console.log("current instance: " + rackRowTemp.charCodeAt(0) + " " + rackNumTemp)
+            /*if(rackRowTemp.charCodeAt(0) >= rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) <= rackRowEnd.charCodeAt(0) && rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd){
+                console.log("found a match!")
+                newInstances.push(instance);
+            }*/
+            if((rackRowTemp === rackRowStart && rackNumTemp >= rackNumStart) || (rackRowTemp === rackRowEnd && rackNumTemp <= rackNumEnd) || (rackRowTemp.charCodeAt(0) > rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) < rackRowEnd.charCodeAt(0))){
+                console.log("found a match!")
+                newInstances.push(instance);
+            }
+            console.log("rackRowStart " + rackRowStart.charCodeAt(0) + " rackRowEnd " + rackRowEnd.charCodeAt(0) + " rackNumStart " + rackNumStart + " rackNumEnd " + rackNumEnd)
+        })
+
+        this.setState({instances: newInstances})
     }
 
     render() {
@@ -139,6 +180,7 @@ export default class InstanceTable extends Component {
         if (!this.state.initialLoaded) {
             return (<Text>Please wait...</Text>);
         }
+
 
         return (
 
@@ -154,7 +196,7 @@ export default class InstanceTable extends Component {
                 pad="17px"
                 sortable={true}
                 columns={this.columns}
-                
+
                 data={this.state.instances}
 
 
