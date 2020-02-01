@@ -19,6 +19,7 @@ import UnclaimScreen from './screens/UnclaimScreen'
 import ResetPasswordScreen from './screens/ResetPasswordScreen'
 import ModelsScreen from './screens/ModelsScreen'
 import ModelPermaScreen from './screens/ModelPermaScreen'
+import PortScreen from './screens/PortScreen'
 
 import RackView from "./components/RackView";
 import InstanceScreen from './screens/InstanceScreen'
@@ -41,6 +42,7 @@ ReactDOM.render((
                     <Route exact path='/instanceDetails' component={DetailedInstanceScreen}/>
                     {/* TODO: implement a functionality to take you to instance screen vs http://localhost:3000/instances*/}
                     <Route path='/instances' component={InstanceScreen} />
+                    <Route path='/port' component={PortScreen} />
                 </Switch>
             </BrowserRouter>
         ), document.getElementById('root'))
