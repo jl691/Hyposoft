@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Link } from 'react-router-dom'
+import {Link, Redirect} from 'react-router-dom'
 import { DataTable, Button, Text} from 'grommet'
 import { Book, Trash, Edit} from 'grommet-icons'
 import * as instutils from '../utils/instanceutils'
@@ -202,6 +202,10 @@ export default class InstanceTable extends Component {
 
 
     render() {
+
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
 
         if (!this.state.initialLoaded) {
             return (<Text>Please wait...</Text>);
