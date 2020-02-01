@@ -12,6 +12,7 @@ import UserMenu from "./UserMenu";
 import AppBar from "./AppBar";
 import RackUsageReport from "./RackUsageReport";
 import * as formvalidationutils from "../utils/formvalidationutils";
+import {Redirect} from "react-router-dom";
 
 class RackView extends React.Component {
 
@@ -133,6 +134,10 @@ class RackView extends React.Component {
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
+
         const {popupType} = this.state;
         let popup;
         if (popupType === 'Delete') {

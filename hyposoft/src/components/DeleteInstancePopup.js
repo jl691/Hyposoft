@@ -2,6 +2,8 @@ import React, { Component } from 'react'
 import { Button, Grommet, Form, Heading, Text, Box } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as instutils from '../utils/instanceutils'
+import * as userutils from "../utils/userutils";
+import {Redirect} from "react-router-dom";
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -36,6 +38,9 @@ export default class DeleteInstancePopup extends Component {
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
 
         return (
             <Grommet>

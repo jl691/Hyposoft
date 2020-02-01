@@ -13,6 +13,7 @@ import FilterBarInstances from '../components/FilterBarInstances'
 import SearchInstances from '../components/SearchInstances'
 import InstanceTable from '../components/InstanceTable'
 import * as userutils from "../utils/userutils";
+import {Redirect} from "react-router-dom";
 
 class InstanceScreen extends Component {
 
@@ -84,6 +85,10 @@ class InstanceScreen extends Component {
 
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
+
         //  const [value, setValue] = React.useState('medium');
         const { popupType } = this.state;
         let popup;
