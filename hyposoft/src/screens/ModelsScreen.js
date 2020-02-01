@@ -1,9 +1,8 @@
-import React, { Component } from 'react'
+import React from 'react'
 import AppBar from '../components/AppBar'
 import HomeButton from '../components/HomeButton'
 import UserMenu from '../components/UserMenu'
 import ModelSettingsLayer from '../components/ModelSettingsLayer'
-import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import * as modelutils from '../utils/modelutils'
 import * as firebaseutils from '../utils/firebaseutils'
@@ -132,7 +131,7 @@ class ModelsScreen extends React.Component {
         })
     }
 
-    componentWillMount() {
+    componentDidMount() {
         this.init()
     }
 

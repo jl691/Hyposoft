@@ -1,13 +1,11 @@
 import React, { Component } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
-import { Link } from 'react-router-dom'
 
 import { Text, Button, Layer, Grommet, Heading, Box, TextInput } from 'grommet'
 import { Add } from 'grommet-icons'
 import AddInstanceForm from '../components/AddInstanceForm'
 import DeleteInstancePopup from '../components/DeleteInstancePopup'
 import EditInstanceForm from '../components/EditInstanceForm'
-import DetailedInstanceScreen from './DetailedInstanceScreen'
 
 import theme from '../theme'
 import AppBar from '../components/AppBar'

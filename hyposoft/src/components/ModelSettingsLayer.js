@@ -1,7 +1,6 @@
 import * as modelutils from '../utils/modelutils'
-import * as firebaseutils from '../utils/firebaseutils'
 import * as userutils from '../utils/userutils'
-import React, { Component } from 'react'
+import React from 'react'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 
 import { SketchPicker } from 'react-color'
@@ -16,7 +15,6 @@ import {
     TextArea,
     Form } from 'grommet'
 
-import theme from '../theme'
 import {Redirect} from "react-router-dom";
 
 const algoliasearch = require('algoliasearch')

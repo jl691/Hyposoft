@@ -83,7 +83,7 @@ export default class InstanceTable extends Component {
 
                         <Button icon={< Book />}
                             margin="small"
-                            onClick={new DetailedInstanceScreen}
+                            onClick={new DetailedInstanceScreen()}
 
                         />
 
