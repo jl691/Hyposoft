@@ -112,7 +112,7 @@ class RackView extends React.Component {
             ToastsStore.error('Invalid number.');
         } else if (!formvalidationutils.checkPositive(this.state.numberStart) || !formvalidationutils.checkPositive(this.state.numberEnd)) {
             //non positive number
-            ToastsStore.error('Numbers most be positive.');
+            ToastsStore.error('Numbers must be positive.');
         } else if (!formvalidationutils.checkUppercaseLetter(this.state.letterStart) || !formvalidationutils.checkUppercaseLetter(this.state.letterEnd)) {
             //non uppercase letter
             ToastsStore.error('Rows must be a single uppercase letter.');

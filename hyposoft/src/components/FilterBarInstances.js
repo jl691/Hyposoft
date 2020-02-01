@@ -1,5 +1,5 @@
-import React, { Component } from 'react'
-import { Form, FormField, Select, RangeInput, Button, TextInput, Box } from 'grommet'
+import React from 'react'
+import { Box } from 'grommet'
 
 
 // TODO: add functionality, and UI components for filter, range, add Model, etc

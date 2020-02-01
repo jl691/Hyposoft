@@ -1,5 +1,4 @@
 import * as firebaseutils from './firebaseutils'
-import * as rackutils from './rackutils'
 
 function packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment) {
     const model = {

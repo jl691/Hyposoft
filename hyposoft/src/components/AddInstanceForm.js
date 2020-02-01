@@ -1,8 +1,7 @@
 import React, {Component} from 'react'
-import {Button, Grommet, Form, FormField, Heading, TextInput, Box, Text} from 'grommet'
+import {Button, Grommet, Form, FormField, Heading, TextInput, Box} from 'grommet'
 import {ToastsContainer, ToastsStore} from 'react-toasts';
 import * as instutils from '../utils/instanceutils'
-import RequiredFormField from './RequiredFormField'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
 import {Redirect} from "react-router-dom";

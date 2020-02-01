@@ -1,4 +1,4 @@
-import { instanceRef, racksRef, modelsRef, db, firebase } from './firebaseutils'
+import { instanceRef, racksRef, modelsRef, firebase } from './firebaseutils'
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
 
