@@ -6,6 +6,7 @@ import { checkInstanceFits } from '../utils/rackutils';
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
 import {Redirect} from "react-router-dom";
+import theme from "../theme";
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -99,7 +100,7 @@ export default class EditInstanceForm extends Component {
 
         return (
 
-            <Grommet>
+            <Grommet theme={theme}>
                 <Box height="575px" width="400px" pad="medium" gap="xxsmall" overflow="auto">
                     <Heading
                         size="small"
@@ -172,11 +173,19 @@ export default class EditInstanceForm extends Component {
                                 value={this.state.comment} />
                         </FormField>
 
-                        <Button
-                            margin="small"
-                            type="submit"
-                            primary label="Update"
-                        />
+
+                        <Box direction={"row"}>
+                            <Button
+                                margin="small"
+                                type="submit"
+                                primary label="Update"
+                            />
+                            <Button
+                                margin="small"
+                                label="Cancel"
+                                onClick={() => this.props.cancelCallback()}
+                            />
+                        </Box>
 
                     </Form >
                 </Box>

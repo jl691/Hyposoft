@@ -6,6 +6,7 @@ import RequiredFormField from './RequiredFormField'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
 import {Redirect} from "react-router-dom";
+import theme from "../theme";
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -86,7 +87,7 @@ export default class AddInstanceForm extends Component {
         }
 
         return (
-            <Grommet>
+            <Grommet theme={theme}>
                 <Box height="575px" width="450px" pad="medium" gap="xxsmall" overflow="auto">
                     <Heading
                         size="small"
@@ -167,11 +168,18 @@ export default class AddInstanceForm extends Component {
                                        value={this.state.comment}/>
                         </FormField>
 
-                        <Button
-                            margin="small"
-                            type="submit"
-                            primary label="Submit"
-                        />
+                        <Box direction={"row"}>
+                            <Button
+                                margin="small"
+                                type="submit"
+                                primary label="Submit"
+                            />
+                            <Button
+                                margin="small"
+                                label="Cancel"
+                                onClick={() => this.props.cancelCallback()}
+                            />
+                        </Box>
 
                     </Form>
                 </Box>
