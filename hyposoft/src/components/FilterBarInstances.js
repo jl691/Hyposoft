@@ -24,8 +24,8 @@ const FilterBarInstances = (props) => (
        
     </Box>
 
-    //need a sort by (all fields)
-    //need to find range of racks
+    
+
  
     
 )

@@ -23,16 +23,6 @@ export default class AddInstanceForm extends Component {
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
-        this.callAutocompleteResults = this.callAutocompleteResults.bind(this)
-    }
-
-    callAutocompleteResults(event) {
-        instutils.getSuggestedModels(event.target.value, d => {
-            console.log(d)
-        })
-        this.setState({
-            [event.target.name]: event.target.value
-        });
     }
 
     handleChange(event) {
@@ -43,7 +33,6 @@ export default class AddInstanceForm extends Component {
 
     handleSubmit(event) {
         if (event.target.name === "addInst") {
-
             if(!this.state.model || !this.state.hostname || !this.state.rack || !this.state.rackU){
                 //not all required fields filled out
                 ToastsStore.error("Please fill out all required fields.");
@@ -68,7 +57,7 @@ export default class AddInstanceForm extends Component {
                     this.state.comment,
                     errorMessage => {
                         if (errorMessage) {
-                            ToastsStore.error(errorMessage)
+                            ToastsStore.error(errorMessage, 10000)
                         } else {
                             ToastsStore.success('Successfully added instance!');
                             // this.setState({
@@ -85,15 +74,15 @@ export default class AddInstanceForm extends Component {
                     }
                 );
             }
+
         }
     }
-
 
     render() {
 
         return (
             <Grommet>
-                <Box height="575px" width="400px" pad="medium" gap="xxsmall" overflow="auto">
+                <Box height="575px" width="450px" pad="medium" gap="xxsmall" overflow="auto">
                     <Heading
                         size="small"
                         margin="small"
@@ -101,38 +90,60 @@ export default class AddInstanceForm extends Component {
                     >Add Instance</Heading>
                     <Form onSubmit={this.handleSubmit} name="addInst">
 
-                        <FormField name="model" label="Model">
+                        <FormField name="model" label="Model" required="true" >
 
-                            <TextInput name="model" placeholder="eg. Dell R710" onChange={this.callAutocompleteResults}
-                                       value={this.state.model}/>
+                            <TextInput name="model"
+                                placeholder="eg. Dell R710"
+                                onChange={e => {
+                                    const value = e.target.value
+                                    this.setState(oldState => ({...oldState, model: value}))
+                                    instutils.getSuggestedModels(value, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))
+                                }}
+                                onSelect={e => {
+                                    this.setState(oldState => ({...oldState, model: e.suggestion}))
+                                }}
+                                value={this.state.model}
+                                suggestions={this.state.modelSuggestions}
+                                onClick={() => instutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))}
+                                title='Model'
+                                />
                         </FormField>
 
-                        <FormField name="hostname" label="Hostname">
+
+
+
+                        <FormField name="hostname" label="Hostname" required="true">
+
 
                             <TextInput padding="medium" name="hostname" placeholder="eg. server9"
                                        onChange={this.handleChange}
                                        value={this.state.hostname}/>
                         </FormField>
 
-                        <FormField name="rack" label="Rack">
+
+                        <FormField name="rack" label="Rack" required="true">
+
 
                             <TextInput name="rack" placeholder="eg. B12" onChange={this.handleChange}
                                        value={this.state.rack}/>
                         </FormField>
 
-                        <FormField name="rackU" label="RackU">
+
+                        <FormField name="rackU" label="RackU" required="true">
+
 
                             <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
                                        value={this.state.rackU}/>
                         </FormField>
 
-                        <FormField name="owner" label="Owner">
+
+                        <FormField name="owner" label="Owner" required="true">
 
                             <TextInput name="owner" placeholder="eg. Jan" onChange={this.handleChange}
                                        value={this.state.owner}/>
                         </FormField>
 
-                        <FormField name="comment" label="Comment">
+                        <FormField name="comment" label="Comment" required="false">
 
                             <TextInput name="comment" placeholder="" onChange={this.handleChange}
                                        value={this.state.comment}/>
