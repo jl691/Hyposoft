@@ -1,6 +1,5 @@
 import * as firebaseutils from "./firebaseutils";
 import * as modelutils from "./modelutils";
-import {modelsRef} from "./firebaseutils";
 
 function getRackAt(start, callback) {
     firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).startAfter(start).get().then(docSnaps => {
@@ -362,7 +361,6 @@ function generateRackUsageReport(rack, callback) {
 
 function generateAllRackUsageReports(callback) {
     let usedCount = 0;
-    let totalHeight = 0;
     let vendorCounts = new Map();
     let modelCounts = new Map();
     let ownerCounts = new Map();

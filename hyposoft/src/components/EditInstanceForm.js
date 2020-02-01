@@ -1,11 +1,11 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Text } from 'grommet'
+import { Button, Grommet, Form, FormField, Heading, TextInput, Box } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as instutils from '../utils/instanceutils'
-import { checkInstanceFits } from '../utils/rackutils';
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
 import {Redirect} from "react-router-dom";
+import theme from "../theme";
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -99,7 +99,7 @@ export default class EditInstanceForm extends Component {
 
         return (
 
-            <Grommet>
+            <Grommet theme={theme}>
                 <Box height="575px" width="400px" pad="medium" gap="xxsmall" overflow="auto">
                     <Heading
                         size="small"
@@ -149,8 +149,21 @@ export default class EditInstanceForm extends Component {
 
                         <FormField name="owner" label="Owner" >
 
-                            <TextInput name="owner" placeholder="Update Owner" onChange={this.handleChange}
-                                value={this.state.owner} />
+                            <TextInput name="owner"
+                                placeholder="Update Owner"
+                                onChange={e => {
+                                    const value = e.target.value
+                                    this.setState(oldState => ({...oldState, owner: value}))
+                                    instutils.getSuggestedOwners(value, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))
+                                }}
+                                onSelect={e => {
+                                    this.setState(oldState => ({...oldState, owner: e.suggestion}))
+                                }}
+                                value={this.state.owner}
+                                suggestions={this.state.ownerSuggestions}
+                                onClick={() => instutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))}
+                                title='Owner' 
+                              />
                         </FormField>
 
                         <FormField name="comment" label="Comment" >
@@ -159,11 +172,19 @@ export default class EditInstanceForm extends Component {
                                 value={this.state.comment} />
                         </FormField>
 
-                        <Button
-                            margin="small"
-                            type="submit"
-                            primary label="Update"
-                        />
+
+                        <Box direction={"row"}>
+                            <Button
+                                margin="small"
+                                type="submit"
+                                primary label="Update"
+                            />
+                            <Button
+                                margin="small"
+                                label="Cancel"
+                                onClick={() => this.props.cancelCallback()}
+                            />
+                        </Box>
 
                     </Form >
                 </Box>

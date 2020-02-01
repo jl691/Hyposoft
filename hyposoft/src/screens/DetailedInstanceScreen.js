@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
 import { Link } from 'react-router-dom'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box, List } from 'grommet'
+import { Button, Grommet, Heading, Box, List } from 'grommet'
 import * as instutils from '../utils/instanceutils'
 import theme from '../theme'
 import InstanceScreen from '../screens/InstanceScreen'
@@ -75,7 +75,7 @@ export default class DetailedInstanceScreen extends Component {
                                     <Button
                                         margin="xlarge"
                                         label="Go to all instances"
-                                        onClick={new InstanceScreen}
+                                        onClick={new InstanceScreen()}
 
                                     />
 
