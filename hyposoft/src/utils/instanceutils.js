@@ -1,4 +1,4 @@
-import { instanceRef, racksRef, modelsRef, firebase } from './firebaseutils'
+import { instanceRef, racksRef, modelsRef, usersRef, firebase } from './firebaseutils'
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
 
@@ -295,6 +295,28 @@ function getSuggestedModels(userInput, callback) {
   })
 }
 
+function getSuggestedOwners(userInput, callback) {
+  // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+  var modelArray = []
+  usersRef.orderBy('username').get().then(querySnapshot => {
+    querySnapshot.forEach( doc => {
+      const modelName = doc.data().username.toLowerCase()
+      const lowerUserInput = userInput.toLowerCase()
+      if (!modelArray.includes(doc.data().username) && (!userInput
+          || (modelName.localeCompare(lowerUserInput) >= 0
+              && modelName.localeCompare(lowerUserInput.slice(0,lowerUserInput.length-1)
+                  + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length-1,lowerUserInput.length).charCodeAt(0)+1)) < 0))) {
+          modelArray.push(doc.data().username)
+        }
+    })
+    callback(modelArray)
+  })
+  .catch( error => {
+    console.log("Error getting documents: ", error)
+    callback(null)
+  })
+}
+
 function getInstanceDetails(instanceID, callback) {
 
     let instanceHardCoded='nUIqYpZqe0GIg1wBEdjh'
@@ -318,4 +340,4 @@ function getInstanceDetails(instanceID, callback) {
 
 }
 
-export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstanceDetails, getInstancesFromModel, getInstanceAt }
+export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getSuggestedOwners, getInstanceDetails, getInstancesFromModel, getInstanceAt }
