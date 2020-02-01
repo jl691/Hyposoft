@@ -354,6 +354,9 @@ class ModelsScreen extends React.Component {
                                                         data={this.state.models}
                                                         sortable={true}
                                                         size="medium"
+                                                        onClickRow={({datum}) => {
+                                                            this.props.history.push('/models/'+datum.vendor+'/'+datum.modelNumber)
+                                                        }}
                                                     />
                                                 </Box>
                                            </Box>
