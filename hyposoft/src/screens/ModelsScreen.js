@@ -155,7 +155,7 @@ class ModelsScreen extends React.Component {
         }
 
         this.setState(currState => (
-            {...currState, showAddDialog: true, showEditDialog: false}
+            {...currState, showAddDialog: true, showEditDialog: false, showDeleteDialog: false}
         ))
     }
 
@@ -174,7 +174,7 @@ class ModelsScreen extends React.Component {
         this.modelToEdit = this.state.models[itemNo-1]
 
         this.setState(currState => (
-            {...currState, showEditDialog: true, showAddDialog: false}
+            {...currState, showEditDialog: true, showAddDialog: false, showDeleteDialog: false}
         ))
     }
 

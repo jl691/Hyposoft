@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import AppBar from '../components/AppBar'
 import HomeButton from '../components/HomeButton'
 import UserMenu from '../components/UserMenu'
+import ModelSettingsLayer from '../components/ModelSettingsLayer'
 import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import * as userutils from '../utils/userutils'
@@ -23,6 +24,10 @@ import {
 import { Add, FormEdit, FormTrash } from "grommet-icons"
 import theme from '../theme'
 
+const algoliasearch = require('algoliasearch')
+const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
+const index = client.initIndex('models')
+
 class UsersScreen extends Component {
     state = {
         vendor: '',
@@ -41,13 +46,71 @@ class UsersScreen extends Component {
 
     constructor() {
         super()
+        this.showEditDialog = this.showEditDialog.bind(this)
+        this.hideEditDialog = this.hideEditDialog.bind(this)
+        this.showDeleteDialog = this.showDeleteDialog.bind(this)
+        this.hideDeleteDialog = this.hideDeleteDialog.bind(this)
+    }
+
+    showEditDialog(itemNo) {
+        if (!userutils.isLoggedInUserAdmin()) {
+            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+            return
+        }
+
+        this.setState(currState => (
+            {...currState, showEditDialog: true, showDeleteDialog: false}
+        ))
+    }
+
+    hideEditDialog() {
+        this.setState(currState => (
+            {...currState, showEditDialog: false}
+        ))
+    }
+
+    showDeleteDialog(itemNo) {
+        if (!userutils.isLoggedInUserAdmin()) {
+            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+            return
+        }
+
+        this.setState(currState => (
+            {...currState, showEditDialog: false, showDeleteDialog: true}
+        ))
+    }
+
+    hideDeleteDialog() {
+        this.setState(currState => (
+            {...currState, showDeleteDialog: false}
+        ))
+    }
+
+    deleteModel() {
+        if (!userutils.isLoggedInUserAdmin()) {
+            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+            return
+        }
+
+        if (this.state.instances.length > 0) {
+            ToastsStore.info("Can't delete model with live instances", 3000, 'burntToast')
+        } else {
+            modelutils.deleteModel(this.state.id, () => {
+                ToastsStore.info("Model deleted", 3000, 'burntToast')
+                this.init()
+                this.hideDeleteDialog()
+                index.deleteObject(this.state.id)
+            })
+        }
     }
 
     init() {
         modelutils.getModelByModelname(this.props.match.params.vendor+' '+this.props.match.params.modelNumber, model => {
             this.setState(oldState => ({
                 ...oldState,
-                ...model.data()
+                ...model.data(),
+                id: model.id,
+                model: {...model.data(), id: model.id}
             }))
         })
 
@@ -214,8 +277,8 @@ class UsersScreen extends Component {
                                                     return <div key={key}>{i}</div>
                                                 })}
                                                 <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}} gap='small'>
-                                                    <Button primary label="Edit" onClick={() => {}} />
-                                                    <Button label="Delete" onClick={() => {}} />
+                                                    <Button primary label="Edit" onClick={this.showEditDialog} />
+                                                    <Button label="Delete" onClick={this.showDeleteDialog} />
                                                 </Box>
                                             </Box>
                                         </Box>
@@ -225,6 +288,33 @@ class UsersScreen extends Component {
                     </Box>
                 </Box>
                 <ToastsContainer store={ToastsStore} lightBackground/>
+
+                {this.state.showEditDialog && (
+                    <ModelSettingsLayer type='edit' parent={this} model={this.state.model} />
+                )}
+
+                {this.state.showDeleteDialog && (
+                    <Layer position="center" modal onClickOutside={this.hideDeleteDialog} onEsc={this.hideDeleteDialog}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Are you sure?
+                            </Heading>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="end" >
+                                <Button label="Yes" type='submit' primary onClick={() => this.deleteModel()} />
+                                <Button
+                                    label="No"
+                                    onClick={this.hideDeleteDialog}
+                                    />
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
             </Grommet>
         )
     }
