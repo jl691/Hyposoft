@@ -51,37 +51,48 @@ function addInstance( model, hostname, rack, racku, owner, comment, callback) {
             var errMessage="Model does not exist"
             callback(errMessage)
         } else {
-            instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum, rackID) {
-                //Allen wants me to add a vendor and modelname field to my document
-                if (errorMessage) {
-                    callback(errorMessage)
-                    console.log(errorMessage)
 
-                }
-                //The rack doesn't exist, or it doesn't fit on the rack at rackU
-                else {
-                    instanceRef.add({
-                        modelId: doc.id,
-                        model: model,
-                        hostname: hostname,
-                        rack: rack,
-                        rackU: racku,
-                        owner: owner,
-                        comment: comment,
-                        rackID: rackID,
-                        //This is for rack usage reports
-                        vendor: modelVendor,
-                        modelNumber: modelNum
+            //call validateInstanceForm(x, y, z..)
+            if( model=="" || hostname=="" || rack=="" || racku==null|| !owner){
+                callback("Required fields cannot be empty")
+            }
+
+            else{
+                instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum, rackID) {
+                    //Allen wants me to add a vendor and modelname field to my document
+                    if (errorMessage) {
+                        callback(errorMessage)
+                        console.log(errorMessage)
+    
+                    }
+                    //The rack doesn't exist, or it doesn't fit on the rack at rackU
+                    else {
+                        instanceRef.add({
+                            modelId: doc.id,
+                            model: model,
+                            hostname: hostname,
+                            rack: rack,
+                            rackU: racku,
+                            owner: owner,
+                            comment: comment,
+                            rackID: rackID,
+                            //This is for rack usage reports
+                            vendor: modelVendor,
+                            modelNumber: modelNum
+    
+    
+                        }).then(function (docRef) {
+                            callback(null);
+                        }).catch(function (error) {
+                           // callback("Error");
+                            console.log(error)
+                        })
+                    }
+                })
 
 
-                    }).then(function (docRef) {
-                        callback(null);
-                    }).catch(function (error) {
-                       // callback("Error");
-                        console.log(error)
-                    })
-                }
-            })
+            }
+           
 
         }
     })
@@ -297,11 +308,9 @@ function getSuggestedModels(userInput, callback) {
 
 function getInstanceDetails(instanceID, callback) {
 
-    let instanceHardCoded='nUIqYpZqe0GIg1wBEdjh'
-
-    instanceRef.doc(instanceHardCoded).get().then((doc) => {
+    instanceRef.doc(instanceID).get().then((doc) => {
         let inst = {
-            instanceID: instanceHardCoded, //instanceID
+            instanceID: instanceID, //instanceID
             model: doc.data().model.trim(),
             hostname: doc.data().hostname.trim(),
             rack: doc.data().rack.trim(),
@@ -318,4 +327,18 @@ function getInstanceDetails(instanceID, callback) {
 
 }
 
-export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstanceDetails, getInstancesFromModel, getInstanceAt }
+//as long as it's not in the render, not accessible by the user 
+function validateInstanceForm(model, hostname, rack, racku, owner){
+    //check requried fields aren't empty
+    //legal hostname: check Allen's code so go to dev
+    //racku : fits within height of the rack (what if they fill out the racku before rack?)
+    //owner: must be someone in the system
+    console.log(model, hostname, rack, racku, owner)
+
+
+
+
+
+}
+
+export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstanceDetails, getInstancesFromModel, getInstanceAt, validateInstanceForm }
