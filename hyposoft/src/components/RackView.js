@@ -86,7 +86,7 @@ class RackView extends React.Component {
                 <Box direction={"row"}>
                     <Button icon={<View/>} label={"View"} style={{width: '150px'}}
                             onClick={() => this.setState({popupType: "Diagram"})}/>
-                    <Button icon={<View/>} label={"View"} style={{width: '150px'}}
+                    <Button icon={<Analytics/>} label={"Report"} style={{width: '150px'}}
                             onClick={() => this.setState({popupType: "ReportAll"})}/>
                 </Box>
             )
