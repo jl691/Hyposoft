@@ -56,9 +56,8 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                 if (!doc) {
                     var errMessage = "Model does not exist"
                     callback(errMessage)
-                } else {
-
-                    if (model == "" || hostname == "" || rack == "" || racku == null || !owner) {
+                } else {          
+                    if (model == "" || hostname == "" || rack == "" || racku == null) {
                         callback("Required fields cannot be empty")
                     }
 

@@ -314,6 +314,14 @@ class RackView extends React.Component {
                                        render: datum => (
                                            <Box direction="row">
                                                {this.RackDeleteButton(datum)}
+                                               <Button icon={<View/>} label="View" onClick={() => {
+                                                   this.props.history.push({
+                                                       pathname: '/rackdiagram',
+                                                       state: {
+                                                           id: datum.id
+                                                       }
+                                                   })
+                                               }}/>
                                                <Button icon={<Analytics/>} label="Report" onClick={() => {
                                                    this.setState({popupType: 'Report', rackReport: datum.id})
                                                }}/>

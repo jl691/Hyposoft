@@ -9,26 +9,32 @@ import {Redirect} from "react-router-dom";
 class RackDiagram extends React.Component {
     generateDiagrams() {
         const canvas = new fabric.Canvas('canvas');
-        let currX = 0;
-        let currY = 0;
-        let rowStartNumber = this.props.location.state.letterStart.charCodeAt(0);
-        let rowEndNumber = this.props.location.state.letterEnd.charCodeAt(0);
-        for(let i=rowStartNumber;i<=rowEndNumber;i++){
-            let currLetter = String.fromCharCode(i);
-            for(let j=parseInt(this.props.location.state.numberStart); j<=parseInt(this.props.location.state.numberEnd); j++){
-                rackutils.getRackID(currLetter, j, result => {
-                    console.log(result)
-                    if(result){
-                        this.generateBorders(currX, currY, canvas);
-                        this.generateRackFill(currX, currY, canvas, result);
-                        if(currX === 2){
-                            currX = 0;
-                            currY++;
-                        } else {
-                            currX++;
+
+        if(this.props.location.state.id){
+            this.generateBorders(0, 0, canvas);
+            this.generateRackFill(0, 0, canvas, this.props.location.state.id);
+        } else {
+            let currX = 0;
+            let currY = 0;
+            let rowStartNumber = this.props.location.state.letterStart.charCodeAt(0);
+            let rowEndNumber = this.props.location.state.letterEnd.charCodeAt(0);
+            for(let i=rowStartNumber;i<=rowEndNumber;i++){
+                let currLetter = String.fromCharCode(i);
+                for(let j=parseInt(this.props.location.state.numberStart); j<=parseInt(this.props.location.state.numberEnd); j++){
+                    rackutils.getRackID(currLetter, j, result => {
+                        console.log(result)
+                        if(result){
+                            this.generateBorders(currX, currY, canvas);
+                            this.generateRackFill(currX, currY, canvas, result);
+                            if(currX === 2){
+                                currX = 0;
+                                currY++;
+                            } else {
+                                currX++;
+                            }
                         }
-                    }
-                })
+                    })
+                }
             }
         }
     }
@@ -72,7 +78,7 @@ class RackDiagram extends React.Component {
                         selectable: false
                     });
 
-                    let instanceText = new fabric.Text(instance.model, {
+                    let instanceText = new fabric.Text(instance.model.substr(0, 20), {
                         fill: this.getContrastYIQ(instance.color),
                         fontFamily: 'Arial',
                         fontSize: 15,
@@ -81,7 +87,7 @@ class RackDiagram extends React.Component {
                         selectable: false
                     });
 
-                    let instanceHostname = new fabric.Text(instance.hostname, {
+                    let instanceHostname = new fabric.Text(instance.hostname.substr(0, 15), {
                         fill: this.getContrastYIQ(instance.color),
                         fontFamily: 'Arial',
                         fontSize: 15,
