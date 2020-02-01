@@ -87,6 +87,9 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
         
         
                                 }).then(function (docRef) {
+                                    racksRef.doc(String(rackID)).update({
+                                        instances: firebase.firestore.FieldValue.arrayUnion(docRef.id)
+                                    })
                                     callback(null);
                                 }).catch(function (error) {
                                     // callback("Error");
