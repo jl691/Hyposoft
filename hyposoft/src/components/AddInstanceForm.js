@@ -60,15 +60,7 @@ export default class AddInstanceForm extends Component {
                             ToastsStore.error(errorMessage, 10000)
                         } else {
                             ToastsStore.success('Successfully added instance!');
-                            // this.setState({
-                            //     instance_id: "",
-                            //     model: "",
-                            //     hostname: "",
-                            //     rack: "",
-                            //     rackU: "",
-                            //     owner: "",
-                            //     comment: ""
-                            // })
+            
                             this.props.parentCallback(true);
                         }
                     }
@@ -139,7 +131,7 @@ export default class AddInstanceForm extends Component {
 
                         <FormField name="owner" label="Owner">
 
-                            <TextInput name="owner" placeholder="eg. Jan" onChange={this.handleChange}
+                            <TextInput name="owner" placeholder="eg. userName1" onChange={this.handleChange}
                                        value={this.state.owner}/>
                         </FormField>
 
