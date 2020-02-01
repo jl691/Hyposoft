@@ -113,22 +113,16 @@ class ModelSettingsLayer extends React.Component {
                 ToastsStore.info(this.state.modelNumber.trim() + ' by ' + this.state.vendor.trim() + ' exists', 3000, 'burntToast')
                 return
             } else {
-                modelutils.isNewHeightOk(this.state.id, this.state.height, ok => {
-                    if (!ok) {
-                        ToastsStore.info('New height conflicts with existing instances')
-                        return
-                    }
-                    this.dbFunction(this.state.id, this.state.vendor,
-                        this.state.modelNumber, parseInt(this.state.height),
-                        this.state.displayColor, ethernetPorts,
-                        powerPorts, this.state.cpu,
-                        memory, this.state.storage,
-                        this.state.comment, () => {
-                            ToastsStore.info('Model saved', 3000, 'burntToast')
-                            this.hideFunction()
-                            this.props.parent.init()
-                        })
-                })
+                this.dbFunction(this.state.id, this.state.vendor,
+                    this.state.modelNumber, parseInt(this.state.height),
+                    this.state.displayColor, ethernetPorts,
+                    powerPorts, this.state.cpu,
+                    memory, this.state.storage,
+                    this.state.comment, () => {
+                        ToastsStore.info('Model saved', 3000, 'burntToast')
+                        this.hideFunction()
+                        this.props.parent.init()
+                    })
             }
         })
 

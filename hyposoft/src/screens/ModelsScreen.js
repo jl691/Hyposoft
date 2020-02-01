@@ -26,21 +26,78 @@ import { Add, FormEdit, FormTrash } from "grommet-icons"
 import theme from '../theme'
 
 class ModelsScreen extends React.Component {
+    defaultFilters = {
+        ethernetPortsFilterEnd: 25,
+        ethernetPortsFilterStart: 0,
+        heightFilterEnd: 42,
+        heightFilterStart: 0,
+        powerFilterEnd: 10,
+        powerFilterStart: 0,
+        ethernetPortsFilterMax: 30,
+        powerFilterMax: 12,
+        memoryFilterMax: 1200,
+        memoryFilterStart: 0,
+        memoryFilterEnd: 1000,
+        filters: {
+            heightStart: 0, heightEnd: 42,
+            ethernetPortsStart: 0, ethernetPortsEnd: 25,
+            memoryStart: 0, memoryEnd: 1000,
+            powerPortsStart: 0, powerPortsEnd: 10
+        }
+    }
     state = {
-        searchQuery: ''
+        searchQuery: '',
+        ethernetPortsFilterEnd: 25,
+        ethernetPortsFilterStart: 0,
+        heightFilterEnd: 42,
+        heightFilterStart: 0,
+        powerFilterEnd: 10,
+        powerFilterStart: 0,
+        ethernetPortsFilterMax: 30,
+        powerFilterMax: 12,
+        memoryFilterMax: 1200,
+        memoryFilterStart: 0,
+        memoryFilterEnd: 1000,
+        filters: {
+            heightStart: 0, heightEnd: 42,
+            ethernetPortsStart: 0, ethernetPortsEnd: 25,
+            memoryStart: 0, memoryEnd: 1000,
+            powerPortsStart: 0, powerPortsEnd: 10
+        }
     }
 
     startAfter = null
 
     init() {
-        firebaseutils.modelsRef.orderBy('vendor').orderBy('modelNumber').limit(25).get().then(docSnaps => {
-            if (docSnaps.docs.length === 25) {
-                this.startAfter = docSnaps.docs[docSnaps.docs.length-1]
+        firebaseutils.modelsRef
+        .orderBy('vendor').orderBy('modelNumber')
+        .get()
+        .then(docSnaps => {
+            var models = []
+            var itemNo = 1
+            for (var i = 0; i < docSnaps.docs.length; i++) {
+                if (modelutils.matchesFilters(docSnaps.docs[i], this.state.filters)) {
+                    models = [...models, {...docSnaps.docs[i].data(), id: docSnaps.docs[i].id, itemNo: itemNo++}]
+                    if (models.length === 25 || i === docSnaps.docs.length - 1) {
+                        var newStartAfter = null
+                        if (i < docSnaps.docs.length - 1) {
+                            newStartAfter = docSnaps.docs[i+1]
+                        }
+                        this.startAfter = newStartAfter
+                        this.setState(oldState => ({
+                            ...oldState,
+                            models: models
+                        }))
+                        return
+                    }
+                }
             }
-            var i = 1
-            this.setState({models: docSnaps.docs.map(doc => (
-                {...doc.data(), id: doc.id, itemNo: i++}
-            ))})
+
+            this.startAfter = null
+            this.setState(oldState => ({
+                ...oldState,
+                models: models
+            }))
         })
     }
 
@@ -192,7 +249,7 @@ class ModelsScreen extends React.Component {
                                                                     this.setState(oldState => (
                                                                         {...oldState, models: [...oldState.userse, ...models]}
                                                                     ))
-                                                                })
+                                                                }, this.state.filters)
                                                             }
                                                         }}
                                                         columns={
@@ -291,17 +348,21 @@ class ModelsScreen extends React.Component {
                                                    <RangeSelector
                                                      direction="horizontal"
                                                      min={0}
-                                                     max={10}
+                                                     max={42}
                                                      step={1}
                                                      round="large"
-                                                     values={[1,2]}
+                                                     values={[this.state.heightFilterStart,this.state.heightFilterEnd]}
                                                      onChange={nextRange => {
-
+                                                         this.setState(oldState => ({
+                                                             ...oldState, heightFilterStart: nextRange[0],
+                                                             heightFilterEnd: nextRange[1],
+                                                             filters: {...oldState.filters, heightStart: nextRange[0], heightEnd: nextRange[1]}
+                                                         }))
                                                      }}
                                                    />
                                                 </Stack>
                                                 <Box align="center">
-                                                   <Text size="xsmall" margin={{top: 'xsmall'}}>1 - 2 U</Text>
+                                                   <Text size="xsmall" margin={{top: 'xsmall'}}>{this.state.heightFilterStart} - {this.state.heightFilterEnd} U</Text>
                                                 </Box>
                                             </Box>
                                         </Box>
@@ -322,17 +383,27 @@ class ModelsScreen extends React.Component {
                                                     <RangeSelector
                                                       direction="horizontal"
                                                       min={0}
-                                                      max={10}
+                                                      max={this.state.ethernetPortsFilterMax}
                                                       step={1}
                                                       round="large"
-                                                      values={[1,2]}
+                                                      values={[this.state.ethernetPortsFilterStart,this.state.ethernetPortsFilterEnd]}
                                                       onChange={nextRange => {
+                                                          var newMax = this.state.ethernetPortsFilterMax
+                                                          if (nextRange[1] === this.state.ethernetPortsFilterMax) {
+                                                              newMax = parseInt(newMax*1.1)
+                                                          }
 
+                                                          this.setState(oldState => ({
+                                                              ...oldState, ethernetPortsFilterStart: nextRange[0],
+                                                              ethernetPortsFilterEnd: nextRange[1],
+                                                              ethernetPortsFilterMax: newMax,
+                                                              filters: {...oldState.filters, ethernetPortsStart: nextRange[0], ethernetPortsEnd: nextRange[1]}
+                                                          }))
                                                       }}
                                                     />
                                                 </Stack>
                                                 <Box align="center">
-                                                    <Text size="xsmall" margin={{top: 'xsmall'}}>1 - 2 ports</Text>
+                                                    <Text size="xsmall" margin={{top: 'xsmall'}}>{this.state.ethernetPortsFilterStart} - {this.state.ethernetPortsFilterEnd} ports</Text>
                                                 </Box>
                                              </Box>
                                          </Box>
@@ -353,17 +424,27 @@ class ModelsScreen extends React.Component {
                                                      <RangeSelector
                                                        direction="horizontal"
                                                        min={0}
-                                                       max={10}
+                                                       max={this.state.powerFilterMax}
                                                        step={1}
                                                        round="large"
-                                                       values={[1,2]}
+                                                       values={[this.state.powerFilterStart,this.state.powerFilterEnd]}
                                                        onChange={nextRange => {
+                                                           var newMax = this.state.powerFilterMax
+                                                           if (nextRange[1] === this.state.powerFilterMax) {
+                                                               newMax = parseInt(newMax*1.1)
+                                                           }
 
+                                                           this.setState(oldState => ({
+                                                               ...oldState, powerFilterStart: nextRange[0],
+                                                               powerFilterEnd: nextRange[1],
+                                                               powerFilterMax: newMax,
+                                                               filters: {...oldState.filters, powerPortsStart: nextRange[0], powerPortsEnd: nextRange[1]}
+                                                           }))
                                                        }}
                                                      />
                                                   </Stack>
                                                   <Box align="center">
-                                                     <Text size="xsmall" margin={{top: 'xsmall'}}>1 - 2 ports</Text>
+                                                     <Text size="xsmall" margin={{top: 'xsmall'}}>{this.state.powerFilterStart} - {this.state.powerFilterEnd} ports</Text>
                                                   </Box>
                                               </Box>
                                           </Box>
@@ -384,17 +465,27 @@ class ModelsScreen extends React.Component {
                                                       <RangeSelector
                                                         direction="horizontal"
                                                         min={0}
-                                                        max={10}
+                                                        max={this.state.memoryFilterMax}
                                                         step={1}
                                                         round="large"
-                                                        values={[1,2]}
+                                                        values={[this.state.memoryFilterStart,this.state.memoryFilterEnd]}
                                                         onChange={nextRange => {
+                                                            var newMax = this.state.memoryFilterMax
+                                                            if (nextRange[1] === this.state.memoryFilterMax) {
+                                                                newMax = parseInt(newMax*1.1)
+                                                            }
 
+                                                            this.setState(oldState => ({
+                                                                ...oldState, memoryFilterStart: nextRange[0],
+                                                                memoryFilterEnd: nextRange[1],
+                                                                memoryFilterMax: newMax,
+                                                                filters: {...oldState.filters, memoryStart: nextRange[0], memoryEnd: nextRange[1]}
+                                                            }))
                                                         }}
                                                       />
                                                    </Stack>
                                                    <Box align="center">
-                                                      <Text size="xsmall" margin={{top: 'xsmall'}}>1 - 2 GB</Text>
+                                                      <Text size="xsmall" margin={{top: 'xsmall'}}>{this.state.memoryFilterStart} - {this.state.memoryFilterEnd} GB</Text>
                                                    </Box>
                                                </Box>
                                            </Box>
@@ -404,8 +495,14 @@ class ModelsScreen extends React.Component {
                                              width='medium'
                                              justify='center'
                                              margin={{top: 'medium', left: 'medium', right: 'medium'}} >
-                                             <Button primary label="Apply filters" onClick={() => {}}
+                                             <Button primary label="Apply filters" onClick={() => {this.init()}}
                                                 />
+                                            <Button label="Clear filters" onClick={() => {
+                                                this.setState(oldState => ({
+                                                    ...oldState, ...this.defaultFilters
+                                                }), () => this.init())
+                                            }} margin={{left: 'small'}}
+                                               />
                                         </Box>
                                    </Box>
                                </Box>

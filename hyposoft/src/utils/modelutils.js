@@ -29,33 +29,6 @@ function createModel(id, vendor, modelNumber, height, displayColor, ethernetPort
     })
 }
 
-function isNewHeightOk(modelId, newHeight, callback) {
-    if (!modelId) {
-        callback(true)
-        return
-    }
-    firebaseutils.instanceRef.where('modelId', '==', modelId).get().then(qs => {
-        var modelsChecked = 0
-        var issuesFound = false
-        if (qs.size === 0) {
-            callback(true)
-        }
-        qs.forEach(doc => {
-            rackutils.checkInstanceFits(doc.data().racku, newHeight, doc.data().rackID , status => {
-                modelsChecked++
-                if (status) {
-                    callback(false)
-                    issuesFound = true
-                } else {
-                    if (modelsChecked === qs.size && !issuesFound) {
-                        callback(true)
-                    }
-                }
-            })
-        })
-    })
-}
-
 function modifyModel(id, vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment, callback) {
     firebaseutils.modelsRef.doc(id).update(packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)).then(() => {
         callback()
@@ -100,19 +73,41 @@ function getModelByModelname(modelName, callback) {
     })
 }
 
-function getModels(startAfter, callback) {
-    firebaseutils.modelsRef.orderBy('vendor').orderBy('modelNumber').limit(25).startAfter(startAfter).get()
+function matchesFilters(doc, filters) {
+    return (
+        doc.data().height >= filters.heightStart &&
+        doc.data().height <= filters.heightEnd &&
+        doc.data().memory >= filters.memoryStart &&
+        doc.data().memory <= filters.memoryEnd &&
+        doc.data().ethernetPorts >= filters.ethernetPortsStart &&
+        doc.data().ethernetPorts <= filters.ethernetPortsEnd &&
+        doc.data().powerPorts >= filters.powerPortsStart &&
+        doc.data().powerPorts <= filters.powerPortsEnd
+    )
+}
+
+function getModels(startAfter, callback, filters) {
+    firebaseutils.modelsRef.startAfter(startAfter)
+    .orderBy('vendor').orderBy('modelNumber')
+    .get()
     .then( docSnaps => {
       // added this in from anshu
-      var newStartAfter = null
-      if (docSnaps.docs.length === 25) {
-        newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
+      var models = []
+      var itemNo = 1
+      for (var i = 0; i < docSnaps.docs.length; i++) {
+          if (matchesFilters(docSnaps.docs[i], filters)) {
+              models = [...models, {...docSnaps.docs[i].data(), id: docSnaps.docs[i].id, itemNo: itemNo++}]
+              if (models.length === 25 || i === docSnaps.docs.length - 1) {
+                  var newStartAfter = null
+                  if (i < docSnaps.docs.length - 1) {
+                      newStartAfter = docSnaps.docs[i+1]
+                  }
+                  callback(models, newStartAfter)
+                  return
+              }
+          }
       }
-
-      const models = docSnaps.docs.map( doc => (
-        {...doc.data(), id: doc.id}
-      ))
-      callback(models,newStartAfter)
+      callback(models, null)
     })
     .catch( error => {
       console.log("Error getting documents: ", error)
@@ -160,4 +155,4 @@ function getSuggestedVendors(userInput, callback) {
 }
 
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
-getModelByModelname, isNewHeightOk, doesModelHaveInstances }
+getModelByModelname, doesModelHaveInstances, matchesFilters }
