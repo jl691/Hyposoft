@@ -27,64 +27,89 @@ function getInstance(callback) {
 
 function getInstanceAt(start, callback) {
     console.log("the start after is " + start)
-	instanceRef.startAfter(start).limit(25).get().then(docSnaps => {
-		const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-		const instances = docSnaps.docs.map(doc => (
-			{
-				instance_id: doc.id,
-				model: doc.data().model,
-				hostname: doc.data().hostname,
-				rack: doc.data().rack,
-				rackU: doc.data().rackU,
-				owner: doc.data().owner,
-				comment: doc.data().comment
-			}))
-		callback(newStart, instances)
-	}).catch(function (error) {
-		callback(null, null);
-	})
+    instanceRef.startAfter(start).limit(25).get().then(docSnaps => {
+        const newStart = docSnaps.docs[docSnaps.docs.length - 1];
+        const instances = docSnaps.docs.map(doc => (
+            {
+                instance_id: doc.id,
+                model: doc.data().model,
+                hostname: doc.data().hostname,
+                rack: doc.data().rack,
+                rackU: doc.data().rackU,
+                owner: doc.data().owner,
+                comment: doc.data().comment
+            }))
+        callback(newStart, instances)
+    }).catch(function (error) {
+        callback(null, null);
+    })
 }
 
-function addInstance( model, hostname, rack, racku, owner, comment, callback) {
-    modelutils.getModelByModelname(model, doc => {
-        if (!doc) {
-            var errMessage="Model does not exist"
-            callback(errMessage)
-        } else {
-            instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum, rackID) {
-                //Allen wants me to add a vendor and modelname field to my document
-                if (errorMessage) {
-                    callback(errorMessage)
-                    console.log(errorMessage)
+function addInstance(model, hostname, rack, racku, owner, comment, callback) {
 
-                }
-                //The rack doesn't exist, or it doesn't fit on the rack at rackU
-                else {
-                    instanceRef.add({
-                        modelId: doc.id,
-                        model: model,
-                        hostname: hostname,
-                        rack: rack,
-                        rackU: racku,
-                        owner: owner,
-                        comment: comment,
-                        rackID: rackID,
-                        //This is for rack usage reports
-                        vendor: modelVendor,
-                        modelNumber: modelNum
-
-
-                    }).then(function (docRef) {
-                        callback(null);
-                    }).catch(function (error) {
-                       // callback("Error");
-                        console.log(error)
-                    })
+    validateInstanceForm(model, hostname, rack, racku, owner, valid => {
+        if(valid){
+            callback(valid)
+        }
+        else{
+            modelutils.getModelByModelname(model, doc => {
+                if (!doc) {
+                    var errMessage = "Model does not exist"
+                    callback(errMessage)
+                } else {
+          
+                    if (model == "" || hostname == "" || rack == "" || racku == null || !owner) {
+                        callback("Required fields cannot be empty")
+                    }
+        
+                    else {
+                        instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum, rackID) {
+                            //Allen wants me to add a vendor and modelname field to my document
+                            if (errorMessage) {
+                                callback(errorMessage)
+                                console.log(errorMessage)
+        
+                            }
+                            //The rack doesn't exist, or it doesn't fit on the rack at rackU
+                            else {
+                                instanceRef.add({
+                                    modelId: doc.id,
+                                    model: model,
+                                    hostname: hostname,
+                                    rack: rack,
+                                    rackU: racku,
+                                    owner: owner,
+                                    comment: comment,
+                                    rackID: rackID,
+                                    //This is for rack usage reports
+                                    vendor: modelVendor,
+                                    modelNumber: modelNum
+        
+        
+                                }).then(function (docRef) {
+                                    racksRef.doc(String(rackID)).update({
+                                        instances: firebase.firestore.FieldValue.arrayUnion(docRef.id)
+                                    })
+                                    callback(null);
+                                }).catch(function (error) {
+                                    // callback("Error");
+                                    console.log(error)
+                                })
+                            }
+                        })
+        
+        
+                    }
+        
+        
                 }
             })
 
+
         }
+        
     })
+
 
 }
 
@@ -142,7 +167,7 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                             var errMessage = "Error adding instance: instance of height " + height + " racked at " + rackedAt + "U conflicts with instance(s) " + conflicts;
                             callback(errMessage);
                         }
-                        else{//status callback is null, no conflits
+                        else {//status callback is null, no conflits
                             console.log("Instance fits in rack with no conflicts")
                             callback(null, doc.data().modelNumber, doc.data().vendor, rackID)
 
@@ -211,6 +236,8 @@ function deleteInstance(instanceid, callback) {
 
 function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment, callback) {
 
+    //TODO: check model exists
+
     instanceFitsOnRack(rack, rackU, model, stat => {
 
         console.log(stat)
@@ -244,17 +271,17 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
 }
 
 
-function getInstancesFromModel(model,callback) {
-  instanceRef.where('model','==',model).get().then( docSnaps => {
-    const instances = docSnaps.docs.map( doc => (
-      {id: doc.id, ...doc.data()}
-    ))
-    callback(instances)
-  })
-  .catch( error => {
-    console.log("Error getting documents: ", error)
-    callback(null)
-  })
+function getInstancesFromModel(model, callback) {
+    instanceRef.where('model', '==', model).get().then(docSnaps => {
+        const instances = docSnaps.docs.map(doc => (
+            { id: doc.id, ...doc.data() }
+        ))
+        callback(instances)
+    })
+        .catch(error => {
+            console.log("Error getting documents: ", error)
+            callback(null)
+        })
 }
 
 function sortByKeyword(keyword, callback) {
@@ -274,25 +301,25 @@ function sortByKeyword(keyword, callback) {
 }
 
 function getSuggestedModels(userInput, callback) {
-  // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
-  var modelArray = []
-  modelsRef.orderBy('modelName').get().then(querySnapshot => {
-    querySnapshot.forEach( doc => {
-      const modelName = doc.data().modelName.toLowerCase()
-      const lowerUserInput = userInput.toLowerCase()
-      if (!modelArray.includes(doc.data().modelName) && (!userInput
-          || (modelName.localeCompare(lowerUserInput) >= 0
-              && modelName.localeCompare(lowerUserInput.slice(0,lowerUserInput.length-1)
-                  + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length-1,lowerUserInput.length).charCodeAt(0)+1)) < 0))) {
-          modelArray.push(doc.data().modelName)
-        }
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    var modelArray = []
+    modelsRef.orderBy('modelName').get().then(querySnapshot => {
+        querySnapshot.forEach(doc => {
+            const modelName = doc.data().modelName.toLowerCase()
+            const lowerUserInput = userInput.toLowerCase()
+            if (!modelArray.includes(doc.data().modelName) && (!userInput
+                || (modelName.localeCompare(lowerUserInput) >= 0
+                    && modelName.localeCompare(lowerUserInput.slice(0, lowerUserInput.length - 1)
+                        + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length - 1, lowerUserInput.length).charCodeAt(0) + 1)) < 0))) {
+                modelArray.push(doc.data().modelName)
+            }
+        })
+        callback(modelArray)
     })
-    callback(modelArray)
-  })
-  .catch( error => {
-    console.log("Error getting documents: ", error)
-    callback(null)
-  })
+        .catch(error => {
+            console.log("Error getting documents: ", error)
+            callback(null)
+        })
 }
 
 function getSuggestedOwners(userInput, callback) {
@@ -319,11 +346,9 @@ function getSuggestedOwners(userInput, callback) {
 
 function getInstanceDetails(instanceID, callback) {
 
-    let instanceHardCoded='nUIqYpZqe0GIg1wBEdjh'
-
-    instanceRef.doc(instanceHardCoded).get().then((doc) => {
+    instanceRef.doc(instanceID).get().then((doc) => {
         let inst = {
-            instanceID: instanceHardCoded, //instanceID
+            instanceID: instanceID.trim(),
             model: doc.data().model.trim(),
             hostname: doc.data().hostname.trim(),
             rack: doc.data().rack.trim(),
@@ -340,4 +365,33 @@ function getInstanceDetails(instanceID, callback) {
 
 }
 
-export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getSuggestedOwners, getInstanceDetails, getInstancesFromModel, getInstanceAt }
+//as long as it's not in the render, not accessible by the user ??
+function validateInstanceForm(model, hostname, rack, racku, owner, callback) {
+    //check required fields aren't empty
+    //check model exists
+    //legal hostname: done in AddInstanceForm and EditInstanceForm
+    //racku : fits within height of the rack (what if they fill out the racku before rack?)
+    //owner: must be someone in the system??
+
+    // } TODO: see if Joyce breaks this
+
+    //if owner is not null, need to check username in system
+    if (owner != "") {
+        let username = owner;
+        usersRef.where('username', '==', username).get().then(querySnapshot => {
+            if (!querySnapshot.empty) {
+                callback(null)
+            }
+            else {     
+                callback("This user does not exist")
+            }
+        })
+    }
+    else {
+        callback(null)
+    }
+
+}
+
+
+export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstanceDetails, getInstancesFromModel, getSuggestedOwners, getInstanceAt, validateInstanceForm }

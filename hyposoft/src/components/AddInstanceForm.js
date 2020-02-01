@@ -62,15 +62,7 @@ export default class AddInstanceForm extends Component {
                             ToastsStore.error(errorMessage, 10000)
                         } else {
                             ToastsStore.success('Successfully added instance!');
-                            // this.setState({
-                            //     instance_id: "",
-                            //     model: "",
-                            //     hostname: "",
-                            //     rack: "",
-                            //     rackU: "",
-                            //     owner: "",
-                            //     comment: ""
-                            // })
+            
                             this.props.parentCallback(true);
                         }
                     }
