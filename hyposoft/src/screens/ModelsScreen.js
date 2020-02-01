@@ -14,8 +14,10 @@ import {
     Box,
     Button,
     DataTable,
+    Form,
     Grommet,
     Heading,
+    Layer,
     Text,
     TextInput,
     RangeSelector,
@@ -24,22 +26,109 @@ import {
 import { Add, FormEdit, FormTrash } from "grommet-icons"
 import theme from '../theme'
 
+const algoliasearch = require('algoliasearch')
+const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
+const index = client.initIndex('models')
+
 class ModelsScreen extends React.Component {
+    defaultFilters = {
+        ethernetPortsFilterEnd: 25,
+        ethernetPortsFilterStart: 0,
+        heightFilterEnd: 42,
+        heightFilterStart: 0,
+        powerFilterEnd: 10,
+        powerFilterStart: 0,
+        ethernetPortsFilterMax: 30,
+        powerFilterMax: 12,
+        memoryFilterMax: 1200,
+        memoryFilterStart: 0,
+        memoryFilterEnd: 1000,
+        filters: {
+            heightStart: 0, heightEnd: 42,
+            ethernetPortsStart: 0, ethernetPortsEnd: 25,
+            memoryStart: 0, memoryEnd: 1000,
+            powerPortsStart: 0, powerPortsEnd: 10
+        }
+    }
     state = {
-        searchQuery: ''
+        searchQuery: '',
+        ethernetPortsFilterEnd: 25,
+        ethernetPortsFilterStart: 0,
+        heightFilterEnd: 42,
+        heightFilterStart: 0,
+        powerFilterEnd: 10,
+        powerFilterStart: 0,
+        ethernetPortsFilterMax: 30,
+        powerFilterMax: 12,
+        memoryFilterMax: 1200,
+        memoryFilterStart: 0,
+        memoryFilterEnd: 1000,
+        filters: {
+            heightStart: 0, heightEnd: 42,
+            ethernetPortsStart: 0, ethernetPortsEnd: 25,
+            memoryStart: 0, memoryEnd: 1000,
+            powerPortsStart: 0, powerPortsEnd: 10
+        }
+    }
+
+    search () {
+        if (this.state.searchQuery.trim() === '') {
+            this.init()
+            return
+        }
+        index.search(this.state.searchQuery)
+        .then(({ hits }) => {
+            var models = []
+            var itemNo = 1
+            this.startAfter = null
+            for (var i = 0; i < hits.length; i++) {
+                if (modelutils.matchesFilters(hits[i], this.state.filters)) {
+                    models = [...models, {...hits[i], id: hits[i].objectID, itemNo: itemNo++}]
+                }
+            }
+            this.setState(oldState => ({
+                ...oldState,
+                models: models
+            }))
+        })
     }
 
     startAfter = null
 
     init() {
-        firebaseutils.modelsRef.orderBy('vendor').orderBy('modelNumber').limit(25).get().then(docSnaps => {
-            if (docSnaps.docs.length === 25) {
-                this.startAfter = docSnaps.docs[docSnaps.docs.length-1]
+        if (this.state.searchQuery.trim() !== '') {
+            this.search()
+            return
+        }
+        firebaseutils.modelsRef
+        .orderBy('vendor').orderBy('modelNumber')
+        .get()
+        .then(docSnaps => {
+            var models = []
+            var itemNo = 1
+            for (var i = 0; i < docSnaps.docs.length; i++) {
+                if (modelutils.matchesFilters(docSnaps.docs[i].data(), this.state.filters)) {
+                    models = [...models, {...docSnaps.docs[i].data(), id: docSnaps.docs[i].id, itemNo: itemNo++}]
+                    if (models.length === 25 || i === docSnaps.docs.length - 1) {
+                        var newStartAfter = null
+                        if (i < docSnaps.docs.length - 1) {
+                            newStartAfter = docSnaps.docs[i+1]
+                        }
+                        this.startAfter = newStartAfter
+                        this.setState(oldState => ({
+                            ...oldState,
+                            models: models
+                        }))
+                        return
+                    }
+                }
             }
-            var i = 1
-            this.setState({models: docSnaps.docs.map(doc => (
-                {...doc.data(), id: doc.id, itemNo: i++}
-            ))})
+
+            this.startAfter = null
+            this.setState(oldState => ({
+                ...oldState,
+                models: models
+            }))
         })
     }
 
@@ -53,6 +142,9 @@ class ModelsScreen extends React.Component {
         this.hideAddModelDialog = this.hideAddModelDialog.bind(this)
         this.showEditDialog = this.showEditDialog.bind(this)
         this.hideEditDialog = this.hideEditDialog.bind(this)
+        this.showDeleteDialog = this.showDeleteDialog.bind(this)
+        this.hideDeleteDialog = this.hideDeleteDialog.bind(this)
+
         this.init = this.init.bind(this)
     }
 
@@ -63,7 +155,7 @@ class ModelsScreen extends React.Component {
         }
 
         this.setState(currState => (
-            {...currState, showAddDialog: true, showEditDialog: false}
+            {...currState, showAddDialog: true, showEditDialog: false, showDeleteDialog: false}
         ))
     }
 
@@ -82,7 +174,7 @@ class ModelsScreen extends React.Component {
         this.modelToEdit = this.state.models[itemNo-1]
 
         this.setState(currState => (
-            {...currState, showEditDialog: true, showAddDialog: false}
+            {...currState, showEditDialog: true, showAddDialog: false, showDeleteDialog: false}
         ))
     }
 
@@ -90,6 +182,47 @@ class ModelsScreen extends React.Component {
         this.setState(currState => (
             {...currState, showEditDialog: false}
         ))
+    }
+
+    showDeleteDialog(itemNo) {
+        if (!userutils.isLoggedInUserAdmin()) {
+            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+            return
+        }
+
+        this.modelToDelete = this.state.models[itemNo-1]
+
+        this.setState(currState => (
+            {...currState, showEditDialog: false, showAddDialog: false, showDeleteDialog: true}
+        ))
+    }
+
+    hideDeleteDialog() {
+        this.setState(currState => (
+            {...currState, showDeleteDialog: false}
+        ))
+    }
+
+    deleteModel() {
+        if (!userutils.isLoggedInUserAdmin()) {
+            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+            return
+        }
+
+        modelutils.doesModelHaveInstances(this.modelToDelete.id, yes => {
+            if (yes) {
+                ToastsStore.info("Can't delete model with live instances", 3000, 'burntToast')
+                return
+            }
+
+            modelutils.deleteModel(this.modelToDelete.id, () => {
+                ToastsStore.info("Model deleted", 3000, 'burntToast')
+                this.init()
+                this.hideDeleteDialog()
+                index.deleteObject(this.modelToDelete.id)
+            })
+
+        })
     }
 
     render() {
@@ -111,16 +244,18 @@ class ModelsScreen extends React.Component {
                                <Box direction='row' justify='center'>
                                    <Box width='large' direction='column' align='stretch' justify='start'>
                                    <Box margin={{top: 'medium'}}>
-                                       <TextInput style={styles.TIStyle}
-                                           placeholder="Search for models (type your query and press enter)"
-                                           type='search'
-                                           onChange={e => {
-                                               const value = e.target.value
-                                               this.setState(oldState => ({...oldState, searchQuery: value}))
-                                           }}
-                                           value={this.state.searchQuery}
-                                           title='Search'
-                                           />
+                                       <Form onSubmit={() => this.search()}>
+                                           <TextInput style={styles.TIStyle}
+                                               placeholder="Search for models (type your query and press enter)"
+                                               type='search'
+                                               onChange={e => {
+                                                   const value = e.target.value
+                                                   this.setState(oldState => ({...oldState, searchQuery: value}))
+                                               }}
+                                               value={this.state.searchQuery}
+                                               title='Search'
+                                               />
+                                        </Form>
                                    </Box>
                                        <Box style={{
                                                 borderRadius: 10,
@@ -147,7 +282,7 @@ class ModelsScreen extends React.Component {
                                                                     this.setState(oldState => (
                                                                         {...oldState, models: [...oldState.userse, ...models]}
                                                                     ))
-                                                                })
+                                                                }, this.state.filters)
                                                             }
                                                         }}
                                                         columns={
@@ -198,7 +333,12 @@ class ModelsScreen extends React.Component {
                                                                 {
                                                                     property: 'dummy',
                                                                     render: datum => (
-                                                                    <FormEdit style={{cursor: 'pointer'}} onClick={() => this.showEditDialog(datum.itemNo)} />
+                                                                    <FormEdit style={{cursor: 'pointer'}} onClick={(e) => {
+                                                                        e.persist()
+                                                                        e.nativeEvent.stopImmediatePropagation()
+                                                                        e.stopPropagation()
+                                                                         this.showEditDialog(datum.itemNo)
+                                                                    }} />
                                                                 ),
                                                                     align: 'center',
                                                                     header: <Text size='small'>Edit</Text>,
@@ -207,7 +347,12 @@ class ModelsScreen extends React.Component {
                                                                 {
                                                                     property: 'dummy2',
                                                                     render: datum => (
-                                                                    <FormTrash style={{cursor: 'pointer'}} onClick={() => this.showDeleteDialog(datum.username)} />
+                                                                    <FormTrash style={{cursor: 'pointer'}} onClick={(e) => {
+                                                                        e.persist()
+                                                                        e.nativeEvent.stopImmediatePropagation()
+                                                                        e.stopPropagation()
+                                                                        this.showDeleteDialog(datum.itemNo)
+                                                                    }} />
                                                                 ),
                                                                     align: 'center',
                                                                     header: <Text size='small'>Delete</Text>,
@@ -218,6 +363,9 @@ class ModelsScreen extends React.Component {
                                                         data={this.state.models}
                                                         sortable={true}
                                                         size="medium"
+                                                        onClickRow={({datum}) => {
+                                                            this.props.history.push('/models/'+datum.vendor+'/'+datum.modelNumber)
+                                                        }}
                                                     />
                                                 </Box>
                                            </Box>
@@ -246,17 +394,21 @@ class ModelsScreen extends React.Component {
                                                    <RangeSelector
                                                      direction="horizontal"
                                                      min={0}
-                                                     max={10}
+                                                     max={42}
                                                      step={1}
                                                      round="large"
-                                                     values={[1,2]}
+                                                     values={[this.state.heightFilterStart,this.state.heightFilterEnd]}
                                                      onChange={nextRange => {
-
+                                                         this.setState(oldState => ({
+                                                             ...oldState, heightFilterStart: nextRange[0],
+                                                             heightFilterEnd: nextRange[1],
+                                                             filters: {...oldState.filters, heightStart: nextRange[0], heightEnd: nextRange[1]}
+                                                         }))
                                                      }}
                                                    />
                                                 </Stack>
                                                 <Box align="center">
-                                                   <Text size="xsmall" margin={{top: 'xsmall'}}>1 - 2 U</Text>
+                                                   <Text size="xsmall" margin={{top: 'xsmall'}}>{this.state.heightFilterStart} - {this.state.heightFilterEnd} U</Text>
                                                 </Box>
                                             </Box>
                                         </Box>
@@ -277,17 +429,27 @@ class ModelsScreen extends React.Component {
                                                     <RangeSelector
                                                       direction="horizontal"
                                                       min={0}
-                                                      max={10}
+                                                      max={this.state.ethernetPortsFilterMax}
                                                       step={1}
                                                       round="large"
-                                                      values={[1,2]}
+                                                      values={[this.state.ethernetPortsFilterStart,this.state.ethernetPortsFilterEnd]}
                                                       onChange={nextRange => {
+                                                          var newMax = this.state.ethernetPortsFilterMax
+                                                          if (nextRange[1] === this.state.ethernetPortsFilterMax) {
+                                                              newMax = parseInt(newMax*1.1)
+                                                          }
 
+                                                          this.setState(oldState => ({
+                                                              ...oldState, ethernetPortsFilterStart: nextRange[0],
+                                                              ethernetPortsFilterEnd: nextRange[1],
+                                                              ethernetPortsFilterMax: newMax,
+                                                              filters: {...oldState.filters, ethernetPortsStart: nextRange[0], ethernetPortsEnd: nextRange[1]}
+                                                          }))
                                                       }}
                                                     />
                                                 </Stack>
                                                 <Box align="center">
-                                                    <Text size="xsmall" margin={{top: 'xsmall'}}>1 - 2 ports</Text>
+                                                    <Text size="xsmall" margin={{top: 'xsmall'}}>{this.state.ethernetPortsFilterStart} - {this.state.ethernetPortsFilterEnd} ports</Text>
                                                 </Box>
                                              </Box>
                                          </Box>
@@ -308,17 +470,27 @@ class ModelsScreen extends React.Component {
                                                      <RangeSelector
                                                        direction="horizontal"
                                                        min={0}
-                                                       max={10}
+                                                       max={this.state.powerFilterMax}
                                                        step={1}
                                                        round="large"
-                                                       values={[1,2]}
+                                                       values={[this.state.powerFilterStart,this.state.powerFilterEnd]}
                                                        onChange={nextRange => {
+                                                           var newMax = this.state.powerFilterMax
+                                                           if (nextRange[1] === this.state.powerFilterMax) {
+                                                               newMax = parseInt(newMax*1.1)
+                                                           }
 
+                                                           this.setState(oldState => ({
+                                                               ...oldState, powerFilterStart: nextRange[0],
+                                                               powerFilterEnd: nextRange[1],
+                                                               powerFilterMax: newMax,
+                                                               filters: {...oldState.filters, powerPortsStart: nextRange[0], powerPortsEnd: nextRange[1]}
+                                                           }))
                                                        }}
                                                      />
                                                   </Stack>
                                                   <Box align="center">
-                                                     <Text size="xsmall" margin={{top: 'xsmall'}}>1 - 2 ports</Text>
+                                                     <Text size="xsmall" margin={{top: 'xsmall'}}>{this.state.powerFilterStart} - {this.state.powerFilterEnd} ports</Text>
                                                   </Box>
                                               </Box>
                                           </Box>
@@ -339,17 +511,27 @@ class ModelsScreen extends React.Component {
                                                       <RangeSelector
                                                         direction="horizontal"
                                                         min={0}
-                                                        max={10}
+                                                        max={this.state.memoryFilterMax}
                                                         step={1}
                                                         round="large"
-                                                        values={[1,2]}
+                                                        values={[this.state.memoryFilterStart,this.state.memoryFilterEnd]}
                                                         onChange={nextRange => {
+                                                            var newMax = this.state.memoryFilterMax
+                                                            if (nextRange[1] === this.state.memoryFilterMax) {
+                                                                newMax = parseInt(newMax*1.1)
+                                                            }
 
+                                                            this.setState(oldState => ({
+                                                                ...oldState, memoryFilterStart: nextRange[0],
+                                                                memoryFilterEnd: nextRange[1],
+                                                                memoryFilterMax: newMax,
+                                                                filters: {...oldState.filters, memoryStart: nextRange[0], memoryEnd: nextRange[1]}
+                                                            }))
                                                         }}
                                                       />
                                                    </Stack>
                                                    <Box align="center">
-                                                      <Text size="xsmall" margin={{top: 'xsmall'}}>1 - 2 GB</Text>
+                                                      <Text size="xsmall" margin={{top: 'xsmall'}}>{this.state.memoryFilterStart} - {this.state.memoryFilterEnd} GB</Text>
                                                    </Box>
                                                </Box>
                                            </Box>
@@ -359,8 +541,14 @@ class ModelsScreen extends React.Component {
                                              width='medium'
                                              justify='center'
                                              margin={{top: 'medium', left: 'medium', right: 'medium'}} >
-                                             <Button primary label="Apply filters" onClick={() => {}}
+                                             <Button primary label="Apply filters" onClick={() => {this.init()}}
                                                 />
+                                            <Button label="Clear filters" onClick={() => {
+                                                this.setState(oldState => ({
+                                                    ...oldState, ...this.defaultFilters
+                                                }), () => this.init())
+                                            }} margin={{left: 'small'}}
+                                               />
                                         </Box>
                                    </Box>
                                </Box>
@@ -374,6 +562,29 @@ class ModelsScreen extends React.Component {
 
                 {this.state.showEditDialog && (
                     <ModelSettingsLayer type='edit' parent={this} model={this.modelToEdit} />
+                )}
+
+                {this.state.showDeleteDialog && (
+                    <Layer position="center" modal onClickOutside={this.hideDeleteDialog} onEsc={this.hideDeleteDialog}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Are you sure?
+                            </Heading>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="end" >
+                                <Button label="Yes" type='submit' primary onClick={() => this.deleteModel()} />
+                                <Button
+                                    label="No"
+                                    onClick={this.hideDeleteDialog}
+                                    />
+                            </Box>
+                        </Box>
+                    </Layer>
                 )}
             </Grommet>
         )

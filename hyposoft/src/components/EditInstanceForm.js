@@ -27,12 +27,12 @@ export default class EditInstanceForm extends Component {
         this.handleChange = this.handleChange.bind(this);
     }
 
-    //TODO: use this method properly 
+    //TODO: use this method properly
     handleChange(event) {
         this.setState({
             [event.target.name]: event.target.value
-           
-            
+
+
         });
     }
 
@@ -98,7 +98,7 @@ export default class EditInstanceForm extends Component {
         }
 
         return (
-            
+
             <Grommet>
                 <Box height="575px" width="400px" pad="medium" gap="xxsmall" overflow="auto">
                     <Heading
@@ -106,13 +106,25 @@ export default class EditInstanceForm extends Component {
                         margin="small"
                         level="4"
                     >Edit Instance</Heading>
-                
+
                     <Form onSubmit={this.handleUpdate} name="updateInst" >
 
                         <FormField name="model" label="Model">
                             {/* change placeholders to what the original values were? */}
-                            <TextInput name="model" placeholder="Update Model" onChange={this.handleChange}
-                                value={this.state.model} /> 
+                            <TextInput name="model" placeholder="Update Model"
+                                onChange={e => {
+                                    const value = e.target.value
+                                    this.setState(oldState => ({...oldState, model: value}))
+                                    instutils.getSuggestedModels(value, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))
+                                }}
+                                onSelect={e => {
+                                  this.setState(oldState => ({...oldState, model: e.suggestion}))
+                                }}
+                                value={this.state.model}
+                                suggestions={this.state.modelSuggestions}
+                                onClick={() => instutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))}
+                                title='Model'
+                              />
                                 {/* or value can be */}
                                 {/* this.props.updateModelFromParent */}
                         </FormField>
@@ -168,8 +180,3 @@ export default class EditInstanceForm extends Component {
     }
 
 }
-
-
-
-
-
