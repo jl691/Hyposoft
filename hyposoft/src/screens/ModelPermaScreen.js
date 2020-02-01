@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import AppBar from '../components/AppBar'
 import HomeButton from '../components/HomeButton'
+import BackButton from '../components/BackButton'
 import UserMenu from '../components/UserMenu'
 import ModelSettingsLayer from '../components/ModelSettingsLayer'
 import { Redirect } from 'react-router-dom'
@@ -21,7 +22,6 @@ import {
     TextInput,
     Form } from 'grommet'
 
-import { Add, FormEdit, FormTrash } from "grommet-icons"
 import theme from '../theme'
 
 const algoliasearch = require('algoliasearch')
@@ -143,7 +143,7 @@ class UsersScreen extends Component {
 
                 <Box fill background='light-2'>
                     <AppBar>
-                        <HomeButton alignSelf='start' this={this} />
+                        <BackButton alignSelf='start' this={this} />
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                         }} >{this.props.match.params.vendor} {this.props.match.params.modelNumber}</Heading>
@@ -267,11 +267,11 @@ class UsersScreen extends Component {
                                                         thickness='xsmall'
                                                         />
                                                     </td></tr>
-                                                    <tr><td><b>Ethernet Ports</b></td><td style={{textAlign: 'right'}}>{this.state.ethernetPorts} Ports</td></tr>
-                                                    <tr><td><b>Power Ports</b></td><td style={{textAlign: 'right'}}>{this.state.powerPorts} Ports</td></tr>
-                                                    <tr><td><b>CPU</b></td><td style={{textAlign: 'right'}}>{this.state.cpu}</td></tr>
-                                                    <tr><td><b>Memory</b></td><td style={{textAlign: 'right'}}>{this.state.memory} GB</td></tr>
-                                                    <tr><td><b>Storage</b></td><td style={{textAlign: 'right'}}>{this.state.storage}</td></tr>
+                                                    <tr><td><b>Ethernet Ports</b></td><td style={{textAlign: 'right'}}>{this.state.ethernetPorts || 'N/A'} Ports</td></tr>
+                                                    <tr><td><b>Power Ports</b></td><td style={{textAlign: 'right'}}>{this.state.powerPorts || 'N/A'} Ports</td></tr>
+                                                    <tr><td><b>CPU</b></td><td style={{textAlign: 'right'}}>{this.state.cpu || 'N/A'}</td></tr>
+                                                    <tr><td><b>Memory</b></td><td style={{textAlign: 'right'}}>{this.state.memory || 'N/A'} GB</td></tr>
+                                                    <tr><td><b>Storage</b></td><td style={{textAlign: 'right'}}>{this.state.storage || 'N/A'}</td></tr>
                                                 </table>
                                                 {this.state.comment.split('\n').map((i,key) => {
                                                     return <div key={key}>{i}</div>
