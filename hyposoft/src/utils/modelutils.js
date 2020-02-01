@@ -91,6 +91,7 @@ function matchesFilters(data, filters) {
 function getModels(startAfter, callback, filters) {
     firebaseutils.modelsRef.startAfter(startAfter)
     .orderBy('vendor').orderBy('modelNumber')
+    .startAfter(startAfter)
     .get()
     .then( docSnaps => {
       // added this in from anshu
@@ -156,5 +157,25 @@ function getSuggestedVendors(userInput, callback) {
     })
 }
 
+function getInstancesByModel(model, startAfter, callback) {
+    firebaseutils.instanceRef.startAfter(startAfter)
+    .where('model', '==', model)
+    .limit(25)
+    .startAfter(startAfter)
+    .get()
+    .then( docSnaps => {
+      // added this in from anshu
+      var newStartAfter = null
+      if (docSnaps.docs.length === 25) {
+        newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
+      }
+
+      const instances = docSnaps.docs.map( doc => (
+        {...doc.data(), id: doc.id}
+      ))
+      callback(instances,newStartAfter)
+    })
+}
+
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
-getModelByModelname, doesModelHaveInstances, matchesFilters }
+getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel }

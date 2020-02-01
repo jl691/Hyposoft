@@ -5,6 +5,7 @@ import UserMenu from '../components/UserMenu'
 import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import * as userutils from '../utils/userutils'
+import * as modelutils from '../utils/modelutils'
 import * as firebaseutils from '../utils/firebaseutils'
 
 import {
@@ -24,7 +25,16 @@ import theme from '../theme'
 
 class UsersScreen extends Component {
     state = {
-
+        vendor: '',
+        modelNumber: '',
+        height: '',
+        displayColor: '#BD10E0',
+        ethernetPorts: '',
+        powerPorts: '',
+        cpu: '',
+        memory: '',
+        storage: '',
+        comment: ''
     }
 
     startAfter = null
@@ -34,7 +44,25 @@ class UsersScreen extends Component {
     }
 
     init() {
+        modelutils.getModelByModelname(this.props.match.params.vendor+' '+this.props.match.params.modelNumber, model => {
+            this.setState(oldState => ({
+                ...oldState,
+                ...model.data()
+            }))
+        })
 
+        firebaseutils.instanceRef
+        .where('model', '==', this.props.match.params.vendor+' '+this.props.match.params.modelNumber)
+        .limit(25)
+        .get().then(docSnaps => {
+            if (docSnaps.docs.length === 25) {
+                this.startAfter = docSnaps.docs[docSnaps.docs.length-1]
+            }
+            var i = 1
+            this.setState({instances: docSnaps.docs.map(doc => (
+                {...doc.data(), id: doc.id, itemNo: i++}
+            ))})
+        })
     }
 
     componentWillMount() {
@@ -65,6 +93,21 @@ class UsersScreen extends Component {
                         <Box direction='row' justify='center' overflow={{ horizontal: 'hidden' }}>
                                <Box direction='row' justify='center'>
                                    <Box width='large' direction='column' align='stretch' justify='start'>
+                                   <Box style={{
+                                            borderRadius: 10,
+                                            borderColor: '#EDEDED'
+                                        }}
+                                       id='containerBox'
+                                       direction='row'
+                                       background='#FFFFFF'
+                                       margin={{top: 'medium', bottom: 'small'}}
+                                       flex={{
+                                           grow: 0,
+                                           shrink: 0
+                                       }}
+                                       pad='small' >
+                                       <Heading level='5' margin={{left: 'medium', top: 'none', bottom: 'none'}}>Deployed Instances</Heading>
+                                   </Box>
                                        <Box style={{
                                                 borderRadius: 10,
                                                 borderColor: '#EDEDED'
@@ -72,7 +115,7 @@ class UsersScreen extends Component {
                                            id='containerBox'
                                            direction='row'
                                            background='#FFFFFF'
-                                           margin={{top: 'medium', bottom: 'medium'}}
+                                           margin={{top: 'small', bottom: 'medium'}}
                                            flex={{
                                                grow: 0,
                                                shrink: 0
@@ -97,42 +140,32 @@ class UsersScreen extends Component {
                                                         columns={
                                                             [
                                                                 {
-                                                                    property: 'name',
-                                                                    header: <Text>Name</Text>,
+                                                                    property: 'hostname',
+                                                                    header: <Text size='small'>Hostname</Text>,
+                                                                    render: datum => <Text size='small'>{datum.hostname}</Text>,
                                                                     sortable: true,
                                                                 },
                                                                 {
-                                                                    property: 'username',
-                                                                    header: <Text>Username</Text>,
-                                                                    primary: true,
+                                                                    property: 'rack',
+                                                                    header: <Text size='small'>Rack</Text>,
+                                                                    render: datum => <Text size='small'>{datum.rack}</Text>,
                                                                     sortable: true,
                                                                 },
                                                                 {
-                                                                    property: 'role',
-                                                                    header: <Text>Role</Text>,
+                                                                    property: 'rackU',
+                                                                    header: <Text size='small'>Rack U</Text>,
+                                                                    render: datum => <Text size='small'>{datum.rackU}</Text>,
                                                                     sortable: true,
                                                                 },
                                                                 {
-                                                                    property: 'dummy',
-                                                                    render: datum => (
-                                                                    <FormEdit style={{cursor: 'pointer'}} onClick={() => this.showEditDialog(datum.username)} />
-                                                                ),
-                                                                    align: 'center',
-                                                                    header: <Text>Edit</Text>,
-                                                                    sortable: false
+                                                                    property: 'owner',
+                                                                    header: <Text size='small'>Owner</Text>,
+                                                                    render: datum => <Text size='small'>{datum.owner}</Text>,
+                                                                    sortable: true,
                                                                 },
-                                                                {
-                                                                    property: 'dummy2',
-                                                                    render: datum => (
-                                                                    <FormTrash style={{cursor: 'pointer'}} onClick={() => this.showDeleteDialog(datum.username)} />
-                                                                ),
-                                                                    align: 'center',
-                                                                    header: <Text>Delete</Text>,
-                                                                    sortable: false
-                                                                }
                                                             ]
                                                         }
-                                                        data={this.state.users}
+                                                        data={this.state.instances}
                                                         sortable={true}
                                                         size="medium"
                                                     />
@@ -147,8 +180,7 @@ class UsersScreen extends Component {
                                        justify='start' >
                                        <Box style={{
                                                 borderRadius: 10,
-                                                borderColor: '#EDEDED',
-                                                position: 'fixed'
+                                                borderColor: '#EDEDED'
                                             }}
                                             direction='row'
                                             alignSelf='stretch'
@@ -159,30 +191,31 @@ class UsersScreen extends Component {
                                             <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}} direction='column' justify='start'>
                                                 <Heading level='4' margin='none'>Model Details</Heading>
                                                 <table style={{marginTop: '10px', marginBottom: '10px'}}>
-                                                    <tr><td><b>Vendor</b></td><td style={{textAlign: 'right'}}>Apple</td></tr>
-                                                    <tr><td><b>Model Number</b></td><td style={{textAlign: 'right'}}>iServer 3.0</td></tr>
-                                                    <tr><td><b>Height</b></td><td style={{textAlign: 'right'}}>5 U</td></tr>
+                                                    <tr><td><b>Vendor</b></td><td style={{textAlign: 'right'}}>{this.state.vendor}</td></tr>
+                                                    <tr><td><b>Model Number</b></td><td style={{textAlign: 'right'}}>{this.state.modelNumber}</td></tr>
+                                                    <tr><td><b>Height</b></td><td style={{textAlign: 'right'}}>{this.state.height} U</td></tr>
                                                     <tr><td><b>Display Color</b></td><td style={{textAlign: 'right'}}>
                                                     <Meter
                                                         values={[{
                                                         value: 100,
-                                                        color: '#0000ff'
+                                                        color: this.state.displayColor
                                                         }]}
                                                         size='xsmall'
                                                         thickness='xsmall'
                                                         />
                                                     </td></tr>
-                                                    <tr><td><b>Ethernet Ports</b></td><td style={{textAlign: 'right'}}>5 Ports</td></tr>
-                                                    <tr><td><b>Power Ports</b></td><td style={{textAlign: 'right'}}>5 Ports</td></tr>
-                                                    <tr><td><b>CPU</b></td><td style={{textAlign: 'right'}}>iCPU</td></tr>
-                                                    <tr><td><b>Memory</b></td><td style={{textAlign: 'right'}}>10 GB</td></tr>
-                                                    <tr><td><b>Storage</b></td><td style={{textAlign: 'right'}}>iStorage</td></tr>
+                                                    <tr><td><b>Ethernet Ports</b></td><td style={{textAlign: 'right'}}>{this.state.ethernetPorts} Ports</td></tr>
+                                                    <tr><td><b>Power Ports</b></td><td style={{textAlign: 'right'}}>{this.state.powerPorts} Ports</td></tr>
+                                                    <tr><td><b>CPU</b></td><td style={{textAlign: 'right'}}>{this.state.cpu}</td></tr>
+                                                    <tr><td><b>Memory</b></td><td style={{textAlign: 'right'}}>{this.state.memory} GB</td></tr>
+                                                    <tr><td><b>Storage</b></td><td style={{textAlign: 'right'}}>{this.state.storage}</td></tr>
                                                 </table>
-                                                {"".split('\n').map((i,key) => {
+                                                {this.state.comment.split('\n').map((i,key) => {
                                                     return <div key={key}>{i}</div>
                                                 })}
-                                                <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}>
-                                                    <Button primary icon={<Add />} label="Add" onClick={this.addUserDialog} />
+                                                <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}} gap='small'>
+                                                    <Button primary label="Edit" onClick={() => {}} />
+                                                    <Button label="Delete" onClick={() => {}} />
                                                 </Box>
                                             </Box>
                                         </Box>

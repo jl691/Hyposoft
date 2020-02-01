@@ -212,7 +212,6 @@ class ModelsScreen extends React.Component {
         modelutils.doesModelHaveInstances(this.modelToDelete.id, yes => {
             if (yes) {
                 ToastsStore.info("Can't delete model with live instances", 3000, 'burntToast')
-                this.hideDeleteDialog()
                 return
             }
 
@@ -334,7 +333,12 @@ class ModelsScreen extends React.Component {
                                                                 {
                                                                     property: 'dummy',
                                                                     render: datum => (
-                                                                    <FormEdit style={{cursor: 'pointer'}} onClick={() => this.showEditDialog(datum.itemNo)} />
+                                                                    <FormEdit style={{cursor: 'pointer'}} onClick={(e) => {
+                                                                        e.persist()
+                                                                        e.nativeEvent.stopImmediatePropagation()
+                                                                        e.stopPropagation()
+                                                                         this.showEditDialog(datum.itemNo)
+                                                                    }} />
                                                                 ),
                                                                     align: 'center',
                                                                     header: <Text size='small'>Edit</Text>,
@@ -343,7 +347,12 @@ class ModelsScreen extends React.Component {
                                                                 {
                                                                     property: 'dummy2',
                                                                     render: datum => (
-                                                                    <FormTrash style={{cursor: 'pointer'}} onClick={() => this.showDeleteDialog(datum.itemNo)} />
+                                                                    <FormTrash style={{cursor: 'pointer'}} onClick={(e) => {
+                                                                        e.persist()
+                                                                        e.nativeEvent.stopImmediatePropagation()
+                                                                        e.stopPropagation()
+                                                                        this.showDeleteDialog(datum.itemNo)
+                                                                    }} />
                                                                 ),
                                                                     align: 'center',
                                                                     header: <Text size='small'>Delete</Text>,
