@@ -18,6 +18,10 @@ import {
 
 import theme from '../theme'
 
+const algoliasearch = require('algoliasearch')
+const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
+const index = client.initIndex('models')
+
 class ModelSettingsLayer extends React.Component {
     state = {
         vendor: '',
@@ -118,10 +122,11 @@ class ModelSettingsLayer extends React.Component {
                     this.state.displayColor, ethernetPorts,
                     powerPorts, this.state.cpu,
                     memory, this.state.storage,
-                    this.state.comment, () => {
+                    this.state.comment, (model, id) => {
                         ToastsStore.info('Model saved', 3000, 'burntToast')
                         this.hideFunction()
                         this.props.parent.init()
+                        index.saveObject({...model, objectID: id})
                     })
             }
         })

@@ -25,6 +25,10 @@ import {
 import { Add, FormEdit, FormTrash } from "grommet-icons"
 import theme from '../theme'
 
+const algoliasearch = require('algoliasearch')
+const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
+const index = client.initIndex('models')
+
 class ModelsScreen extends React.Component {
     defaultFilters = {
         ethernetPortsFilterEnd: 25,
@@ -189,6 +193,7 @@ class ModelsScreen extends React.Component {
                 ToastsStore.info("Model deleted", 3000, 'burntToast')
                 this.init()
                 this.hideDeleteDialog()
+                index.deleteObject(this.modelToDelete.id)
             })
 
         })

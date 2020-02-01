@@ -24,14 +24,16 @@ function combineVendorAndModelNumber(vendor, modelNumber) {
 
 function createModel(id, vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment, callback) {
     // Ignore the first param
-    firebaseutils.modelsRef.add(packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)).then(() => {
-        callback()
+    var model = packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)
+    firebaseutils.modelsRef.add(model).then(docRef => {
+        callback(model, docRef.id)
     })
 }
 
 function modifyModel(id, vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment, callback) {
-    firebaseutils.modelsRef.doc(id).update(packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)).then(() => {
-        callback()
+    var model = packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)
+    firebaseutils.modelsRef.doc(id).update(model).then(() => {
+        callback(model, id)
     })
 
     // Now update all instances of this model just in case the modelNumber or vendor changed
