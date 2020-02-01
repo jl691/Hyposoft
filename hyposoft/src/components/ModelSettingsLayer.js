@@ -1,7 +1,6 @@
 import * as modelutils from '../utils/modelutils'
-import * as firebaseutils from '../utils/firebaseutils'
 import * as userutils from '../utils/userutils'
-import React, { Component } from 'react'
+import React from 'react'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 
 import { SketchPicker } from 'react-color'
@@ -16,7 +15,11 @@ import {
     TextArea,
     Form } from 'grommet'
 
-import theme from '../theme'
+import {Redirect} from "react-router-dom";
+
+const algoliasearch = require('algoliasearch')
+const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
+const index = client.initIndex('models')
 
 class ModelSettingsLayer extends React.Component {
     state = {
@@ -44,8 +47,11 @@ class ModelSettingsLayer extends React.Component {
             this.dbFunction = modelutils.modifyModel
 
             this.setState({
-                ...this.props.model, height: ''+this.props.model.height, ethernetPorts: ''+this.props.model.ethernetPorts,
-                powerPorts: ''+this.props.model.powerPorts, memory: ''+this.props.model.memory
+                ...this.props.model,
+                height: ''+this.props.model.height,
+                ethernetPorts: (this.props.model.ethernetPorts ? ''+this.props.model.ethernetPorts : ''),
+                powerPorts: (this.props.model.powerPorts ? ''+this.props.model.powerPorts : ''),
+                memory: (this.props.model.memory ? ''+this.props.model.memory : '')
             })
         }
     }
@@ -110,28 +116,27 @@ class ModelSettingsLayer extends React.Component {
                 ToastsStore.info(this.state.modelNumber.trim() + ' by ' + this.state.vendor.trim() + ' exists', 3000, 'burntToast')
                 return
             } else {
-                modelutils.isNewHeightOk(this.state.id, this.state.height, ok => {
-                    if (!ok) {
-                        ToastsStore.info('New height conflicts with existing instances')
-                        return
-                    }
-                    this.dbFunction(this.state.id, this.state.vendor,
-                        this.state.modelNumber, parseInt(this.state.height),
-                        this.state.displayColor, ethernetPorts,
-                        powerPorts, this.state.cpu,
-                        memory, this.state.storage,
-                        this.state.comment, () => {
-                            ToastsStore.info('Model saved', 3000, 'burntToast')
-                            this.hideFunction()
-                            this.props.parent.init()
-                        })
-                })
+                this.dbFunction(this.state.id, this.state.vendor,
+                    this.state.modelNumber, parseInt(this.state.height),
+                    this.state.displayColor, ethernetPorts,
+                    powerPorts, this.state.cpu,
+                    memory, this.state.storage,
+                    this.state.comment, (model, id) => {
+                        ToastsStore.info('Model saved', 3000, 'burntToast')
+                        this.hideFunction()
+                        this.props.parent.init()
+                        index.saveObject({...model, objectID: id})
+                    })
             }
         })
 
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
+
         return (
             <Layer position="center" modal onClickOutside={this.hideFunction} onEsc={this.hideFunction}>
                 <Box pad="medium" gap="small" width="large">

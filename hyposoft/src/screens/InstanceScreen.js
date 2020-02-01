@@ -1,13 +1,11 @@
 import React, { Component } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
-import { Link } from 'react-router-dom'
 
 import { Text, Button, Layer, Grommet, Heading, Box, TextInput } from 'grommet'
 import { Add } from 'grommet-icons'
 import AddInstanceForm from '../components/AddInstanceForm'
 import DeleteInstancePopup from '../components/DeleteInstancePopup'
 import EditInstanceForm from '../components/EditInstanceForm'
-import DetailedInstanceScreen from './DetailedInstanceScreen'
 
 import theme from '../theme'
 import AppBar from '../components/AppBar'
@@ -43,6 +41,7 @@ class InstanceScreen extends Component {
         }
 
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
+        this.handleCancelRefreshPopupChange = this.handleCancelRefreshPopupChange.bind(this);
         this.handleDeleteButton = this.handleDeleteButton.bind(this);
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
         this.handleChange = this.handleChange.bind(this);
@@ -91,13 +90,20 @@ class InstanceScreen extends Component {
         }
     }
 
-    handleCancelPopupChange() {
+    handleCancelRefreshPopupChange() {
         this.setState({
             popupType: ""
         });
         //TODO: READ https://stackoverflow.com/questions/37949981/call-child-method-from-parent
         this.instanceTable.current.forceRefresh();
     }
+
+    handleCancelPopupChange() {
+        this.setState({
+            popupType: ""
+        });
+    }
+
     handleDeleteButton = (datumID) => {
         this.setState({
             popupType: 'Delete',
@@ -146,13 +152,8 @@ class InstanceScreen extends Component {
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <AddInstanceForm
-                        parentCallback={this.handleCancelPopupChange}
-                    />
-                    <Button
-                        margin="small"
-                        label="Cancel"
-                        onClick={() => this.setState({ popupType: "" })}
-
+                        parentCallback={this.handleCancelRefreshPopupChange}
+                        cancelCallback={this.handleCancelPopupChange}
                     />
 
                 </Layer>
@@ -165,14 +166,9 @@ class InstanceScreen extends Component {
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <DeleteInstancePopup
-                        parentCallback={this.handleCancelPopupChange}
+                        parentCallback={this.handleCancelRefreshPopupChange}
+                        cancelCallback={this.handleCancelPopupChange}
                         deleteIDFromParent={this.state.deleteID}
-
-                    />
-                    <Button
-                        margin="small"
-                        label="Cancel"
-                        onClick={() => this.setState({ popupType: "" })}
 
                     />
                 </Layer>
@@ -188,7 +184,8 @@ class InstanceScreen extends Component {
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <EditInstanceForm
-                        parentCallback={this.handleCancelPopupChange}
+                        parentCallback={this.handleCancelRefreshPopupChange}
+                        cancelCallback={this.handleCancelPopupChange}
 
                         updateIDFromParent={this.state.updateID}
                         updateModelFromParent={this.state.updateModel}
@@ -197,12 +194,6 @@ class InstanceScreen extends Component {
                         updateRackUFromParent={this.state.updateRackU}
                         updateOwnerFromParent={this.state.updateOwner}
                         updateCommentFromParent={this.state.updateComment}
-                    />
-                    <Button
-                        margin="small"
-                        label="Cancel"
-                        onClick={() => this.setState({ popupType: "" })}
-
                     />
                 </Layer>
             )

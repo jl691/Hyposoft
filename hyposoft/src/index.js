@@ -18,6 +18,8 @@ import ClaimScreen from './screens/ClaimScreen'
 import UnclaimScreen from './screens/UnclaimScreen'
 import ResetPasswordScreen from './screens/ResetPasswordScreen'
 import ModelsScreen from './screens/ModelsScreen'
+import ModelPermaScreen from './screens/ModelPermaScreen'
+import PortScreen from './screens/PortScreen'
 
 import RackView from "./components/RackView";
 import InstanceScreen from './screens/InstanceScreen'
@@ -35,10 +37,12 @@ ReactDOM.render((
                     <Route path='/badsignup/:secret' component={UnclaimScreen} />
                     <Route path='/resetpassword/:secret' component={ResetPasswordScreen} />
                     <Route exact path='/models' component={ModelsScreen} />
+                    <Route exact path='/models/:vendor/:modelNumber' component={ModelPermaScreen} />
                     {/* TODO: have url be the ID of the instance */}
                     <Route exact path='/instances/:instanceID' component={DetailedInstanceScreen}/>
                     {/* TODO: implement a functionality to take you to instance screen vs http://localhost:3000/instances*/}
                     <Route exact path='/instances' component={InstanceScreen} />
+                    <Route path='/port' component={PortScreen} />
                 </Switch>
             </BrowserRouter>
         ), document.getElementById('root'))

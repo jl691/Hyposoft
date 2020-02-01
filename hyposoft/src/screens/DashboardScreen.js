@@ -44,6 +44,9 @@ class DashboardScreen extends Component {
             case 3:
                 this.setState({redirect: '/racks'})
                 break
+            case 4:
+                this.setState({redirect: '/port'})
+                break
             default:
                 alert(action)
         }

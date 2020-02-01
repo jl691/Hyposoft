@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Link } from 'react-router-dom'
+import {Link, Redirect} from 'react-router-dom'
 import { DataTable, Button, Text} from 'grommet'
 import { Book, Trash, Edit} from 'grommet-icons'
 import * as instutils from '../utils/instanceutils'
@@ -83,7 +83,7 @@ export default class InstanceTable extends Component {
 
                         <Button icon={< Book />}
                             margin="small"
-                            onClick={new DetailedInstanceScreen}
+                            onClick={new DetailedInstanceScreen()}
 
                         />
 
@@ -181,11 +181,13 @@ export default class InstanceTable extends Component {
 
         let newInstances = [];
         let splitRackArrayTemp, rackRowTemp, rackNumTemp;
-        this.state.instances.forEach(instance => {
+        this.defaultInstances.forEach(instance => {
             splitRackArrayTemp = instance.rack.split(/(\d+)/);
             rackRowTemp = splitRackArrayTemp[0];
             rackNumTemp = parseInt(splitRackArrayTemp[1]);
             console.log("current instance: " + rackRowTemp.charCodeAt(0) + " " + rackNumTemp)
+            console.log("rackRowTemp " + rackRowTemp + " rackNumTemp " + rackNumTemp)
+            console.log("rackRowStart " + rackRowStart.charCodeAt(0) + " rackRowEnd " + rackRowEnd.charCodeAt(0) + " rackNumStart " + rackNumStart + " rackNumEnd " + rackNumEnd)
             /*if(rackRowTemp.charCodeAt(0) >= rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) <= rackRowEnd.charCodeAt(0) && rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd){
                 console.log("found a match!")
                 newInstances.push(instance);
@@ -194,7 +196,6 @@ export default class InstanceTable extends Component {
                 console.log("found a match!")
                 newInstances.push(instance);
             }
-            console.log("rackRowStart " + rackRowStart.charCodeAt(0) + " rackRowEnd " + rackRowEnd.charCodeAt(0) + " rackNumStart " + rackNumStart + " rackNumEnd " + rackNumEnd)
         })
 
         this.setState({instances: newInstances})
@@ -202,6 +203,10 @@ export default class InstanceTable extends Component {
 
 
     render() {
+
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
 
         if (!this.state.initialLoaded) {
             return (<Text>Please wait...</Text>);

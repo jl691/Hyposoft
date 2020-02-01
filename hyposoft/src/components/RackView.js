@@ -12,6 +12,7 @@ import UserMenu from "./UserMenu";
 import AppBar from "./AppBar";
 import RackUsageReport from "./RackUsageReport";
 import * as formvalidationutils from "../utils/formvalidationutils";
+import {Redirect} from "react-router-dom";
 
 class RackView extends React.Component {
 
@@ -85,7 +86,7 @@ class RackView extends React.Component {
                 <Box direction={"row"}>
                     <Button icon={<View/>} label={"View"} style={{width: '150px'}}
                             onClick={() => this.setState({popupType: "Diagram"})}/>
-                    <Button icon={<View/>} label={"View"} style={{width: '150px'}}
+                    <Button icon={<Analytics/>} label={"Report"} style={{width: '150px'}}
                             onClick={() => this.setState({popupType: "ReportAll"})}/>
                 </Box>
             )
@@ -111,7 +112,7 @@ class RackView extends React.Component {
             ToastsStore.error('Invalid number.');
         } else if (!formvalidationutils.checkPositive(this.state.numberStart) || !formvalidationutils.checkPositive(this.state.numberEnd)) {
             //non positive number
-            ToastsStore.error('Numbers most be positive.');
+            ToastsStore.error('Numbers must be positive.');
         } else if (!formvalidationutils.checkUppercaseLetter(this.state.letterStart) || !formvalidationutils.checkUppercaseLetter(this.state.letterEnd)) {
             //non uppercase letter
             ToastsStore.error('Rows must be a single uppercase letter.');
@@ -133,6 +134,10 @@ class RackView extends React.Component {
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
+
         const {popupType} = this.state;
         let popup;
         if (popupType === 'Delete') {
@@ -224,7 +229,17 @@ class RackView extends React.Component {
         }
 
         if (!this.state.initialLoaded) {
-            return (<Text>Please wait...</Text>);
+            return (<Grommet theme={theme}>
+                <Box fill background='light-2'>
+                    <AppBar>
+                        <HomeButton alignSelf='start' this={this}/>
+                        <Heading alignSelf='center' level='4' margin={{
+                            top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
+                        }}>Racks</Heading>
+                        <UserMenu alignSelf='end' this={this}/>
+                    </AppBar>
+                    <Heading margin={"none"}>Racks</Heading>
+                    <Text>Please wait...</Text></Box></Grommet>);
         }
 
         return (

@@ -1,5 +1,4 @@
 import * as firebaseutils from './firebaseutils'
-import * as rackutils from './rackutils'
 
 function packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment) {
     const model = {
@@ -24,41 +23,16 @@ function combineVendorAndModelNumber(vendor, modelNumber) {
 
 function createModel(id, vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment, callback) {
     // Ignore the first param
-    firebaseutils.modelsRef.add(packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)).then(() => {
-        callback()
-    })
-}
-
-function isNewHeightOk(modelId, newHeight, callback) {
-    if (!modelId) {
-        callback(true)
-        return
-    }
-    firebaseutils.instanceRef.where('modelId', '==', modelId).get().then(qs => {
-        var modelsChecked = 0
-        var issuesFound = false
-        if (qs.size === 0) {
-            callback(true)
-        }
-        qs.forEach(doc => {
-            rackutils.checkInstanceFits(doc.data().racku, newHeight, doc.data().rackID , status => {
-                modelsChecked++
-                if (status) {
-                    callback(false)
-                    issuesFound = true
-                } else {
-                    if (modelsChecked === qs.size && !issuesFound) {
-                        callback(true)
-                    }
-                }
-            })
-        })
+    var model = packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)
+    firebaseutils.modelsRef.add(model).then(docRef => {
+        callback(model, docRef.id)
     })
 }
 
 function modifyModel(id, vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment, callback) {
-    firebaseutils.modelsRef.doc(id).update(packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)).then(() => {
-        callback()
+    var model = packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)
+    firebaseutils.modelsRef.doc(id).update(model).then(() => {
+        callback(model, id)
     })
 
     // Now update all instances of this model just in case the modelNumber or vendor changed
@@ -73,14 +47,8 @@ function modifyModel(id, vendor, modelNumber, height, displayColor, ethernetPort
     })
 }
 
-function deleteModel(vendor, modelNumber) {
-    firebaseutils.modelsRef.where('vendor', '==', vendor)
-    .where('modelNumber', '==', modelNumber)
-    .get().then(qs => {
-        if (!qs.empty) {
-            qs.docs[0].ref.delete()
-        }
-    })
+function deleteModel(modelId, callback) {
+    firebaseutils.modelsRef.doc(modelId).delete().then(() => callback())
 }
 
 function getModel(vendor, modelNumber, callback) {
@@ -106,19 +74,42 @@ function getModelByModelname(modelName, callback) {
     })
 }
 
-function getModels(startAfter, callback) {
-    firebaseutils.modelsRef.orderBy('vendor').orderBy('modelNumber').limit(25).startAfter(startAfter).get()
+function matchesFilters(data, filters) {
+    return (
+        data.height >= filters.heightStart &&
+        data.height <= filters.heightEnd &&
+        data.memory >= filters.memoryStart &&
+        data.memory <= filters.memoryEnd &&
+        data.ethernetPorts >= filters.ethernetPortsStart &&
+        data.ethernetPorts <= filters.ethernetPortsEnd &&
+        data.powerPorts >= filters.powerPortsStart &&
+        data.powerPorts <= filters.powerPortsEnd
+    )
+}
+
+function getModels(startAfter, callback, filters) {
+    firebaseutils.modelsRef.startAfter(startAfter)
+    .orderBy('vendor').orderBy('modelNumber')
+    .startAfter(startAfter)
+    .get()
     .then( docSnaps => {
       // added this in from anshu
-      var newStartAfter = null
-      if (docSnaps.docs.length === 25) {
-        newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
+      var models = []
+      var itemNo = 1
+      for (var i = 0; i < docSnaps.docs.length; i++) {
+          if (matchesFilters(docSnaps.docs[i].data(), filters)) {
+              models = [...models, {...docSnaps.docs[i].data(), id: docSnaps.docs[i].id, itemNo: itemNo++}]
+              if (models.length === 25 || i === docSnaps.docs.length - 1) {
+                  var newStartAfter = null
+                  if (i < docSnaps.docs.length - 1) {
+                      newStartAfter = docSnaps.docs[i+1]
+                  }
+                  callback(models, newStartAfter)
+                  return
+              }
+          }
       }
-
-      const models = docSnaps.docs.map( doc => (
-        {...doc.data(), id: doc.id}
-      ))
-      callback(models,newStartAfter)
+      callback(models, null)
     })
     .catch( error => {
       console.log("Error getting documents: ", error)
@@ -134,6 +125,12 @@ function doesModelDocExist(vendor, modelNumber, callback) {
     .catch( error => {
       console.log("Error getting documents: ", error)
       callback(null)
+    })
+}
+
+function doesModelHaveInstances(modelId, callback) {
+    firebaseutils.instanceRef.where('modelId', '==', modelId).get().then(qs => {
+        callback(!qs.empty)
     })
 }
 
@@ -159,5 +156,25 @@ function getSuggestedVendors(userInput, callback) {
     })
 }
 
+function getInstancesByModel(model, startAfter, callback) {
+    firebaseutils.instanceRef.startAfter(startAfter)
+    .where('model', '==', model)
+    .limit(25)
+    .startAfter(startAfter)
+    .get()
+    .then( docSnaps => {
+      // added this in from anshu
+      var newStartAfter = null
+      if (docSnaps.docs.length === 25) {
+        newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
+      }
+
+      const instances = docSnaps.docs.map( doc => (
+        {...doc.data(), id: doc.id}
+      ))
+      callback(instances,newStartAfter)
+    })
+}
+
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
-getModelByModelname, isNewHeightOk }
+getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel }

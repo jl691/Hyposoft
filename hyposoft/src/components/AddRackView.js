@@ -4,6 +4,8 @@ import {Accordion, AccordionPanel, Box, Button, Form, Grommet, Text, TextInput} 
 import * as rackutils from "../utils/rackutils";
 import * as formvalidationutils from "../utils/formvalidationutils";
 import {ToastsContainer, ToastsStore} from 'react-toasts';
+import * as userutils from "../utils/userutils";
+import {Redirect} from "react-router-dom";
 
 class AddRackView extends React.Component {
 
@@ -88,6 +90,10 @@ class AddRackView extends React.Component {
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
+
         return (
             <Grommet theme={theme}>
                 <Accordion>
