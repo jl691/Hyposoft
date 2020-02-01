@@ -49,7 +49,7 @@ class RackView extends React.Component {
 
     componentDidMount() {
         rackutils.getRacks((startAfterCallback, rackCallback) => {
-            if (startAfterCallback && rackCallback) {
+            if (!(startAfterCallback === null) && !(rackCallback === null)) {
                 this.startAfter = startAfterCallback;
                 this.setState({racks: rackCallback, initialLoaded: true});
             }
@@ -256,10 +256,12 @@ class RackView extends React.Component {
                     {this.AdminTools()}
                     <DataTable step={25}
                                onMore={() => {
-                                   rackutils.getRackAt(this.startAfter, (newStartAfter, newRacks) => {
-                                       this.startAfter = newStartAfter
-                                       this.setState({racks: this.state.racks.concat(newRacks)})
-                                   });
+                                   if(this.startAfter){
+                                       rackutils.getRackAt(this.startAfter, (newStartAfter, newRacks) => {
+                                           this.startAfter = newStartAfter
+                                           this.setState({racks: this.state.racks.concat(newRacks)})
+                                       });
+                                   }
                                }}
                                columns={[
                                    /*                                  {

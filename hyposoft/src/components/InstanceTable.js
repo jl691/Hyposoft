@@ -60,7 +60,7 @@ export default class InstanceTable extends Component {
 
     componentDidMount() {
         instutils.getInstance((newStartAfter, instancesdb) => {
-            if (newStartAfter && instancesdb) {
+            if (!(newStartAfter === null) && !(instancesdb === null)) {
                 this.startAfter = newStartAfter;
                 this.defaultInstances = instancesdb;
                 this.setState({instances: instancesdb, initialLoaded: true})
@@ -220,10 +220,12 @@ export default class InstanceTable extends Component {
                 <DataTable
                     step={5}
                     onMore={() => {
-                        instutils.getInstanceAt(this.startAfter, (newStartAfter, newInstances) => {
-                            this.startAfter = newStartAfter
-                            this.setState({ instances: this.state.instances.concat(newInstances) })
-                        });
+                        if(this.startAfter){
+                            instutils.getInstanceAt(this.startAfter, (newStartAfter, newInstances) => {
+                                this.startAfter = newStartAfter
+                                this.setState({ instances: this.state.instances.concat(newInstances) })
+                            });
+                        }
                     }}
                     pad="17px"
                     sortable={true}
