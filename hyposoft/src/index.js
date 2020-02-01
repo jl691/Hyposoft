@@ -39,9 +39,9 @@ ReactDOM.render((
                     <Route exact path='/models' component={ModelsScreen} />
                     <Route exact path='/models/:vendor/:modelNumber' component={ModelPermaScreen} />
                     {/* TODO: have url be the ID of the instance */}
-                    <Route exact path='/instanceDetails' component={DetailedInstanceScreen}/>
+                    <Route exact path='/instances/:instanceID' component={DetailedInstanceScreen}/>
                     {/* TODO: implement a functionality to take you to instance screen vs http://localhost:3000/instances*/}
-                    <Route path='/instances' component={InstanceScreen} />
+                    <Route exact path='/instances' component={InstanceScreen} />
                     <Route path='/port' component={PortScreen} />
                 </Switch>
             </BrowserRouter>
