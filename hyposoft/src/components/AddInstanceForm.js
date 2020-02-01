@@ -90,9 +90,9 @@ export default class AddInstanceForm extends Component {
                     >Add Instance</Heading>
                     <Form onSubmit={this.handleSubmit} name="addInst">
 
-                        <FormField name="model" label="Model" required="true" >
+                        <FormField name="model" label="Model">
 
-                            <TextInput name="model"
+                            <TextInput name="model"  required="true"
                                 placeholder="eg. Dell R710"
                                 onChange={e => {
                                     const value = e.target.value
@@ -112,38 +112,38 @@ export default class AddInstanceForm extends Component {
 
 
 
-                        <FormField name="hostname" label="Hostname" required="true">
+                        <FormField name="hostname" label="Hostname">
 
 
                             <TextInput padding="medium" name="hostname" placeholder="eg. server9"
                                        onChange={this.handleChange}
-                                       value={this.state.hostname}/>
+                                       value={this.state.hostname} required="true"/>
                         </FormField>
 
 
-                        <FormField name="rack" label="Rack" required="true">
+                        <FormField name="rack" label="Rack">
 
 
                             <TextInput name="rack" placeholder="eg. B12" onChange={this.handleChange}
-                                       value={this.state.rack}/>
+                                       value={this.state.rack} required="true"/>
                         </FormField>
 
 
-                        <FormField name="rackU" label="RackU" required="true">
+                        <FormField name="rackU" label="RackU">
 
 
                             <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
-                                       value={this.state.rackU}/>
+                                       value={this.state.rackU} required="true"/>
                         </FormField>
 
 
-                        <FormField name="owner" label="Owner" required="true">
+                        <FormField name="owner" label="Owner">
 
                             <TextInput name="owner" placeholder="eg. Jan" onChange={this.handleChange}
                                        value={this.state.owner}/>
                         </FormField>
 
-                        <FormField name="comment" label="Comment" required="false">
+                        <FormField name="comment" label="Comment">
 
                             <TextInput name="comment" placeholder="" onChange={this.handleChange}
                                        value={this.state.comment}/>
