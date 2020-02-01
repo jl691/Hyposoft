@@ -229,7 +229,17 @@ class RackView extends React.Component {
         }
 
         if (!this.state.initialLoaded) {
-            return (<Text>Please wait...</Text>);
+            return (<Grommet theme={theme}>
+                <Box fill background='light-2'>
+                    <AppBar>
+                        <HomeButton alignSelf='start' this={this}/>
+                        <Heading alignSelf='center' level='4' margin={{
+                            top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
+                        }}>Racks</Heading>
+                        <UserMenu alignSelf='end' this={this}/>
+                    </AppBar>
+                    <Heading margin={"none"}>Racks</Heading>
+                    <Text>Please wait...</Text></Box></Grommet>);
         }
 
         return (
