@@ -144,8 +144,21 @@ export default class AddInstanceForm extends Component {
 
                         <FormField name="owner" label="Owner">
 
-                            <TextInput name="owner" placeholder="eg. Jan" onChange={this.handleChange}
-                                       value={this.state.owner}/>
+                            <TextInput name="owner"
+                                placeholder="eg. Jan"
+                                onChange={e => {
+                                    const value = e.target.value
+                                    this.setState(oldState => ({...oldState, owner: value}))
+                                    instutils.getSuggestedOwners(value, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))
+                                }}
+                                onSelect={e => {
+                                    this.setState(oldState => ({...oldState, owner: e.suggestion}))
+                                }}
+                                value={this.state.owner}
+                                suggestions={this.state.ownerSuggestions}
+                                onClick={() => instutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))}
+                                title='Owner'
+                              />
                         </FormField>
 
                         <FormField name="comment" label="Comment">
