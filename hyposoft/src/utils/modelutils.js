@@ -75,16 +75,16 @@ function getModelByModelname(modelName, callback) {
     })
 }
 
-function matchesFilters(doc, filters) {
+function matchesFilters(data, filters) {
     return (
-        doc.data().height >= filters.heightStart &&
-        doc.data().height <= filters.heightEnd &&
-        doc.data().memory >= filters.memoryStart &&
-        doc.data().memory <= filters.memoryEnd &&
-        doc.data().ethernetPorts >= filters.ethernetPortsStart &&
-        doc.data().ethernetPorts <= filters.ethernetPortsEnd &&
-        doc.data().powerPorts >= filters.powerPortsStart &&
-        doc.data().powerPorts <= filters.powerPortsEnd
+        data.height >= filters.heightStart &&
+        data.height <= filters.heightEnd &&
+        data.memory >= filters.memoryStart &&
+        data.memory <= filters.memoryEnd &&
+        data.ethernetPorts >= filters.ethernetPortsStart &&
+        data.ethernetPorts <= filters.ethernetPortsEnd &&
+        data.powerPorts >= filters.powerPortsStart &&
+        data.powerPorts <= filters.powerPortsEnd
     )
 }
 
@@ -97,7 +97,7 @@ function getModels(startAfter, callback, filters) {
       var models = []
       var itemNo = 1
       for (var i = 0; i < docSnaps.docs.length; i++) {
-          if (matchesFilters(docSnaps.docs[i], filters)) {
+          if (matchesFilters(docSnaps.docs[i].data(), filters)) {
               models = [...models, {...docSnaps.docs[i].data(), id: docSnaps.docs[i].id, itemNo: itemNo++}]
               if (models.length === 25 || i === docSnaps.docs.length - 1) {
                   var newStartAfter = null

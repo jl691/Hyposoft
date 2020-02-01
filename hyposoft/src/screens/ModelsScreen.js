@@ -14,6 +14,7 @@ import {
     Box,
     Button,
     DataTable,
+    Form,
     Grommet,
     Heading,
     Layer,
@@ -26,7 +27,7 @@ import { Add, FormEdit, FormTrash } from "grommet-icons"
 import theme from '../theme'
 
 const algoliasearch = require('algoliasearch')
-const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
+const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
 const index = client.initIndex('models')
 
 class ModelsScreen extends React.Component {
@@ -70,9 +71,35 @@ class ModelsScreen extends React.Component {
         }
     }
 
+    search () {
+        if (this.state.searchQuery.trim() === '') {
+            this.init()
+            return
+        }
+        index.search(this.state.searchQuery)
+        .then(({ hits }) => {
+            var models = []
+            var itemNo = 1
+            this.startAfter = null
+            for (var i = 0; i < hits.length; i++) {
+                if (modelutils.matchesFilters(hits[i], this.state.filters)) {
+                    models = [...models, {...hits[i], id: hits[i].objectID, itemNo: itemNo++}]
+                }
+            }
+            this.setState(oldState => ({
+                ...oldState,
+                models: models
+            }))
+        })
+    }
+
     startAfter = null
 
     init() {
+        if (this.state.searchQuery.trim() !== '') {
+            this.search()
+            return
+        }
         firebaseutils.modelsRef
         .orderBy('vendor').orderBy('modelNumber')
         .get()
@@ -80,7 +107,7 @@ class ModelsScreen extends React.Component {
             var models = []
             var itemNo = 1
             for (var i = 0; i < docSnaps.docs.length; i++) {
-                if (modelutils.matchesFilters(docSnaps.docs[i], this.state.filters)) {
+                if (modelutils.matchesFilters(docSnaps.docs[i].data(), this.state.filters)) {
                     models = [...models, {...docSnaps.docs[i].data(), id: docSnaps.docs[i].id, itemNo: itemNo++}]
                     if (models.length === 25 || i === docSnaps.docs.length - 1) {
                         var newStartAfter = null
@@ -218,16 +245,18 @@ class ModelsScreen extends React.Component {
                                <Box direction='row' justify='center'>
                                    <Box width='large' direction='column' align='stretch' justify='start'>
                                    <Box margin={{top: 'medium'}}>
-                                       <TextInput style={styles.TIStyle}
-                                           placeholder="Search for models (type your query and press enter)"
-                                           type='search'
-                                           onChange={e => {
-                                               const value = e.target.value
-                                               this.setState(oldState => ({...oldState, searchQuery: value}))
-                                           }}
-                                           value={this.state.searchQuery}
-                                           title='Search'
-                                           />
+                                       <Form onSubmit={() => this.search()}>
+                                           <TextInput style={styles.TIStyle}
+                                               placeholder="Search for models (type your query and press enter)"
+                                               type='search'
+                                               onChange={e => {
+                                                   const value = e.target.value
+                                                   this.setState(oldState => ({...oldState, searchQuery: value}))
+                                               }}
+                                               value={this.state.searchQuery}
+                                               title='Search'
+                                               />
+                                        </Form>
                                    </Box>
                                        <Box style={{
                                                 borderRadius: 10,
