@@ -4,6 +4,8 @@ import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as instutils from '../utils/instanceutils'
 import { checkInstanceFits } from '../utils/rackutils';
 import * as formvalidationutils from "../utils/formvalidationutils";
+import * as userutils from "../utils/userutils";
+import {Redirect} from "react-router-dom";
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -91,6 +93,10 @@ export default class EditInstanceForm extends Component {
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
+
         return (
 
             <Grommet>

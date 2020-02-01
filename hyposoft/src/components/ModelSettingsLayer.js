@@ -17,6 +17,7 @@ import {
     Form } from 'grommet'
 
 import theme from '../theme'
+import {Redirect} from "react-router-dom";
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
@@ -134,6 +135,10 @@ class ModelSettingsLayer extends React.Component {
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
+
         return (
             <Layer position="center" modal onClickOutside={this.hideFunction} onEsc={this.hideFunction}>
                 <Box pad="medium" gap="small" width="large">
