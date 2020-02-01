@@ -5,6 +5,8 @@ import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as rackutils from "../utils/rackutils";
 import {Close, Trash} from "grommet-icons";
 import * as formvalidationutils from "../utils/formvalidationutils";
+import * as userutils from "../utils/userutils";
+import {Redirect} from "react-router-dom";
 
 class DeleteRackView extends React.Component {
     constructor(props) {
@@ -58,6 +60,10 @@ class DeleteRackView extends React.Component {
 
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
+
         const {confirm} = this.state;
         let confirmPopup;
         if(confirm){

@@ -9,47 +9,17 @@ import * as userutils from '../utils/userutils'
 
 import {
     Box,
+    Button,
     Grommet,
     Heading } from 'grommet'
 
 import theme from '../theme'
 
-class DashboardScreen extends Component {
+class PortScreen extends Component {
     state = {
         redirect: '',
         loading: true,
         classes: []
-    }
-
-    actions = [
-        {id: 0, title: 'Users', desc: 'View and manage users'},
-        {id: 1, title: 'Models', desc: 'View and manage models'},
-        {id: 2, title: 'Instances', desc: 'View and manage instances of models'},
-        {id: 3, title: 'Racks', desc: 'View and manage racks'},
-        {id: 4, title: 'Import / Export', desc: 'Import and export models and instances'},
-        {id: 5, title: 'Reports', desc: 'Generate rack usage reports'}
-    ]
-
-    doAction (action) {
-        switch(action) {
-            case 0:
-                this.setState({redirect: '/users'})
-                break
-            case 1:
-                this.setState({redirect: '/models'})
-                break
-            case 2:
-                this.setState({redirect: '/instances'})
-                break
-            case 3:
-                this.setState({redirect: '/racks'})
-                break
-            case 4:
-                this.setState({redirect: '/port'})
-                break
-            default:
-                alert(action)
-        }
     }
 
     render() {
@@ -61,13 +31,18 @@ class DashboardScreen extends Component {
             return <Redirect to='/' />
         }
 
-        var content = this.actions.map(element => (
-                    <ItemCard
-                        key={element.id}
-                        title={element.title}
-                        desc={element.desc}
-                        onAction={() => this.doAction(element.id)} />
-                ))
+        var content = [
+                <Button label="Export Models" onClick={()=>{}}/>,
+                <Button label="Import Models" onClick={()=>{}}/>,
+                <Button label="Export Instances" onClick={()=>{}}/>,
+                <Button label="Import Models" onClick={()=>{}}/>
+        ]
+        if (!userutils.isLoggedInUserAdmin()) {
+            content = [
+                    <Heading alignSelf='center' level='5' margin='none'>You're not an admin</Heading>,
+                    <Button label="Go back" onClick={()=>{}} margin={{top: 'small'}}/>
+            ]
+        }
 
         return (
             <Grommet theme={theme} full className='fade'>
@@ -77,13 +52,28 @@ class DashboardScreen extends Component {
                         <HomeButton alignSelf='start' this={this} />
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
-                        }} >Dashboard</Heading>
+                        }} ></Heading>
                         <UserMenu alignSelf='end' this={this} />
                     </AppBar>
                     <Box direction='row'
                         justify='center'
                         wrap={true}>
-                        {content}
+                        <Box style={{
+                                 borderRadius: 10,
+                                 borderColor: '#EDEDED'
+                             }}
+                             width="medium"
+                            id='containerBox'
+                            background='#FFFFFF'
+                            margin={{top: 'medium', bottom: 'small'}}
+                            flex={{
+                                grow: 0,
+                                shrink: 0
+                            }}
+                            gap='small'
+                            pad='medium' >
+                            {content}
+                        </Box>
                     </Box>
                 </Box>
                 <ToastsContainer store={ToastsStore} lightBackground/>
@@ -92,4 +82,4 @@ class DashboardScreen extends Component {
     }
 }
 
-export default DashboardScreen
+export default PortScreen

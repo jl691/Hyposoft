@@ -1,8 +1,11 @@
-import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Text } from 'grommet'
-import { ToastsContainer, ToastsStore } from 'react-toasts';
+import React, {Component} from 'react'
+import {Button, Grommet, Form, FormField, Heading, TextInput, Box, Text} from 'grommet'
+import {ToastsContainer, ToastsStore} from 'react-toasts';
 import * as instutils from '../utils/instanceutils'
 import RequiredFormField from './RequiredFormField'
+import * as formvalidationutils from "../utils/formvalidationutils";
+import * as userutils from "../utils/userutils";
+import {Redirect} from "react-router-dom";
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -31,37 +34,56 @@ export default class AddInstanceForm extends Component {
     }
 
     handleSubmit(event) {
-        console.log(" yeet ")
-        console.log(this.props)
         if (event.target.name === "addInst") {
-            instutils.addInstance(
-                this.state.model,
-                this.state.hostname,
-                this.state.rack,
-                parseInt(this.state.rackU),
-                this.state.owner,
-                this.state.comment,
-                errorMessage => {
-
-                    if (errorMessage) {
-                        ToastsStore.error(errorMessage, 10000)
-
+            if(!this.state.model || !this.state.hostname || !this.state.rack || !this.state.rackU){
+                //not all required fields filled out
+                ToastsStore.error("Please fill out all required fields.");
+            } else if(!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)){
+                //not a valid hostname
+                ToastsStore.error("Invalid hostname.");
+            } else if(!/[A-Z]\d+/.test(this.state.rack)){
+                //not a valid rack
+                ToastsStore.error("Invalid rack.");
+            } else if(!parseInt(this.state.rackU)){
+                //invalid number
+                ToastsStore.error("Rack elevation must be a number.");
+            } else if(!formvalidationutils.checkPositive(this.state.rackU)){
+                ToastsStore.error("Rack elevation must be positive.");
+            } else {
+                instutils.addInstance(
+                    this.state.model,
+                    this.state.hostname,
+                    this.state.rack,
+                    parseInt(this.state.rackU),
+                    this.state.owner,
+                    this.state.comment,
+                    errorMessage => {
+                        if (errorMessage) {
+                            ToastsStore.error(errorMessage, 10000)
+                        } else {
+                            ToastsStore.success('Successfully added instance!');
+                            // this.setState({
+                            //     instance_id: "",
+                            //     model: "",
+                            //     hostname: "",
+                            //     rack: "",
+                            //     rackU: "",
+                            //     owner: "",
+                            //     comment: ""
+                            // })
+                            this.props.parentCallback(true);
+                        }
                     }
-                    else {
-
-                        ToastsStore.success('Successfully added instance!');
-                        this.props.parentCallback(true);
-
-
-
-                    }
-                });
+                );
+            }
 
         }
-
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
 
         return (
             <Grommet>
@@ -71,11 +93,11 @@ export default class AddInstanceForm extends Component {
                         margin="small"
                         level="4"
                     >Add Instance</Heading>
-                    <Form onSubmit={this.handleSubmit} name="addInst" >
+                    <Form onSubmit={this.handleSubmit} name="addInst">
 
-                        <FormField name="model" label="Model" required="true" >
+                        <FormField name="model" label="Model">
 
-                            <TextInput name="model"
+                            <TextInput name="model"  required="true"
                                 placeholder="eg. Dell R710"
                                 onChange={e => {
                                     const value = e.target.value
@@ -95,34 +117,41 @@ export default class AddInstanceForm extends Component {
 
 
 
-                        <FormField name="hostname" label="Hostname" required="true">
+                        <FormField name="hostname" label="Hostname">
 
-                            <TextInput padding="medium" name="hostname" placeholder="eg. server9" onChange={this.handleChange}
-                                value={this.state.hostname} />
+
+                            <TextInput padding="medium" name="hostname" placeholder="eg. server9"
+                                       onChange={this.handleChange}
+                                       value={this.state.hostname} required="true"/>
                         </FormField>
 
-                        <FormField name="rack" label="Rack" required="true">
+
+                        <FormField name="rack" label="Rack">
+
 
                             <TextInput name="rack" placeholder="eg. B12" onChange={this.handleChange}
-                                value={this.state.rack} />
+                                       value={this.state.rack} required="true"/>
                         </FormField>
 
-                        <FormField name="rackU" label="RackU" required="true">
+
+                        <FormField name="rackU" label="RackU">
+
 
                             <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
-                                value={this.state.rackU} />
+                                       value={this.state.rackU} required="true"/>
                         </FormField>
 
-                        <FormField name="owner" label="Owner" required="true">
+
+                        <FormField name="owner" label="Owner">
 
                             <TextInput name="owner" placeholder="eg. Jan" onChange={this.handleChange}
-                                value={this.state.owner} />
+                                       value={this.state.owner}/>
                         </FormField>
 
-                        <FormField name="comment" label="Comment" required="false">
+                        <FormField name="comment" label="Comment">
 
                             <TextInput name="comment" placeholder="" onChange={this.handleChange}
-                                value={this.state.comment} />
+                                       value={this.state.comment}/>
                         </FormField>
 
                         <Button
@@ -131,16 +160,15 @@ export default class AddInstanceForm extends Component {
                             primary label="Submit"
                         />
 
-                    </Form >
+                    </Form>
                 </Box>
 
 
-                <ToastsContainer store={ToastsStore} />
+                <ToastsContainer store={ToastsStore}/>
             </Grommet>
 
 
         )
-
 
 
     }

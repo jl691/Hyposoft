@@ -3,6 +3,8 @@ import theme from "../theme";
 import { fabric } from "fabric";
 import {Grommet} from "grommet";
 import * as rackutils from "../utils/rackutils";
+import * as userutils from "../utils/userutils";
+import {Redirect} from "react-router-dom";
 
 class RackDiagram extends React.Component {
     generateDiagrams() {
@@ -273,6 +275,10 @@ class RackDiagram extends React.Component {
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
+
         return (
             <Grommet theme={theme}>
                 <canvas id="canvas" width="1500" height="10000"></canvas>
