@@ -58,7 +58,7 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                     callback(errMessage)
                 } else {
           
-                    if (model == "" || hostname == "" || rack == "" || racku == null || !owner) {
+                    if (model == "" || hostname == "" || rack == "" || racku == null) {
                         callback("Required fields cannot be empty")
                     }
         
@@ -98,10 +98,8 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                             }
                         })
         
-        
                     }
-        
-        
+     
                 }
             })
 
