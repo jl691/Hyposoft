@@ -46,59 +46,67 @@ function getInstanceAt(start, callback) {
 }
 
 function addInstance(model, hostname, rack, racku, owner, comment, callback) {
-    modelutils.getModelByModelname(model, doc => {
-        if (!doc) {
-            var errMessage = "Model does not exist"
-            callback(errMessage)
-        } else {
-            validateInstanceForm(model, hostname, rack, racku, owner, valid => {
-                callback(valid)
-            })
 
-            //call validateInstanceForm(x, y, z..)
-            if (model == "" || hostname == "" || rack == "" || racku == null || !owner) {
-                callback("Required fields cannot be empty")
-            }
-
-            else {
-                instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum, rackID) {
-                    //Allen wants me to add a vendor and modelname field to my document
-                    if (errorMessage) {
-                        callback(errorMessage)
-                        console.log(errorMessage)
-
+    validateInstanceForm(model, hostname, rack, racku, owner, valid => {
+        if(valid){
+            callback(valid)
+        }
+        else{
+            modelutils.getModelByModelname(model, doc => {
+                if (!doc) {
+                    var errMessage = "Model does not exist"
+                    callback(errMessage)
+                } else {
+          
+                    if (model == "" || hostname == "" || rack == "" || racku == null || !owner) {
+                        callback("Required fields cannot be empty")
                     }
-                    //The rack doesn't exist, or it doesn't fit on the rack at rackU
+        
                     else {
-                        instanceRef.add({
-                            modelId: doc.id,
-                            model: model,
-                            hostname: hostname,
-                            rack: rack,
-                            rackU: racku,
-                            owner: owner,
-                            comment: comment,
-                            rackID: rackID,
-                            //This is for rack usage reports
-                            vendor: modelVendor,
-                            modelNumber: modelNum
-
-
-                        }).then(function (docRef) {
-                            callback(null);
-                        }).catch(function (error) {
-                            // callback("Error");
-                            console.log(error)
+                        instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum, rackID) {
+                            //Allen wants me to add a vendor and modelname field to my document
+                            if (errorMessage) {
+                                callback(errorMessage)
+                                console.log(errorMessage)
+        
+                            }
+                            //The rack doesn't exist, or it doesn't fit on the rack at rackU
+                            else {
+                                instanceRef.add({
+                                    modelId: doc.id,
+                                    model: model,
+                                    hostname: hostname,
+                                    rack: rack,
+                                    rackU: racku,
+                                    owner: owner,
+                                    comment: comment,
+                                    rackID: rackID,
+                                    //This is for rack usage reports
+                                    vendor: modelVendor,
+                                    modelNumber: modelNum
+        
+        
+                                }).then(function (docRef) {
+                                    callback(null);
+                                }).catch(function (error) {
+                                    // callback("Error");
+                                    console.log(error)
+                                })
+                            }
                         })
+        
+        
                     }
-                })
-
-
-            }
+        
+        
+                }
+            })
 
 
         }
+        
     })
+
 
 }
 
@@ -342,27 +350,15 @@ function validateInstanceForm(model, hostname, rack, racku, owner, callback) {
 
     // } TODO: see if Joyce breaks this
 
-    modelutils.getModelByModelname(model, doc => {
-        if (!doc) {
-            var errMessage = "Model does not exist"
-            callback(errMessage)
-        }
-    }
-    )
-
-    if (racku < 0 || racku > 42) {
-        callback("Invalid Rack U")
-    }
-
     //if owner is not null, need to check username in system
-    else if (owner != "") {
+    if (owner != "") {
         let username = owner;
         usersRef.where('username', '==', username).get().then(querySnapshot => {
-            if (querySnapshot.empty) {
-                callback("This user does not exist")
-            }
-            else {
+            if (!querySnapshot.empty) {
                 callback(null)
+            }
+            else {     
+                callback("This user does not exist")
             }
         })
     }
