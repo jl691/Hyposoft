@@ -67,9 +67,10 @@ class RackDiagram extends React.Component {
                 canvas.add(header);
                 //header.centerH();
                 result.forEach(instance => {
+                    console.log("yeetersssss " + instance.position)
                     let instanceBox = new fabric.Rect({
                         left: (400*x)+30,
-                        top: (1113*y) + 10 + (20*(42-instance.position)),
+                        top: (1113*y) + 50 + (20*(42-instance.position)) - (20*instance.height),
                         fill: '#' + instance.color,
                         width: 290,
                         height: (20*instance.height),
@@ -82,7 +83,7 @@ class RackDiagram extends React.Component {
                         fill: this.getContrastYIQ(instance.color),
                         fontFamily: 'Arial',
                         fontSize: 15,
-                        top: (1113*y) + 10 + (20*(42-instance.position)) + (20*(instance.height-1)),
+                        top: (1113*y) + 30 + (20*(42-instance.position)),
                         left: (400*x) + 35,
                         selectable: false
                     });
@@ -91,7 +92,7 @@ class RackDiagram extends React.Component {
                         fill: this.getContrastYIQ(instance.color),
                         fontFamily: 'Arial',
                         fontSize: 15,
-                        top: (1113*y) + 10 + (20*(42-instance.position)) + (20*(instance.height-1)),
+                        top: (1113*y) + 30 + (20*(42-instance.position)),
                         left: (400*x) + 200,
                         selectable: false
                     });
