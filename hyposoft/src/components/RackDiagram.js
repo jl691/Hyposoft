@@ -78,7 +78,7 @@ class RackDiagram extends React.Component {
                         selectable: false
                     });
 
-                    let instanceText = new fabric.Text(instance.model, {
+                    let instanceText = new fabric.Text(instance.model.substr(0, 20), {
                         fill: this.getContrastYIQ(instance.color),
                         fontFamily: 'Arial',
                         fontSize: 15,
@@ -87,13 +87,7 @@ class RackDiagram extends React.Component {
                         selectable: false
                     });
 
-                    if(instanceText.getScaledWidth() > 150){
-                        instanceText.set({
-                            width: 150
-                        });
-                    }
-
-                    let instanceHostname = new fabric.Text(instance.hostname, {
+                    let instanceHostname = new fabric.Text(instance.hostname.substr(0, 15), {
                         fill: this.getContrastYIQ(instance.color),
                         fontFamily: 'Arial',
                         fontSize: 15,
@@ -101,10 +95,6 @@ class RackDiagram extends React.Component {
                         left: (400*x) + 200,
                         selectable: false
                     });
-
-                    if(instanceHostname.width > 100){
-                        instanceHostname.width = "100";
-                    }
 
                     canvas.add(instanceBox, instanceText, instanceHostname);
 
