@@ -56,19 +56,18 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                 if (!doc) {
                     var errMessage = "Model does not exist"
                     callback(errMessage)
-                } else {
-          
+                } else {          
                     if (model == "" || hostname == "" || rack == "" || racku == null) {
                         callback("Required fields cannot be empty")
                     }
-        
+
                     else {
                         instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum, rackID) {
                             //Allen wants me to add a vendor and modelname field to my document
                             if (errorMessage) {
                                 callback(errorMessage)
                                 console.log(errorMessage)
-        
+
                             }
                             //The rack doesn't exist, or it doesn't fit on the rack at rackU
                             else {
@@ -84,8 +83,8 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                                     //This is for rack usage reports
                                     vendor: modelVendor,
                                     modelNumber: modelNum
-        
-        
+
+
                                 }).then(function (docRef) {
                                     racksRef.doc(String(rackID)).update({
                                         instances: firebase.firestore.FieldValue.arrayUnion(docRef.id)
@@ -97,17 +96,17 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                                 })
                             }
                         })
-        
-        
+
+
                     }
-        
-        
+
+
                 }
             })
 
 
         }
-        
+
     })
 
 
@@ -236,38 +235,54 @@ function deleteInstance(instanceid, callback) {
 
 function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment, callback) {
 
-    //TODO: check model exists
-
-    instanceFitsOnRack(rack, rackU, model, stat => {
-
-        console.log(stat)
-        //returned an error message
-        if (stat) {
-
-            var errMessage = stat
-            //need to pass up errormessage if model updated and instance no longer fits
-            callback(errMessage)
+    validateInstanceForm(model, hostname, rack, rackU, owner, valid => {
+        if(valid){
+            callback(valid)
         }
-        //returns null if no issues/conflicts.
-        else {
-            instanceRef.doc(String(instanceid)).update({
-                model,
-                hostname,
-                rack,
-                rackU,
-                owner,
-                comment
-                //these are the fields in the document to update
+        else{
+            modelutils.getModelByModelname(model, doc => {
+                if (!doc) {
+                    var errMessage = "Model does not exist"
+                    callback(errMessage)
+                } else {
 
-            }).then(function () {
-                console.log("Updated model successfully")
-                callback(null);
-            }).catch(function (error) {
-                console.log(error)
-                callback(error);
-            })
-        }
-    })
+                    if (model == "" || hostname == "" || rack == "" || rackU == null || !owner) {
+                        callback("Required fields cannot be empty")
+                    }
+
+                    else {
+                      instanceFitsOnRack(rack, rackU, model, stat => {
+
+                          console.log(stat)
+                          //returned an error message
+                          if (stat) {
+
+                              var errMessage = stat
+                              //need to pass up errormessage if model updated and instance no longer fits
+                              callback(errMessage)
+                          }
+                          //returns null if no issues/conflicts.
+                          else {
+                              instanceRef.doc(String(instanceid)).update({
+                                  model,
+                                  hostname,
+                                  rack,
+                                  rackU,
+                                  owner,
+                                  comment
+                                  //these are the fields in the document to update
+
+                              }).then(function () {
+                                  console.log("Updated model successfully")
+                                  callback(null);
+                              }).catch(function (error) {
+                                  console.log(error)
+                                  callback(error);
+                              })
+                          }
+                      })
+                    }
+                  }})}})
 }
 
 
@@ -382,7 +397,7 @@ function validateInstanceForm(model, hostname, rack, racku, owner, callback) {
             if (!querySnapshot.empty) {
                 callback(null)
             }
-            else {     
+            else {
                 callback("This user does not exist")
             }
         })
