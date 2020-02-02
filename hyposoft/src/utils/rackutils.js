@@ -266,7 +266,7 @@ function checkInstanceFits(position, height, rack, callback, id = null) { //rack
                 console.log("this rack contains " + instanceID);
                 firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
                     //ignore own self
-                    if(id && instanceID === id){
+                    if(id && instanceID != id){
                         //find height
                         modelutils.getModelByModelname(docRefInstance.data().model, result => {
                             if (result) {
