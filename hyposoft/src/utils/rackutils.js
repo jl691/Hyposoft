@@ -143,9 +143,11 @@ function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, callback) {
                         if (!querySnapshot.empty) {
                             let docID;
                             docID = querySnapshot.docs[0].id;
-                            firebaseutils.racksRef.doc(docID).delete().catch(function (error) {
-                                callback(null);
-                            })
+                            if(!(querySnapshot.docs[0].data().instances && Object.keys(querySnapshot.docs[0].data().instances).length > 0)){
+                                firebaseutils.racksRef.doc(docID).delete().catch(function (error) {
+                                    callback(null);
+                                })
+                            }
                         }
                     }));
                 }
