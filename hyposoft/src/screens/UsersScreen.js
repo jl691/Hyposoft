@@ -213,6 +213,27 @@ class UsersScreen extends Component {
             return <Redirect to='/' />
         }
 
+        const adminColumns = userutils.isLoggedInUserAdmin() ? [
+            {
+                property: 'dummy',
+                render: datum => (
+                <FormEdit style={{cursor: 'pointer'}} onClick={() => this.showEditDialog(datum.username)} />
+            ),
+                align: 'center',
+                header: <Text>Edit</Text>,
+                sortable: false
+            },
+            {
+                property: 'dummy2',
+                render: datum => (
+                <FormTrash style={{cursor: 'pointer'}} onClick={() => this.showDeleteDialog(datum.username)} />
+            ),
+                align: 'center',
+                header: <Text>Delete</Text>,
+                sortable: false
+            }
+        ] : []
+
         return (
             <Grommet theme={theme} full className='fade'>
 
@@ -278,24 +299,7 @@ class UsersScreen extends Component {
                                                                     header: <Text>Role</Text>,
                                                                     sortable: true,
                                                                 },
-                                                                {
-                                                                    property: 'dummy',
-                                                                    render: datum => (
-                                                                    <FormEdit style={{cursor: 'pointer'}} onClick={() => this.showEditDialog(datum.username)} />
-                                                                ),
-                                                                    align: 'center',
-                                                                    header: <Text>Edit</Text>,
-                                                                    sortable: false
-                                                                },
-                                                                {
-                                                                    property: 'dummy2',
-                                                                    render: datum => (
-                                                                    <FormTrash style={{cursor: 'pointer'}} onClick={() => this.showDeleteDialog(datum.username)} />
-                                                                ),
-                                                                    align: 'center',
-                                                                    header: <Text>Delete</Text>,
-                                                                    sortable: false
-                                                                }
+                                                                ...adminColumns
                                                             ]
                                                         }
                                                         data={this.state.users}
@@ -324,10 +328,17 @@ class UsersScreen extends Component {
                                             pad='small' >
                                             <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}} direction='column' justify='start'>
                                                 <Heading level='4' margin='none'>Missing someone?</Heading>
-                                                <p>Assign a username to them, and we'll invite them to join.</p>
-                                                <Box direction='column' flex alignSelf='stretch'>
-                                                    <Button primary icon={<Add />} label="Add" onClick={this.addUserDialog} />
-                                                </Box>
+                                                {
+                                                    userutils.isLoggedInUserAdmin() ?
+                                                    <p>Assign a username to them, and we'll invite them to join.</p> :
+                                                    <p>Ask your admin to add them!</p>
+                                                }
+
+                                                {userutils.isLoggedInUserAdmin() && (
+                                                    <Box direction='column' flex alignSelf='stretch'>
+                                                        <Button primary icon={<Add />} label="Add" onClick={this.addUserDialog} />
+                                                    </Box>
+                                                )}
                                             </Box>
                                         </Box>
                                    </Box>

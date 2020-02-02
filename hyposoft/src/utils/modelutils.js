@@ -1,5 +1,4 @@
 import * as firebaseutils from './firebaseutils'
-import * as rackutils from './rackutils'
 
 function packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment) {
     const model = {
@@ -177,5 +176,40 @@ function getInstancesByModel(model, startAfter, callback) {
     })
 }
 
+function escapeStringForCSV(string) {
+    if (!string || string.trim() === '') {
+        return ''
+    } else {
+        return '"'+string.split('"').join('""')+'"'
+    }
+}
+
+function getModelsForExport(callback) {
+    firebaseutils.modelsRef.orderBy('vendor').get().then(qs => {
+        var rows = [
+            ["vendor", "model_number", "height", "display_color", "ethernet_ports", "power_ports", "cpu", "memory", "storage", "comment"]
+        ]
+
+        for (var i = 0; i < qs.size; i++) {
+            rows = [...rows, [
+                '"'+qs.docs[i].data().vendor+'"',
+                '"'+qs.docs[i].data().modelNumber+'"',
+                ''+qs.docs[i].data().height,
+                ''+qs.docs[i].data().displayColor,
+                ''+(qs.docs[i].data().ethernetPorts || ''),
+                ''+(qs.docs[i].data().powerPorts || ''),
+                escapeStringForCSV(qs.docs[i].data().cpu),
+                escapeStringForCSV(''+(qs.docs[i].data().ethernetPorts || '')),
+                escapeStringForCSV(qs.docs[i].data().storage),
+                escapeStringForCSV(qs.docs[i].data().comment)
+            ]]
+            if (rows.length === qs.size+1) {
+                callback(rows)
+            }
+        }
+    })
+}
+
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
-getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel }
+getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel,
+getModelsForExport }

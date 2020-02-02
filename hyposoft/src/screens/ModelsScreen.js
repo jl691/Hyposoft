@@ -226,6 +226,35 @@ class ModelsScreen extends React.Component {
     }
 
     render() {
+        const adminColumns = userutils.isLoggedInUserAdmin() ? [{
+            property: 'dummy',
+            render: datum => (
+            <FormEdit style={{cursor: 'pointer'}} onClick={(e) => {
+                e.persist()
+                e.nativeEvent.stopImmediatePropagation()
+                e.stopPropagation()
+                 this.showEditDialog(datum.itemNo)
+            }} />
+        ),
+            align: 'center',
+            header: <Text size='small'>Edit</Text>,
+            sortable: false
+        },
+        {
+            property: 'dummy2',
+            render: datum => (
+            <FormTrash style={{cursor: 'pointer'}} onClick={(e) => {
+                e.persist()
+                e.nativeEvent.stopImmediatePropagation()
+                e.stopPropagation()
+                this.showDeleteDialog(datum.itemNo)
+            }} />
+        ),
+            align: 'center',
+            header: <Text size='small'>Delete</Text>,
+            sortable: false
+        }] : []
+
         return (
             <Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
@@ -330,34 +359,7 @@ class ModelsScreen extends React.Component {
                                                                     render: datum => <Text size='small'>{datum.memory}</Text>,
                                                                     sortable: true,
                                                                 },
-                                                                {
-                                                                    property: 'dummy',
-                                                                    render: datum => (
-                                                                    <FormEdit style={{cursor: 'pointer'}} onClick={(e) => {
-                                                                        e.persist()
-                                                                        e.nativeEvent.stopImmediatePropagation()
-                                                                        e.stopPropagation()
-                                                                         this.showEditDialog(datum.itemNo)
-                                                                    }} />
-                                                                ),
-                                                                    align: 'center',
-                                                                    header: <Text size='small'>Edit</Text>,
-                                                                    sortable: false
-                                                                },
-                                                                {
-                                                                    property: 'dummy2',
-                                                                    render: datum => (
-                                                                    <FormTrash style={{cursor: 'pointer'}} onClick={(e) => {
-                                                                        e.persist()
-                                                                        e.nativeEvent.stopImmediatePropagation()
-                                                                        e.stopPropagation()
-                                                                        this.showDeleteDialog(datum.itemNo)
-                                                                    }} />
-                                                                ),
-                                                                    align: 'center',
-                                                                    header: <Text size='small'>Delete</Text>,
-                                                                    sortable: false
-                                                                }
+                                                                ...adminColumns
                                                             ]
                                                         }
                                                         data={this.state.models}
@@ -370,7 +372,9 @@ class ModelsScreen extends React.Component {
                                                 </Box>
                                            </Box>
                                        </Box>
-                                       <Button primary icon={<Add />} label="Add model" alignSelf='center' onClick={this.showAddModelDialog} />
+                                       {userutils.isLoggedInUserAdmin() && (
+                                            <Button primary icon={<Add />} label="Add model" alignSelf='center' onClick={this.showAddModelDialog} />
+                                       )}                                       
                                    </Box>
                                    <Box
                                        width='medium'

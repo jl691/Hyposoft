@@ -2,24 +2,41 @@ import React, { Component } from 'react'
 import AppBar from '../components/AppBar'
 import HomeButton from '../components/HomeButton'
 import UserMenu from '../components/UserMenu'
-import ItemCard from '../components/ItemCard'
 import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
+import { saveAs } from 'file-saver'
 import * as userutils from '../utils/userutils'
+import * as modelutils from '../utils/modelutils'
 
 import {
     Box,
     Button,
     Grommet,
-    Heading } from 'grommet'
+    Heading,
+    Layer } from 'grommet'
 
 import theme from '../theme'
 
 class PortScreen extends Component {
     state = {
         redirect: '',
-        loading: true,
-        classes: []
+        showLoadingDialog: false
+    }
+
+    constructor () {
+        super()
+        this.exportModels = this.exportModels.bind(this)
+    }
+
+    exportModels () {
+        this.setState(oldState => ({...oldState, showLoadingDialog: true}))
+        modelutils.getModelsForExport(rows => {
+            var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
+                type: "data:text/csv;charset=utf-8;",
+            })
+            saveAs(blob, "hyposoft_models.csv")
+            this.setState(oldState => ({...oldState, showLoadingDialog: false}))
+        })
     }
 
     render() {
@@ -32,15 +49,15 @@ class PortScreen extends Component {
         }
 
         var content = [
-                <Button label="Export Models" onClick={()=>{}}/>,
+                <Button primary label="Export Models" onClick={this.exportModels}/>,
                 <Button label="Import Models" onClick={()=>{}}/>,
-                <Button label="Export Instances" onClick={()=>{}}/>,
-                <Button label="Import Models" onClick={()=>{}}/>
+                <Button primary label="Export Instances" onClick={()=>{}}/>,
+                <Button label="Import Instances" onClick={()=>{}}/>
         ]
         if (!userutils.isLoggedInUserAdmin()) {
             content = [
                     <Heading alignSelf='center' level='5' margin='none'>You're not an admin</Heading>,
-                    <Button label="Go back" onClick={()=>{}} margin={{top: 'small'}}/>
+                    <Button label="Go back" onClick={()=>this.props.history.goBack()} margin={{top: 'small'}}/>
             ]
         }
 
@@ -77,6 +94,24 @@ class PortScreen extends Component {
                     </Box>
                 </Box>
                 <ToastsContainer store={ToastsStore} lightBackground/>
+                {this.state.showLoadingDialog && (
+                    <Layer position="center" modal onClickOutside={this.hideDeleteDialog} onEsc={this.hideDeleteDialog}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Please wait
+                            </Heading>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="start" >
+                                We're preparing your export.
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
             </Grommet>
         )
     }
