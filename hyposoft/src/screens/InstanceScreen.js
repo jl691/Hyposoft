@@ -15,6 +15,7 @@ import FilterBarInstances from '../components/FilterBarInstances'
 import SearchInstances from '../components/SearchInstances'
 import InstanceTable from '../components/InstanceTable'
 import * as userutils from "../utils/userutils";
+import {ToastsContainer, ToastsStore} from "react-toasts";
 
 class InstanceScreen extends Component {
 
@@ -145,6 +146,10 @@ class InstanceScreen extends Component {
         }
     }
 
+    componentDidMount() {
+        ToastsStore.info("Tip: Click on a column name to sort by it", 10000)
+    }
+
     render() {
         const { popupType } = this.state;
         let popup;
@@ -248,6 +253,7 @@ class InstanceScreen extends Component {
                                     ref={this.instanceTable}
 
                                 />
+                                <ToastsContainer store={ToastsStore}/>
                             </Grommet>
 
                         </React.Fragment>
