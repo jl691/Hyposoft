@@ -57,12 +57,14 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                     var errMessage = "Model does not exist"
                     callback(errMessage)
                 } else {
-                    if (model == "" || hostname == "" || rack == "" || racku == null) {
+                    if (model === "" || hostname === "" || rack === "" || racku == null) {
                         callback("Required fields cannot be empty")
                     }
 
                     else {
+                        console.log("Calling instancefitsonrack")
                         instanceFitsOnRack(rack, racku, model, function (errorMessage, modelNum, modelVendor, rackID) {//see line 171
+                            console.log("Calling instancefitsonrack and returned")
                             //Allen wants me to add a vendor and modelname field to my document
                             if (errorMessage) {
                                 callback(errorMessage)
@@ -83,7 +85,7 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                                     //This is for rack usage reports
                                     modelNumber: modelNum,
                                     vendor: modelVendor,
-                                    
+
 
 
                                 }).then(function (docRef) {
@@ -97,9 +99,9 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                                 })
                             }
                         })
-        
+
                     }
-     
+
                 }
             })
 
@@ -152,18 +154,23 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
 
                         if (status.length) {
                             console.log("Conflicts found on rack")
-                            var height = doc.data().height
-                            var rackedAt = rackU
-                            var conflicts = ""
-                            var arrayLength = status.length;
-                            for (var i = 0; i < arrayLength; i++) {
-                                console.log(status[i]);
-                                conflicts = conflicts + ", " + status[i]
-
-                            }
-
-                            var errMessage = "Error adding instance: instance of height " + height + " racked at " + rackedAt + "U conflicts with instance(s) " + conflicts;
-                            callback(errMessage);
+                            let height = doc.data().height
+                            let rackedAt = rackU
+                            let conflictNew = [];
+                            let conflictCount = 0;
+                            status.forEach(instanceID => {
+                                getInstanceDetails(instanceID, result => {
+                                    console.log(result.model + " " + result.hostname);
+                                    conflictNew.push(result.model + " " + result.hostname + ", ");
+                                    console.log(conflictNew)
+                                    conflictCount++;
+                                    if(conflictCount === status.length){
+                                        console.log(conflictNew)
+                                        var errMessage = "Error adding instance: instance of height " + height + " racked at " + rackedAt + "U conflicts with instance(s) " + conflictNew.join(', ').toString();
+                                        callback(errMessage);
+                                    }
+                                });
+                            })
                         }
                         else {//status callback is null, no conflits
                             console.log("Instance fits in rack with no conflicts")
@@ -245,7 +252,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                     callback(errMessage)
                 } else {
 
-                    if (model == "" || hostname == "" || rack == "" || rackU == null) {
+                    if (model === "" || hostname === "" || rack === "" || rackU == null) {
                         callback("Required fields cannot be empty")
                     }
 
@@ -414,7 +421,7 @@ function validateInstanceForm(model, hostname, rack, racku, owner, callback) {
     // } TODO: see if Joyce breaks this
 
     //if owner is not null, need to check username in system
-    if (owner != "") {
+    if (owner !== "") {
         let username = owner;
         usersRef.where('username', '==', username).get().then(querySnapshot => {
             if (!querySnapshot.empty) {
