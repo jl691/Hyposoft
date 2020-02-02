@@ -176,5 +176,20 @@ function getInstancesByModel(model, startAfter, callback) {
     })
 }
 
+function getVendorAndNumberFromModel(modelName, callback) {
+    firebaseutils.modelsRef.where('modelName','==',modelName).get()
+    .then( docSnaps => {
+        if (docSnaps.docs.length !== 0) {
+          callback([docSnaps.docs[0].data().vendor,docSnaps.docs[0].data().modelNumber])
+        } else {
+          callback(null)
+        }
+    })
+    .catch( error => {
+      console.log("Error getting documents: ", error)
+      callback(null)
+    })
+}
+
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
-getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel }
+getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel, getVendorAndNumberFromModel }
