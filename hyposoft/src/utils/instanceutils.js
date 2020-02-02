@@ -269,21 +269,44 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                           }
                           //returns null if no issues/conflicts.
                           else {
-                              instanceRef.doc(String(instanceid)).update({
-                                  model,
-                                  hostname,
-                                  rack,
-                                  rackU,
-                                  owner,
-                                  comment
-                                  //these are the fields in the document to update
+                              let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
+                              let rackRow = splitRackArray[0]
+                              let rackNum = parseInt(splitRackArray[1])
+                              //get new rack document
+                              rackutils.getRackID(rackRow, rackNum, result => {
+                                  if(result){
+                                      //get old rack document
+                                      instanceRef.doc(instanceid).get().then(docSnap => {
+                                          let oldRack = docSnap.data().rack;
+                                          let oldSplitRackArray = oldRack.split(/(\d+)/).filter(Boolean)
+                                          let oldRackRow = oldSplitRackArray[0]
+                                          let oldRackNum = parseInt(oldSplitRackArray[1])
+                                          rackutils.getRackID(oldRackRow, oldRackNum, oldResult => {
+                                              if(oldResult){
+                                                  //get new rack document
+                                                  //get instance id
+                                                  replaceInstanceRack(oldResult, result, instanceid, result => {
+                                                      instanceRef.doc(String(instanceid)).update({
+                                                          model,
+                                                          hostname,
+                                                          rack,
+                                                          rackU,
+                                                          owner,
+                                                          comment
+                                                          //these are the fields in the document to update
 
-                              }).then(function () {
-                                  console.log("Updated model successfully")
-                                  callback(null);
-                              }).catch(function (error) {
-                                  console.log(error)
-                                  callback(error);
+                                                      }).then(function () {
+                                                          console.log("Updated model successfully")
+                                                          callback(null);
+                                                      }).catch(function (error) {
+                                                          console.log(error)
+                                                          callback(error);
+                                                      })
+                                                  })
+                                              }
+                                          })
+                                      })
+                                  }
                               })
                           }
                       })
@@ -438,5 +461,20 @@ function validateInstanceForm(model, hostname, rack, racku, owner, callback) {
 
 }
 
+function replaceInstanceRack(oldRack, newRack, id, callback){
+    racksRef.doc(String(oldRack)).update({
+        instances: firebase.firestore.FieldValue.arrayRemove(id)
+    }).then(() => {
+        racksRef.doc(String(newRack)).update({
+            instances: firebase.firestore.FieldValue.arrayUnion(id)
+        }).then(() => {
+            callback(true);
+        }).catch(function (error) {
+            callback(false);
+        })
+    }).catch(function (error) {
+        callback(false);
+    })
+}
 
 export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstanceDetails, getInstancesFromModel, getSuggestedOwners, getSuggestedRacks, getInstanceAt, validateInstanceForm }
