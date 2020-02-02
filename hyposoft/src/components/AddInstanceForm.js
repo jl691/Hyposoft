@@ -46,9 +46,9 @@ export default class AddInstanceForm extends Component {
                 ToastsStore.error("Invalid rack.");
             } else if(!parseInt(this.state.rackU)){
                 //invalid number
-                ToastsStore.error("Rack elevation must be a number.");
+                ToastsStore.error("Rack U must be a number.");
             } else if(!formvalidationutils.checkPositive(this.state.rackU)){
-                ToastsStore.error("Rack elevation must be positive.");
+                ToastsStore.error("Rack U must be positive.");
             } else {
                 instutils.addInstance(
                     this.state.model,

@@ -132,7 +132,7 @@ export default class EditInstanceForm extends Component {
                         <FormField name="hostname" label="Hostname" >
 
                             <TextInput padding="medium" name="hostname" placeholder="Update Server" onChange={this.handleChange}
-                                value={this.state.hostname} />
+                                value={this.state.hostname} required="true"/>
                         </FormField>
 
                         <FormField name="rack" label="Rack" >
@@ -157,7 +157,7 @@ export default class EditInstanceForm extends Component {
                         <FormField name="rackU" label="RackU" >
 
                             <TextInput name="rackU" placeholder="Update RackU" onChange={this.handleChange}
-                                value={this.state.rackU} />
+                                value={this.state.rackU} required="true"/>
                         </FormField>
 
                         <FormField name="owner" label="Owner" >
