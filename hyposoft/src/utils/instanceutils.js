@@ -246,7 +246,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                     callback(errMessage)
                 } else {
 
-                    if (model == "" || hostname == "" || rack == "" || rackU == null || !owner) {
+                    if (model == "" || hostname == "" || rack == "" || rackU == null) {
                         callback("Required fields cannot be empty")
                     }
 
