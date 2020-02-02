@@ -62,7 +62,7 @@ export default class AddInstanceForm extends Component {
                             ToastsStore.error(errorMessage, 10000)
                         } else {
                             ToastsStore.success('Successfully added instance!');
-            
+
                             this.props.parentCallback(true);
                         }
                     }
@@ -121,8 +121,22 @@ export default class AddInstanceForm extends Component {
                         <FormField name="rack" label="Rack">
 
 
-                            <TextInput name="rack" placeholder="eg. B12" onChange={this.handleChange}
-                                       value={this.state.rack} required="true"/>
+                            <TextInput name="rack"
+                                  placeholder="eg. B12"
+                                  onChange={e => {
+                                      const value = e.target.value
+                                      this.setState(oldState => ({...oldState, rack: value}))
+                                      instutils.getSuggestedRacks(value, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))
+                                  }}
+                                  onSelect={e => {
+                                      this.setState(oldState => ({...oldState, rack: e.suggestion}))
+                                  }}
+                                  value={this.state.rack}
+                                  suggestions={this.state.rackSuggestions}
+                                  onClick={() => instutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))}
+                                  title='Rack'
+                                  required="true"
+                                />
                         </FormField>
 
 

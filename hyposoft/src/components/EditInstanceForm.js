@@ -137,8 +137,21 @@ export default class EditInstanceForm extends Component {
 
                         <FormField name="rack" label="Rack" >
 
-                            <TextInput name="rack" placeholder="Update Rack" onChange={this.handleChange}
-                                value={this.state.rack} />
+                            <TextInput name="rack"
+                                placeholder="Update Rack"
+                                onChange={e => {
+                                    const value = e.target.value
+                                    this.setState(oldState => ({...oldState, rack: value}))
+                                    instutils.getSuggestedRacks(value, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))
+                                }}
+                                onSelect={e => {
+                                    this.setState(oldState => ({...oldState, rack: e.suggestion}))
+                                }}
+                                value={this.state.rack}
+                                suggestions={this.state.rackSuggestions}
+                                onClick={() => instutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))}
+                                title='Rack'
+                              />
                         </FormField>
 
                         <FormField name="rackU" label="RackU" >
@@ -162,7 +175,7 @@ export default class EditInstanceForm extends Component {
                                 value={this.state.owner}
                                 suggestions={this.state.ownerSuggestions}
                                 onClick={() => instutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))}
-                                title='Owner' 
+                                title='Owner'
                               />
                         </FormField>
 
