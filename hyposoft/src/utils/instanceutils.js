@@ -390,7 +390,9 @@ function getInstanceDetails(instanceID, callback) {
             rack: doc.data().rack.trim(),
             rackU: doc.data().rackU,
             owner: doc.data().owner.trim(),
-            comment: doc.data().comment.trim()
+            comment: doc.data().comment.trim(),
+            modelNum: doc.data().modelNumber.trim(),
+            vendor: doc.data().vendor.trim()
 
 
         }
