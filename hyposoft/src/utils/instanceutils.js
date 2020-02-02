@@ -57,7 +57,7 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                     var errMessage = "Model does not exist"
                     callback(errMessage)
                 } else {
-                    if (model == "" || hostname == "" || rack == "" || racku == null) {
+                    if (model === "" || hostname === "" || rack === "" || racku == null) {
                         callback("Required fields cannot be empty")
                     }
 
@@ -85,7 +85,7 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                                     //This is for rack usage reports
                                     modelNumber: modelNum,
                                     vendor: modelVendor,
-                                    
+
 
 
                                 }).then(function (docRef) {
@@ -99,9 +99,9 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                                 })
                             }
                         })
-        
+
                     }
-     
+
                 }
             })
 
@@ -252,7 +252,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                     callback(errMessage)
                 } else {
 
-                    if (model == "" || hostname == "" || rack == "" || rackU == null) {
+                    if (model === "" || hostname === "" || rack === "" || rackU == null) {
                         callback("Required fields cannot be empty")
                     }
 
@@ -419,7 +419,7 @@ function validateInstanceForm(model, hostname, rack, racku, owner, callback) {
     // } TODO: see if Joyce breaks this
 
     //if owner is not null, need to check username in system
-    if (owner != "") {
+    if (owner !== "") {
         let username = owner;
         usersRef.where('username', '==', username).get().then(querySnapshot => {
             if (!querySnapshot.empty) {
