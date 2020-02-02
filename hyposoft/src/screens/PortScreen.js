@@ -8,6 +8,7 @@ import { saveAs } from 'file-saver'
 import * as userutils from '../utils/userutils'
 import * as modelutils from '../utils/modelutils'
 import * as instanceutils from '../utils/instanceutils'
+import CSVReader from 'react-csv-reader'
 
 import {
     Box,
@@ -28,6 +29,7 @@ class PortScreen extends Component {
         super()
         this.exportModels = this.exportModels.bind(this)
         this.exportInstances = this.exportInstances.bind(this)
+        this.importModels = this.importModels.bind(this)
     }
 
     exportModels () {
@@ -52,6 +54,45 @@ class PortScreen extends Component {
         })
     }
 
+    importModels (data, fileName) {
+        if (data.length === 0) {
+            ToastsStore.info('No records found in imported file', 3000, 'burntToast')
+            return
+        }
+
+        if (!('vendor' in data[0] && 'model_number' in data[0] && 'height' in data[0]
+            && 'display_color' in data[0] && 'ethernet_ports' in data[0] && 'power_ports' in data[0]
+            && 'cpu' in data[0] && 'memory' in data[0] && 'storage' in data[0] && 'comment' in data[0])) {
+            ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
+            return
+        }
+
+        modelutils.validateImportedModels(data, errors => {
+            if (errors.length > 0) {
+                this.setState(oldState => ({
+                    ...oldState, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
+                }))
+            } else {
+                this.setState(oldState => ({...oldState, errors: undefined}))
+                modelutils.addModelsFromImport(data, false, ({modelsPending, modelsPendingInfo}) => {
+                    if (modelsPending.length > 0) {
+                        // Show confirmation
+                        this.setState(oldState => ({
+                            ...oldState, modifications: modelsPending, modificationsInfo: modelsPendingInfo.map(m => <div><b>Row {m[0]}:</b> {m[1]}</div>)
+                        }))
+                    } else {
+                        this.setState(oldState => ({...oldState, modifications: undefined, modificationsInfo: undefined}))
+                        // TODO: Show success import stats
+                    }
+                })
+            }
+        })
+    }
+
+    importInstances (data, fileName) {
+
+    }
+
     render() {
         if (this.state.redirect !== '') {
             return <Redirect to={this.state.redirect} />
@@ -63,9 +104,9 @@ class PortScreen extends Component {
 
         var content = [
                 <Button primary label="Export Models" onClick={this.exportModels}/>,
-                <Button label="Import Models" onClick={()=>{}}/>,
+                <Button label="Import Models" onClick={()=>{document.getElementById('csvreadermodels').click()}}/>,
                 <Button primary label="Export Instances" onClick={this.exportInstances}/>,
-                <Button label="Import Instances" onClick={()=>{}}/>
+                <Button label="Import Instances" onClick={()=>{document.getElementById('handleImportInstances').click()}}/>
         ]
         if (!userutils.isLoggedInUserAdmin()) {
             content = [
@@ -125,9 +166,86 @@ class PortScreen extends Component {
                         </Box>
                     </Layer>
                 )}
+                {this.state.errors && (
+                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState => ({...oldState, errors: undefined}))}} onEsc={()=>{this.setState(oldState => ({...oldState, errors: undefined}))}}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Import failed due to the following errors
+                            </Heading>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="column"
+                                align="start"
+                                justify="start" >
+                                {this.state.errors}
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
+                {this.state.modificationsInfo && (
+                    <Layer position="center" modal onClickOutside={()=>{}} onEsc={()=>{}}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Modify or ignore?
+                            </Heading>
+                            <p>The following models already exist in the database, and their fields' values are different from those you've supplied. Would you like to ignore these entries or modify the existing values with your new values?</p>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="column"
+                                align="start"
+                                justify="start" >
+                                {this.state.modificationsInfo}
+                            </Box>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="end" >
+                                <Button label="Ignore" primary onClick={() => this.setState(oldState => ({...oldState, modifications: undefined, modificationsInfo: undefined}))} />
+                                <Button
+                                    label="Modify"
+                                    onClick={() => {
+                                        modelutils.addModelsFromImport(this.state.modelsPending, true, () => {
+                                            this.setState(oldState => ({...oldState, modifications: undefined, modificationsInfo: undefined}))
+                                        })
+                                    }}
+                                    />
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
+                <CSVReader
+                    cssClass="react-csv-input"
+                    onFileLoaded={this.importModels}
+                    parserOptions={this.papaparseOptions}
+                    inputStyle={{ display: "none" }}
+                    inputId='csvreadermodels'
+                />
+                <CSVReader
+                    cssClass="react-csv-input"
+                    onFileLoaded={this.importInstances}
+                    parserOptions={this.papaparseOptions}
+                    inputStyle={{ display: "none" }}
+                    inputId='csvreaderinstances'
+                />
             </Grommet>
         )
     }
+    papaparseOptions = {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        transformHeader: header =>
+          header
+            .toLowerCase()
+            .replace(/\W/g, '_')
+      }
 }
 
 export default PortScreen

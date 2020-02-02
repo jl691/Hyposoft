@@ -116,7 +116,7 @@ class ModelSettingsLayer extends React.Component {
            } else if (this.state.memory.trim() !== '') {
                memory=parseInt(this.state.memory)
            }
-        modelutils.getModel(this.state.vendor.trim(), this.state.modelNumber.trim(), doc => {
+        modelutils.getModelByModelname(this.state.vendor.trim()+' '+this.state.modelNumber.trim(), doc => {
             if (doc && doc.id !== this.state.id) {
                 ToastsStore.info(this.state.modelNumber.trim() + ' by ' + this.state.vendor.trim() + ' exists', 3000, 'burntToast')
                 return

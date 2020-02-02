@@ -56,9 +56,9 @@ function getModel(vendor, modelNumber, callback) {
     .where('modelNumber', '==', modelNumber)
     .get().then(qs => {
         if (!qs.empty) {
-            callback({...qs.docs[0].data(), id: qs.docs[0].id})
+            callback({...qs.docs[0].data(), id: qs.docs[0].id, found: true})
         } else {
-            callback(null)
+            callback({found: false, vendor: vendor, modelNumber: modelNumber})
         }
     })
 }
@@ -199,7 +199,7 @@ function getModelsForExport(callback) {
                 ''+(qs.docs[i].data().ethernetPorts || ''),
                 ''+(qs.docs[i].data().powerPorts || ''),
                 escapeStringForCSV(qs.docs[i].data().cpu),
-                ''+(qs.docs[i].data().ethernetPorts || ''),
+                ''+(qs.docs[i].data().memory || ''),
                 escapeStringForCSV(qs.docs[i].data().storage),
                 escapeStringForCSV(qs.docs[i].data().comment)
             ]]
@@ -210,6 +210,95 @@ function getModelsForExport(callback) {
     })
 }
 
+function validateImportedModels (data, callback) {
+    var errors = []
+    for (var i = 0; i < data.length; i++) {
+        const datum = data[i]
+        if (!datum.vendor || String(datum.vendor).trim() === '') {
+            errors = [...errors, [i+1, 'Vendor not found']]
+        }
+        if (!datum.model_number || String(datum.model_number).trim() === '') {
+            errors = [...errors, [i+1, 'Model number not found']]
+        }
+        if (!datum.height || String(datum.height).trim() === '') {
+            errors = [...errors, [i+1, 'Height not found']]
+        } else if (isNaN(String(datum.height).trim()) || !Number.isInteger(parseFloat(String(datum.height).trim())) || parseInt(String(datum.height).trim()) <= 0) {
+            errors = [...errors, [i+1, 'Height is not a positive integer']]
+        }
+        if (datum.ethernet_ports !== null && String(datum.ethernet_ports).trim() !== '' &&
+         (isNaN(String(datum.ethernet_ports).trim()) || !Number.isInteger(parseFloat(String(datum.ethernet_ports).trim())) || parseInt(String(datum.ethernet_ports).trim()) < 0)) {
+             errors = [...errors, [i+1, 'Ethernet ports is not a non-negative integer']]
+        }
+        if (datum.power_ports !== null && String(datum.power_ports).trim() !== '' &&
+         (isNaN(String(datum.power_ports).trim()) || !Number.isInteger(parseFloat(String(datum.power_ports).trim())) || parseInt(String(datum.power_ports).trim()) < 0)) {
+             errors = [...errors, [i+1, 'Power ports is not a non-negative integer']]
+        }
+        if (datum.memory !== null && String(datum.memory).trim() !== '' &&
+         (isNaN(String(datum.memory).trim()) || !Number.isInteger(parseFloat(String(datum.memory).trim())) || parseInt(String(datum.memory).trim()) < 0)) {
+             errors = [...errors, [i+1, 'Memory is not a non-negative integer']]
+        }
+    }
+    callback(errors)
+}
+
+function addModelsFromImport (models, force, callback) {
+    var modelsProcessed = 0
+    var modelsPending = []
+    var modelsPendingInfo = []
+    var modelIndices = {}
+    for (var i = 0; i < models.length; i++) {
+        const model = models[i]
+        if (!modelIndices[''+model.vendor])
+            modelIndices[''+model.vendor] = {}
+        modelIndices[''+model.vendor][''+model.model_number] = i
+        getModel(''+model.vendor, ''+model.model_number, modelFromDb => {
+            const model = models[modelIndices[''+modelFromDb.vendor][''+modelFromDb.modelNumber]]
+            const height = parseInt(model.height)
+            const ethernet_ports = (model.ethernet_ports !== null ? parseInt(model.ethernet_ports) : null)
+            const power_ports = (model.power_ports !== null ? parseInt(model.power_ports) : null)
+            const memory = (model.memory !== null ? parseInt(model.memory) : null)
+            const storage = (model.storage !== null ? model.storage.trim() : "")
+            const cpu = (model.cpu !== null ? model.cpu.trim() : "")
+            const comment = (model.comment !== null ? model.comment.trim() : "")
+
+            const modelMemory = (modelFromDb.memory > 0 ? modelFromDb.memory : null)
+            const ethernetPorts = (modelFromDb.ethernetPorts > 0 ? modelFromDb.ethernetPorts : null)
+            const powerPorts = (modelFromDb.powerPorts > 0 ? modelFromDb.powerPorts : null)
+            const modelStorage = (modelFromDb.storage !== null ? modelFromDb.storage.trim() : "")
+            const modelCpu = (modelFromDb.cpu !== null ? modelFromDb.cpu.trim() : "")
+            const modelComment = (modelFromDb.comment !== null ? modelFromDb.comment.trim() : "")
+
+            if (!modelFromDb.found) {
+                console.log('Creating model')
+                createModel(null, ''+model.vendor, ''+model.model_number, height, ''+model.display_color, ethernet_ports, power_ports, model.cpu, memory, model.storage, model.comment, () => {})
+            } else if (!(modelFromDb.height == height && modelFromDb.displayColor == model.display_color
+                    && ethernetPorts == ethernet_ports && powerPorts == power_ports
+                    &&  cpu == modelCpu && storage == modelStorage && modelMemory == memory
+                    && comment == modelComment)) {
+                // Warn of possible modification
+                    console.log('Modifying model: (force = '+force+')')
+                    console.log(modelFromDb)
+                    console.log(model)
+                if (force) {
+                    // Modify model
+                    modifyModel(modelFromDb.id, model.vendor, model.model_number, height, model.display_color, ethernet_ports, power_ports, model.cpu, memory, model.storage, model.comment, () => {})
+                } else {
+                    modelsPending = [...modelsPending, model]
+                    modelsPendingInfo = [...modelsPendingInfo, [modelIndices[''+modelFromDb.vendor][''+modelFromDb.modelNumber]+1, model.vendor+' '+model.model_number]]
+                }
+            } else {
+                console.log('Ignoring model')
+            }
+
+            modelsProcessed++
+            if (modelsProcessed === models.length) {
+                callback({modelsPending, modelsPendingInfo})
+            }
+        })
+    }
+    console.log(modelIndices)
+}
+
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
 getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel,
-getModelsForExport, escapeStringForCSV }
+getModelsForExport, escapeStringForCSV, validateImportedModels, addModelsFromImport }
