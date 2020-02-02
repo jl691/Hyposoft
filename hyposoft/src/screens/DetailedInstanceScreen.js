@@ -4,7 +4,10 @@ import { Link } from 'react-router-dom'
 import { Button, Grommet, Heading, Box, List } from 'grommet'
 import * as instutils from '../utils/instanceutils'
 import theme from '../theme'
-import InstanceScreen from '../screens/InstanceScreen'
+import ModelPermaScreen from '../screens/ModelPermaScreen'
+import BackButton from '../components/BackButton'
+import AppBar from '../components/AppBar'
+import UserMenu from '../components/UserMenu'
 
 export default class DetailedInstanceScreen extends Component {
     constructor(props) {
@@ -36,6 +39,7 @@ export default class DetailedInstanceScreen extends Component {
     }
 
     render() {
+        console.log(this.state.instance)
         console.log(this.props.match.params.instanceID)
         return (
 
@@ -47,15 +51,19 @@ export default class DetailedInstanceScreen extends Component {
 
                     <Grommet theme={theme} full className='fade'>
                         <Box>
-
-                            <Heading level="2"> Detailed Instance View </Heading>
+                            <AppBar>
+                            {/* {this.props.match.params.vendor} {this.props.match.params.modelNumber} */}
+                                <BackButton alignSelf='start' this={this} />
+                                <Heading alignSelf='center' level='4' margin={{
+                                    top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
+                                }} >Detailed Instance View</Heading>
+                                <UserMenu alignSelf='end' this={this} />
+                            </AppBar>
                             <List
-                                //TODO: clicking on model should lead to a detailed model view. Add "View model details button"
                                 margin="medium"
                                 primaryKey="category"
                                 secondaryKey="value"
                                 data={[
-                                    //TODO: Need to make sure instanceID shows
                                     { category: "Instance", value: this.props.match.params.instanceID },
                                     { category: "Model", value: this.state.instance.model },
                                     { category: "Hostname", value: this.state.instance.hostname },
@@ -67,32 +75,20 @@ export default class DetailedInstanceScreen extends Component {
                                 ]}
                             />
 
-
-                            <Box direction="row" align="center">
-                                <Link to="/instances" >
-
-
+                            <Box direction="row">
+                            
+                    
+                                <Link to={`/models/${this.state.instance.vendor}/${this.state.instance.modelNum}`}>
                                     <Button
-                                        label="Go to all instances"
-                                        onClick={new InstanceScreen()}
+                                        margin="xlarge"
+                                        label="View model details"
+                                        onClick={new ModelPermaScreen()}
 
                                     />
-
                                     {/* this.props.history.push */}
                                 </Link>
 
-
-
-
-                                {/* TODO: waiting for Anshu to have detailed model views */}
-                                <Button
-                                    label="View model details"
-                                    onClick={() => { }}
-
-                                />
                             </Box>
-
-
 
                         </Box>
                     </Grommet>
