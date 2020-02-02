@@ -112,8 +112,8 @@ export default class InstanceTable extends Component {
                         margin="small"
                         
                         onClick={() => {
-                       
-                            this.props.deleteButtonCallbackFromParent(datum.instance_id)
+                            console.log(datum)
+                            this.props.deleteButtonCallbackFromParent(datum)
 
 
                         }}/>
