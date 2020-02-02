@@ -7,6 +7,7 @@ import { ToastsContainer, ToastsStore } from 'react-toasts'
 import { saveAs } from 'file-saver'
 import * as userutils from '../utils/userutils'
 import * as modelutils from '../utils/modelutils'
+import * as instanceutils from '../utils/instanceutils'
 
 import {
     Box,
@@ -26,6 +27,7 @@ class PortScreen extends Component {
     constructor () {
         super()
         this.exportModels = this.exportModels.bind(this)
+        this.exportInstances = this.exportInstances.bind(this)
     }
 
     exportModels () {
@@ -35,6 +37,17 @@ class PortScreen extends Component {
                 type: "data:text/csv;charset=utf-8;",
             })
             saveAs(blob, "hyposoft_models.csv")
+            this.setState(oldState => ({...oldState, showLoadingDialog: false}))
+        })
+    }
+
+    exportInstances () {
+        this.setState(oldState => ({...oldState, showLoadingDialog: true}))
+        instanceutils.getInstancesForExport(rows => {
+            var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
+                type: "data:text/csv;charset=utf-8;",
+            })
+            saveAs(blob, "hyposoft_instances.csv")
             this.setState(oldState => ({...oldState, showLoadingDialog: false}))
         })
     }
@@ -51,7 +64,7 @@ class PortScreen extends Component {
         var content = [
                 <Button primary label="Export Models" onClick={this.exportModels}/>,
                 <Button label="Import Models" onClick={()=>{}}/>,
-                <Button primary label="Export Instances" onClick={()=>{}}/>,
+                <Button primary label="Export Instances" onClick={this.exportInstances}/>,
                 <Button label="Import Instances" onClick={()=>{}}/>
         ]
         if (!userutils.isLoggedInUserAdmin()) {

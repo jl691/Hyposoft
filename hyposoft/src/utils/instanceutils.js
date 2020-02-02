@@ -318,4 +318,30 @@ function getInstanceDetails(instanceID, callback) {
 
 }
 
-export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstanceDetails, getInstancesFromModel, getInstanceAt }
+function getInstancesForExport (callback) {
+    instanceRef.orderBy('hostname').get().then(qs => {
+        var rows = [
+            ["hostname", "rack", "rack_position", "vendor", "model_number", "owner", "comment"]
+        ]
+
+        for (var i = 0; i < qs.size; i++) {
+            rows = [...rows, [
+                modelutils.escapeStringForCSV(qs.docs[i].data().hostname),
+                modelutils.escapeStringForCSV(qs.docs[i].data().rack),
+                ''+qs.docs[i].data().rackU,
+                modelutils.escapeStringForCSV(qs.docs[i].data().vendor),
+                modelutils.escapeStringForCSV(qs.docs[i].data().modelNumber),
+                modelutils.escapeStringForCSV(qs.docs[i].data().owner),
+                modelutils.escapeStringForCSV(qs.docs[i].data().comment)
+            ]]
+            if (rows.length === qs.size+1) {
+                callback(rows)
+            }
+        }
+    })
+}
+
+export { getInstance, addInstance, deleteInstance, instanceFitsOnRack,
+    updateInstance, sortByKeyword, getSuggestedModels, getInstanceDetails,
+    getInstancesFromModel, getInstanceAt,
+    getInstancesForExport }

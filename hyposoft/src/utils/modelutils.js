@@ -192,14 +192,14 @@ function getModelsForExport(callback) {
 
         for (var i = 0; i < qs.size; i++) {
             rows = [...rows, [
-                '"'+qs.docs[i].data().vendor+'"',
-                '"'+qs.docs[i].data().modelNumber+'"',
+                escapeStringForCSV(qs.docs[i].data().vendor),
+                escapeStringForCSV(qs.docs[i].data().modelNumber),
                 ''+qs.docs[i].data().height,
                 ''+qs.docs[i].data().displayColor,
                 ''+(qs.docs[i].data().ethernetPorts || ''),
                 ''+(qs.docs[i].data().powerPorts || ''),
                 escapeStringForCSV(qs.docs[i].data().cpu),
-                escapeStringForCSV(''+(qs.docs[i].data().ethernetPorts || '')),
+                ''+(qs.docs[i].data().ethernetPorts || ''),
                 escapeStringForCSV(qs.docs[i].data().storage),
                 escapeStringForCSV(qs.docs[i].data().comment)
             ]]
@@ -212,4 +212,4 @@ function getModelsForExport(callback) {
 
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
 getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel,
-getModelsForExport }
+getModelsForExport, escapeStringForCSV }
