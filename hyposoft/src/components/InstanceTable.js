@@ -13,11 +13,11 @@ export default class InstanceTable extends Component {
     defaultInstances = [];
     startAfter = null;
     columns = [
-        {
+/*        {
             property: 'instance_id',
             header:  <Text>Instance ID</Text>,
             primary: true,
-        },
+        },*/
 
         {
             property: 'model',
@@ -27,7 +27,7 @@ export default class InstanceTable extends Component {
         {
             property: 'hostname',
             header: <Text>Hostname</Text>,
-
+            primary: true
         },
         {
             property: 'rack',
