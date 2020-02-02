@@ -227,6 +227,7 @@ class InstanceScreen extends Component {
                                         to
                                         <TextInput name="rangeNumberEnd" placeholder="eg. C21" onChange={this.handleChangeRange} />
                                     </Box>
+                                    
 
                                     
                                     {/* Button to Add an Instance: */}
