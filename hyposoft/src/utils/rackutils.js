@@ -143,9 +143,11 @@ function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, callback) {
                         if (!querySnapshot.empty) {
                             let docID;
                             docID = querySnapshot.docs[0].id;
-                            firebaseutils.racksRef.doc(docID).delete().catch(function (error) {
-                                callback(null);
-                            })
+                            if(!(querySnapshot.docs[0].data().instances && Object.keys(querySnapshot.docs[0].data().instances).length > 0)){
+                                firebaseutils.racksRef.doc(docID).delete().catch(function (error) {
+                                    callback(null);
+                                })
+                            }
                         }
                     }));
                 }
@@ -266,7 +268,7 @@ function checkInstanceFits(position, height, rack, callback, id = null) { //rack
                 console.log("this rack contains " + instanceID);
                 firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
                     //ignore own self
-                    if(id && instanceID != id){
+                    if(instanceID != id){
                         //find height
                         modelutils.getModelByModelname(docRefInstance.data().model, result => {
                             if (result) {
