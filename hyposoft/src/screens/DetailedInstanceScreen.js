@@ -68,12 +68,11 @@ export default class DetailedInstanceScreen extends Component {
                             />
 
 
-                            <Box direction="row">
+                            <Box direction="row" align="center">
                                 <Link to="/instances" >
 
 
                                     <Button
-                                        margin="xlarge"
                                         label="Go to all instances"
                                         onClick={new InstanceScreen()}
 
@@ -87,7 +86,6 @@ export default class DetailedInstanceScreen extends Component {
 
                                 {/* TODO: waiting for Anshu to have detailed model views */}
                                 <Button
-                                    margin="xlarge"
                                     label="View model details"
                                     onClick={() => { }}
 
