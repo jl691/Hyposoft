@@ -19,10 +19,15 @@ class LoginCard extends React.Component {
         super()
         this.handleStateChange = this.handleStateChange.bind(this)
         this.handleLoginClick = this.handleLoginClick.bind(this)
+        this.handleForgotPassword = this.handleForgotPassword.bind(this)
     }
 
     handleLoginClick() {
-        userutils.isLoginValid(this.state.username, this.state.password, user => {
+        var username = this.state.username.trim()
+        while (username.startsWith('@')) {
+            username = username.substring(1)
+        }
+        userutils.isLoginValid(username, this.state.password.trim(), user => {
             if (user) {
                 // It's a valid login
                 userutils.logUserIn(user)
@@ -30,6 +35,26 @@ class LoginCard extends React.Component {
             } else {
                 ToastsStore.info('Invalid login', 3000, 'info')
             }
+        })
+    }
+
+    handleForgotPassword() {
+        var username = this.state.username.trim()
+        while (username.startsWith('@')) {
+            username = username.substring(1)
+        }
+
+        if (username === '') {
+            ToastsStore.info('Enter a username to recover password', 3000, 'info')
+            return
+        }
+
+        userutils.sendRecoveryEmail(username, () => {
+            ToastsStore.info('Recovery email sent', 3000, 'info')
+            this.setState({
+                username: '',
+                password: ''
+            })
         })
     }
 
