@@ -75,7 +75,7 @@ class DeleteRackView extends React.Component {
                        onClickOutside={() => this.setState({confirm: false})}>
                     <Box pad="medium" align="center">
                         <Heading level="3" margin="none">Confirm deletion</Heading>
-                        <Text>Are you sure you want to delete racks {this.state.rangeLetterStart} - {this.state.rangeLetterEnd}, {this.state.rangeNumberStart} - {this.state.rangeNumberEnd}? This can't be reversed.</Text>
+                        <Text>Are you sure you want to delete racks {this.state.rangeLetterStart}{this.state.rangeNumberStart} - {this.state.rangeLetterEnd}{this.state.rangeNumberEnd}? This can't be reversed.</Text>
                         <Box direction="row">
                             <Button label="Delete" icon={<Trash/>} onClick={this.deleteRacks}/>
                             <Button label="Cancel" icon={<Close/>}
