@@ -40,7 +40,7 @@ export default class AddInstanceForm extends Component {
                 ToastsStore.error("Please fill out all required fields.");
             } else if(!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)){
                 //not a valid hostname
-                ToastsStore.error("Invalid hostname.");
+                ToastsStore.error("Invalid hostname. It must start with a letter or number, contain only letters, numbers, or hyphens, and end with a letter or number. It must be 63 characters or less.");
             } else if(!/[A-Z]\d+/.test(this.state.rack)){
                 //not a valid rack
                 ToastsStore.error("Invalid rack.");

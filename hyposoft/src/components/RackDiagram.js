@@ -71,7 +71,7 @@ class RackDiagram extends React.Component {
                     let instanceBox = new fabric.Rect({
                         left: (400*x)+30,
                         top: (1113*y) + 50 + (20*(42-instance.position)) - (20*instance.height),
-                        fill: '#' + instance.color,
+                        fill: instance.color,
                         width: 290,
                         height: (20*instance.height),
                         stroke: 'black',
