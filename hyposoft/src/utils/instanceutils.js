@@ -158,7 +158,7 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                                     conflictCount++;
                                     if (conflictCount === status.length) {
                                         console.log(conflictNew)
-                                        var errMessage = "Error adding instance: instance of height " + height + " racked at " + rackedAt + "U conflicts with instance(s) " + conflictNew.join(', ').toString();
+                                        var errMessage = "instance of height " + height + " racked at " + rackedAt + "U conflicts with instance(s) " + conflictNew.join(', ').toString();
                                         callback(errMessage);
                                     }
                                 });
@@ -203,7 +203,7 @@ function deleteInstance(instanceid, callback) {
                     rackID = id
                     console.log(rackID)
                 } else {
-                    console.log("Error: no rack for this letter and number")
+                    console.log("no rack for this letter and number")
                 }
             })
 
