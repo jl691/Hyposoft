@@ -281,11 +281,11 @@ class RackView extends React.Component {
                                                                                        }}/>
                                                                          )
                                                                      },*/
-                                   {
+/*                                   {
                                        property: "id",
                                        header: "ID",
                                        primary: true
-                                   },
+                                   },*/
                                    {
                                        property: "letter",
                                        header: "Row",
@@ -331,7 +331,7 @@ class RackView extends React.Component {
                                            </Box>
                                        )
                                    }
-                               ]} data={this.state.racks} sortable={true}/>
+                               ]} data={this.state.racks}/>
                 </Box>
                 {popup}
                 <ToastsContainer store={ToastsStore}/>
