@@ -204,6 +204,13 @@ class UsersScreen extends Component {
         })
     }
 
+    componentDidMount() {
+        if (localStorage.getItem('tipShown') !== 'yes') {
+            ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
+            localStorage.setItem('tipShown', 'yes')
+        }
+    }
+
     render() {
         if (this.state.redirect !== '') {
             return <Redirect to={this.state.redirect} />

@@ -135,6 +135,11 @@ class RackView extends React.Component {
     render() {
         const {popupType} = this.state;
         let popup;
+        if (localStorage.getItem('tipShown') !== 'yes') {
+            ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
+            localStorage.setItem('tipShown', 'yes')
+        }
+        
         if (popupType === 'Delete') {
             let deleteID = this.state.deleteID;
             popup = (

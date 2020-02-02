@@ -255,6 +255,11 @@ class ModelsScreen extends React.Component {
             sortable: false
         }] : []
 
+        if (localStorage.getItem('tipShown') !== 'yes') {
+            ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
+            localStorage.setItem('tipShown', 'yes')
+        }
+
         return (
             <Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
@@ -374,7 +379,7 @@ class ModelsScreen extends React.Component {
                                        </Box>
                                        {userutils.isLoggedInUserAdmin() && (
                                             <Button primary icon={<Add />} label="Add model" alignSelf='center' onClick={this.showAddModelDialog} />
-                                       )}                                       
+                                       )}
                                    </Box>
                                    <Box
                                        width='medium'

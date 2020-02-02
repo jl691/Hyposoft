@@ -8,6 +8,7 @@ import AddInstanceForm from '../components/AddInstanceForm'
 import DeleteInstancePopup from '../components/DeleteInstancePopup'
 import EditInstanceForm from '../components/EditInstanceForm'
 import DetailedInstanceScreen from './DetailedInstanceScreen'
+import { ToastsContainer, ToastsStore } from 'react-toasts'
 
 import theme from '../theme'
 import AppBar from '../components/AppBar'
@@ -39,7 +40,7 @@ class InstanceScreen extends Component {
             updateComment: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
-           
+
         }
 
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
@@ -47,7 +48,7 @@ class InstanceScreen extends Component {
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleChangeRange = this.handleChangeRange.bind(this);
-       
+
 
         this.instanceTable = React.createRef();
     }
@@ -138,6 +139,10 @@ class InstanceScreen extends Component {
     render() {
         const { popupType } = this.state;
         let popup;
+        if (localStorage.getItem('tipShown') !== 'yes') {
+            ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
+            localStorage.setItem('tipShown', 'yes')
+        }
 
         if (popupType === 'Add') {
 
@@ -237,7 +242,7 @@ class InstanceScreen extends Component {
                                         <TextInput name="rangeNumberEnd" placeholder="eg. C21" onChange={this.handleChangeRange} />
                                     </Box>
 
-                                    
+
                                     {/* Button to Add an Instance: */}
                                     {this.addButton()}
                                 </FilterBarInstances>
@@ -250,6 +255,7 @@ class InstanceScreen extends Component {
                                     ref={this.instanceTable}
 
                                 />
+                                <ToastsContainer store={ToastsStore} lightBackground/>
                             </Grommet>
 
                         </React.Fragment>
