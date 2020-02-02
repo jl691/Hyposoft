@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
 
-import { Text, Button, Layer, Grommet, Heading, Box, TextInput } from 'grommet'
+import {Text, Button, Layer, Grommet, Heading, Box, TextInput, RangeSelector} from 'grommet'
 import { Add } from 'grommet-icons'
 import AddInstanceForm from '../components/AddInstanceForm'
 import DeleteInstancePopup from '../components/DeleteInstancePopup'
@@ -27,6 +27,8 @@ class InstanceScreen extends Component {
             instances: [],
             popupType: "",
             deleteID: "",
+            deleteModel: "",
+            deleteHostname: "",
             updateID: "",
             initialLoaded: false,
             updateModel: "",
@@ -37,7 +39,7 @@ class InstanceScreen extends Component {
             updateComment: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
-           
+
         }
 
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
@@ -104,11 +106,13 @@ class InstanceScreen extends Component {
         });
     }
 
-    handleDeleteButton = (datumID) => {
+    handleDeleteButton = (datum) => {
+        console.log(datum.model);
         this.setState({
             popupType: 'Delete',
-            deleteID: datumID,
-
+            deleteID: datum.instance_id,
+            deleteModel: datum.model,
+            deleteHostname: datum.hostname
         });
     }
     handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment) => {
@@ -169,6 +173,8 @@ class InstanceScreen extends Component {
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
                         deleteIDFromParent={this.state.deleteID}
+                        deleteModel = {this.state.deleteModel}
+                        deleteHostname = {this.state.deleteHostname}
 
                     />
                 </Layer>
