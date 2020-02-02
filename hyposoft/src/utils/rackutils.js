@@ -338,10 +338,11 @@ function generateRackUsageReport(rack, callback) {
                         }
 
                         //then owner
-                        if (ownerCounts.has(docRefInstance.data().owner)) {
-                            ownerCounts.set(docRefInstance.data().owner, ownerCounts.get(docRefInstance.data().owner) + height);
+                        let owner = docRefInstance.data().owner ? docRefInstance.data().owner : "No owner";
+                        if (ownerCounts.has(owner)) {
+                            ownerCounts.set(owner, ownerCounts.get(owner) + height);
                         } else {
-                            ownerCounts.set(docRefInstance.data().owner, height);
+                            ownerCounts.set(owner, height);
                         }
 
                         used += height;
