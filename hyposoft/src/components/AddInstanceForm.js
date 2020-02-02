@@ -40,15 +40,15 @@ export default class AddInstanceForm extends Component {
                 ToastsStore.error("Please fill out all required fields.");
             } else if(!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)){
                 //not a valid hostname
-                ToastsStore.error("Invalid hostname.");
+                ToastsStore.error("Invalid hostname. It must start with a letter or number, contain only letters, numbers, or hyphens, and end with a letter or number. It must be 63 characters or less.");
             } else if(!/[A-Z]\d+/.test(this.state.rack)){
                 //not a valid rack
                 ToastsStore.error("Invalid rack.");
             } else if(!parseInt(this.state.rackU)){
                 //invalid number
-                ToastsStore.error("Rack elevation must be a number.");
+                ToastsStore.error("Rack U must be a number.");
             } else if(!formvalidationutils.checkPositive(this.state.rackU)){
-                ToastsStore.error("Rack elevation must be positive.");
+                ToastsStore.error("Rack U must be positive.");
             } else {
                 instutils.addInstance(
                     this.state.model,
@@ -62,7 +62,7 @@ export default class AddInstanceForm extends Component {
                             ToastsStore.error(errorMessage, 10000)
                         } else {
                             ToastsStore.success('Successfully added instance!');
-            
+
                             this.props.parentCallback(true);
                         }
                     }
@@ -121,8 +121,22 @@ export default class AddInstanceForm extends Component {
                         <FormField name="rack" label="Rack">
 
 
-                            <TextInput name="rack" placeholder="eg. B12" onChange={this.handleChange}
-                                       value={this.state.rack} required="true"/>
+                            <TextInput name="rack"
+                                  placeholder="eg. B12"
+                                  onChange={e => {
+                                      const value = e.target.value
+                                      this.setState(oldState => ({...oldState, rack: value}))
+                                      instutils.getSuggestedRacks(value, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))
+                                  }}
+                                  onSelect={e => {
+                                      this.setState(oldState => ({...oldState, rack: e.suggestion}))
+                                  }}
+                                  value={this.state.rack}
+                                  suggestions={this.state.rackSuggestions}
+                                  onClick={() => instutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))}
+                                  title='Rack'
+                                  required="true"
+                                />
                         </FormField>
 
 

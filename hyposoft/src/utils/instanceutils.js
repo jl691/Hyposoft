@@ -57,13 +57,12 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                     var errMessage = "Model does not exist"
                     callback(errMessage)
                 } else {
-
-                    if (model == "" || hostname == "" || rack == "" || racku == null || !owner) {
+                    if (model == "" || hostname == "" || rack == "" || racku == null) {
                         callback("Required fields cannot be empty")
                     }
 
                     else {
-                        instanceFitsOnRack(rack, racku, model, function (errorMessage, modelVendor, modelNum, rackID) {
+                        instanceFitsOnRack(rack, racku, model, function (errorMessage, modelNum, modelVendor, rackID) {//see line 171
                             //Allen wants me to add a vendor and modelname field to my document
                             if (errorMessage) {
                                 callback(errorMessage)
@@ -82,8 +81,9 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                                     comment: comment,
                                     rackID: rackID,
                                     //This is for rack usage reports
+                                    modelNumber: modelNum,
                                     vendor: modelVendor,
-                                    modelNumber: modelNum
+                                    
 
 
                                 }).then(function (docRef) {
@@ -97,11 +97,9 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                                 })
                             }
                         })
-
-
+        
                     }
-
-
+     
                 }
             })
 
@@ -184,7 +182,7 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
         }
         else {
             console.log("Rack doesn't exist")
-            var errMessage2 = "Error adding instance: rack does not exist"
+            var errMessage2 = "Rack does not exist"
             callback(errMessage2)
         }
     })
@@ -247,7 +245,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                     callback(errMessage)
                 } else {
 
-                    if (model == "" || hostname == "" || rack == "" || rackU == null || !owner) {
+                    if (model == "" || hostname == "" || rack == "" || rackU == null) {
                         callback("Required fields cannot be empty")
                     }
 
@@ -360,6 +358,28 @@ function getSuggestedOwners(userInput, callback) {
   })
 }
 
+function getSuggestedRacks(userInput, callback) {
+  // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+  var modelArray = []
+  racksRef.orderBy('letter').orderBy('number').get().then(querySnapshot => {
+    querySnapshot.forEach( doc => {
+      const modelName = (doc.data().letter+doc.data().number.toString()).toLowerCase()
+      const lowerUserInput = userInput.toLowerCase()
+      if (!modelArray.includes(doc.data().letter+doc.data().number.toString()) && (!userInput
+          || (modelName.localeCompare(lowerUserInput) >= 0
+              && modelName.localeCompare(lowerUserInput.slice(0,lowerUserInput.length-1)
+                  + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length-1,lowerUserInput.length).charCodeAt(0)+1)) < 0))) {
+          modelArray.push(doc.data().letter+doc.data().number.toString())
+        }
+    })
+    callback(modelArray)
+  })
+  .catch( error => {
+    console.log("Error getting documents: ", error)
+    callback(null)
+  })
+}
+
 function getInstanceDetails(instanceID, callback) {
 
     instanceRef.doc(instanceID).get().then((doc) => {
@@ -410,4 +430,4 @@ function validateInstanceForm(model, hostname, rack, racku, owner, callback) {
 }
 
 
-export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstanceDetails, getInstancesFromModel, getSuggestedOwners, getInstanceAt, validateInstanceForm }
+export { getInstance, addInstance, deleteInstance, instanceFitsOnRack, updateInstance, sortByKeyword, getSuggestedModels, getInstanceDetails, getInstancesFromModel, getSuggestedOwners, getSuggestedRacks, getInstanceAt, validateInstanceForm }

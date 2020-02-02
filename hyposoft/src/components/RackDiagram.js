@@ -9,26 +9,32 @@ import {Redirect} from "react-router-dom";
 class RackDiagram extends React.Component {
     generateDiagrams() {
         const canvas = new fabric.Canvas('canvas');
-        let currX = 0;
-        let currY = 0;
-        let rowStartNumber = this.props.location.state.letterStart.charCodeAt(0);
-        let rowEndNumber = this.props.location.state.letterEnd.charCodeAt(0);
-        for(let i=rowStartNumber;i<=rowEndNumber;i++){
-            let currLetter = String.fromCharCode(i);
-            for(let j=parseInt(this.props.location.state.numberStart); j<=parseInt(this.props.location.state.numberEnd); j++){
-                rackutils.getRackID(currLetter, j, result => {
-                    console.log(result)
-                    if(result){
-                        this.generateBorders(currX, currY, canvas);
-                        this.generateRackFill(currX, currY, canvas, result);
-                        if(currX === 2){
-                            currX = 0;
-                            currY++;
-                        } else {
-                            currX++;
+
+        if(this.props.location.state.id){
+            this.generateBorders(0, 0, canvas);
+            this.generateRackFill(0, 0, canvas, this.props.location.state.id);
+        } else {
+            let currX = 0;
+            let currY = 0;
+            let rowStartNumber = this.props.location.state.letterStart.charCodeAt(0);
+            let rowEndNumber = this.props.location.state.letterEnd.charCodeAt(0);
+            for(let i=rowStartNumber;i<=rowEndNumber;i++){
+                let currLetter = String.fromCharCode(i);
+                for(let j=parseInt(this.props.location.state.numberStart); j<=parseInt(this.props.location.state.numberEnd); j++){
+                    rackutils.getRackID(currLetter, j, result => {
+                        console.log(result)
+                        if(result){
+                            this.generateBorders(currX, currY, canvas);
+                            this.generateRackFill(currX, currY, canvas, result);
+                            if(currX === 2){
+                                currX = 0;
+                                currY++;
+                            } else {
+                                currX++;
+                            }
                         }
-                    }
-                })
+                    })
+                }
             }
         }
     }
@@ -61,10 +67,11 @@ class RackDiagram extends React.Component {
                 canvas.add(header);
                 //header.centerH();
                 result.forEach(instance => {
+                    console.log("yeetersssss " + instance.position)
                     let instanceBox = new fabric.Rect({
                         left: (400*x)+30,
-                        top: (1113*y) + 10 + (20*(42-instance.position)),
-                        fill: '#' + instance.color,
+                        top: (1113*y) + 50 + (20*(42-instance.position)) - (20*instance.height),
+                        fill: instance.color,
                         width: 290,
                         height: (20*instance.height),
                         stroke: 'black',
@@ -72,20 +79,20 @@ class RackDiagram extends React.Component {
                         selectable: false
                     });
 
-                    let instanceText = new fabric.Text(instance.model, {
+                    let instanceText = new fabric.Text(instance.model.substr(0, 20), {
                         fill: this.getContrastYIQ(instance.color),
                         fontFamily: 'Arial',
                         fontSize: 15,
-                        top: (1113*y) + 10 + (20*(42-instance.position)) + (20*(instance.height-1)),
+                        top: (1113*y) + 30 + (20*(42-instance.position)),
                         left: (400*x) + 35,
                         selectable: false
                     });
 
-                    let instanceHostname = new fabric.Text(instance.hostname, {
+                    let instanceHostname = new fabric.Text(instance.hostname.substr(0, 15), {
                         fill: this.getContrastYIQ(instance.color),
                         fontFamily: 'Arial',
                         fontSize: 15,
-                        top: (1113*y) + 10 + (20*(42-instance.position)) + (20*(instance.height-1)),
+                        top: (1113*y) + 30 + (20*(42-instance.position)),
                         left: (400*x) + 200,
                         selectable: false
                     });

@@ -248,7 +248,7 @@ function getModelHeightColor(model, callback) {
     })
 }
 
-function checkInstanceFits(position, height, rack, callback) { //rackU, modelHeight, rack
+function checkInstanceFits(position, height, rack, callback, id = null) { //rackU, modelHeight, rack
     console.log("checking for instance fit of height " + height + " for " + rack + position)
     //create promise array
     //create array of conflicting instances
@@ -265,34 +265,37 @@ function checkInstanceFits(position, height, rack, callback) { //rackU, modelHei
             docRefRack.data().instances.forEach(instanceID => {
                 console.log("this rack contains " + instanceID);
                 firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
-                    //find height
-                    modelutils.getModelByModelname(docRefInstance.data().model, result => {
-                        if (result) {
-                            getModelHeightColor((docRefInstance.data().model), (height, color) => {
-                                if (height) {
-                                    console.log("found the model height! " + height);
-                                    let instPositions = [];
-                                    for (let i = docRefInstance.data().rackU; i < docRefInstance.data().rackU + height; i++) {
-                                        instPositions.push(i);
+                    //ignore own self
+                    if(id && instanceID != id){
+                        //find height
+                        modelutils.getModelByModelname(docRefInstance.data().model, result => {
+                            if (result) {
+                                getModelHeightColor((docRefInstance.data().model), (height, color) => {
+                                    if (height) {
+                                        console.log("found the model height! " + height);
+                                        let instPositions = [];
+                                        for (let i = docRefInstance.data().rackU; i < docRefInstance.data().rackU + height; i++) {
+                                            instPositions.push(i);
+                                        }
+                                        //check for intersection
+                                        let intersection = tentPositions.filter(value => instPositions.includes(value));
+                                        if (intersection.length) {
+                                            console.log("conflicting!")
+                                            conflicting.push(docRefInstance.id);
+                                        }
+                                        instanceCount++;
+                                        if (instanceCount === docRefRack.data().instances.length) {
+                                            console.log("done! calling back")
+                                            console.log("instancecount is " + instanceCount + " and length is " + docRefRack.data().instances.length)
+                                            callback(conflicting);
+                                        }
                                     }
-                                    //check for intersection
-                                    let intersection = tentPositions.filter(value => instPositions.includes(value));
-                                    if (intersection.length) {
-                                        console.log("conflicting!")
-                                        conflicting.push(docRefInstance.id);
-                                    }
-                                    instanceCount++;
-                                    if (instanceCount === docRefRack.data().instances.length) {
-                                        console.log("done! calling back")
-                                        console.log("instancecount is " + instanceCount + " and length is " + docRefRack.data().instances.length)
-                                        callback(conflicting);
-                                    }
-                                }
-                            })
-                        } else {
-                            callback(null);
-                        }
-                    })
+                                })
+                            } else {
+                                callback(null);
+                            }
+                        })
+                    }
                 });
             });
             /*if(instanceCount === docRefRack.data().instances.length){
@@ -338,10 +341,11 @@ function generateRackUsageReport(rack, callback) {
                         }
 
                         //then owner
-                        if (ownerCounts.has(docRefInstance.data().owner)) {
-                            ownerCounts.set(docRefInstance.data().owner, ownerCounts.get(docRefInstance.data().owner) + height);
+                        let owner = docRefInstance.data().owner ? docRefInstance.data().owner : "No owner";
+                        if (ownerCounts.has(owner)) {
+                            ownerCounts.set(owner, ownerCounts.get(owner) + height);
                         } else {
-                            ownerCounts.set(docRefInstance.data().owner, height);
+                            ownerCounts.set(owner, height);
                         }
 
                         used += height;

@@ -17,13 +17,31 @@ class DeleteRackView extends React.Component {
             rangeNumberStart: "",
             rangeNumberEnd: "",
             confirm: false
-        }
+        };
 
-        this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
+        this.deleteRacks = this.deleteRacks.bind(this);
+        this.deleteRackValidation = this.deleteRackValidation.bind(this);
     }
 
-    handleSubmit(event) {
+    deleteRacks() {
+        rackutils.deleteRackRange(this.state.rangeLetterStart, this.state.rangeLetterEnd, this.state.rangeNumberStart, this.state.rangeNumberEnd, status => {
+            if (status) {
+                ToastsStore.success('Successfully deleted racks!');
+                this.props.parentCallback(true);
+            } else {
+                ToastsStore.error('Error deleting racks. Ensure none of them contain instances.');
+            }
+        })
+    }
+
+    handleChange(event) {
+        this.setState({
+            [event.target.name]: event.target.value
+        });
+    }
+
+    deleteRackValidation(){
         if(!this.state.rangeLetterStart || !this.state.rangeLetterEnd || !this.state.rangeNumberStart || !this.state.rangeNumberEnd) {
             //invalid length
             ToastsStore.error('Please fill out all fields.');
@@ -40,24 +58,9 @@ class DeleteRackView extends React.Component {
             //ranges incorrect
             ToastsStore.error('The starting row or number must come before the ending row or number.');
         } else {
-            rackutils.deleteRackRange(this.state.rangeLetterStart, this.state.rangeLetterEnd, this.state.rangeNumberStart, this.state.rangeNumberEnd, status => {
-                if (status) {
-                    ToastsStore.success('Successfully deleted racks!');
-                    this.props.parentCallback(true);
-                } else {
-                    ToastsStore.error('Error deleting racks. Ensure none of them contain instances.');
-                }
-            })
+            this.setState({confirm: true});
         }
     }
-
-    handleChange(event) {
-        this.setState({
-            [event.target.name]: event.target.value
-        });
-    }
-
-
 
     render() {
         if (!userutils.isUserLoggedIn()) {
@@ -74,7 +77,7 @@ class DeleteRackView extends React.Component {
                         <Heading level="3" margin="none">Confirm deletion</Heading>
                         <Text>Are you sure you want to delete racks {this.state.rangeLetterStart} - {this.state.rangeLetterEnd}, {this.state.rangeNumberStart} - {this.state.rangeNumberEnd}? This can't be reversed.</Text>
                         <Box direction="row">
-                            <Button label="Delete" icon={<Trash/>} onClick={this.handleSubmit}/>
+                            <Button label="Delete" icon={<Trash/>} onClick={this.deleteRacks}/>
                             <Button label="Cancel" icon={<Close/>}
                                     onClick={() => this.setState({confirm: false})}/>
                         </Box>
@@ -86,7 +89,7 @@ class DeleteRackView extends React.Component {
         return (
             <Grommet theme={theme}>
                 <Box pad="medium">
-                    <Form onSubmit={() => this.setState({confirm: true})} name="range">
+                    <Form onSubmit={this.deleteRackValidation} name="range">
                         <Text>Row range</Text>
                         <Box direction="row">
                             <TextInput name="rangeLetterStart" placeholder="eg. A, B, C" onChange={this.handleChange} />
