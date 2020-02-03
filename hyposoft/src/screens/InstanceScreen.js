@@ -120,7 +120,8 @@ class InstanceScreen extends Component {
             updateRack: datumRack,
             updateRackU: datumRackU,
             updateOwner: datumOwner,
-            updateComment: datumComment
+            updateComment: datumComment,
+      
 
         });
 

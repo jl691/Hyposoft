@@ -48,10 +48,10 @@ function getInstanceAt(start, callback) {
 function addInstance(model, hostname, rack, racku, owner, comment, callback) {
 
     validateInstanceForm(model, hostname, rack, racku, owner, valid => {
-        if(valid){
+        if (valid) {
             callback(valid)
         }
-        else{
+        else {
             modelutils.getModelByModelname(model, doc => {
                 if (!doc) {
                     var errMessage = "Model does not exist"
@@ -98,14 +98,11 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                                     console.log(error)
                                 })
                             }
-                        })
-
+                        }) //checkInstanceFits in rackutils will check against self if instance id is passed in
                     }
 
                 }
             })
-
-
         }
 
     })
@@ -116,14 +113,13 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
 
 // This will check if the instance fits on rack (after checking rack exists): fits within in the height of rack, and does not conflict with other instances
 
-function instanceFitsOnRack(instanceRack, rackU, model, callback) {
+function instanceFitsOnRack(instanceRack,  rackU, model, callback, instance_id=null) {
 
     let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
     let rackID = null;
-
     rackutils.getRackID(rackRow, rackNum, id => {
         if (id) {
 
@@ -159,12 +155,13 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                             let conflictNew = [];
                             let conflictCount = 0;
                             status.forEach(instanceID => {
+                                console.log("Passing in instance id: " + instance_id)
                                 getInstanceDetails(instanceID, result => {
                                     console.log(result.model + " " + result.hostname);
                                     conflictNew.push(result.model + " " + result.hostname + ", ");
                                     console.log(conflictNew)
                                     conflictCount++;
-                                    if(conflictCount === status.length){
+                                    if (conflictCount === status.length) {
                                         console.log(conflictNew)
                                         var errMessage = "Error adding instance: instance of height " + height + " racked at " + rackedAt + "U conflicts with instance(s) " + conflictNew.join(', ').toString();
                                         callback(errMessage);
@@ -177,7 +174,7 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                             callback(null, doc.data().modelNumber, doc.data().vendor, rackID)
 
                         }
-                    })
+                    }, instance_id) //if you pass in a null to checkInstanceFits
                 }
                 else {
                     console.log("Instance of this model at this rackU will not fit on the rack")
@@ -222,7 +219,7 @@ function deleteInstance(instanceid, callback) {
 
             instanceRef.doc(instanceid).delete().then(function () {
                 console.log("Deleting. This is the rackID: " + rackID)
-                console.log("removing from database instace ID: " + instanceid)
+                console.log("removing from database instance ID: " + instanceid)
                 racksRef.doc(String(rackID)).update({
 
                     instances: firebase.firestore.FieldValue.arrayRemove(instanceid)
@@ -242,10 +239,10 @@ function deleteInstance(instanceid, callback) {
 function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment, callback) {
 
     validateInstanceForm(model, hostname, rack, rackU, owner, valid => {
-        if(valid){
+        if (valid) {
             callback(valid)
         }
-        else{
+        else {
             modelutils.getModelByModelname(model, doc => {
                 if (!doc) {
                     var errMessage = "Model does not exist"
@@ -257,38 +254,43 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                     }
 
                     else {
-                      instanceFitsOnRack(rack, rackU, model, stat => {
+                        //HERE: need to update vendor, modelNumber
 
-                          console.log(stat)
-                          //returned an error message
-                          if (stat) {
+                        instanceFitsOnRack(rack, rackU, model, stat => {
 
-                              var errMessage = stat
-                              //need to pass up errormessage if model updated and instance no longer fits
-                              callback(errMessage)
-                          }
-                          //returns null if no issues/conflicts.
-                          else {
-                              instanceRef.doc(String(instanceid)).update({
-                                  model,
-                                  hostname,
-                                  rack,
-                                  rackU,
-                                  owner,
-                                  comment
-                                  //these are the fields in the document to update
+                            console.log(stat)
+                            //returned an error message
+                            if (stat) {
+                                var errMessage = stat
+                                //need to pass up errormessage if model updated and instance no longer fits
+                                callback(errMessage)
+                            }
+                            //returns null if no issues/conflicts.
+                            else {
+                
+                                instanceRef.doc(String(instanceid)).update({
+                                    model,
+                                    hostname,
+                                    rack,
+                                    rackU,
+                                    owner,
+                                    comment,
 
-                              }).then(function () {
-                                  console.log("Updated model successfully")
-                                  callback(null);
-                              }).catch(function (error) {
-                                  console.log(error)
-                                  callback(error);
-                              })
-                          }
-                      })
+                                }).then(function () {
+                                    console.log("Updated model successfully")
+                                    callback(null);
+                                }).catch(function (error) {
+                                    console.log(error)
+                                    callback(error);
+                                })
+                            }
+                            console.log(instanceid)
+                        }, instanceid)
                     }
-                  }})}})
+                }
+            })
+        }
+    })
 }
 
 
@@ -344,47 +346,47 @@ function getSuggestedModels(userInput, callback) {
 }
 
 function getSuggestedOwners(userInput, callback) {
-  // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
-  var modelArray = []
-  usersRef.orderBy('username').get().then(querySnapshot => {
-    querySnapshot.forEach( doc => {
-      const modelName = doc.data().username.toLowerCase()
-      const lowerUserInput = userInput.toLowerCase()
-      if (!modelArray.includes(doc.data().username) && (!userInput
-          || (modelName.localeCompare(lowerUserInput) >= 0
-              && modelName.localeCompare(lowerUserInput.slice(0,lowerUserInput.length-1)
-                  + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length-1,lowerUserInput.length).charCodeAt(0)+1)) < 0))) {
-          modelArray.push(doc.data().username)
-        }
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    var modelArray = []
+    usersRef.orderBy('username').get().then(querySnapshot => {
+        querySnapshot.forEach(doc => {
+            const modelName = doc.data().username.toLowerCase()
+            const lowerUserInput = userInput.toLowerCase()
+            if (!modelArray.includes(doc.data().username) && (!userInput
+                || (modelName.localeCompare(lowerUserInput) >= 0
+                    && modelName.localeCompare(lowerUserInput.slice(0, lowerUserInput.length - 1)
+                        + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length - 1, lowerUserInput.length).charCodeAt(0) + 1)) < 0))) {
+                modelArray.push(doc.data().username)
+            }
+        })
+        callback(modelArray)
     })
-    callback(modelArray)
-  })
-  .catch( error => {
-    console.log("Error getting documents: ", error)
-    callback(null)
-  })
+        .catch(error => {
+            console.log("Error getting documents: ", error)
+            callback(null)
+        })
 }
 
 function getSuggestedRacks(userInput, callback) {
-  // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
-  var modelArray = []
-  racksRef.orderBy('letter').orderBy('number').get().then(querySnapshot => {
-    querySnapshot.forEach( doc => {
-      const modelName = (doc.data().letter+doc.data().number.toString()).toLowerCase()
-      const lowerUserInput = userInput.toLowerCase()
-      if (!modelArray.includes(doc.data().letter+doc.data().number.toString()) && (!userInput
-          || (modelName.localeCompare(lowerUserInput) >= 0
-              && modelName.localeCompare(lowerUserInput.slice(0,lowerUserInput.length-1)
-                  + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length-1,lowerUserInput.length).charCodeAt(0)+1)) < 0))) {
-          modelArray.push(doc.data().letter+doc.data().number.toString())
-        }
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    var modelArray = []
+    racksRef.orderBy('letter').orderBy('number').get().then(querySnapshot => {
+        querySnapshot.forEach(doc => {
+            const modelName = (doc.data().letter + doc.data().number.toString()).toLowerCase()
+            const lowerUserInput = userInput.toLowerCase()
+            if (!modelArray.includes(doc.data().letter + doc.data().number.toString()) && (!userInput
+                || (modelName.localeCompare(lowerUserInput) >= 0
+                    && modelName.localeCompare(lowerUserInput.slice(0, lowerUserInput.length - 1)
+                        + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length - 1, lowerUserInput.length).charCodeAt(0) + 1)) < 0))) {
+                modelArray.push(doc.data().letter + doc.data().number.toString())
+            }
+        })
+        callback(modelArray)
     })
-    callback(modelArray)
-  })
-  .catch( error => {
-    console.log("Error getting documents: ", error)
-    callback(null)
-  })
+        .catch(error => {
+            console.log("Error getting documents: ", error)
+            callback(null)
+        })
 }
 
 function getInstanceDetails(instanceID, callback) {
