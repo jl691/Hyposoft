@@ -343,13 +343,9 @@ function getSuggestedModels(userInput, callback) {
     var modelArray = []
     modelsRef.orderBy('modelName').get().then(querySnapshot => {
         querySnapshot.forEach(doc => {
-            const modelName = doc.data().modelName.toLowerCase()
-            const lowerUserInput = userInput.toLowerCase()
-            if (!modelArray.includes(doc.data().modelName) && (!userInput
-                || (modelName.localeCompare(lowerUserInput) >= 0
-                    && modelName.localeCompare(lowerUserInput.slice(0, lowerUserInput.length - 1)
-                        + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length - 1, lowerUserInput.length).charCodeAt(0) + 1)) < 0))) {
-                modelArray.push(doc.data().modelName)
+            const data = doc.data().modelName
+            if (shouldAddToSuggestedItems(modelArray,data,userInput)) {
+                modelArray.push(data)
             }
         })
         callback(modelArray)
@@ -365,13 +361,9 @@ function getSuggestedOwners(userInput, callback) {
     var modelArray = []
     usersRef.orderBy('username').get().then(querySnapshot => {
         querySnapshot.forEach(doc => {
-            const modelName = doc.data().username.toLowerCase()
-            const lowerUserInput = userInput.toLowerCase()
-            if (!modelArray.includes(doc.data().username) && (!userInput
-                || (modelName.localeCompare(lowerUserInput) >= 0
-                    && modelName.localeCompare(lowerUserInput.slice(0, lowerUserInput.length - 1)
-                        + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length - 1, lowerUserInput.length).charCodeAt(0) + 1)) < 0))) {
-                modelArray.push(doc.data().username)
+            const data = doc.data().username
+            if (shouldAddToSuggestedItems(modelArray,data,userInput)) {
+                modelArray.push(data)
             }
         })
         callback(modelArray)
@@ -387,13 +379,9 @@ function getSuggestedRacks(userInput, callback) {
     var modelArray = []
     racksRef.orderBy('letter').orderBy('number').get().then(querySnapshot => {
         querySnapshot.forEach(doc => {
-            const modelName = (doc.data().letter + doc.data().number.toString()).toLowerCase()
-            const lowerUserInput = userInput.toLowerCase()
-            if (!modelArray.includes(doc.data().letter + doc.data().number.toString()) && (!userInput
-                || (modelName.localeCompare(lowerUserInput) >= 0
-                    && modelName.localeCompare(lowerUserInput.slice(0, lowerUserInput.length - 1)
-                        + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length - 1, lowerUserInput.length).charCodeAt(0) + 1)) < 0))) {
-                modelArray.push(doc.data().letter + doc.data().number.toString())
+          const data = doc.data().letter + doc.data().number.toString()
+            if (shouldAddToSuggestedItems(modelArray,data,userInput)) {
+                modelArray.push(data)
             }
         })
         callback(modelArray)
@@ -402,6 +390,15 @@ function getSuggestedRacks(userInput, callback) {
             console.log("Error getting documents: ", error)
             callback(null)
         })
+}
+
+function shouldAddToSuggestedItems(array,data,userInput) {
+    const name = data.toLowerCase()
+    const lowerUserInput = userInput.toLowerCase()
+    return !array.includes(data) && (!userInput
+            || (name >= lowerUserInput
+                && name < lowerUserInput.slice(0, lowerUserInput.length - 1)
+                    + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length - 1, lowerUserInput.length).charCodeAt(0) + 1)))
 }
 
 function getInstanceDetails(instanceID, callback) {
