@@ -59,7 +59,7 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                     if (model === "" || hostname === "" || rack === "" || racku == null) {
                         callback("Required fields cannot be empty")
                     } else {
-                        checkHostnameExists(hostname, result => {
+                        checkHostnameExists(hostname, null, result => {
                             if (result) {
                                 callback("Hostname already exists!")
                             } else {
@@ -244,7 +244,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                     if (model === "" || hostname === "" || rack === "" || rackU == null) {
                         callback("Required fields cannot be empty")
                     } else {
-                        checkHostnameExists(hostname, result => {
+                        checkHostnameExists(hostname, instanceid, result => {
                             if (result) {
                                 callback("Hostname already exists.")
                             } else {
@@ -272,18 +272,28 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                                                     let oldSplitRackArray = oldRack.split(/(\d+)/).filter(Boolean)
                                                     let oldRackRow = oldSplitRackArray[0]
                                                     let oldRackNum = parseInt(oldSplitRackArray[1])
+                                                    var modelStuff = []
+                                                    modelutils.getVendorAndNumberFromModel(model, name => modelStuff = name)
+                                                    var rackId = ''
+                                                    rackutils.getRackID(rack.slice(0,1),rack.slice(1,rack.length), name => rackId = name)
+                                                    var modelId = ''
+                                                    modelutils.getModelIdFromModelName(model, name => modelId = name)
                                                     rackutils.getRackID(oldRackRow, oldRackNum, oldResult => {
                                                         if (oldResult) {
                                                             //get new rack document
                                                             //get instance id
                                                             replaceInstanceRack(oldResult, result, instanceid, result => {
                                                                 instanceRef.doc(String(instanceid)).update({
-                                                                    model,
-                                                                    hostname,
-                                                                    rack,
-                                                                    rackU,
-                                                                    owner,
-                                                                    comment
+                                                                    model: model,
+                                                                    modelId: modelId,
+                                                                    vendor: modelStuff[0],
+                                                                    modelNumber: modelStuff[1],
+                                                                    hostname: hostname,
+                                                                    rack: rack,
+                                                                    rackU: rackU,
+                                                                    rackID: rackId,
+                                                                    owner: owner,
+                                                                    comment: comment
                                                                     //these are the fields in the document to update
 
                                                                 }).then(function () {
@@ -467,13 +477,9 @@ function replaceInstanceRack(oldRack, newRack, id, callback) {
     })
 }
 
-function checkHostnameExists(hostname, callback) {
-    instanceRef.where("hostname", "==", hostname).get().then(function (querySnapshot) {
-        if (querySnapshot.empty) {
-            callback(false);
-        } else {
-            callback(true);
-        }
+function checkHostnameExists(hostname, id, callback) {
+    instanceRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
+        callback(!docSnaps.empty && id != docSnaps.docs[0].id)
     })
 }
 
