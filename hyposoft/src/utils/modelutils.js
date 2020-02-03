@@ -31,12 +31,15 @@ function createModel(id, vendor, modelNumber, height, displayColor, ethernetPort
 
 function modifyModel(id, vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment, callback) {
     var model = packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)
-    firebaseutils.modelsRef.doc(id).update(model).then(() => {
-        callback(model, id)
-    })
 
     // Now update all instances of this model just in case the modelNumber or vendor changed
     firebaseutils.instanceRef.where('modelId', '==', id).get().then(qs => {
+        if (!qs.empty) {
+            delete model.height // Don't change height if instances exist
+        }
+        firebaseutils.modelsRef.doc(id).update(model).then(() => {
+            callback(model, id)
+        })
         qs.forEach(doc => {
             doc.ref.update({
                 vendor: vendor,
@@ -212,13 +215,27 @@ function getModelsForExport(callback) {
 
 function validateImportedModels (data, callback) {
     var errors = []
+    var modelsSeen = {}
     for (var i = 0; i < data.length; i++) {
         const datum = data[i]
+        var modelAndVendorFound = true
         if (!datum.vendor || String(datum.vendor).trim() === '') {
             errors = [...errors, [i+1, 'Vendor not found']]
+            modelAndVendorFound = false
         }
         if (!datum.model_number || String(datum.model_number).trim() === '') {
             errors = [...errors, [i+1, 'Model number not found']]
+            modelAndVendorFound = false
+        }
+        if (modelAndVendorFound) {
+            if (!(datum.vendor in modelsSeen)) {
+                modelsSeen[datum.vendor] = {}
+            }
+            if (datum.model_number in modelsSeen[datum.vendor]) {
+                errors = [...errors, [i+1, 'Duplicate row (this model already exists on row '+modelsSeen[datum.vendor][datum.model_number]+')']]
+            } else {
+                modelsSeen[datum.vendor][datum.model_number] = i+1
+            }
         }
         if (!datum.height || String(datum.height).trim() === '') {
             errors = [...errors, [i+1, 'Height not found']]
@@ -248,6 +265,10 @@ function addModelsFromImport (models, force, callback) {
     var modelIndices = {}
     for (var i = 0; i < models.length; i++) {
         const model = models[i]
+        var ignoredModels = 0
+        var modifiedModels = 0
+        var createdModels = 0
+
         if (!modelIndices[''+model.vendor])
             modelIndices[''+model.vendor] = {}
         modelIndices[''+model.vendor][''+model.model_number] = i
@@ -264,35 +285,32 @@ function addModelsFromImport (models, force, callback) {
             const modelMemory = (modelFromDb.memory > 0 ? modelFromDb.memory : null)
             const ethernetPorts = (modelFromDb.ethernetPorts > 0 ? modelFromDb.ethernetPorts : null)
             const powerPorts = (modelFromDb.powerPorts > 0 ? modelFromDb.powerPorts : null)
-            const modelStorage = (modelFromDb.storage !== null ? modelFromDb.storage.trim() : "")
-            const modelCpu = (modelFromDb.cpu !== null ? modelFromDb.cpu.trim() : "")
-            const modelComment = (modelFromDb.comment !== null ? modelFromDb.comment.trim() : "")
+            const modelStorage = (modelFromDb.storage !== undefined ? modelFromDb.storage.trim() : "")
+            const modelCpu = (modelFromDb.cpu !== undefined ? modelFromDb.cpu.trim() : "")
+            const modelComment = (modelFromDb.comment !== undefined ? modelFromDb.comment.trim() : "")
 
             if (!modelFromDb.found) {
-                console.log('Creating model')
-                createModel(null, ''+model.vendor, ''+model.model_number, height, ''+model.display_color, ethernet_ports, power_ports, model.cpu, memory, model.storage, model.comment, () => {})
+                createModel(null, ''+model.vendor, ''+model.model_number, height, ''+model.display_color, ethernet_ports, power_ports, cpu, memory, storage, comment, () => {})
+                createdModels += 1
             } else if (!(modelFromDb.height == height && modelFromDb.displayColor == model.display_color
                     && ethernetPorts == ethernet_ports && powerPorts == power_ports
                     &&  cpu == modelCpu && storage == modelStorage && modelMemory == memory
                     && comment == modelComment)) {
-                // Warn of possible modification
-                    console.log('Modifying model: (force = '+force+')')
-                    console.log(modelFromDb)
-                    console.log(model)
+                modifiedModels += 1
                 if (force) {
                     // Modify model
-                    modifyModel(modelFromDb.id, model.vendor, model.model_number, height, model.display_color, ethernet_ports, power_ports, model.cpu, memory, model.storage, model.comment, () => {})
+                    modifyModel(modelFromDb.id, ''+model.vendor, ''+model.model_number, height, ''+model.display_color, ethernet_ports, power_ports, cpu, memory, storage, comment, () => {})
                 } else {
                     modelsPending = [...modelsPending, model]
                     modelsPendingInfo = [...modelsPendingInfo, [modelIndices[''+modelFromDb.vendor][''+modelFromDb.modelNumber]+1, model.vendor+' '+model.model_number]]
                 }
             } else {
-                console.log('Ignoring model')
+                ignoredModels += 1
             }
 
             modelsProcessed++
             if (modelsProcessed === models.length) {
-                callback({modelsPending, modelsPendingInfo})
+                callback({modelsPending, modelsPendingInfo, createdModels, ignoredModels, modifiedModels})
             }
         })
     }

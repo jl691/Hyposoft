@@ -74,15 +74,19 @@ class PortScreen extends Component {
                 }))
             } else {
                 this.setState(oldState => ({...oldState, errors: undefined}))
-                modelutils.addModelsFromImport(data, false, ({modelsPending, modelsPendingInfo}) => {
+                modelutils.addModelsFromImport(data, false, ({modelsPending, modelsPendingInfo, ignoredModels, createdModels, modifiedModels}) => {
                     if (modelsPending.length > 0) {
                         // Show confirmation
                         this.setState(oldState => ({
-                            ...oldState, modifications: modelsPending, modificationsInfo: modelsPendingInfo.map(m => <div><b>Row {m[0]}:</b> {m[1]}</div>)
+                            ...oldState,
+                            ignoredModels: ignoredModels, modifiedModels: modifiedModels, createdModels: createdModels,
+                            showStatsForModels: false,
+                            modifications: modelsPending, modificationsInfo: modelsPendingInfo.map(m => <div><b>Row {m[0]}:</b> {m[1]}</div>)
                         }))
                     } else {
-                        this.setState(oldState => ({...oldState, modifications: undefined, modificationsInfo: undefined}))
-                        // TODO: Show success import stats
+                        this.setState(oldState => ({...oldState,
+                        ignoredModels: ignoredModels, modifiedModels: modifiedModels, createdModels: createdModels,
+                        showStatsForModels: true, modifications: undefined, modificationsInfo: undefined}))
                     }
                 })
             }
@@ -207,15 +211,43 @@ class PortScreen extends Component {
                                 direction="row"
                                 align="center"
                                 justify="end" >
-                                <Button label="Ignore" primary onClick={() => this.setState(oldState => ({...oldState, modifications: undefined, modificationsInfo: undefined}))} />
+                                <Button label="Ignore" primary onClick={() => this.setState(oldState => ({...oldState, modifications: undefined, modificationsInfo: undefined,
+                                showStatsForModels: true, ignoredModels: oldState.ignoredModels+oldState.modifiedModels, modifiedModels: 0}))} />
                                 <Button
                                     label="Modify"
                                     onClick={() => {
-                                        modelutils.addModelsFromImport(this.state.modelsPending, true, () => {
-                                            this.setState(oldState => ({...oldState, modifications: undefined, modificationsInfo: undefined}))
+                                        modelutils.addModelsFromImport(this.state.modifications, true, () => {
+                                            this.setState(oldState => ({...oldState, modifications: undefined, modificationsInfo: undefined, showStatsForModels: true}))
                                         })
                                     }}
                                     />
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
+                {this.state.showStatsForModels && (
+                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState=>({
+                        ...oldState, showStatsForModels: false, ignoredModels: undefined, createdModels: undefined,
+                        modifiedModels: undefined
+                    }))}} onEsc={()=>{this.setState(oldState=>({
+                        ...oldState, showStatsForModels: false, ignoredModels: undefined, createdModels: undefined,
+                        modifiedModels: undefined
+                    }))}}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Import Successful
+                            </Heading>
+                            <p>Here are statistics on how your database is different after import.</p>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="column"
+                                align="start"
+                                justify="start" >
+                                <div><b>Models created:</b> {this.state.createdModels}</div>
+                                <div><b>Models modified:</b> {this.state.modifiedModels}</div>
+                                <div><b>Records ignored:</b> {this.state.ignoredModels}</div>
                             </Box>
                         </Box>
                     </Layer>
