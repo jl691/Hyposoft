@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
 
-import { Text, Button, Layer, Grommet, Heading, Box, TextInput } from 'grommet'
+import {Text, Button, Layer, Grommet, Heading, Box, TextInput, RangeSelector} from 'grommet'
 import { Add } from 'grommet-icons'
 import AddInstanceForm from '../components/AddInstanceForm'
 import DeleteInstancePopup from '../components/DeleteInstancePopup'
@@ -15,6 +15,7 @@ import FilterBarInstances from '../components/FilterBarInstances'
 import SearchInstances from '../components/SearchInstances'
 import InstanceTable from '../components/InstanceTable'
 import * as userutils from "../utils/userutils";
+import {ToastsContainer, ToastsStore} from "react-toasts";
 
 class InstanceScreen extends Component {
 
@@ -27,6 +28,8 @@ class InstanceScreen extends Component {
             instances: [],
             popupType: "",
             deleteID: "",
+            deleteModel: "",
+            deleteHostname: "",
             updateID: "",
             initialLoaded: false,
             updateModel: "",
@@ -37,7 +40,7 @@ class InstanceScreen extends Component {
             updateComment: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
-           
+
         }
 
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
@@ -104,11 +107,13 @@ class InstanceScreen extends Component {
         });
     }
 
-    handleDeleteButton = (datumID) => {
+    handleDeleteButton = (datum) => {
+        console.log(datum.model);
         this.setState({
             popupType: 'Delete',
-            deleteID: datumID,
-
+            deleteID: datum.instance_id,
+            deleteModel: datum.model,
+            deleteHostname: datum.hostname
         });
     }
     handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment) => {
@@ -142,6 +147,10 @@ class InstanceScreen extends Component {
         }
     }
 
+    componentDidMount() {
+        ToastsStore.info("Tip: Click on a column name to sort by it", 10000)
+    }
+
     render() {
         const { popupType } = this.state;
         let popup;
@@ -170,6 +179,8 @@ class InstanceScreen extends Component {
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
                         deleteIDFromParent={this.state.deleteID}
+                        deleteModel = {this.state.deleteModel}
+                        deleteHostname = {this.state.deleteHostname}
 
                     />
                 </Layer>
@@ -243,6 +254,7 @@ class InstanceScreen extends Component {
                                     ref={this.instanceTable}
 
                                 />
+                                <ToastsContainer store={ToastsStore}/>
                             </Grommet>
 
                         </React.Fragment>

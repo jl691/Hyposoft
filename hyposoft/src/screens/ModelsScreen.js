@@ -133,6 +133,7 @@ class ModelsScreen extends React.Component {
 
     componentDidMount() {
         this.init()
+        ToastsStore.info("Tip: Click on a column name to sort by it", 10000)
     }
 
     constructor() {

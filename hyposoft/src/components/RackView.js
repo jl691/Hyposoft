@@ -24,6 +24,8 @@ class RackView extends React.Component {
             racks: [],
             popupType: "",
             deleteID: "",
+            deleteLetter: "",
+            deleteNumber: "",
             rackReport: "",
             initialLoaded: false,
             checkedBoxes: [],
@@ -97,7 +99,8 @@ class RackView extends React.Component {
         if (userutils.isLoggedInUserAdmin()) {
             return (
                 <Button icon={<Trash/>} label="Delete" onClick={() => {
-                    this.setState({popupType: 'Delete', deleteID: datum.id});
+                    console.log(datum)
+                    this.setState({popupType: 'Delete', deleteID: datum.id, deleteLetter: datum.letter, deleteNumber: datum.number});
                 }}/>
             )
         }
@@ -147,7 +150,7 @@ class RackView extends React.Component {
                        onClickOutside={() => this.setState({popupType: undefined})}>
                     <Box pad="medium" align="center">
                         <Heading level="3" margin="none">Delete rack</Heading>
-                        <Text>Are you sure you want to delete rack {deleteID}? This can't be reversed.</Text>
+                        <Text>Are you sure you want to delete rack {this.state.deleteLetter}{this.state.deleteNumber}? This can't be reversed.</Text>
                         <Box direction="row">
                             <Button label="Delete" icon={<Trash/>} onClick={() => {
                                 rackutils.deleteSingleRack(deleteID, status => {
@@ -278,11 +281,11 @@ class RackView extends React.Component {
                                                                                        }}/>
                                                                          )
                                                                      },*/
-                                   {
+/*                                   {
                                        property: "id",
                                        header: "ID",
                                        primary: true
-                                   },
+                                   },*/
                                    {
                                        property: "letter",
                                        header: "Row",
@@ -328,7 +331,7 @@ class RackView extends React.Component {
                                            </Box>
                                        )
                                    }
-                               ]} data={this.state.racks} sortable={true}/>
+                               ]} data={this.state.racks}/>
                 </Box>
                 {popup}
                 <ToastsContainer store={ToastsStore}/>
