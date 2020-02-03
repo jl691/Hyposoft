@@ -228,6 +228,7 @@ function deleteInstance(instanceid, callback) {
     })
 }
 
+
 function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment, callback) {
 
     validateInstanceForm(model, hostname, rack, rackU, owner, valid => {
@@ -299,7 +300,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                                             }
                                         })
                                     }
-                                })
+                                }, instanceid)
                             }
                         })
                     }
@@ -476,6 +477,13 @@ function checkHostnameExists(hostname, callback) {
     })
 }
 
+//doublecheck that it works with infinite scroll, and will autorefresh if button is clicked
+//Do this after UI/UX overhaul 
+function combinedRackAndRackUSort(hostname, callback) {
+
+
+}
+
 export {
     getInstance,
     addInstance,
@@ -489,5 +497,6 @@ export {
     getSuggestedOwners,
     getSuggestedRacks,
     getInstanceAt,
-    validateInstanceForm
+    validateInstanceForm,
+    combinedRackAndRackUSort
 }
