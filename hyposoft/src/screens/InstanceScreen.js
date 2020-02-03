@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
 
-import {Text, Button, Layer, Grommet, Heading, Box, TextInput, RangeSelector} from 'grommet'
+import { Text, Button, Layer, Grommet, Heading, Box, TextInput, RangeSelector } from 'grommet'
 import { Add } from 'grommet-icons'
 import AddInstanceForm from '../components/AddInstanceForm'
 import DeleteInstancePopup from '../components/DeleteInstancePopup'
@@ -15,7 +15,7 @@ import FilterBarInstances from '../components/FilterBarInstances'
 import SearchInstances from '../components/SearchInstances'
 import InstanceTable from '../components/InstanceTable'
 import * as userutils from "../utils/userutils";
-import {ToastsContainer, ToastsStore} from "react-toasts";
+import { ToastsContainer, ToastsStore } from "react-toasts";
 
 class InstanceScreen extends Component {
 
@@ -49,7 +49,7 @@ class InstanceScreen extends Component {
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleChangeRange = this.handleChangeRange.bind(this);
-       
+
 
         this.instanceTable = React.createRef();
     }
@@ -126,7 +126,7 @@ class InstanceScreen extends Component {
             updateRackU: datumRackU,
             updateOwner: datumOwner,
             updateComment: datumComment,
-      
+
 
         });
 
@@ -179,8 +179,8 @@ class InstanceScreen extends Component {
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
                         deleteIDFromParent={this.state.deleteID}
-                        deleteModel = {this.state.deleteModel}
-                        deleteHostname = {this.state.deleteHostname}
+                        deleteModel={this.state.deleteModel}
+                        deleteHostname={this.state.deleteHostname}
 
                     />
                 </Layer>
@@ -221,40 +221,71 @@ class InstanceScreen extends Component {
                     exact path="/instances" render={props => (
                         <React.Fragment>
                             <Grommet theme={theme} full className='fade'>
-                                {popup}
-                                <AppBar>
+                                <Box fill background='light-2'>
+                                    {popup}
+                                    <AppBar>
 
-                                    <HomeButton alignSelf='start' this={this} />
-                                    <Heading alignSelf='center' level='4' margin={{
-                                        top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
-                                    }} >Instances</Heading>
-                                    <UserMenu alignSelf='end' this={this} />
-                                </AppBar>
-                                <FilterBarInstances>
-                                    <SearchInstances />
+                                        <HomeButton alignSelf='start' this={this} />
+                                        <Heading alignSelf='center' level='4' margin={{
+                                            top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
+                                        }} >Instances</Heading>
+                                        <UserMenu alignSelf='end' this={this} />
+                                    </AppBar>
+                                    <FilterBarInstances>
+                                        <SearchInstances />
 
-                                    <Box gap='small' direction="column" margin='small'>
-                                        <Text> Range of Racks </Text>
-                                        <TextInput name="rangeNumberStart" placeholder="eg. B1" onChange={this.handleChangeRange}/>
-                                        to
+                                        <Box gap='small' direction="column" margin='small'>
+                                            <Text> Range of Racks </Text>
+                                            <TextInput name="rangeNumberStart" placeholder="eg. B1" onChange={this.handleChangeRange} />
+                                            to
                                         <TextInput name="rangeNumberEnd" placeholder="eg. C21" onChange={this.handleChangeRange} />
-                                    </Box>
-                                    
+                                        </Box>
 
-                                    
-                                    {/* Button to Add an Instance: */}
-                                    {this.addButton()}
-                                </FilterBarInstances>
 
-                                <InstanceTable
-                                    deleteButtonCallbackFromParent={this.handleDeleteButton}
 
-                                    UpdateButtonCallbackFromParent={this.handleUpdateButton}
+                                        {/* Button to Add an Instance: */}
+                                        {this.addButton()}
+                                    </FilterBarInstances>
+                                    {/* <Box direction='row'
+                                        justify='center'
+                                        wrap={true}>
+                                        <Box direction='row' justify='center'>
+                                            <Box direction='row' justify='center'>
+                                                <Box width='large' direction='column' align='stretch' justify='start'>
+                                                    <Box style={{
+                                                        borderRadius: 10,
+                                                        borderColor: '#EDEDED'
+                                                    }}
+                                                        id='containerBox'
+                                                        direction='row'
+                                                        background='#FFFFFF'
+                                                        margin={{ top: 'medium', bottom: 'medium' }}
+                                                        flex={{
+                                                            grow: 0,
+                                                            shrink: 0
+                                                        }}
 
-                                    ref={this.instanceTable}
+                                                        pad='small' >
+                                                        <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column'
+                                                            justify='start' alignSelf='stretch' flex overflow="scroll">
+                                                            <Box align="center" overflow="scroll"> */}
+                                                                <InstanceTable
+                                                                    deleteButtonCallbackFromParent={this.handleDeleteButton}
 
-                                />
-                                <ToastsContainer store={ToastsStore}/>
+                                                                    UpdateButtonCallbackFromParent={this.handleUpdateButton}
+
+                                                                    ref={this.instanceTable}
+
+                                                                />
+                                                            {/* </Box>
+                                                        </Box>
+                                                    </Box>
+                                                </Box>
+                                            </Box>
+                                        </Box>
+                                    </Box> */}
+                                    <ToastsContainer store={ToastsStore} />
+                                </Box>
                             </Grommet>
 
                         </React.Fragment>

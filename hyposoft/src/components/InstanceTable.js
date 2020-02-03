@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
-import {Link, Redirect} from 'react-router-dom'
-import { DataTable, Button, Text} from 'grommet'
-import { Book, Trash, Edit} from 'grommet-icons'
+import { Link, Redirect } from 'react-router-dom'
+import { DataTable, Button, Text, Box } from 'grommet'
+import { Book, Trash, Edit } from 'grommet-icons'
+import {  FormEdit, FormTrash } from "grommet-icons"
 import * as instutils from '../utils/instanceutils'
 import DetailedInstanceScreen from '../screens/DetailedInstanceScreen'
 
@@ -13,35 +14,34 @@ export default class InstanceTable extends Component {
     defaultInstances = [];
     startAfter = null;
     columns = [
-/*        {
-            property: 'instance_id',
-            header:  <Text>Instance ID</Text>,
-            primary: true,
-        },*/
-
         {
             property: 'model',
-            header: <Text>Model</Text>,
+            header: <Text size='small'>Model</Text>,
+            render: datum => <Text size='small'>{datum.model}</Text>,
 
         },
         {
             property: 'hostname',
-            header: <Text>Hostname</Text>,
+            header: <Text size='small'>Hostname</Text>,
+            render: datum => <Text size='small'>{datum.hostname}</Text>,
             primary: true
         },
         {
             property: 'rack',
-            header: <Text>Rack</Text>,
+            header: <Text size='small'>Rack</Text>,
+            render: datum => <Text size='small'>{datum.rack}</Text>,
 
         },
         {
             property: 'rackU',
-            header: <Text>RackU</Text>,
+            header: <Text size='small'>Rack U</Text>,
+            render: datum => <Text size='small'>{datum.rackU}</Text>,
 
         },
         {
             property: 'owner',
-            header: <Text>Owner</Text>,
+            header: <Text size='small'> Owner</Text>,
+            render: datum => <Text size='small'>{datum.owner}</Text>,
 
         }
     ];
@@ -51,7 +51,7 @@ export default class InstanceTable extends Component {
         this.state = {
             instances: [],
             initialLoaded: false,
-     
+
         }
 
         this.handleFilter = this.handleFilter.bind(this);
@@ -63,7 +63,7 @@ export default class InstanceTable extends Component {
             if (!(newStartAfter === null) && !(instancesdb === null)) {
                 this.startAfter = newStartAfter;
                 this.defaultInstances = instancesdb;
-                this.setState({instances: instancesdb, initialLoaded: true})
+                this.setState({ instances: instancesdb, initialLoaded: true })
             }
         })
         this.adminButtons();
@@ -71,8 +71,8 @@ export default class InstanceTable extends Component {
 
         this.columns.push({
             property: "details",
-            header: "Details",
-            sortable:false,
+            header: <Text size='small'>Details</Text>,
+            sortable: false,
 
             render: data => (
 
@@ -103,30 +103,30 @@ export default class InstanceTable extends Component {
         if (userutils.isLoggedInUserAdmin()) {
             this.columns.push({
                 property: "delete",
-                header: "Delete",
-                sortable:false,
+                header: <Text size='small'>Delete</Text>,
+                sortable: false,
 
                 render: datum => (
                     <Button
-                        icon={<Trash/>}
+                        icon={<Trash />}
                         margin="small"
-                        
+
                         onClick={() => {
                             console.log(datum)
                             this.props.deleteButtonCallbackFromParent(datum)
 
 
-                        }}/>
+                        }} />
                 )
             });
             this.columns.push({
                 property: "update",
-                header: "Update",
-                sortable:false,
+                header: <Text size='small'>Update</Text>,
+                sortable: false,
 
                 render: data => (
                     <Button
-                        icon={< Edit/>}
+                        icon={< Edit />}
                         margin="small"
                         onClick={() => {
 
@@ -138,12 +138,12 @@ export default class InstanceTable extends Component {
                                 data.rackU,
                                 data.owner,
                                 data.comment,
-                               )
+                            )
 
                             console.log(data)
 
 
-                        }}/>
+                        }} />
                 )
             })
         }
@@ -161,13 +161,13 @@ export default class InstanceTable extends Component {
         instutils.getInstance((newStartAfter, instancesdb) => {
             if (newStartAfter && instancesdb) {
                 this.startAfter = newStartAfter;
-                this.setState({instances: instancesdb, initialLoaded: true})
+                this.setState({ instances: instancesdb, initialLoaded: true })
             }
         })
     }
 
     restoreDefault() {
-        this.setState({instances: this.defaultInstances});
+        this.setState({ instances: this.defaultInstances });
     }
 
     handleFilter(start, end) {
@@ -193,13 +193,13 @@ export default class InstanceTable extends Component {
                 console.log("found a match!")
                 newInstances.push(instance);
             }*/
-            if((rackRowTemp === rackRowStart && rackNumTemp >= rackNumStart) || (rackRowTemp === rackRowEnd && rackNumTemp <= rackNumEnd) || (rackRowTemp.charCodeAt(0) > rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) < rackRowEnd.charCodeAt(0))){
+            if ((rackRowTemp === rackRowStart && rackNumTemp >= rackNumStart) || (rackRowTemp === rackRowEnd && rackNumTemp <= rackNumEnd) || (rackRowTemp.charCodeAt(0) > rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) < rackRowEnd.charCodeAt(0))) {
                 console.log("found a match!")
                 newInstances.push(instance);
             }
         })
 
-        this.setState({instances: newInstances})
+        this.setState({ instances: newInstances })
     }
 
 
@@ -217,26 +217,56 @@ export default class InstanceTable extends Component {
         return (
 
             // LIST OF INSTANCES ===============================================
-       
-                <DataTable
-                    step={5}
-                    onMore={() => {
-                        if(this.startAfter){
-                            instutils.getInstanceAt(this.startAfter, (newStartAfter, newInstances) => {
-                                this.startAfter = newStartAfter
-                                this.setState({ instances: this.state.instances.concat(newInstances) })
-                            });
-                        }
-                    }}
-                    pad="17px"
-                    sortable={true}
-                    columns={this.columns}
+            <Box direction='row'
+                justify='center'
+                wrap={true}>
+                <Box direction='row' justify='center'>
+                    <Box direction='row' justify='center'>
+                        <Box width='large' direction='column' align='stretch' justify='start'>
+                            <Box style={{
+                                borderRadius: 10,
+                                borderColor: '#EDEDED'
+                            }}
+                                id='containerBox'
+                                direction='row'
+                                background='#FFFFFF'
+                                margin={{ top: 'medium', bottom: 'medium' }}
+                                flex={{
+                                    grow: 0,
+                                    shrink: 0
+                                }}
 
-                    data={this.state.instances}
+                                pad='small' >
+                                <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column'
+                                    justify='start' alignSelf='stretch' flex overflow="scroll">
+                                    <Box align="center" overflow="scroll">
+                                        <DataTable
+                                            step={5}
+                                            onMore={() => {
+                                                if (this.startAfter) {
+                                                    instutils.getInstanceAt(this.startAfter, (newStartAfter, newInstances) => {
+                                                        this.startAfter = newStartAfter
+                                                        this.setState({ instances: this.state.instances.concat(newInstances) })
+                                                    });
+                                                }
+                                            }}
+                                            pad="17px"
+                                            sortable={true}
+                                            columns={this.columns}
+
+                                            data={this.state.instances}
 
 
-                />
-    
+                                        />
+                                    </Box>
+                                </Box>
+                            </Box>
+                        </Box>
+                    </Box>
+                </Box>
+            </Box>
+
+
 
 
         );
