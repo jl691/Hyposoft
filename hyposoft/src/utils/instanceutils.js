@@ -59,7 +59,7 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                     if (model === "" || hostname === "" || rack === "" || racku == null) {
                         callback("Required fields cannot be empty")
                     } else {
-                        checkHostnameExists(hostname, result => {
+                        checkHostnameExists(hostname, null, result => {
                             if (result) {
                                 callback("Hostname already exists!")
                             } else {
@@ -242,7 +242,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                     if (model === "" || hostname === "" || rack === "" || rackU == null) {
                         callback("Required fields cannot be empty")
                     } else {
-                        checkHostnameExists(hostname, result => {
+                        checkHostnameExists(hostname, instanceid, result => {
                             if (result) {
                                 callback("Hostname already exists.")
                             } else {
@@ -475,13 +475,9 @@ function replaceInstanceRack(oldRack, newRack, id, callback) {
     })
 }
 
-function checkHostnameExists(hostname, callback) {
-    instanceRef.where("hostname", "==", hostname).get().then(function (querySnapshot) {
-        if (querySnapshot.empty) {
-            callback(false);
-        } else {
-            callback(true);
-        }
+function checkHostnameExists(hostname, id, callback) {
+    instanceRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
+        callback(!docSnaps.empty && id != docSnaps.docs[0].id)
     })
 }
 
