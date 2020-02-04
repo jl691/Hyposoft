@@ -16,12 +16,14 @@ export default class InstanceTable extends Component {
         {
             property: 'model',
             header: <Text size='small'>Model</Text>,
+            align:"start",
             render: datum => <Text size='small'>{datum.model}</Text>,
 
         },
         {
             property: 'hostname',
             header: <Text size='small'>Hostname</Text>,
+            align:"start",
             render: datum => <Text size='small'>{datum.hostname}</Text>,
             primary: true
         },

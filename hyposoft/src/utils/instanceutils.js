@@ -1,4 +1,4 @@
-import {instanceRef, racksRef, modelsRef, usersRef, firebase} from './firebaseutils'
+import { instanceRef, racksRef, modelsRef, usersRef, firebase } from './firebaseutils'
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
 
@@ -7,8 +7,8 @@ import * as modelutils from './modelutils'
 function getInstance(callback) {
     //TODO: need to rigorously test combined sort
     //TODO: deecide to make rackU unsortable???
-    
-    instanceRef.limit(25).orderBy("rackU", "asc").get().then(docSnaps => {
+
+    instanceRef.limit(25).orderBy("rack", "asc").get().then(docSnaps => {
         const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
         const instances = docSnaps.docs.map(doc => (
             {
@@ -90,8 +90,11 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                                         }).then(function (docRef) {
                                             racksRef.doc(String(rackID)).update({
                                                 instances: firebase.firestore.FieldValue.arrayUnion(docRef.id)
+                                            }).then(function () {
+                                                console.log("Document successfully updated!");
+                                                callback(null);
                                             })
-                                            callback(null);
+
                                         }).catch(function (error) {
                                             // callback("Error");
                                             console.log(error)
@@ -112,7 +115,7 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
 
 // This will check if the instance fits on rack (after checking rack exists): fits within in the height of rack, and does not conflict with other instances
 
-function instanceFitsOnRack(instanceRack,  rackU, model, callback, instance_id=null) {
+function instanceFitsOnRack(instanceRack, rackU, model, callback, instance_id = null) {
 
     let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
@@ -208,6 +211,7 @@ function deleteInstance(instanceid, callback) {
                     console.log(rackID)
                 } else {
                     console.log("no rack for this letter and number")
+                    callback(null)
                 }
             })
 
@@ -219,8 +223,12 @@ function deleteInstance(instanceid, callback) {
 
                     instances: firebase.firestore.FieldValue.arrayRemove(instanceid)
                 })
+                    .then(function () {
+                        console.log("Document successfully updated!");
+                        callback(instanceid);
+                    })
 
-                callback(instanceid);
+
             }).catch(function (error) {
                 callback(null);
             })
@@ -278,7 +286,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                                                     var modelStuff = []
                                                     modelutils.getVendorAndNumberFromModel(model, name => modelStuff = name)
                                                     var rackId = ''
-                                                    rackutils.getRackID(rack.slice(0,1),rack.slice(1,rack.length), name => rackId = name)
+                                                    rackutils.getRackID(rack.slice(0, 1), rack.slice(1, rack.length), name => rackId = name)
                                                     var modelId = ''
                                                     modelutils.getModelIdFromModelName(model, name => modelId = name)
                                                     rackutils.getRackID(oldRackRow, oldRackNum, oldResult => {
@@ -327,7 +335,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
 function getInstancesFromModel(model, callback) {
     instanceRef.where('model', '==', model).get().then(docSnaps => {
         const instances = docSnaps.docs.map(doc => (
-            {id: doc.id, ...doc.data()}
+            { id: doc.id, ...doc.data() }
         ))
         callback(instances)
     })
@@ -342,7 +350,7 @@ function sortByKeyword(keyword, callback) {
     instanceRef.orderBy(keyword.toLowerCase()).get().then(
         docSnaps => {
             const instances = docSnaps.docs.map(doc => (
-                {id: doc.id}
+                { id: doc.id }
             ))
             console.log(instances)
             callback(instances)
@@ -359,7 +367,7 @@ function getSuggestedModels(userInput, callback) {
     modelsRef.orderBy('modelName').get().then(querySnapshot => {
         querySnapshot.forEach(doc => {
             const data = doc.data().modelName
-            if (shouldAddToSuggestedItems(modelArray,data,userInput)) {
+            if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
                 modelArray.push(data)
             }
         })
@@ -377,7 +385,7 @@ function getSuggestedOwners(userInput, callback) {
     usersRef.orderBy('username').get().then(querySnapshot => {
         querySnapshot.forEach(doc => {
             const data = doc.data().username
-            if (shouldAddToSuggestedItems(modelArray,data,userInput)) {
+            if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
                 modelArray.push(data)
             }
         })
@@ -394,8 +402,8 @@ function getSuggestedRacks(userInput, callback) {
     var modelArray = []
     racksRef.orderBy('letter').orderBy('number').get().then(querySnapshot => {
         querySnapshot.forEach(doc => {
-          const data = doc.data().letter + doc.data().number.toString()
-            if (shouldAddToSuggestedItems(modelArray,data,userInput)) {
+            const data = doc.data().letter + doc.data().number.toString()
+            if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
                 modelArray.push(data)
             }
         })
@@ -407,33 +415,33 @@ function getSuggestedRacks(userInput, callback) {
         })
 }
 
-function shouldAddToSuggestedItems(array,data,userInput) {
+function shouldAddToSuggestedItems(array, data, userInput) {
     const name = data.toLowerCase()
     const lowerUserInput = userInput.toLowerCase()
     return !array.includes(data) && (!userInput
-            || (name >= lowerUserInput
-                && name < lowerUserInput.slice(0, lowerUserInput.length - 1)
-                    + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length - 1, lowerUserInput.length).charCodeAt(0) + 1)))
+        || (name >= lowerUserInput
+            && name < lowerUserInput.slice(0, lowerUserInput.length - 1)
+            + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length - 1, lowerUserInput.length).charCodeAt(0) + 1)))
 }
 
 function getInstanceDetails(instanceID, callback) {
 
     instanceRef.doc(instanceID).get().then((doc) => {
-            let inst = {
-                instanceID: instanceID.trim(),
-                model: doc.data().model.trim(),
-                hostname: doc.data().hostname.trim(),
-                rack: doc.data().rack.trim(),
-                rackU: doc.data().rackU,
-                owner: doc.data().owner.trim(),
-                comment: doc.data().comment.trim(),
-                modelNum: doc.data().modelNumber.trim(),
-                vendor: doc.data().vendor.trim()
+        let inst = {
+            instanceID: instanceID.trim(),
+            model: doc.data().model.trim(),
+            hostname: doc.data().hostname.trim(),
+            rack: doc.data().rack.trim(),
+            rackU: doc.data().rackU,
+            owner: doc.data().owner.trim(),
+            comment: doc.data().comment.trim(),
+            modelNum: doc.data().modelNumber.trim(),
+            vendor: doc.data().vendor.trim()
 
 
-            }
-            callback(inst)
         }
+        callback(inst)
+    }
     );
 
 }
@@ -488,7 +496,12 @@ function checkHostnameExists(hostname, id, callback) {
 
 //doublecheck that it works with infinite scroll, and will autorefresh if button is clicked
 //Do this after UI/UX overhaul 
-function combinedRackAndRackUSort(hostname, callback) {
+function combinedSortAsc(callback) {
+    //Group by rack
+    //Order by rack, asc
+    //Group by rack. Then, for each rack:
+    //order by rack num, asc
+   // instanceRef
 
 
 }
@@ -507,5 +520,5 @@ export {
     getSuggestedRacks,
     getInstanceAt,
     validateInstanceForm,
-    combinedRackAndRackUSort
+    combinedSortAsc
 }

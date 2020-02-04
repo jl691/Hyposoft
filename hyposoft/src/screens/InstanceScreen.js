@@ -130,6 +130,25 @@ class InstanceScreen extends Component {
         }
     }
 
+    combinedSortAscButton() {
+        return (<Button
+            margin="medium"
+            label={
+                <Text>
+                    Ascending
+                </Text>
+            }
+
+            onClick={() => this.handleAscSort}
+        />);
+
+
+    }
+    handleAscSort() {
+        //instutils.
+
+    }
+
     componentDidMount() {
         ToastsStore.info("Tip: Click on a column name to sort by it", 10000)
     }
@@ -307,8 +326,13 @@ class InstanceScreen extends Component {
                                                         </Stack>
                                                     </Box>
                                                 </Box>
-                                                {/* This box is for combined sort on Rack and Rack U */}
-                                                <Box style={{
+                                           
+                                                {/* Button to Add an Instance: */}
+                                                <Box margin="17px" align="center" direction="column" justify="center">
+                                                    {this.addButton()}
+                                                </Box>
+                                                 {/* Button for combined sort: */}
+                                                 <Box style={{
                                                     borderRadius: 10,
                                                     borderColor: '#EDEDED'
                                                 }}
@@ -319,55 +343,13 @@ class InstanceScreen extends Component {
                                                     margin={{ top: 'medium', left: 'medium', right: 'medium' }}
                                                     pad='small' >
                                                     <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
-                                                        <Text size='small'><b>Combined Sort</b></Text>
-                                                        <Stack margin={{ top: 'small' }}>
-                                                            <Box gap='small' direction="column" margin='small'>
-                                                                {/* Put sort buttons here */}
-                                                                <Text size='small'><b>Rack</b></Text>
-                                                                <Box direction="row" justify="start" margin="small">
-                                                                    <RadioButtonGroup
-                                                                        label="Rack"
-                                                                        name="rack"
-                                                                        options={[
-                                                                            { label: "Ascending", value: "rackAsc" },
-                                                                            { label: "Descending", value: "rackDesc" },
+                                                        <Text size='small'><b>Combined Rack and Rack U Sort</b></Text>
+                                                        {this.combinedSortAscButton()}
 
-                                                                        ]}
-                                                                        //value={this.rackSort}
-                                                                        // onChange={this.setState(rackSort= value)}
-                                                                        {...props}
-                                                                    />
-
-                                                                </Box>
-                                                                <Text size='small'><b>Rack U</b></Text>
-                                                                <Box direction="row" justify="start" margin="small">
-                                                                    <RadioButtonGroup
-                                                                        label="Rack U"
-                                                                        name="rackU"
-                                                                        options={[
-                                                                            { label: "Ascending", value: "rackUAsc" },
-                                                                            { label: "Descending", value: "rackUDesc" },
-
-                                                                        ]}
-                                                                        //value={this.rackSort}
-                                                                        // onChange={this.setState(rackSort= value)}
-                                                                        {...props}
-                                                                    />
-                                                                </Box>
-                                                                <Box margin="17px"  direction="column" justify="center">
-                                                                    <Button label={<Text size="small"> Apply sort</Text>} />
-                                                                </Box>
-
-
-                                                            </Box>
-
-                                                        </Stack>
+                                                        
                                                     </Box>
                                                 </Box>
-                                                {/* Button to Add an Instance: */}
-                                                <Box margin="17px" align="center" direction="column" justify="center">
-                                                    {this.addButton()}
-                                                </Box>
+
                                             </Box>
                                             {/* END OFF FILTER BAR ================= */}
 
