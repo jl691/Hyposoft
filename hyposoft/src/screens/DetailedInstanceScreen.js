@@ -80,7 +80,6 @@ export default class DetailedInstanceScreen extends Component {
                     
                                 <Link to={`/models/${this.state.instance.vendor}/${this.state.instance.modelNum}`}>
                                     <Button
-                                        margin="xlarge"
                                         label="View model details"
                                         onClick={new ModelPermaScreen()}
 
