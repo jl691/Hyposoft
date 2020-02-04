@@ -1,7 +1,7 @@
 import React from "react";
 import theme from "../theme";
-import {Box, Heading, Grommet, Button, DataTable, Layer, Text, Form, TextInput} from "grommet";
-import {Add, Trash, Close, View, Analytics} from "grommet-icons";
+import {Box, Heading, Grommet, Button, DataTable, Layer, Text, Form, TextInput, Stack, RangeSelector} from "grommet";
+import {Add, Trash, Close, View, Analytics, FormEdit, FormTrash, FormView} from "grommet-icons";
 import * as userutils from "../utils/userutils";
 import * as rackutils from "../utils/rackutils";
 import AddRackView from "./AddRackView";
@@ -12,6 +12,7 @@ import UserMenu from "./UserMenu";
 import AppBar from "./AppBar";
 import RackUsageReport from "./RackUsageReport";
 import * as formvalidationutils from "../utils/formvalidationutils";
+import {Redirect} from "react-router-dom";
 
 class RackView extends React.Component {
 
@@ -23,6 +24,8 @@ class RackView extends React.Component {
             racks: [],
             popupType: "",
             deleteID: "",
+            deleteLetter: "",
+            deleteNumber: "",
             rackReport: "",
             initialLoaded: false,
             checkedBoxes: [],
@@ -47,9 +50,11 @@ class RackView extends React.Component {
     }
 
     componentDidMount() {
-        rackutils.getRacks((startAfterCallback, rackCallback) => {
-            if (startAfterCallback && rackCallback) {
+        rackutils.getRackAt((startAfterCallback, rackCallback) => {
+            if (!(startAfterCallback === null) && !(rackCallback === null)) {
                 this.startAfter = startAfterCallback;
+                console.log("loaded up until " + this.startAfter)
+                console.log(this.startAfter.data())
                 this.setState({racks: rackCallback, initialLoaded: true});
             }
         });
@@ -58,7 +63,7 @@ class RackView extends React.Component {
     forceRefresh() {
         this.startAfter = null;
         this.setState({initialLoaded: false, racks: [], popupType: "", deleteID: ""});
-        rackutils.getRacks((startAfterCallback, rackCallback) => {
+        rackutils.getRackAt((startAfterCallback, rackCallback) => {
             if (startAfterCallback && rackCallback) {
                 this.startAfter = startAfterCallback;
                 this.setState({racks: rackCallback, initialLoaded: true});
@@ -69,25 +74,145 @@ class RackView extends React.Component {
     AdminTools() {
         if (userutils.isLoggedInUserAdmin()) {
             return (
-                <Box direction={"row"}>
-                    <Button icon={<Add/>} label={"Add"} style={{width: '150px'}}
-                            onClick={() => this.setState({popupType: "Add"})}/>
-                    <Button icon={<Trash/>} label={"Remove"} style={{width: '150px'}}
-                            onClick={() => this.setState({popupType: "Remove"})}/>
-                    <Button icon={<View/>} label={"View"} style={{width: '150px'}}
-                            onClick={() => this.setState({popupType: "Diagram"})}/>
-                    <Button icon={<Analytics/>} label={"Report"} style={{width: '150px'}}
-                            onClick={() => this.setState({popupType: "ReportAll"})}/>
-                </Box>
+                <Box
+                    width='medium'
+                    align='center'
+                    margin={{left: 'medium', right: 'medium'}}
+                    justify='start'>
+                    <Box style={{
+                        borderRadius: 10,
+                        borderColor: '#EDEDED'
+                    }}
+                         direction='row'
+                         alignSelf='stretch'
+                         background='#FFFFFF'
+                         width={'medium'}
+                         margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                         pad='small'>
+                        <Box flex
+                             margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                             direction='column' justify='start'>
+                            <Heading level='4' margin='none'>Add racks</Heading>
+                            <p>Add a single rack or a range of racks.</p>
+                            <Box direction='column' flex alignSelf='stretch'>
+                                <Button primary icon={<Add/>} label="Add" onClick={() => {this.setState({popupType: "Add"})
+                                }}/>
+                            </Box>
+                        </Box>
+                    </Box>
+                    <Box style={{
+                        borderRadius: 10,
+                        borderColor: '#EDEDED'
+                    }}
+                         direction='row'
+                         alignSelf='stretch'
+                         background='#FFFFFF'
+                         width={'medium'}
+                         margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                         pad='small'>
+                        <Box flex
+                             margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                             direction='column' justify='start'>
+                            <Heading level='4' margin='none'>Remove racks</Heading>
+                            <p>Remove a range of racks.</p>
+                            <Box direction='column' flex alignSelf='stretch'>
+                                <Button primary icon={<Trash/>} label="Remove" onClick={() => {this.setState({popupType: "Remove"})
+                                }}/>
+                            </Box>
+                        </Box>
+                    </Box>
+                    <Box style={{
+                        borderRadius: 10,
+                        borderColor: '#EDEDED'
+                    }}
+                         direction='row'
+                         alignSelf='stretch'
+                         background='#FFFFFF'
+                         width={'medium'}
+                         margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                         pad='small'>
+                        <Box flex
+                             margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                             direction='column' justify='start'>
+                            <Heading level='4' margin='none'>View rack elevations</Heading>
+                            <p>View rack elevations for a range of racks.</p>
+                            <Box direction='column' flex alignSelf='stretch'>
+                                <Button primary icon={<View/>} label="Elevation" onClick={() => {this.setState({popupType: "Diagram"})
+                                }}/>
+                            </Box>
+                        </Box>
+                    </Box>
+                    <Box style={{
+                        borderRadius: 10,
+                        borderColor: '#EDEDED'
+                    }}
+                         direction='row'
+                         alignSelf='stretch'
+                         background='#FFFFFF'
+                         width={'medium'}
+                         margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                         pad='small'>
+                        <Box flex
+                             margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                             direction='column' justify='start'>
+                            <Heading level='4' margin='none'>View rack usage report</Heading>
+                            <p>View an overall rack usage report for all racks.</p>
+                            <Box direction='column' flex alignSelf='stretch'>
+                                <Button primary icon={<Analytics/>} label="Report" onClick={() => {this.setState({popupType: "ReportAll"})
+                                }}/>
+                            </Box>
+                        </Box>
+                    </Box></Box>
             );
         } else {
             return (
-                <Box direction={"row"}>
-                    <Button icon={<View/>} label={"View"} style={{width: '150px'}}
-                            onClick={() => this.setState({popupType: "Diagram"})}/>
-                    <Button icon={<View/>} label={"View"} style={{width: '150px'}}
-                            onClick={() => this.setState({popupType: "ReportAll"})}/>
-                </Box>
+                <Box
+                    width='medium'
+                    align='center'
+                    margin={{left: 'medium', right: 'medium'}}
+                    justify='start'>
+                    <Box style={{
+                        borderRadius: 10,
+                        borderColor: '#EDEDED'
+                    }}
+                         direction='row'
+                         alignSelf='stretch'
+                         background='#FFFFFF'
+                         width={'medium'}
+                         margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                         pad='small'>
+                        <Box flex
+                             margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                             direction='column' justify='start'>
+                            <Heading level='4' margin='none'>View rack elevations</Heading>
+                            <p>View rack elevations for a range of racks.</p>
+                            <Box direction='column' flex alignSelf='stretch'>
+                                <Button primary icon={<View/>} label="Elevation" onClick={() => {this.setState({popupType: "Diagram"})
+                                }}/>
+                            </Box>
+                        </Box>
+                    </Box>
+                    <Box style={{
+                        borderRadius: 10,
+                        borderColor: '#EDEDED'
+                    }}
+                         direction='row'
+                         alignSelf='stretch'
+                         background='#FFFFFF'
+                         width={'medium'}
+                         margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                         pad='small'>
+                        <Box flex
+                             margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                             direction='column' justify='start'>
+                            <Heading level='4' margin='none'>View rack usage report</Heading>
+                            <p>View an overall rack usage report for all racks.</p>
+                            <Box direction='column' flex alignSelf='stretch'>
+                                <Button primary icon={<Analytics/>} label="Report" onClick={() => {this.setState({popupType: "ReportAll"})
+                                }}/>
+                            </Box>
+                        </Box>
+                    </Box></Box>
             )
         }
     }
@@ -95,8 +220,14 @@ class RackView extends React.Component {
     RackDeleteButton(datum) {
         if (userutils.isLoggedInUserAdmin()) {
             return (
-                <Button icon={<Trash/>} label="Delete" onClick={() => {
-                    this.setState({popupType: 'Delete', deleteID: datum.id});
+                <Trash onClick={() => {
+                    console.log(datum)
+                    this.setState({
+                        popupType: 'Delete',
+                        deleteID: datum.id,
+                        deleteLetter: datum.letter,
+                        deleteNumber: datum.number
+                    });
                 }}/>
             )
         }
@@ -111,7 +242,7 @@ class RackView extends React.Component {
             ToastsStore.error('Invalid number.');
         } else if (!formvalidationutils.checkPositive(this.state.numberStart) || !formvalidationutils.checkPositive(this.state.numberEnd)) {
             //non positive number
-            ToastsStore.error('Numbers most be positive.');
+            ToastsStore.error('Numbers must be positive.');
         } else if (!formvalidationutils.checkUppercaseLetter(this.state.letterStart) || !formvalidationutils.checkUppercaseLetter(this.state.letterEnd)) {
             //non uppercase letter
             ToastsStore.error('Rows must be a single uppercase letter.');
@@ -133,6 +264,10 @@ class RackView extends React.Component {
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/'/>
+        }
+
         const {popupType} = this.state;
         let popup;
         if (localStorage.getItem('tipShown') !== 'yes') {
@@ -147,7 +282,8 @@ class RackView extends React.Component {
                        onClickOutside={() => this.setState({popupType: undefined})}>
                     <Box pad="medium" align="center">
                         <Heading level="3" margin="none">Delete rack</Heading>
-                        <Text>Are you sure you want to delete rack {deleteID}? This can't be reversed.</Text>
+                        <Text>Are you sure you want to delete rack {this.state.deleteLetter}{this.state.deleteNumber}?
+                            This can't be reversed.</Text>
                         <Box direction="row">
                             <Button label="Delete" icon={<Trash/>} onClick={() => {
                                 rackutils.deleteSingleRack(deleteID, status => {
@@ -229,11 +365,7 @@ class RackView extends React.Component {
         }
 
         if (!this.state.initialLoaded) {
-            return (<Text>Please wait...</Text>);
-        }
-
-        return (
-            <Grommet theme={theme}>
+            return (<Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
                     <AppBar>
                         <HomeButton alignSelf='start' this={this}/>
@@ -242,17 +374,186 @@ class RackView extends React.Component {
                         }}>Racks</Heading>
                         <UserMenu alignSelf='end' this={this}/>
                     </AppBar>
-                    <Heading margin={"none"}>Racks</Heading>
-                    {this.AdminTools()}
-                    <DataTable step={25}
+                    <Text>Please wait...</Text></Box></Grommet>);
+        }
+
+        return (
+            <Grommet theme={theme} full className='fade'>
+                <Box fill background='light-2'>
+                    <AppBar>
+                        <HomeButton alignSelf='start' this={this}/>
+                        <Heading alignSelf='center' level='4' margin={{
+                            top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
+                        }}>Racks</Heading>
+                        <UserMenu alignSelf='end' this={this}/>
+                    </AppBar>
+                    <Box direction='row'
+                         justify='center'
+                         wrap={true}>
+                        <Box direction='row' justify='center' overflow={{horizontal: 'hidden'}}>
+                            <Box direction='row' justify='center'>
+                                <Box width='large' direction='column' align='stretch' justify='start'>
+                                    <Box style={{
+                                        borderRadius: 10,
+                                        borderColor: '#EDEDED'
+                                    }}
+                                         id='containerBox'
+                                         direction='row'
+                                         background='#FFFFFF'
+                                         margin={{top: 'medium', bottom: 'medium'}}
+                                         flex={{
+                                             grow: 0,
+                                             shrink: 0
+                                         }}
+                                         pad='small'>
+                                        <Box margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                             direction='column'
+                                             justify='start' alignSelf='stretch' height={"810px"} flex>
+                                            <Box align="center">
+                                                <DataTable step={25}
+                                                           onMore={() => {
+                                                               if (this.startAfter) {
+                                                                   rackutils.getRackAt((newStartAfter, newRacks) => {
+                                                                       this.startAfter = newStartAfter
+                                                                       this.setState({racks: this.state.racks.concat(newRacks)})
+                                                                   }, this.startAfter);
+                                                               }
+                                                           }}
+                                                           columns={[
+                                                               /*                                  {
+                                                                                                     property: "checkbox",
+                                                                                                     render: datum => (
+                                                                                                         <CheckBox key={datum.id}
+                                                                                                                   checked={this.state.checkedBoxes.includes(datum.id)}
+                                                                                                                   onChange={e => {
+                                                                                                                       if (e.target.checked) {
+                                                                                                                           this.state.checkedBoxes.push(datum.id);
+                                                                                                                       } else {
+                                                                                                                           this.setState({checkedBoxes: this.state.checkedBoxes.filter(item => item !== datum.id)})
+                                                                                                                       }
+                                                                                                                   }}/>
+                                                                                                     )
+                                                                                                 },*/
+                                                               /*                                   {
+                                                                                                      property: "id",
+                                                                                                      header: "ID",
+                                                                                                      primary: true
+                                                                                                  },*/
+                                                               {
+                                                                   property: "count",
+                                                                   header: <Text size={"small"}>ID</Text>,
+                                                                   primary: true,
+                                                                   render: datum => (<Text size={"small"}>{datum.count}</Text> )
+                                                               },
+                                                               {
+                                                                   property: "letter",
+                                                                   header: <Text size='small'>Row</Text>,
+                                                                   render: datum => (
+                                                                       <Text size='small'>{datum.letter}</Text>)
+                                                               },
+                                                               {
+                                                                   property: "number",
+                                                                   header: <Text size='small'>Position</Text>,
+                                                                   render: datum => (
+                                                                       <Text size='small'>{datum.number}</Text>)
+                                                               },
+                                                               /*                                   {
+                                                                                                      property: "height",
+                                                                                                      header: "Occupied",
+                                                                                                      render: datum => (
+                                                                                                          <Box pad={{vertical: 'xsmall'}}>
+                                                                                                              <Meter
+                                                                                                                  values={[{value: datum.instances / 42 * 100}]}
+                                                                                                                  thickness="small"
+                                                                                                                  size="small"
+                                                                                                              />
+                                                                                                          </Box>
+                                                                                                      )
+                                                                                                  },*/
+                                                               {
+                                                                   property: "instances",
+                                                                   header: <Text size='small'>Instances</Text>,
+                                                                   render: datum => (
+                                                                       <Text size='small'>{datum.instances}</Text>)
+                                                               },
+                                                               {
+                                                                   property: "delete",
+                                                                   header: <Text size='small'>Delete</Text>,
+                                                                   render: datum =>
+                                                                       this.RackDeleteButton(datum)
+                                                               },
+                                                               {
+                                                                   property: "view",
+                                                                   header: <Text size='small'>View</Text>,
+                                                                   render: datum => (<View
+                                                                                             onClick={() => {
+                                                                                                 this.props.history.push({
+                                                                                                     pathname: '/rackdiagram',
+                                                                                                     state: {
+                                                                                                         id: datum.id
+                                                                                                     }
+                                                                                                 })
+                                                                                             }}/>)
+                                                               },
+                                                               {
+                                                                   property: "report",
+                                                                   header: <Text size='small'>Report</Text>,
+                                                                   render: datum => (<Analytics
+                                                                                             onClick={() => {
+                                                                                                 this.setState({
+                                                                                                     popupType: 'Report',
+                                                                                                     rackReport: datum.id
+                                                                                                 })
+                                                                                             }}/>)
+                                                               }
+                                                               /*{
+                                                                   property: "modify",
+                                                                   header: <Text size='small'>Actions</Text>,
+                                                                   render: datum => (
+                                                                       <Box direction="row">
+                                                                           {this.RackDeleteButton(datum)}
+                                                                           <Button icon={<View/>} label="View"
+                                                                                   onClick={() => {
+                                                                                       this.props.history.push({
+                                                                                           pathname: '/rackdiagram',
+                                                                                           state: {
+                                                                                               id: datum.id
+                                                                                           }
+                                                                                       })
+                                                                                   }}/>
+                                                                           <Button icon={<Analytics/>} label="Report"
+                                                                                   onClick={() => {
+                                                                                       this.setState({
+                                                                                           popupType: 'Report',
+                                                                                           rackReport: datum.id
+                                                                                       })
+                                                                                   }}/>
+                                                                       </Box>
+                                                                   )
+                                                               }*/
+                                                           ]} data={this.state.racks} size={"large"}/>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                </Box>
+                                {this.AdminTools()}
+                            </Box>
+                        </Box>
+                    </Box>
+
+                    {/*<Heading margin={"none"}>Racks</Heading>*/}
+
+                    {/* <DataTable step={25}
                                onMore={() => {
-                                   rackutils.getRackAt(this.startAfter, (newStartAfter, newRacks) => {
-                                       this.startAfter = newStartAfter
-                                       this.setState({racks: this.state.racks.concat(newRacks)})
-                                   });
+                                   if(this.startAfter){
+                                       rackutils.getRackAt(this.startAfter, (newStartAfter, newRacks) => {
+                                           this.startAfter = newStartAfter
+                                           this.setState({racks: this.state.racks.concat(newRacks)})
+                                       });
+                                   }
                                }}
                                columns={[
-                                   /*                                  {
+                                                                     {
                                                                          property: "checkbox",
                                                                          render: datum => (
                                                                              <CheckBox key={datum.id}
@@ -266,49 +567,57 @@ class RackView extends React.Component {
                                                                                        }}/>
                                                                          )
                                                                      },*/
-                                   {
-                                       property: "id",
-                                       header: "ID",
-                                       primary: true
-                                   },
-                                   {
-                                       property: "letter",
-                                       header: "Row",
-                                   },
-                                   {
-                                       property: "number",
-                                       header: "Position"
-                                   },
-                                   /*                                   {
-                                                                          property: "height",
-                                                                          header: "Occupied",
-                                                                          render: datum => (
-                                                                              <Box pad={{vertical: 'xsmall'}}>
-                                                                                  <Meter
-                                                                                      values={[{value: datum.instances / 42 * 100}]}
-                                                                                      thickness="small"
-                                                                                      size="small"
-                                                                                  />
-                                                                              </Box>
-                                                                          )
-                                                                      },*/
-                                   {
-                                       property: "instances",
-                                       header: "Instances"
-                                   },
-                                   {
-                                       property: "modify",
-                                       header: "Actions",
-                                       render: datum => (
-                                           <Box direction="row">
-                                               {this.RackDeleteButton(datum)}
-                                               <Button icon={<Analytics/>} label="Report" onClick={() => {
-                                                   this.setState({popupType: 'Report', rackReport: datum.id})
-                                               }}/>
-                                           </Box>
-                                       )
-                                   }
-                               ]} data={this.state.racks} sortable={true}/>
+                        /*                                   {
+                                                               property: "id",
+                                                               header: "ID",
+                                                               primary: true
+                                                           },
+                                                           {
+                                                               property: "letter",
+                                                               header: "Row",
+                                                           },
+                                                           {
+                                                               property: "number",
+                                                               header: "Position"
+                                                           },
+                                                                                              {
+                                                                                                  property: "height",
+                                                                                                  header: "Occupied",
+                                                                                                  render: datum => (
+                                                                                                      <Box pad={{vertical: 'xsmall'}}>
+                                                                                                          <Meter
+                                                                                                              values={[{value: datum.instances / 42 * 100}]}
+                                                                                                              thickness="small"
+                                                                                                              size="small"
+                                                                                                          />
+                                                                                                      </Box>
+                                                                                                  )
+                                                                                              },
+                                                           {
+                                                               property: "instances",
+                                                               header: "Instances"
+                                                           },
+                                                           {
+                                                               property: "modify",
+                                                               header: "Actions",
+                                                               render: datum => (
+                                                                   <Box direction="row">
+                                                                       {this.RackDeleteButton(datum)}
+                                                                       <Button icon={<View/>} label="View" onClick={() => {
+                                                                           this.props.history.push({
+                                                                               pathname: '/rackdiagram',
+                                                                               state: {
+                                                                                   id: datum.id
+                                                                               }
+                                                                           })
+                                                                       }}/>
+                                                                       <Button icon={<Analytics/>} label="Report" onClick={() => {
+                                                                           this.setState({popupType: 'Report', rackReport: datum.id})
+                                                                       }}/>
+                                                                   </Box>
+                                                               )
+                                                           }
+                                                       ]} data={this.state.racks}/>*/}
                 </Box>
                 {popup}
                 <ToastsContainer store={ToastsStore}/>

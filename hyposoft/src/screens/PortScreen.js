@@ -94,7 +94,42 @@ class PortScreen extends Component {
     }
 
     importInstances (data, fileName) {
+        if (data.length === 0) {
+            ToastsStore.info('No records found in imported file', 3000, 'burntToast')
+            return
+        }
 
+        if (!('hostname' in data[0] && 'rack' in data[0] && 'rack_position' in data[0]
+            && 'vendor' in data[0] && 'model_number' in data[0] && 'owner' in data[0]
+            && 'comment' in data[0])) {
+            ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
+            return
+        }
+
+        modelutils.validateImportedModels(data, errors => {
+            if (errors.length > 0) {
+                this.setState(oldState => ({
+                    ...oldState, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
+                }))
+            } else {
+                this.setState(oldState => ({...oldState, errors: undefined}))
+                modelutils.addModelsFromImport(data, false, ({modelsPending, modelsPendingInfo, ignoredModels, createdModels, modifiedModels}) => {
+                    if (modelsPending.length > 0) {
+                        // Show confirmation
+                        this.setState(oldState => ({
+                            ...oldState,
+                            ignoredModels: ignoredModels, modifiedModels: modifiedModels, createdModels: createdModels,
+                            showStatsForModels: false,
+                            modifications: modelsPending, modificationsInfo: modelsPendingInfo.map(m => <div><b>Row {m[0]}:</b> {m[1]}</div>)
+                        }))
+                    } else {
+                        this.setState(oldState => ({...oldState,
+                        ignoredModels: ignoredModels, modifiedModels: modifiedModels, createdModels: createdModels,
+                        showStatsForModels: true, modifications: undefined, modificationsInfo: undefined}))
+                    }
+                })
+            }
+        })
     }
 
     render() {

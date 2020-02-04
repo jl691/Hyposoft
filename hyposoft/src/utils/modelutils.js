@@ -137,6 +137,17 @@ function doesModelHaveInstances(modelId, callback) {
     })
 }
 
+function getModelIdFromModelName(modelName, callback) {
+    firebaseutils.modelsRef.where('modelName','==',modelName).get()
+    .then(docSnaps => {
+        callback(docSnaps.docs[0].id)
+    })
+    .catch( error => {
+      console.log("Error getting documents: ", error)
+      callback(null)
+    })
+}
+
 function getSuggestedVendors(userInput, callback) {
   // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
   var vendorArray = []
@@ -145,9 +156,9 @@ function getSuggestedVendors(userInput, callback) {
       const vendorName = doc.data().vendor.toLowerCase()
       const lowerUserInput = userInput.toLowerCase()
       if (!vendorArray.includes(doc.data().vendor) && (!userInput
-          || (vendorName.localeCompare(lowerUserInput) >= 0
-              && vendorName.localeCompare(lowerUserInput.slice(0,lowerUserInput.length-1)
-                  + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length-1,lowerUserInput.length).charCodeAt(0)+1)) < 0))) {
+          || (vendorName >= lowerUserInput
+              && vendorName < lowerUserInput.slice(0,lowerUserInput.length-1)
+                  + String.fromCharCode(lowerUserInput.slice(lowerUserInput.length-1,lowerUserInput.length).charCodeAt(0)+1)))) {
           vendorArray.push(doc.data().vendor)
         }
     })
@@ -316,6 +327,22 @@ function addModelsFromImport (models, force, callback) {
     }
 }
 
+function getVendorAndNumberFromModel(modelName, callback) {
+    firebaseutils.modelsRef.where('modelName','==',modelName).get()
+    .then( docSnaps => {
+        if (docSnaps.docs.length !== 0) {
+          callback([docSnaps.docs[0].data().vendor,docSnaps.docs[0].data().modelNumber])
+        } else {
+          callback([null,null])
+        }
+    })
+    .catch( error => {
+      console.log("Error getting documents: ", error)
+      callback([null,null])
+    })
+}
+
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
 getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel,
-getModelsForExport, escapeStringForCSV, validateImportedModels, addModelsFromImport }
+getModelsForExport, escapeStringForCSV, validateImportedModels, addModelsFromImport, getVendorAndNumberFromModel,
+getModelIdFromModelName }

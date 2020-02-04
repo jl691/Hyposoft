@@ -1,14 +1,11 @@
 import React, { Component } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
-import { Link } from 'react-router-dom'
 
-import { Text, Button, Layer, Grommet, Heading, Box, TextInput } from 'grommet'
+import { Text, Button, Layer, Grommet, Heading, Box, TextInput, RadioButtonGroup, Stack } from 'grommet'
 import { Add } from 'grommet-icons'
 import AddInstanceForm from '../components/AddInstanceForm'
 import DeleteInstancePopup from '../components/DeleteInstancePopup'
 import EditInstanceForm from '../components/EditInstanceForm'
-import DetailedInstanceScreen from './DetailedInstanceScreen'
-import { ToastsContainer, ToastsStore } from 'react-toasts'
 
 import theme from '../theme'
 import AppBar from '../components/AppBar'
@@ -18,11 +15,14 @@ import FilterBarInstances from '../components/FilterBarInstances'
 import SearchInstances from '../components/SearchInstances'
 import InstanceTable from '../components/InstanceTable'
 import * as userutils from "../utils/userutils";
+import { ToastsContainer, ToastsStore } from "react-toasts";
 
 class InstanceScreen extends Component {
 
     rangeStart;
     rangeEnd;
+    rackSort;
+    rackUSort;
 
     constructor(props) {
         super(props);
@@ -30,6 +30,8 @@ class InstanceScreen extends Component {
             instances: [],
             popupType: "",
             deleteID: "",
+            deleteModel: "",
+            deleteHostname: "",
             updateID: "",
             initialLoaded: false,
             updateModel: "",
@@ -44,6 +46,7 @@ class InstanceScreen extends Component {
         }
 
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
+        this.handleCancelRefreshPopupChange = this.handleCancelRefreshPopupChange.bind(this);
         this.handleDeleteButton = this.handleDeleteButton.bind(this);
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
         this.handleChange = this.handleChange.bind(this);
@@ -59,25 +62,6 @@ class InstanceScreen extends Component {
     }
 
     handleChangeRange(event) {
-        /*        console.log("big booty" + event.target.name)
-                this.setState({
-                    [event.target.name]: event.target.value
-                });
-                if(event.target.name === "rangeNumberStart"){
-                    console.log("start")
-                    if (/[A-Z]\d+/.test(event.target.value) && /[A-Z]\d+/.test(this.state.rangeNumberEnd)) {
-                        this.instanceTable.current.handleFilter(event.target.value, this.state.rangeNumberEnd);
-                    }
-                } else if(event.target.name === "rangeNumberEnd"){
-                    console.log("end")
-                    if (/[A-Z]\d+/.test(this.state.rangeNumberStart) && /[A-Z]\d+/.test(event.target.value)) {
-                        this.instanceTable.current.handleFilter(this.state.rangeLetterStart, event.target.value);
-                    }
-                }
-                this.setState({
-                    [event.target.name]: event.target.value
-                });
-                console.log(this.state.rangeNumberStart + " yeeters " + this.state.rangeNumberEnd)*/
         if (event.target.name === "rangeNumberStart") {
             console.log("start")
             this.rangeStart = event.target.value;
@@ -92,18 +76,27 @@ class InstanceScreen extends Component {
         }
     }
 
-    handleCancelPopupChange() {
+    handleCancelRefreshPopupChange() {
         this.setState({
             popupType: ""
         });
         //TODO: READ https://stackoverflow.com/questions/37949981/call-child-method-from-parent
         this.instanceTable.current.forceRefresh();
     }
-    handleDeleteButton = (datumID) => {
+
+    handleCancelPopupChange() {
+        this.setState({
+            popupType: ""
+        });
+    }
+
+    handleDeleteButton = (datum) => {
+        console.log(datum.model);
         this.setState({
             popupType: 'Delete',
-            deleteID: datumID,
-
+            deleteID: datum.instance_id,
+            deleteModel: datum.model,
+            deleteHostname: datum.hostname
         });
     }
     handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment) => {
@@ -115,7 +108,8 @@ class InstanceScreen extends Component {
             updateRack: datumRack,
             updateRackU: datumRackU,
             updateOwner: datumOwner,
-            updateComment: datumComment
+            updateComment: datumComment,
+
 
         });
 
@@ -136,6 +130,10 @@ class InstanceScreen extends Component {
         }
     }
 
+    componentDidMount() {
+        ToastsStore.info("Tip: Click on a column name to sort by it", 10000)
+    }
+
     render() {
         const { popupType } = this.state;
         let popup;
@@ -151,13 +149,8 @@ class InstanceScreen extends Component {
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <AddInstanceForm
-                        parentCallback={this.handleCancelPopupChange}
-                    />
-                    <Button
-                        margin="small"
-                        label="Cancel"
-                        onClick={() => this.setState({ popupType: "" })}
-
+                        parentCallback={this.handleCancelRefreshPopupChange}
+                        cancelCallback={this.handleCancelPopupChange}
                     />
 
                 </Layer>
@@ -170,14 +163,11 @@ class InstanceScreen extends Component {
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <DeleteInstancePopup
-                        parentCallback={this.handleCancelPopupChange}
+                        parentCallback={this.handleCancelRefreshPopupChange}
+                        cancelCallback={this.handleCancelPopupChange}
                         deleteIDFromParent={this.state.deleteID}
-
-                    />
-                    <Button
-                        margin="small"
-                        label="Cancel"
-                        onClick={() => this.setState({ popupType: "" })}
+                        deleteModel={this.state.deleteModel}
+                        deleteHostname={this.state.deleteHostname}
 
                     />
                 </Layer>
@@ -193,7 +183,8 @@ class InstanceScreen extends Component {
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <EditInstanceForm
-                        parentCallback={this.handleCancelPopupChange}
+                        parentCallback={this.handleCancelRefreshPopupChange}
+                        cancelCallback={this.handleCancelPopupChange}
 
                         updateIDFromParent={this.state.updateID}
                         updateModelFromParent={this.state.updateModel}
@@ -202,12 +193,6 @@ class InstanceScreen extends Component {
                         updateRackUFromParent={this.state.updateRackU}
                         updateOwnerFromParent={this.state.updateOwner}
                         updateCommentFromParent={this.state.updateComment}
-                    />
-                    <Button
-                        margin="small"
-                        label="Cancel"
-                        onClick={() => this.setState({ popupType: "" })}
-
                     />
                 </Layer>
             )
@@ -223,39 +208,182 @@ class InstanceScreen extends Component {
                     exact path="/instances" render={props => (
                         <React.Fragment>
                             <Grommet theme={theme} full className='fade'>
-                                {popup}
-                                <AppBar>
+                                <Box fill background='light-2'>
+                                    {popup}
+                                    <AppBar>
 
-                                    <HomeButton alignSelf='start' this={this} />
-                                    <Heading alignSelf='center' level='4' margin={{
-                                        top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
-                                    }} >Instances</Heading>
-                                    <UserMenu alignSelf='end' this={this} />
-                                </AppBar>
-                                <FilterBarInstances>
-                                    <SearchInstances />
+                                        <HomeButton alignSelf='start' this={this} />
+                                        <Heading alignSelf='center' level='4' margin={{
+                                            top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
+                                        }} >Instances</Heading>
+                                        <UserMenu alignSelf='end' this={this} />
+                                    </AppBar>
 
-                                    <Box gap='small' direction="column" margin='small'>
-                                        <Text> Range of Racks </Text>
-                                        <TextInput name="rangeNumberStart" placeholder="eg. B1" onChange={this.handleChangeRange}/>
-                                        to
-                                        <TextInput name="rangeNumberEnd" placeholder="eg. C21" onChange={this.handleChangeRange} />
+
+                                    <Box direction='row'
+                                        justify='center'
+                                        wrap={true}
+                                        overflow="scroll">
+                                        <Box direction='row' justify='center' overflow="scroll">
+                                            <Box direction='row' justify='center' overflow="scroll">
+                                                <Box width='large' direction='column' align='stretch' justify='start' overflow="scroll">
+                                                    <Box style={{
+                                                        borderRadius: 10,
+                                                        borderColor: '#EDEDED'
+                                                    }}
+                                                        id='containerBox'
+                                                        direction='row'
+                                                        background='#FFFFFF'
+                                                        margin={{ top: 'medium', bottom: 'medium' }}
+                                                        flex={{
+                                                            grow: 0,
+                                                            shrink: 0
+                                                        }}
+
+                                                        pad='small' overflow="scroll">
+                                                        <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column'
+                                                            justify='start' alignSelf='stretch' flex overflow="scroll">
+                                                            <Box align="center" overflow="scroll">
+                                                                <InstanceTable
+                                                                    deleteButtonCallbackFromParent={this.handleDeleteButton}
+
+                                                                    UpdateButtonCallbackFromParent={this.handleUpdateButton}
+
+                                                                    ref={this.instanceTable}
+
+                                                                />
+                                                            </Box>
+                                                        </Box>
+                                                    </Box>
+                                                </Box>
+                                            </Box>
+                                        </Box>
+                                        <Box >
+
+                                            {/* BEGNINNING OF FILTER BAR ==========*/}
+                                            <Box
+                                                width='medium'
+                                                align='center'
+                                                margin={{ left: 'medium', right: 'medium' }}
+                                                justify='start' >
+                                                {/* This box below is for Search */}
+                                                <Box style={{
+                                                    borderRadius: 10,
+                                                    borderColor: '#EDEDED'
+                                                }}
+                                                    direction='row'
+                                                    alignSelf='stretch'
+                                                    background='#FFFFFF'
+                                                    width={'medium'}
+                                                    margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                                                    pad='small' >
+                                                    <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
+
+
+
+                                                        <Text size='small'><b>Search Instances</b></Text>
+                                                        <Stack margin={{ top: 'small' }}>
+                                                            <SearchInstances />
+                                                        </Stack>
+                                                    </Box>
+                                                </Box>
+                                                {/* This box below is for range of racks */}
+                                                <Box style={{
+                                                    borderRadius: 10,
+                                                    borderColor: '#EDEDED'
+                                                }}
+                                                    direction='row'
+                                                    alignSelf='stretch'
+                                                    background='#FFFFFF'
+                                                    width={'medium'}
+                                                    margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                                                    pad='small' >
+                                                    <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
+                                                        <Text size='small'><b>Filter By Rack Range</b></Text>
+                                                        <Stack margin={{ top: 'small' }}>
+                                                            <Box gap='small' direction="column" margin='small'>
+
+                                                                <TextInput name="rangeNumberStart" placeholder="eg. B1" size="xsmall" onChange={this.handleChangeRange} />
+                                                                to
+                                                                <TextInput name="rangeNumberEnd" placeholder="eg. C21" size="xsmall" onChange={this.handleChangeRange} />
+                                                            </Box>
+
+                                                        </Stack>
+                                                    </Box>
+                                                </Box>
+                                                {/* This box is for combined sort on Rack and Rack U */}
+                                                <Box style={{
+                                                    borderRadius: 10,
+                                                    borderColor: '#EDEDED'
+                                                }}
+                                                    direction='row'
+                                                    alignSelf='stretch'
+                                                    background='#FFFFFF'
+                                                    width={'medium'}
+                                                    margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                                                    pad='small' >
+                                                    <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
+                                                        <Text size='small'><b>Combined Sort</b></Text>
+                                                        <Stack margin={{ top: 'small' }}>
+                                                            <Box gap='small' direction="column" margin='small'>
+                                                                {/* Put sort buttons here */}
+                                                                <Text size='small'><b>Rack</b></Text>
+                                                                <Box direction="row" justify="start" margin="small">
+                                                                    <RadioButtonGroup
+                                                                        label="Rack"
+                                                                        name="rack"
+                                                                        options={[
+                                                                            { label: "Ascending", value: "rackAsc" },
+                                                                            { label: "Descending", value: "rackDesc" },
+
+                                                                        ]}
+                                                                        //value={this.rackSort}
+                                                                        // onChange={this.setState(rackSort= value)}
+                                                                        {...props}
+                                                                    />
+
+                                                                </Box>
+                                                                <Text size='small'><b>Rack U</b></Text>
+                                                                <Box direction="row" justify="start" margin="small">
+                                                                    <RadioButtonGroup
+                                                                        label="Rack U"
+                                                                        name="rackU"
+                                                                        options={[
+                                                                            { label: "Ascending", value: "rackUAsc" },
+                                                                            { label: "Descending", value: "rackUDesc" },
+
+                                                                        ]}
+                                                                        //value={this.rackSort}
+                                                                        // onChange={this.setState(rackSort= value)}
+                                                                        {...props}
+                                                                    />
+                                                                </Box>
+                                                                <Box margin="17px"  direction="column" justify="center">
+                                                                    <Button label={<Text size="small"> Apply sort</Text>} />
+                                                                </Box>
+
+
+                                                            </Box>
+
+                                                        </Stack>
+                                                    </Box>
+                                                </Box>
+                                                {/* Button to Add an Instance: */}
+                                                <Box margin="17px" align="center" direction="column" justify="center">
+                                                    {this.addButton()}
+                                                </Box>
+                                            </Box>
+                                            {/* END OFF FILTER BAR ================= */}
+
+
+                                        </Box>
+
                                     </Box>
 
+                                    <ToastsContainer store={ToastsStore} />
 
-                                    {/* Button to Add an Instance: */}
-                                    {this.addButton()}
-                                </FilterBarInstances>
+                                </Box>
 
-                                <InstanceTable
-                                    deleteButtonCallbackFromParent={this.handleDeleteButton}
-
-                                    UpdateButtonCallbackFromParent={this.handleUpdateButton}
-
-                                    ref={this.instanceTable}
-
-                                />
-                                <ToastsContainer store={ToastsStore} lightBackground/>
                             </Grommet>
 
                         </React.Fragment>

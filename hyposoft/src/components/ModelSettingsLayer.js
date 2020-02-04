@@ -1,7 +1,6 @@
 import * as modelutils from '../utils/modelutils'
-import * as firebaseutils from '../utils/firebaseutils'
 import * as userutils from '../utils/userutils'
-import React, { Component } from 'react'
+import React from 'react'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 
 import { SketchPicker } from 'react-color'
@@ -16,7 +15,7 @@ import {
     TextArea,
     Form } from 'grommet'
 
-import theme from '../theme'
+import {Redirect} from "react-router-dom";
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
@@ -138,6 +137,10 @@ class ModelSettingsLayer extends React.Component {
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
+
         return (
             <Layer position="center" modal onClickOutside={this.hideFunction} onEsc={this.hideFunction}>
                 <Box pad="medium" gap="small" width="large">

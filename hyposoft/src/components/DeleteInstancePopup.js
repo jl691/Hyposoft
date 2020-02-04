@@ -2,6 +2,9 @@ import React, { Component } from 'react'
 import { Button, Grommet, Form, Heading, Text, Box } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as instutils from '../utils/instanceutils'
+import * as userutils from "../utils/userutils";
+import {Redirect} from "react-router-dom";
+import theme from "../theme";
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -36,9 +39,12 @@ export default class DeleteInstancePopup extends Component {
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
 
         return (
-            <Grommet>
+            <Grommet theme={theme}>
                 <Box height="250px" width="medium" pad="medium" gap="xxsmall" overflow="auto" margin="medium">
                     <Heading
                         size="small"
@@ -49,15 +55,21 @@ export default class DeleteInstancePopup extends Component {
                         name="deleteInst"
                     >
 
-                        <Text>Are you sure you want to delete instance <strong>{this.props.deleteIDFromParent}</strong>? This cannot be undone. </Text>
+                        <Text>Are you sure you want to delete instance <strong>{this.props.deleteModel} {this.props.deleteHostname}</strong>? This cannot be undone. </Text>
 
-                        <Button
-
-                            alignSelf="center"
-                            margin="medium"
-                            type="submit"
-                            primary label="Yes"
-                        />
+                        <Box direction={"row"}>
+                            <Button
+                                alignSelf="center"
+                                margin="small"
+                                type="submit"
+                                primary label="Yes"
+                            />
+                            <Button
+                                margin="small"
+                                label="Cancel"
+                                onClick={() => this.props.cancelCallback()}
+                            />
+                        </Box>
 
                     </Form >
                 </Box>

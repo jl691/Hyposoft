@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import AppBar from '../components/AppBar'
-import HomeButton from '../components/HomeButton'
 import BackButton from '../components/BackButton'
 import UserMenu from '../components/UserMenu'
 import ModelSettingsLayer from '../components/ModelSettingsLayer'
@@ -18,9 +17,7 @@ import {
     Heading,
     Layer,
     Meter,
-    Text,
-    TextInput,
-    Form } from 'grommet'
+    Text } from 'grommet'
 
 import theme from '../theme'
 

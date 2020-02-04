@@ -2,6 +2,8 @@ import React from "react";
 import theme from "../theme";
 import {Box, Text, Grommet, Meter, DataTable} from "grommet";
 import * as rackutils from "../utils/rackutils";
+import * as userutils from "../utils/userutils";
+import {Redirect} from "react-router-dom";
 
 class RackUsageReport extends React.Component {
     constructor(props) {
@@ -60,12 +62,16 @@ class RackUsageReport extends React.Component {
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
+
         if (!this.state.initialLoaded) {
             return (<Text>Please wait...</Text>);
         }
         return (
             <Grommet theme={theme}>
-                <Box width={"medium"} align={"center"}>
+                <Box width={"large"} align={"center"}>
                     <Text>Total usage: {this.state.count}/{this.state.total} - {Math.round(this.state.count/this.state.total*100)}%</Text>
                     <Meter values={
                         [

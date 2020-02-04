@@ -4,6 +4,8 @@ import {Accordion, AccordionPanel, Box, Button, Form, Grommet, Text, TextInput} 
 import * as rackutils from "../utils/rackutils";
 import * as formvalidationutils from "../utils/formvalidationutils";
 import {ToastsContainer, ToastsStore} from 'react-toasts';
+import * as userutils from "../utils/userutils";
+import {Redirect} from "react-router-dom";
 
 class AddRackView extends React.Component {
 
@@ -13,12 +15,12 @@ class AddRackView extends React.Component {
         this.state = {
             singleLetter: "",
             singleNumber: "",
-            singleHeight: "",
+            singleHeight: 42,
             rangeLetterStart: "",
             rangeLetterEnd: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
-            rangeHeight: "",
+            rangeHeight: 42,
         }
 
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -88,6 +90,10 @@ class AddRackView extends React.Component {
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
+
         return (
             <Grommet theme={theme}>
                 <Accordion>
@@ -100,9 +106,9 @@ class AddRackView extends React.Component {
                                 <Text>Number</Text>
                                 <TextInput name="singleNumber" placeholder="eg. 6, 12, 42" onChange={this.handleChange}
                                            value={this.state.singleNumber}/>
-                                <Text>Height</Text>
+                                {/*<Text>Height</Text>
                                 <TextInput name="singleHeight" placeholder="42" onChange={this.handleChange}
-                                           value={this.state.singleHeight}/>
+                                           value={this.state.singleHeight}/>*/}
                                 <Button type="submit" primary label="Submit"/>
                             </Form>
                         </Box>
@@ -122,8 +128,8 @@ class AddRackView extends React.Component {
                                     to
                                     <TextInput name="rangeNumberEnd" placeholder="eg. 24, 36, 48" onChange={this.handleChange} />
                                 </Box>
-                                <Text>Height of racks</Text>
-                                <TextInput name="rangeHeight" placeholder="42" onChange={this.handleChange}/>
+                                {/*<Text>Height of racks</Text>
+                                <TextInput name="rangeHeight" placeholder="42" onChange={this.handleChange}/>*/}
                                 <Button type="submit" primary label="Submit"/>
                             </Form>
                         </Box>

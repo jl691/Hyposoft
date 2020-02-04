@@ -1,9 +1,11 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Text } from 'grommet'
+import { Button, Grommet, Form, FormField, Heading, TextInput, Box } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as instutils from '../utils/instanceutils'
-import { checkInstanceFits } from '../utils/rackutils';
 import * as formvalidationutils from "../utils/formvalidationutils";
+import * as userutils from "../utils/userutils";
+import {Redirect} from "react-router-dom";
+import theme from "../theme";
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -12,13 +14,13 @@ export default class EditInstanceForm extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            //instance_id: "",
             model: this.props.updateModelFromParent,
             hostname: this.props.updateHostnameFromParent,
             rack: this.props.updateRackFromParent,
             rackU: this.props.updateRackUFromParent,
             owner: this.props.updateOwnerFromParent,
-            comment: this.props.updateCommentFromParent
+            comment: this.props.updateCommentFromParent,
+            
 
         }
         this.handleUpdate = this.handleUpdate.bind(this);
@@ -61,24 +63,16 @@ export default class EditInstanceForm extends Component {
                     parseInt(this.state.rackU),
                     this.state.owner,
                     this.state.comment,
+
+                
                     status => {
                         console.log(status)
                         //returned a null in instanceutils updateInstance function. Means no errormessage
                         if (!status) {
                             console.log(this.state)
                             ToastsStore.success('Successfully updated instance!');
-                            //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
-                            //this.props.parentCallbackRefresh(true);
                             this.props.parentCallback(true);
-                            /*this.setState({
-                                instance_id: "",
-                                model: "",
-                                hostname: "",
-                                rack: "",
-                                rackU: "",
-                                owner: "",
-                                comment: ""
-                            })*/
+                 
                         }
                         else {
                             ToastsStore.error('Error updating instance: ' + status);
@@ -91,9 +85,13 @@ export default class EditInstanceForm extends Component {
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/' />
+        }
+
         return (
 
-            <Grommet>
+            <Grommet theme={theme}>
                 <Box height="575px" width="400px" pad="medium" gap="xxsmall" overflow="auto">
                     <Heading
                         size="small"
@@ -126,25 +124,51 @@ export default class EditInstanceForm extends Component {
                         <FormField name="hostname" label="Hostname" >
 
                             <TextInput padding="medium" name="hostname" placeholder="Update Server" onChange={this.handleChange}
-                                value={this.state.hostname} />
+                                value={this.state.hostname} required="true"/>
                         </FormField>
 
                         <FormField name="rack" label="Rack" >
 
-                            <TextInput name="rack" placeholder="Update Rack" onChange={this.handleChange}
-                                value={this.state.rack} />
+                            <TextInput name="rack"
+                                placeholder="Update Rack"
+                                onChange={e => {
+                                    const value = e.target.value
+                                    this.setState(oldState => ({...oldState, rack: value}))
+                                    instutils.getSuggestedRacks(value, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))
+                                }}
+                                onSelect={e => {
+                                    this.setState(oldState => ({...oldState, rack: e.suggestion}))
+                                }}
+                                value={this.state.rack}
+                                suggestions={this.state.rackSuggestions}
+                                onClick={() => instutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))}
+                                title='Rack'
+                              />
                         </FormField>
 
                         <FormField name="rackU" label="RackU" >
 
                             <TextInput name="rackU" placeholder="Update RackU" onChange={this.handleChange}
-                                value={this.state.rackU} />
+                                value={this.state.rackU} required="true"/>
                         </FormField>
 
                         <FormField name="owner" label="Owner" >
 
-                            <TextInput name="owner" placeholder="Update Owner" onChange={this.handleChange}
-                                value={this.state.owner} />
+                            <TextInput name="owner"
+                                placeholder="Update Owner"
+                                onChange={e => {
+                                    const value = e.target.value
+                                    this.setState(oldState => ({...oldState, owner: value}))
+                                    instutils.getSuggestedOwners(value, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))
+                                }}
+                                onSelect={e => {
+                                    this.setState(oldState => ({...oldState, owner: e.suggestion}))
+                                }}
+                                value={this.state.owner}
+                                suggestions={this.state.ownerSuggestions}
+                                onClick={() => instutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))}
+                                title='Owner'
+                              />
                         </FormField>
 
                         <FormField name="comment" label="Comment" >
@@ -153,11 +177,19 @@ export default class EditInstanceForm extends Component {
                                 value={this.state.comment} />
                         </FormField>
 
-                        <Button
-                            margin="small"
-                            type="submit"
-                            primary label="Update"
-                        />
+
+                        <Box direction={"row"}>
+                            <Button
+                                margin="small"
+                                type="submit"
+                                primary label="Update"
+                            />
+                            <Button
+                                margin="small"
+                                label="Cancel"
+                                onClick={() => this.props.cancelCallback()}
+                            />
+                        </Box>
 
                     </Form >
                 </Box>

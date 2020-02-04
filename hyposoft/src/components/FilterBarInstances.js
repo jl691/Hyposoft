@@ -1,5 +1,5 @@
-import React, { Component } from 'react'
-import { Form, FormField, Select, RangeInput, Button, TextInput, Box } from 'grommet'
+import React from 'react'
+import { Box, Stack, Text } from 'grommet'
 
 
 // TODO: add functionality, and UI components for filter, range, add Model, etc
@@ -8,26 +8,34 @@ import { Form, FormField, Select, RangeInput, Button, TextInput, Box } from 'gro
 
 const FilterBarInstances = (props) => (
     <Box
-        direction='row'
+        width='medium'
         align='center'
-        alignContent='between'
-        justify='between'
-        flex={{
-            grow: 0,
-            shrink: 0
+        margin={{ left: 'medium', right: 'medium' }}
+        justify='start' >
+        <Box style={{
+            borderRadius: 10,
+            borderColor: '#EDEDED'
         }}
-        background='neutral-1'
-        pad={{ left: 'medium', right: 'small', vertical: 'small' }}
-        elevation='medium'
-        style={{ zIndex: '1' }} >
-        {props.children}
-       
+            direction='row'
+            alignSelf='stretch'
+            background='#FFFFFF'
+            width={'medium'}
+            margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+            pad='small' >
+            <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
+
+                {/* {props.children} */}
+
+                <Text size='small'><b>Height range</b></Text>
+                <Stack margin={{ top: 'small' }}>
+                    <Box background="light-4" height="10px" direction="row" round="large" />
+                    <Text>Henlo</Text>
+                </Stack>
+            </Box>
+        </Box>
     </Box>
 
-    
 
- 
-    
 )
 
 export default FilterBarInstances
