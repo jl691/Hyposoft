@@ -5,7 +5,10 @@ import * as modelutils from './modelutils'
 //TODO: admin vs. user privileges
 
 function getInstance(callback) {
-    instanceRef.limit(25).get().then(docSnaps => {
+    //TODO: need to rigorously test combined sort
+    //TODO: deecide to make rackU unsortable???
+    
+    instanceRef.limit(25).orderBy("rackU", "asc").get().then(docSnaps => {
         const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
         const instances = docSnaps.docs.map(doc => (
             {
