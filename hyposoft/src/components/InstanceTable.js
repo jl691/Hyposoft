@@ -61,7 +61,7 @@ export default class InstanceTable extends Component {
     }
 
     componentDidMount() {
-        instutils.getInstance((newStartAfter, instancesdb) => {
+        instutils.getInstanceAt((newStartAfter, instancesdb) => {
             if (!(newStartAfter === null) && !(instancesdb === null)) {
                 this.startAfter = newStartAfter;
                 this.defaultInstances = instancesdb;
@@ -160,7 +160,7 @@ export default class InstanceTable extends Component {
             instances: [],
             initialLoaded: false
         });
-        instutils.getInstance((newStartAfter, instancesdb) => {
+        instutils.getInstanceAt((newStartAfter, instancesdb) => {
             if (newStartAfter && instancesdb) {
                 this.startAfter = newStartAfter;
                 this.setState({ instances: instancesdb, initialLoaded: true })
@@ -246,9 +246,9 @@ export default class InstanceTable extends Component {
                                             step={5}
                                             onMore={() => {
                                                 if (this.startAfter) {
-                                                    instutils.getInstanceAt(this.startAfter, (newStartAfter, newInstances) => {
-                                                        this.startAfter = newStartAfter
-                                                        this.setState({ instances: this.state.instances.concat(newInstances) })
+                                                    instutils.getInstanceAt((newStartAfter, newInstances) => {
+                                                        this.startAfter = newStartAfter;
+                                                        this.setState({ instances: this.state.instances.concat(newInstances) }, this.startAfter)
                                                     });
                                                 }
                                             }}

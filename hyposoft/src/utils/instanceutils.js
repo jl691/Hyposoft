@@ -2,50 +2,45 @@ import { instanceRef, racksRef, modelsRef, usersRef, firebase } from './firebase
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
 
-//TODO: admin vs. user privileges
-
-function getInstance(callback) {
-    //TODO: need to rigorously test combined sort
-    //TODO: deecide to make rackU unsortable???
-
-    instanceRef.limit(25).orderBy("rack", "asc").get().then(docSnaps => {
-        const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
-        const instances = docSnaps.docs.map(doc => (
-            {
-                instance_id: doc.id,
-                model: doc.data().model,
-                hostname: doc.data().hostname,
-                rack: doc.data().rack,
-                rackU: doc.data().rackU,
-                owner: doc.data().owner,
-                comment: doc.data().comment
-            }
-        ))
-        callback(startAfter, instances);
-    }).catch(function (error) {
-        callback(null, null)
-    })
-}
-
-
-function getInstanceAt(start, callback) {
+function getInstanceAt(callback, start = null) {
+    console.log("running getinstanceat")
     console.log("the start after is " + start)
-    instanceRef.startAfter(start).limit(25).get().then(docSnaps => {
-        const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-        const instances = docSnaps.docs.map(doc => (
-            {
-                instance_id: doc.id,
-                model: doc.data().model,
-                hostname: doc.data().hostname,
-                rack: doc.data().rack,
-                rackU: doc.data().rackU,
-                owner: doc.data().owner,
-                comment: doc.data().comment
-            }))
-        callback(newStart, instances)
-    }).catch(function (error) {
-        callback(null, null);
-    })
+    if(start){
+        instanceRef.startAfter(start).limit(25).get().then(docSnaps => {
+            const newStart = docSnaps.docs[docSnaps.docs.length - 1];
+            const instances = docSnaps.docs.map(doc => (
+                {
+                    instance_id: doc.id,
+                    model: doc.data().model,
+                    hostname: doc.data().hostname,
+                    rack: doc.data().rack,
+                    rackU: doc.data().rackU,
+                    owner: doc.data().owner,
+                    comment: doc.data().comment
+                }))
+            callback(newStart, instances)
+        }).catch(function (error) {
+            callback(null, null);
+        })
+    } else {
+        instanceRef.limit(25).orderBy("rack", "asc").get().then(docSnaps => {
+            const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
+            const instances = docSnaps.docs.map(doc => (
+                {
+                    instance_id: doc.id,
+                    model: doc.data().model,
+                    hostname: doc.data().hostname,
+                    rack: doc.data().rack,
+                    rackU: doc.data().rackU,
+                    owner: doc.data().owner,
+                    comment: doc.data().comment
+                }
+            ))
+            callback(startAfter, instances);
+        }).catch(function (error) {
+            callback(null, null)
+        })
+    }
 }
 
 function addInstance(model, hostname, rack, racku, owner, comment, callback) {
@@ -507,7 +502,6 @@ function combinedSortAsc(callback) {
 }
 
 export {
-    getInstance,
     addInstance,
     deleteInstance,
     instanceFitsOnRack,
