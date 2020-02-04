@@ -249,7 +249,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                                 callback("Hostname already exists.")
                             } else {
                                 instanceFitsOnRack(rack, rackU, model, stat => {
-
+                                    console.log("returneddddd")
                                     console.log(stat)
                                     //returned an error message
                                     if (stat) {

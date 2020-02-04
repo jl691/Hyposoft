@@ -287,11 +287,14 @@ function checkInstanceFits(position, height, rack, callback, id = null) { //rack
                 firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
                     console.log(docRefInstance)
                     //ignore own self
+                    console.log("instanceid is " + instanceID + " and id is " + id)
                     if(instanceID != id){
                      
                         console.log(docRefInstance)
                         modelutils.getModelByModelname(docRefInstance.data().model, result => {
                             if (result) {
+                                console.log("found a model!")
+                                console.log(result)
                                 getModelHeightColor((docRefInstance.data().model), (height, color) => {
                                     if (height) {
                                         console.log("found the model height! " + height);
@@ -314,9 +317,17 @@ function checkInstanceFits(position, height, rack, callback, id = null) { //rack
                                     }
                                 })
                             } else {
+                                console.log("no models of that model")
                                 callback(null);
                             }
                         })
+                    } else {
+                        instanceCount++;
+                        if (instanceCount === docRefRack.data().instances.length) {
+                            console.log("done! calling back")
+                            console.log("instancecount is " + instanceCount + " and length is " + docRefRack.data().instances.length)
+                            callback(conflicting);
+                        }
                     }
                 });
             });
