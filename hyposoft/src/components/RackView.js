@@ -360,7 +360,7 @@ class RackView extends React.Component {
         }
 
         if (!this.state.initialLoaded) {
-            return (<Grommet theme={theme}>
+            return (<Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
                     <AppBar>
                         <HomeButton alignSelf='start' this={this}/>
