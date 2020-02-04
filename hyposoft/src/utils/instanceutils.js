@@ -56,7 +56,7 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                     var errMessage = "Model does not exist"
                     callback(errMessage)
                 } else {
-                    if (model === "" || hostname === "" || rack === "" || racku == null) {
+                    if (model.trim() === "" || hostname.trim() === "" || rack.trim() === "" || racku == null){
                         callback("Required fields cannot be empty")
                     } else {
                         checkHostnameExists(hostname, null, result => {
@@ -241,7 +241,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                     callback(errMessage)
                 } else {
 
-                    if (model === "" || hostname === "" || rack === "" || rackU == null) {
+                    if (model.trim() === "" || hostname.trim() === "" || rack.trim() === "" || rackU == null) {
                         callback("Required fields cannot be empty")
                     } else {
                         checkHostnameExists(hostname, instanceid, result => {
