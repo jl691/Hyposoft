@@ -314,7 +314,6 @@ function addModelsFromImport (models, force, callback) {
             }
         })
     }
-    console.log(modelIndices)
 }
 
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
