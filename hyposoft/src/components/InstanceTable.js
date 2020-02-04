@@ -248,8 +248,8 @@ export default class InstanceTable extends Component {
                                                 if (this.startAfter) {
                                                     instutils.getInstanceAt((newStartAfter, newInstances) => {
                                                         this.startAfter = newStartAfter;
-                                                        this.setState({ instances: this.state.instances.concat(newInstances) }, this.startAfter)
-                                                    });
+                                                        this.setState({ instances: this.state.instances.concat(newInstances) })
+                                                    }, this.startAfter);
                                                 }
                                             }}
                                             pad="17px"
