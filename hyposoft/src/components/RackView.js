@@ -369,7 +369,6 @@ class RackView extends React.Component {
                         }}>Racks</Heading>
                         <UserMenu alignSelf='end' this={this}/>
                     </AppBar>
-                    <Heading margin={"none"}>Racks</Heading>
                     <Text>Please wait...</Text></Box></Grommet>);
         }
 
@@ -404,7 +403,7 @@ class RackView extends React.Component {
                                          pad='small'>
                                         <Box margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
                                              direction='column'
-                                             justify='start' alignSelf='stretch' flex>
+                                             justify='start' alignSelf='stretch' height={"810px"} flex>
                                             <Box align="center">
                                                 <DataTable step={25}
                                                            onMore={() => {
@@ -527,7 +526,7 @@ class RackView extends React.Component {
                                                                        </Box>
                                                                    )
                                                                }*/
-                                                           ]} data={this.state.racks} size={"medium"}/>
+                                                           ]} data={this.state.racks} size={"large"}/>
                                             </Box>
                                         </Box>
                                     </Box>
