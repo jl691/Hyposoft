@@ -18,8 +18,8 @@ export default class SearchInstances extends Component {
         return (
             <Box width="200px" gap="small">
                 <Form margin='small'>
-                    <FormField label="Search Instances">
-                        <TextInput placeholder="Type here" />
+                    <FormField name="Search Instances">
+                        <TextInput placeholder="Type here" size="xsmall"/>
                     </FormField>
                     <Button type="submit" primary label="Submit" />
 

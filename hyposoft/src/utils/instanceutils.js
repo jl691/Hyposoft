@@ -59,7 +59,7 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                     if (model === "" || hostname === "" || rack === "" || racku == null) {
                         callback("Required fields cannot be empty")
                     } else {
-                        checkHostnameExists(hostname, result => {
+                        checkHostnameExists(hostname, null, result => {
                             if (result) {
                                 callback("Hostname already exists!")
                             } else {
@@ -96,7 +96,7 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                                     }
                                 })
                             }
-                        })
+                        }) //checkInstanceFits in rackutils will check against self if instance id is passed in
                     }
                 }
             })
@@ -109,14 +109,13 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
 
 // This will check if the instance fits on rack (after checking rack exists): fits within in the height of rack, and does not conflict with other instances
 
-function instanceFitsOnRack(instanceRack, rackU, model, callback) {
+function instanceFitsOnRack(instanceRack,  rackU, model, callback, instance_id=null) {
 
     let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
     let rackID = null;
-
     rackutils.getRackID(rackRow, rackNum, id => {
         if (id) {
 
@@ -151,6 +150,7 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                             let conflictNew = [];
                             let conflictCount = 0;
                             status.forEach(instanceID => {
+                                console.log("Passing in instance id: " + instance_id)
                                 getInstanceDetails(instanceID, result => {
                                     console.log(result.model + " " + result.hostname);
                                     conflictNew.push(result.model + " " + result.hostname + ", ");
@@ -168,8 +168,9 @@ function instanceFitsOnRack(instanceRack, rackU, model, callback) {
                             callback(null, doc.data().modelNumber, doc.data().vendor, rackID)
 
                         }
-                    })
-                } else {
+                    }, instance_id) //if you pass in a null to checkInstanceFits
+                }
+                else {
                     console.log("Instance of this model at this rackU will not fit on the rack")
                     var errMessage = "Instance of this model at this RackU will not fit on this rack";
                     callback(errMessage);
@@ -210,7 +211,7 @@ function deleteInstance(instanceid, callback) {
 
             instanceRef.doc(instanceid).delete().then(function () {
                 console.log("Deleting. This is the rackID: " + rackID)
-                console.log("removing from database instace ID: " + instanceid)
+                console.log("removing from database instance ID: " + instanceid)
                 racksRef.doc(String(rackID)).update({
 
                     instances: firebase.firestore.FieldValue.arrayRemove(instanceid)
@@ -227,6 +228,7 @@ function deleteInstance(instanceid, callback) {
     })
 }
 
+
 function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment, callback) {
 
     validateInstanceForm(model, hostname, rack, rackU, owner, valid => {
@@ -242,7 +244,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                     if (model === "" || hostname === "" || rack === "" || rackU == null) {
                         callback("Required fields cannot be empty")
                     } else {
-                        checkHostnameExists(hostname, result => {
+                        checkHostnameExists(hostname, instanceid, result => {
                             if (result) {
                                 callback("Hostname already exists.")
                             } else {
@@ -270,18 +272,28 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                                                     let oldSplitRackArray = oldRack.split(/(\d+)/).filter(Boolean)
                                                     let oldRackRow = oldSplitRackArray[0]
                                                     let oldRackNum = parseInt(oldSplitRackArray[1])
+                                                    var modelStuff = []
+                                                    modelutils.getVendorAndNumberFromModel(model, name => modelStuff = name)
+                                                    var rackId = ''
+                                                    rackutils.getRackID(rack.slice(0,1),rack.slice(1,rack.length), name => rackId = name)
+                                                    var modelId = ''
+                                                    modelutils.getModelIdFromModelName(model, name => modelId = name)
                                                     rackutils.getRackID(oldRackRow, oldRackNum, oldResult => {
                                                         if (oldResult) {
                                                             //get new rack document
                                                             //get instance id
                                                             replaceInstanceRack(oldResult, result, instanceid, result => {
                                                                 instanceRef.doc(String(instanceid)).update({
-                                                                    model,
-                                                                    hostname,
-                                                                    rack,
-                                                                    rackU,
-                                                                    owner,
-                                                                    comment
+                                                                    model: model,
+                                                                    modelId: modelId,
+                                                                    vendor: modelStuff[0],
+                                                                    modelNumber: modelStuff[1],
+                                                                    hostname: hostname,
+                                                                    rack: rack,
+                                                                    rackU: rackU,
+                                                                    rackID: rackId,
+                                                                    owner: owner,
+                                                                    comment: comment
                                                                     //these are the fields in the document to update
 
                                                                 }).then(function () {
@@ -298,7 +310,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                                             }
                                         })
                                     }
-                                })
+                                }, instanceid)
                             }
                         })
                     }
@@ -465,14 +477,17 @@ function replaceInstanceRack(oldRack, newRack, id, callback) {
     })
 }
 
-function checkHostnameExists(hostname, callback) {
-    instanceRef.where("hostname", "==", hostname).get().then(function (querySnapshot) {
-        if (querySnapshot.empty) {
-            callback(false);
-        } else {
-            callback(true);
-        }
+function checkHostnameExists(hostname, id, callback) {
+    instanceRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
+        callback(!docSnaps.empty && id != docSnaps.docs[0].id)
     })
+}
+
+//doublecheck that it works with infinite scroll, and will autorefresh if button is clicked
+//Do this after UI/UX overhaul 
+function combinedRackAndRackUSort(hostname, callback) {
+
+
 }
 
 export {
@@ -488,5 +503,6 @@ export {
     getSuggestedOwners,
     getSuggestedRacks,
     getInstanceAt,
-    validateInstanceForm
+    validateInstanceForm,
+    combinedRackAndRackUSort
 }

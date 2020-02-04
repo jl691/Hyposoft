@@ -269,6 +269,7 @@ function getModelHeightColor(model, callback) {
 
 function checkInstanceFits(position, height, rack, callback, id = null) { //rackU, modelHeight, rack
     console.log("checking for instance fit of height " + height + " for " + rack + position)
+    console.log("This is the instance")
     //create promise array
     //create array of conflicting instances
     let conflicting = [];
@@ -284,9 +285,11 @@ function checkInstanceFits(position, height, rack, callback, id = null) { //rack
             docRefRack.data().instances.forEach(instanceID => {
                 console.log("this rack contains " + instanceID);
                 firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
+                    console.log(docRefInstance)
                     //ignore own self
                     if(instanceID != id){
-                        //find height
+                     
+                        console.log(docRefInstance)
                         modelutils.getModelByModelname(docRefInstance.data().model, result => {
                             if (result) {
                                 getModelHeightColor((docRefInstance.data().model), (height, color) => {
