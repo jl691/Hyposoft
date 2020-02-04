@@ -1,8 +1,7 @@
 import React, { Component } from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { DataTable, Button, Text, Box } from 'grommet'
-import { Book, Trash, Edit } from 'grommet-icons'
-import {  FormEdit, FormTrash } from "grommet-icons"
+import {  FormEdit, FormTrash, FormFolder } from "grommet-icons"
 import * as instutils from '../utils/instanceutils'
 import DetailedInstanceScreen from '../screens/DetailedInstanceScreen'
 
@@ -29,6 +28,7 @@ export default class InstanceTable extends Component {
         {
             property: 'rack',
             header: <Text size='small'>Rack</Text>,
+            align:"end",
             render: datum => <Text size='small'>{datum.rack}</Text>,
 
         },
@@ -81,7 +81,7 @@ export default class InstanceTable extends Component {
                 <React.Fragment>
                     <Link to={`/instances/${data.instance_id}`} >
 
-                        <Button icon={< Book />}
+                        <Button icon={< FormFolder/>}
                             margin="small"
                             onClick={new DetailedInstanceScreen()}
 
@@ -108,7 +108,7 @@ export default class InstanceTable extends Component {
 
                 render: datum => (
                     <Button
-                        icon={<Trash />}
+                        icon={<FormTrash />}
                         margin="small"
 
                         onClick={() => {
@@ -126,7 +126,7 @@ export default class InstanceTable extends Component {
 
                 render: data => (
                     <Button
-                        icon={< Edit />}
+                        icon={< FormEdit />}
                         margin="small"
                         onClick={() => {
 
@@ -217,29 +217,29 @@ export default class InstanceTable extends Component {
         return (
 
             // LIST OF INSTANCES ===============================================
-            <Box direction='row'
-                justify='center'
-                wrap={true}>
-                <Box direction='row' justify='center'>
-                    <Box direction='row' justify='center'>
-                        <Box width='large' direction='column' align='stretch' justify='start'>
-                            <Box style={{
-                                borderRadius: 10,
-                                borderColor: '#EDEDED'
-                            }}
-                                id='containerBox'
-                                direction='row'
-                                background='#FFFFFF'
-                                margin={{ top: 'medium', bottom: 'medium' }}
-                                flex={{
-                                    grow: 0,
-                                    shrink: 0
-                                }}
+            // <Box direction='row'
+            //     justify='center'
+            //     wrap={true}>
+            //     <Box direction='row' justify='center'>
+            //         <Box direction='row' justify='center'>
+            //             <Box width='large' direction='column' align='stretch' justify='start'>
+            //                 <Box style={{
+            //                     borderRadius: 10,
+            //                     borderColor: '#EDEDED'
+            //                 }}
+            //                     id='containerBox'
+            //                     direction='row'
+            //                     background='#FFFFFF'
+            //                     margin={{ top: 'medium', bottom: 'medium' }}
+            //                     flex={{
+            //                         grow: 0,
+            //                         shrink: 0
+            //                     }}
 
-                                pad='small' >
-                                <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column'
-                                    justify='start' alignSelf='stretch' flex overflow="scroll">
-                                    <Box align="center" overflow="scroll">
+            //                     pad='small' >
+            //                     <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column'
+            //                         justify='start' alignSelf='stretch' flex overflow="scroll">
+            //                         <Box align="center" overflow="scroll">
                                         <DataTable
                                             step={5}
                                             onMore={() => {
@@ -253,18 +253,20 @@ export default class InstanceTable extends Component {
                                             pad="17px"
                                             sortable={true}
                                             columns={this.columns}
+                                            size="large"
+                                        
 
                                             data={this.state.instances}
 
 
                                         />
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </Box>
-                    </Box>
-                </Box>
-            </Box>
+            //                         </Box>
+            //                     </Box>
+            //                 </Box>
+            //             </Box>
+            //         </Box>
+            //     </Box>
+            // </Box>
 
 
 
