@@ -8,7 +8,7 @@ function getInstance(callback) {
     //TODO: need to rigorously test combined sort
     //TODO: deecide to make rackU unsortable???
 
-    instanceRef.limit(25).orderBy("rack", "asc").get().then(docSnaps => {
+    instanceRef.limit(25).get().then(docSnaps => {
         const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
         const instances = docSnaps.docs.map(doc => (
             {
@@ -209,6 +209,24 @@ function deleteInstance(instanceid, callback) {
 
                     rackID = id
                     console.log(rackID)
+
+                    instanceRef.doc(instanceid).delete().then(function () {
+                        console.log("Deleting. This is the rackID: " + rackID)
+                        console.log("removing from database instance ID: " + instanceid)
+                        racksRef.doc(String(rackID)).update({
+
+                            instances: firebase.firestore.FieldValue.arrayRemove(instanceid)
+                        })
+                            .then(function () {
+                                console.log("Document successfully deleted!");
+                                callback(instanceid);
+                            })
+
+
+                    }).catch(function (error) {
+                        callback(null);
+                    })
+
                 } else {
                     console.log("no rack for this letter and number")
                     callback(null)
@@ -216,22 +234,6 @@ function deleteInstance(instanceid, callback) {
             })
 
 
-            instanceRef.doc(instanceid).delete().then(function () {
-                console.log("Deleting. This is the rackID: " + rackID)
-                console.log("removing from database instance ID: " + instanceid)
-                racksRef.doc(String(rackID)).update({
-
-                    instances: firebase.firestore.FieldValue.arrayRemove(instanceid)
-                })
-                    .then(function () {
-                        console.log("Document successfully updated!");
-                        callback(instanceid);
-                    })
-
-
-            }).catch(function (error) {
-                callback(null);
-            })
         } else {
             console.log("Trying to delete instance that somehow isn't there??")
             callback(null);
@@ -501,7 +503,7 @@ function combinedSortAsc(callback) {
     //Order by rack, asc
     //Group by rack. Then, for each rack:
     //order by rack num, asc
-   // instanceRef
+    // instanceRef
 
 
 }
