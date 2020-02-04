@@ -1,40 +1,57 @@
 import * as firebaseutils from "./firebaseutils";
 import * as modelutils from "./modelutils";
 
-function getRackAt(start, callback) {
-    firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).startAfter(start).get().then(docSnaps => {
-        const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-        const racks = docSnaps.docs.map(doc => (
-            {
-                id: doc.id,
-                letter: doc.data().letter,
-                number: doc.data().number,
-                height: doc.data().height,
-                instances: (doc.data().instances ? Object.keys(doc.data().instances).length : 0)
-            }));
-        callback(newStart, racks);
-    }).catch(function (error) {
-        callback(null, null);
-    })
-}
+var rackCount = 1;
 
-function getRacks(callback) {
-    firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).get().then(docSnaps => {
-        const startAfter = docSnaps.docs[docSnaps.docs.length - 1]
-        const racks = docSnaps.docs.map(doc => (
+function getRackAt(callback, start = null) {
+    console.log("calling getrackat with start ")
+    let racks = [];
+    if(start){
+        firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).startAfter(start).get().then(docSnaps => {
+            const newStart = docSnaps.docs[docSnaps.docs.length - 1];
+            docSnaps.forEach(doc => {
+                racks.push({
+                    count: rackCount,
+                    id: doc.id,
+                    letter: doc.data().letter,
+                    number: doc.data().number,
+                    height: doc.data().height,
+                    instances: (doc.data().instances ? Object.keys(doc.data().instances).length : 0)
+                });
+                rackCount++;
+            });
+            /*const racks = docSnaps.docs.map(doc => (
                 {
                     id: doc.id,
                     letter: doc.data().letter,
                     number: doc.data().number,
                     height: doc.data().height,
                     instances: (doc.data().instances ? Object.keys(doc.data().instances).length : 0)
-                }
-            )
-        )
-        callback(startAfter, racks);
-    }).catch(function (error) {
-        callback(null, null);
-    })
+                }));*/
+            console.log(racks);
+            callback(newStart, racks);
+        }).catch(function (error) {
+            callback(null, null);
+        })
+    } else {
+        firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).get().then(docSnaps => {
+            const startAfter = docSnaps.docs[docSnaps.docs.length - 1]
+            docSnaps.forEach(doc => {
+                racks.push({
+                    count: rackCount,
+                    id: doc.id,
+                    letter: doc.data().letter,
+                    number: doc.data().number,
+                    height: doc.data().height,
+                    instances: (doc.data().instances ? Object.keys(doc.data().instances).length : 0)
+                });
+                rackCount++;
+            });
+            callback(startAfter, racks);
+        }).catch(function (error) {
+            callback(null, null);
+        })
+    }
 }
 
 function addSingleRack(row, number, height, callback) {
@@ -270,11 +287,14 @@ function checkInstanceFits(position, height, rack, callback, id = null) { //rack
                 firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
                     console.log(docRefInstance)
                     //ignore own self
+                    console.log("instanceid is " + instanceID + " and id is " + id)
                     if(instanceID != id){
                      
                         console.log(docRefInstance)
                         modelutils.getModelByModelname(docRefInstance.data().model, result => {
                             if (result) {
+                                console.log("found a model!")
+                                console.log(result)
                                 getModelHeightColor((docRefInstance.data().model), (height, color) => {
                                     if (height) {
                                         console.log("found the model height! " + height);
@@ -297,9 +317,17 @@ function checkInstanceFits(position, height, rack, callback, id = null) { //rack
                                     }
                                 })
                             } else {
+                                console.log("no models of that model")
                                 callback(null);
                             }
                         })
+                    } else {
+                        instanceCount++;
+                        if (instanceCount === docRefRack.data().instances.length) {
+                            console.log("done! calling back")
+                            console.log("instancecount is " + instanceCount + " and length is " + docRefRack.data().instances.length)
+                            callback(conflicting);
+                        }
                     }
                 });
             });
@@ -466,7 +494,6 @@ function getTotalRackHeight(callback){
 
 export {
     getRackAt,
-    getRacks,
     addSingleRack,
     addRackRange,
     deleteSingleRack,

@@ -5,7 +5,10 @@ import * as modelutils from './modelutils'
 //TODO: admin vs. user privileges
 
 function getInstance(callback) {
-    instanceRef.limit(25).get().then(docSnaps => {
+    //TODO: need to rigorously test combined sort
+    //TODO: deecide to make rackU unsortable???
+    
+    instanceRef.limit(25).orderBy("rackU", "asc").get().then(docSnaps => {
         const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
         const instances = docSnaps.docs.map(doc => (
             {
@@ -56,7 +59,7 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                     var errMessage = "Model does not exist"
                     callback(errMessage)
                 } else {
-                    if (model.trim() === "" || hostname.trim() === "" || rack.trim() === "" || racku == null){
+                    if (model.trim() === "" || hostname.trim() === "" || rack.trim() === "" || racku == null) {
                         callback("Required fields cannot be empty")
                     } else {
                         checkHostnameExists(hostname, null, result => {
@@ -249,7 +252,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                                 callback("Hostname already exists.")
                             } else {
                                 instanceFitsOnRack(rack, rackU, model, stat => {
-
+                                    console.log("returneddddd")
                                     console.log(stat)
                                     //returned an error message
                                     if (stat) {

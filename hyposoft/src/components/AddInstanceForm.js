@@ -79,7 +79,7 @@ export default class AddInstanceForm extends Component {
 
         return (
             <Grommet theme={theme}>
-                <Box height="575px" width="450px" pad="medium" gap="xxsmall" overflow="auto">
+                <Box height="medium" width="medium" pad="medium" gap="xxsmall" overflow="auto">
                     <Heading
                         size="small"
                         margin="small"
