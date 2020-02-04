@@ -71,7 +71,7 @@ class RackUsageReport extends React.Component {
         }
         return (
             <Grommet theme={theme}>
-                <Box width={"medium"} align={"center"}>
+                <Box width={"large"} align={"center"}>
                     <Text>Total usage: {this.state.count}/{this.state.total} - {Math.round(this.state.count/this.state.total*100)}%</Text>
                     <Meter values={
                         [
