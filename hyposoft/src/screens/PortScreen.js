@@ -11,6 +11,7 @@ import * as instanceutils from '../utils/instanceutils'
 import CSVReader from 'react-csv-reader'
 
 import {
+    Anchor,
     Box,
     Button,
     Grommet,
@@ -32,6 +33,7 @@ class PortScreen extends Component {
         this.importModels = this.importModels.bind(this)
         this.importInstances = this.importInstances.bind(this)
         this.addInstancesToDb = this.addInstancesToDb.bind(this)
+        this.showFormatDocumentation = this.showFormatDocumentation.bind(this)
     }
 
     exportModels () {
@@ -141,6 +143,12 @@ class PortScreen extends Component {
         instanceutils.forceModifyInstancesInDb(toBeModified)
     }
 
+    showFormatDocumentation() {
+        this.setState(oldState => ({
+            ...oldState, showFormatDocumentation: true
+        }))
+    }
+
     render() {
         if (this.state.redirect !== '') {
             return <Redirect to={this.state.redirect} />
@@ -190,12 +198,37 @@ class PortScreen extends Component {
                                 shrink: 0
                             }}
                             gap='small'
-                            pad='medium' >
+                            pad={{top: 'medium', left: 'medium', right: 'medium'}} >
                             {content}
+                            <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={this.showFormatDocumentation}>Need documentation for file format?</Anchor>
                         </Box>
                     </Box>
                 </Box>
                 <ToastsContainer store={ToastsStore} lightBackground/>
+                {this.state.showFormatDocumentation && (
+                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState => ({...oldState, showFormatDocumentation: false}))}} onEsc={()=>{this.setState(oldState => ({...oldState, showFormatDocumentation: false}))}}>
+                        <Box pad="medium" gap="small" width="large">
+                            <Heading level={4} margin="none">
+                                Import File Format Documentation
+                            </Heading>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="start" >
+                                <span>
+                                    Files must be CSV files (comma-separated values) for import purposes. Files for model import must contain all 10 headers (columns) that can potentially be specified, although individual values for these columns may be left empty.
+                                    These columns are: <b>vendor, model_number, height, display_color, ethernet_ports, power_ports, cpu, memory, storage,</b> and <b>comments.</b> <br/> <br/>
+                                    The same rules apply for files intended for instance imports. However, the columns for instance import files are: <b>hostname, rack, rack_position, vendor, model_number, owner,</b> and <b>comments.</b> <br/><br/>
+                                    All the restrictions that would apply to values inputted via the web form also apply to values provided in the import files. Any issues will be reported to you, and your import will safely abort.<br/><br/>
+                                    <Anchor href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Click here</Anchor> for more detailed technical information on the file format specification.
+                                </span>
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
                 {this.state.showLoadingDialog && (
                     <Layer position="center" modal>
                         <Box pad="medium" gap="small" width="medium">
