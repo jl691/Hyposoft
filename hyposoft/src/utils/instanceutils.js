@@ -7,7 +7,7 @@ import * as modelutils from './modelutils'
 function getInstance(callback) {
     //TODO: need to rigorously test combined sort
     //TODO: deecide to make rackU unsortable???
-    
+
     instanceRef.limit(25).orderBy("rackU", "asc").get().then(docSnaps => {
         const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
         const instances = docSnaps.docs.map(doc => (
@@ -107,6 +107,31 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
     })
 
 
+}
+
+// rackAsc should be a boolean corresponding to true if rack is ascending
+// rackUAsc should be a boolean corresponding to true if rackU is ascending
+function sortInstancesByRackAndRackU(rackAsc,rackUAsc,callback) {
+    var vendorArray = []
+    var query = instanceRef
+    if (!rackAsc && !rackUAsc) {
+      query = instanceRef.orderBy("rackRow","desc").orderBy("rackNum","desc").orderBy("rackU","desc")
+    } else if (rackAsc && !rackUAsc) {
+      query = instanceRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU","desc")
+    } else if (!rackAsc && rackUAsc) {
+      query = instanceRef.orderBy("rackRow","desc").orderBy("rackNum","desc").orderBy("rackU")
+    } else {
+      query = instanceRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU")
+    }
+    query.get().then( querySnapshot => {
+      querySnapshot.forEach( doc => {
+          vendorArray.push(doc.data())
+      })
+        callback(vendorArray)
+    }).catch(error => {
+        console.log("Error getting documents: ", error)
+        callback(null)
+    })
 }
 
 
@@ -487,7 +512,7 @@ function checkHostnameExists(hostname, id, callback) {
 }
 
 //doublecheck that it works with infinite scroll, and will autorefresh if button is clicked
-//Do this after UI/UX overhaul 
+//Do this after UI/UX overhaul
 function combinedRackAndRackUSort(hostname, callback) {
 
 
@@ -507,5 +532,6 @@ export {
     getSuggestedRacks,
     getInstanceAt,
     validateInstanceForm,
-    combinedRackAndRackUSort
+    combinedRackAndRackUSort,
+    sortInstancesByRackAndRackU
 }
