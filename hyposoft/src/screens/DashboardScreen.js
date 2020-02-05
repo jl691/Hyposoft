@@ -27,7 +27,7 @@ class DashboardScreen extends Component {
         {id: 2, title: 'Instances', desc: 'View and manage instances of models'},
         {id: 3, title: 'Racks', desc: 'View and manage racks'},
         {id: 4, title: 'Import / Export', desc: 'Import and export models and instances'},
-        {id: 5, title: 'Reports', desc: 'Generate rack usage reports'}
+        //{id: 5, title: 'Reports', desc: 'Generate rack usage reports'}
     ]
 
     doAction (action) {

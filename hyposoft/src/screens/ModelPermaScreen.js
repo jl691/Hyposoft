@@ -270,9 +270,11 @@ class UsersScreen extends Component {
                                                     <tr><td><b>Memory</b></td><td style={{textAlign: 'right'}}>{this.state.memory || 'N/A'} GB</td></tr>
                                                     <tr><td><b>Storage</b></td><td style={{textAlign: 'right'}}>{this.state.storage || 'N/A'}</td></tr>
                                                 </table>
+                                                <span style={{maxHeight: 100, overflow: 'scroll'}}>
                                                 {this.state.comment.split('\n').map((i,key) => {
                                                     return <div key={key}>{i}</div>
                                                 })}
+                                                </span>
                                                 <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}} gap='small'>
                                                     <Button primary label="Edit" onClick={this.showEditDialog} />
                                                     <Button label="Delete" onClick={this.showDeleteDialog} />

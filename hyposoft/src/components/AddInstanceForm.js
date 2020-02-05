@@ -79,7 +79,7 @@ export default class AddInstanceForm extends Component {
 
         return (
             <Grommet theme={theme}>
-                <Box height="575px" width="450px" pad="medium" gap="xxsmall" overflow="auto">
+                <Box height="medium" width="medium" pad="medium" gap="xxsmall" overflow="auto">
                     <Heading
                         size="small"
                         margin="small"
@@ -151,7 +151,7 @@ export default class AddInstanceForm extends Component {
                         <FormField name="owner" label="Owner">
 
                             <TextInput name="owner"
-                                placeholder="eg. Jan"
+                                placeholder="Optional"
                                 onChange={e => {
                                     const value = e.target.value
                                     this.setState(oldState => ({...oldState, owner: value}))
@@ -169,7 +169,7 @@ export default class AddInstanceForm extends Component {
 
                         <FormField name="comment" label="Comment">
 
-                            <TextInput name="comment" placeholder="" onChange={this.handleChange}
+                            <TextInput name="comment" placeholder="Optional" onChange={this.handleChange}
                                        value={this.state.comment}/>
                         </FormField>
 

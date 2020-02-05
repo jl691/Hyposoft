@@ -14,13 +14,13 @@ export default class EditInstanceForm extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            //instance_id: "",
             model: this.props.updateModelFromParent,
             hostname: this.props.updateHostnameFromParent,
             rack: this.props.updateRackFromParent,
             rackU: this.props.updateRackUFromParent,
             owner: this.props.updateOwnerFromParent,
-            comment: this.props.updateCommentFromParent
+            comment: this.props.updateCommentFromParent,
+            
 
         }
         this.handleUpdate = this.handleUpdate.bind(this);
@@ -63,24 +63,16 @@ export default class EditInstanceForm extends Component {
                     parseInt(this.state.rackU),
                     this.state.owner,
                     this.state.comment,
+
+                
                     status => {
                         console.log(status)
                         //returned a null in instanceutils updateInstance function. Means no errormessage
                         if (!status) {
                             console.log(this.state)
                             ToastsStore.success('Successfully updated instance!');
-                            //TODO: need to pass info amongst siblings: AddInstanceForm to InstanceScreen to InstanceTable
-                            //this.props.parentCallbackRefresh(true);
                             this.props.parentCallback(true);
-                            /*this.setState({
-                                instance_id: "",
-                                model: "",
-                                hostname: "",
-                                rack: "",
-                                rackU: "",
-                                owner: "",
-                                comment: ""
-                            })*/
+                 
                         }
                         else {
                             ToastsStore.error('Error updating instance: ' + status);

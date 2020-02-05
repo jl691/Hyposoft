@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { Component } from 'react'
 import AppBar from '../components/AppBar'
 import HomeButton from '../components/HomeButton'
 import UserMenu from '../components/UserMenu'
 import ModelSettingsLayer from '../components/ModelSettingsLayer'
+import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import * as modelutils from '../utils/modelutils'
 import * as firebaseutils from '../utils/firebaseutils'
@@ -26,7 +27,7 @@ import { Add, FormEdit, FormTrash } from "grommet-icons"
 import theme from '../theme'
 
 const algoliasearch = require('algoliasearch')
-const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
+const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
 const index = client.initIndex('models')
 
 class ModelsScreen extends React.Component {
@@ -62,6 +63,7 @@ class ModelsScreen extends React.Component {
         memoryFilterMax: 1200,
         memoryFilterStart: 0,
         memoryFilterEnd: 1000,
+        heightFilterMax: 42,
         filters: {
             heightStart: 0, heightEnd: 42,
             ethernetPortsStart: 0, ethernetPortsEnd: 25,
@@ -131,7 +133,7 @@ class ModelsScreen extends React.Component {
         })
     }
 
-    componentDidMount() {
+    componentWillMount() {
         this.init()
     }
 
@@ -225,6 +227,40 @@ class ModelsScreen extends React.Component {
     }
 
     render() {
+        const adminColumns = userutils.isLoggedInUserAdmin() ? [{
+            property: 'dummy',
+            render: datum => (
+            <FormEdit style={{cursor: 'pointer'}} onClick={(e) => {
+                e.persist()
+                e.nativeEvent.stopImmediatePropagation()
+                e.stopPropagation()
+                 this.showEditDialog(datum.itemNo)
+            }} />
+        ),
+            align: 'center',
+            header: <Text size='small'>Edit</Text>,
+            sortable: false
+        },
+        {
+            property: 'dummy2',
+            render: datum => (
+            <FormTrash style={{cursor: 'pointer'}} onClick={(e) => {
+                e.persist()
+                e.nativeEvent.stopImmediatePropagation()
+                e.stopPropagation()
+                this.showDeleteDialog(datum.itemNo)
+            }} />
+        ),
+            align: 'center',
+            header: <Text size='small'>Delete</Text>,
+            sortable: false
+        }] : []
+
+        if (localStorage.getItem('tipShown') !== 'yes') {
+            ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
+            localStorage.setItem('tipShown', 'yes')
+        }
+
         return (
             <Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
@@ -329,34 +365,7 @@ class ModelsScreen extends React.Component {
                                                                     render: datum => <Text size='small'>{datum.memory}</Text>,
                                                                     sortable: true,
                                                                 },
-                                                                {
-                                                                    property: 'dummy',
-                                                                    render: datum => (
-                                                                    <FormEdit style={{cursor: 'pointer'}} onClick={(e) => {
-                                                                        e.persist()
-                                                                        e.nativeEvent.stopImmediatePropagation()
-                                                                        e.stopPropagation()
-                                                                         this.showEditDialog(datum.itemNo)
-                                                                    }} />
-                                                                ),
-                                                                    align: 'center',
-                                                                    header: <Text size='small'>Edit</Text>,
-                                                                    sortable: false
-                                                                },
-                                                                {
-                                                                    property: 'dummy2',
-                                                                    render: datum => (
-                                                                    <FormTrash style={{cursor: 'pointer'}} onClick={(e) => {
-                                                                        e.persist()
-                                                                        e.nativeEvent.stopImmediatePropagation()
-                                                                        e.stopPropagation()
-                                                                        this.showDeleteDialog(datum.itemNo)
-                                                                    }} />
-                                                                ),
-                                                                    align: 'center',
-                                                                    header: <Text size='small'>Delete</Text>,
-                                                                    sortable: false
-                                                                }
+                                                                ...adminColumns
                                                             ]
                                                         }
                                                         data={this.state.models}
@@ -369,7 +378,9 @@ class ModelsScreen extends React.Component {
                                                 </Box>
                                            </Box>
                                        </Box>
-                                       <Button primary icon={<Add />} label="Add model" alignSelf='center' onClick={this.showAddModelDialog} />
+                                       {userutils.isLoggedInUserAdmin() && (
+                                            <Button primary icon={<Add />} label="Add model" alignSelf='center' onClick={this.showAddModelDialog} />
+                                       )}
                                    </Box>
                                    <Box
                                        width='medium'
@@ -393,14 +404,20 @@ class ModelsScreen extends React.Component {
                                                    <RangeSelector
                                                      direction="horizontal"
                                                      min={0}
-                                                     max={42}
+                                                     max={this.state.heightFilterMax}
                                                      step={1}
                                                      round="large"
                                                      values={[this.state.heightFilterStart,this.state.heightFilterEnd]}
                                                      onChange={nextRange => {
+                                                         var newMax = this.state.heightFilterMax
+                                                         if (nextRange[1] === this.state.heightFilterMax) {
+                                                             newMax = parseInt(newMax*1.1)
+                                                         }
+
                                                          this.setState(oldState => ({
                                                              ...oldState, heightFilterStart: nextRange[0],
                                                              heightFilterEnd: nextRange[1],
+                                                             heightFilterMax: newMax,
                                                              filters: {...oldState.filters, heightStart: nextRange[0], heightEnd: nextRange[1]}
                                                          }))
                                                      }}

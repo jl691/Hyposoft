@@ -55,7 +55,7 @@ export default class DeleteInstancePopup extends Component {
                         name="deleteInst"
                     >
 
-                        <Text>Are you sure you want to delete instance <strong>{this.props.deleteIDFromParent}</strong>? This cannot be undone. </Text>
+                        <Text>Are you sure you want to delete instance <strong>{this.props.deleteModel} {this.props.deleteHostname}</strong>? This cannot be undone. </Text>
 
                         <Box direction={"row"}>
                             <Button
