@@ -118,6 +118,31 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
 
 }
 
+// rackAsc should be a boolean corresponding to true if rack is ascending
+// rackUAsc should be a boolean corresponding to true if rackU is ascending
+function sortInstancesByRackAndRackU(rackAsc,rackUAsc,callback) {
+    var vendorArray = []
+    var query = instanceRef
+    if (!rackAsc && !rackUAsc) {
+      query = instanceRef.orderBy("rackRow","desc").orderBy("rackNum","desc").orderBy("rackU","desc")
+    } else if (rackAsc && !rackUAsc) {
+      query = instanceRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU","desc")
+    } else if (!rackAsc && rackUAsc) {
+      query = instanceRef.orderBy("rackRow","desc").orderBy("rackNum","desc").orderBy("rackU")
+    } else {
+      query = instanceRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU")
+    }
+    query.get().then( querySnapshot => {
+      querySnapshot.forEach( doc => {
+          vendorArray.push(doc.data())
+      })
+        callback(vendorArray)
+    }).catch(error => {
+        console.log("Error getting documents: ", error)
+        callback(null)
+    })
+}
+
 
 // This will check if the instance fits on rack (after checking rack exists): fits within in the height of rack, and does not conflict with other instances
 
@@ -506,16 +531,8 @@ function checkHostnameExists(hostname, id, callback) {
 }
 
 //doublecheck that it works with infinite scroll, and will autorefresh if button is clicked
-//Do this after UI/UX overhaul 
-function combinedSortAsc(callback) {
-    //Group by rack
-    //Order by rack, asc
-    //Group by rack. Then, for each rack:
-    //order by rack num, asc
-    // instanceRef
-    //Add a rackRow, rackNum field when update and Add
-    //getInstance: order(RackRow)
-    // 
+//Do this after UI/UX overhaul
+function combinedRackAndRackUSort(hostname, callback) {
 
 
 }
@@ -534,5 +551,6 @@ export {
     getSuggestedRacks,
     getInstanceAt,
     validateInstanceForm,
-    combinedSortAsc
+    combinedRackAndRackUSort,
+    sortInstancesByRackAndRackU
 }
