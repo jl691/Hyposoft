@@ -42,8 +42,8 @@ class InstanceScreen extends Component {
             updateComment: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
-            rackSortChoice: true, //ascending
-            rackUSortChoice: true
+            rackSortChoice: "asc",//by default, will be ascending
+            rackUSortChoice: "asc"
 
         }
 
@@ -118,8 +118,10 @@ class InstanceScreen extends Component {
     }
     handleRadioButtonChange(event) {
         if (event.target.name === "rackSortChoice") {
-            // console.log("start")
+            console.log(event.target.value)
             this.rackSort = event.target.value;
+            this.state.rackSortChoice = event.target.value
+
         }
         else if (event.target.name === "rackUSortChoice") {
             // console.log("start")
@@ -342,33 +344,49 @@ class InstanceScreen extends Component {
                                                                     <RadioButtonGroup
                                                                         label="Rack"
                                                                         name="rackSortChoice"
+                                                                        value={this.state.rackSortChoice}
+
                                                                         options={[
-                                                                            { label: "Ascending", value: true },
-                                                                            { label: "Descending", value: false },
+                                                                            { label: "Ascending", value: "asc" },
+                                                                            { label: "Descending", value: "desc" },
 
                                                                         ]}
 
-                                                                        // let value={this.rackSort}
-                                                                        onClick={this.handleRadioButtonChange}
+                                                                        onClick={e => {
+
+                                                                            this.value = e.target.value
+                                                                            this.setState(oldState => ({ ...oldState, rackSortChoice: this.value }))
+                                                                            this.handleRadioButtonChange(e)
+
+                                                                        }}
 
                                                                     />
 
                                                                 </Box>
                                                                 <Text size='small'><b>Rack U</b></Text>
-                                                                {/* <Box direction="row" justify="start" margin="small">
+                                                                <Box direction="row" justify="start" margin="small">
                                                                     <RadioButtonGroup
-                                                                        label="Rack U"
-                                                                        name="rackU"
+                                                                        label="Rack"
+                                                                        name="rackUSortChoice"
+                                                                        value={this.state.rackUSortChoice}
+
                                                                         options={[
-                                                                            { label: "Ascending", value: "rackUAsc" },
-                                                                            { label: "Descending", value: "rackUDesc" },
+                                                                            { label: "Ascending", value: "asc" },
+                                                                            { label: "Descending", value: "desc" },
 
                                                                         ]}
-                                                                        //value={this.rackSort}
-                                                                        // onChange={this.setState(rackSort= value)}
-                                                                        {...props}
+
+                                                                        onClick={e => {
+
+                                                                            this.value = e.target.value
+                                                                            this.setState(oldState => ({ ...oldState, rackUSortChoice: this.value }))
+                                                                            this.handleRadioButtonChange(e)
+
+                                                                        }}
+
                                                                     />
-                                                                </Box> */}
+
+                                                                </Box>
                                                                 <Box margin="17px" direction="column" justify="center">
                                                                     <Button label={<Text size="small"> Apply sort</Text>} />
                                                                 </Box>
