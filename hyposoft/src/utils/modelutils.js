@@ -228,7 +228,7 @@ function validateImportedModels (data, callback) {
     var errors = []
     var modelsSeen = {}
     for (var i = 0; i < data.length; i++) {
-        const datum = data[i]
+        var datum = data[i]
         var modelAndVendorFound = true
         if (!datum.vendor || String(datum.vendor).trim() === '') {
             errors = [...errors, [i+1, 'Vendor not found']]
@@ -252,6 +252,11 @@ function validateImportedModels (data, callback) {
             errors = [...errors, [i+1, 'Height not found']]
         } else if (isNaN(String(datum.height).trim()) || !Number.isInteger(parseFloat(String(datum.height).trim())) || parseInt(String(datum.height).trim()) <= 0) {
             errors = [...errors, [i+1, 'Height is not a positive integer']]
+        }
+        if (!datum.display_color || String(datum.display_color).trim() === '') {
+            datum.display_color = '#000000'
+        } else if (/^#[0-9A-F]{6}$/i.test(String(datum.display_color))) {
+            errors = [...errors, [i+1, 'Invalid display color']]
         }
         if (datum.ethernet_ports !== null && String(datum.ethernet_ports).trim() !== '' &&
          (isNaN(String(datum.ethernet_ports).trim()) || !Number.isInteger(parseFloat(String(datum.ethernet_ports).trim())) || parseInt(String(datum.ethernet_ports).trim()) < 0)) {
