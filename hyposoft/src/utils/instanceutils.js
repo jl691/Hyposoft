@@ -2,11 +2,7 @@ import { instanceRef, racksRef, modelsRef, usersRef, firebase } from './firebase
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
 
-//TODO: admin vs. user privileges
-
 function getInstance(callback) {
-    //TODO: need to rigorously test combined sort
-    //TODO: deecide to make rackU unsortable???
 
     instanceRef.limit(25).get().then(docSnaps => {
         const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
@@ -22,6 +18,8 @@ function getInstance(callback) {
             }
         ))
         callback(startAfter, instances);
+        console.log(startAfter)
+        console.log(instances)
     }).catch(function (error) {
         callback(null, null)
     })
@@ -49,6 +47,11 @@ function getInstanceAt(start, callback) {
 }
 
 function addInstance(model, hostname, rack, racku, owner, comment, callback) {
+
+    let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
+    let rackRow = splitRackArray[0]
+    let rackNum = parseInt(splitRackArray[1])
+
 
     validateInstanceForm(model, hostname, rack, racku, owner, valid => {
         if (valid) {
@@ -87,6 +90,9 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                                             //This is for rack usage reports
                                             modelNumber: modelNum,
                                             vendor: modelVendor,
+                                            //This is for sorting
+                                            rackRow:rackRow,
+                                            rackNum:rackNum,
                                         }).then(function (docRef) {
                                             racksRef.doc(String(rackID)).update({
                                                 instances: firebase.firestore.FieldValue.arrayUnion(docRef.id)
@@ -296,6 +302,7 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                                                             //get new rack document
                                                             //get instance id
                                                             replaceInstanceRack(oldResult, result, instanceid, result => {
+                                                                console.log(rackRow, rackNum)
                                                                 instanceRef.doc(String(instanceid)).update({
                                                                     model: model,
                                                                     modelId: modelId,
@@ -306,7 +313,9 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
                                                                     rackU: rackU,
                                                                     rackID: rackId,
                                                                     owner: owner,
-                                                                    comment: comment
+                                                                    comment: comment,
+                                                                    rackRow: rackRow,
+                                                                    rackNum: rackNum
                                                                     //these are the fields in the document to update
 
                                                                 }).then(function () {
@@ -504,6 +513,9 @@ function combinedSortAsc(callback) {
     //Group by rack. Then, for each rack:
     //order by rack num, asc
     // instanceRef
+    //Add a rackRow, rackNum field when update and Add
+    //getInstance: order(RackRow)
+    // 
 
 
 }

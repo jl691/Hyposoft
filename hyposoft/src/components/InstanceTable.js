@@ -64,6 +64,7 @@ export default class InstanceTable extends Component {
         instutils.getInstance((newStartAfter, instancesdb) => {
             if (!(newStartAfter === null) && !(instancesdb === null)) {
                 this.startAfter = newStartAfter;
+                console.log(instancesdb)
                 this.defaultInstances = instancesdb;
                 this.setState({ instances: instancesdb, initialLoaded: true })
             }
