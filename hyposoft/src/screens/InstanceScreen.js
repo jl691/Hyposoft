@@ -15,6 +15,7 @@ import FilterBarInstances from '../components/FilterBarInstances'
 import SearchInstances from '../components/SearchInstances'
 import InstanceTable from '../components/InstanceTable'
 import * as userutils from "../utils/userutils";
+import * as instutils from "../utils/instanceutils";
 import { ToastsContainer, ToastsStore } from "react-toasts";
 
 class InstanceScreen extends Component {
@@ -28,6 +29,7 @@ class InstanceScreen extends Component {
         super(props);
         this.state = {
             instances: [],
+            sortedInstances:[],
             popupType: "",
             deleteID: "",
             deleteModel: "",
@@ -53,6 +55,8 @@ class InstanceScreen extends Component {
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleChangeRange = this.handleChangeRange.bind(this);
+        this.handleRadioButtonChange = this.handleRadioButtonChange.bind(this);
+        this.handleCombinedSort = this.handleCombinedSort.bind(this);
 
 
         this.instanceTable = React.createRef();
@@ -76,6 +80,40 @@ class InstanceScreen extends Component {
         } else {
             this.instanceTable.current.restoreDefault();
         }
+    }
+    handleRadioButtonChange(event) {
+        if (event.target.name === "rackSortChoice") {
+            console.log(event.target.value)
+            this.rackSort = event.target.value;
+            this.state.rackSortChoice = event.target.value
+
+        }
+        else if (event.target.name === "rackUSortChoice") {
+            console.log(event.target.value)
+            this.rackUSort = event.target.value;
+            this.state.rackUSortChoice = event.target.value
+        }  
+    }
+
+    handleCombinedSort(event) {
+        let rackBool=this.state.rackSortChoice === "asc"? true : false;
+        let rackUBool=this.state.rackUSortChoice === "asc"? true : false;
+ 
+        instutils.sortInstancesByRackAndRackU(rackBool, rackUBool, sortedInst => {
+            console.log("Will be sorting racks: " + this.state.rackSortChoice)
+            console.log("Will be sorting rackU: " + this.state.rackUSortChoice)
+
+            if(sortedInst){
+                this.state.sortedInstances=sortedInst;
+                console.log(this.state.sortedInstances)
+                this.instanceTable.current.handleRackRackUSort(sortedInst)
+            }
+            else{
+                console.log("Done goofed somehow trying to sort")
+                
+            }
+
+        })
     }
 
     handleCancelRefreshPopupChange() {
@@ -116,18 +154,7 @@ class InstanceScreen extends Component {
         });
 
     }
-    handleRadioButtonChange(event) {
-        if (event.target.name === "rackSortChoice") {
-            console.log(event.target.value)
-            this.rackSort = event.target.value;
-            this.state.rackSortChoice = event.target.value
-
-        }
-        else if (event.target.name === "rackUSortChoice") {
-            // console.log("start")
-            this.rackUSort = event.target.value;
-        }
-    }
+   
 
     addButton() {
         if (userutils.isLoggedInUserAdmin()) {
@@ -388,7 +415,7 @@ class InstanceScreen extends Component {
 
                                                                 </Box>
                                                                 <Box margin="17px" direction="column" justify="center">
-                                                                    <Button label={<Text size="small"> Apply sort</Text>} />
+                                                                    <Button label={<Text size="small"> Apply sort</Text>} onClick={this.handleCombinedSort}/>
                                                                 </Box>
 
 

@@ -58,6 +58,7 @@ export default class InstanceTable extends Component {
 
         this.handleFilter = this.handleFilter.bind(this);
         this.restoreDefault = this.restoreDefault.bind(this);
+        this.handleRackRackUSort = this.handleRackRackUSort.bind(this);
     }
 
     componentDidMount() {
@@ -203,6 +204,11 @@ export default class InstanceTable extends Component {
         })
 
         this.setState({ instances: newInstances })
+    }
+
+    handleRackRackUSort(sortedInstances){
+        this.setState({instances:sortedInstances})
+
     }
 
 

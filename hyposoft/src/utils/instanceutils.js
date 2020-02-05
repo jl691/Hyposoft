@@ -530,12 +530,6 @@ function checkHostnameExists(hostname, id, callback) {
     })
 }
 
-//doublecheck that it works with infinite scroll, and will autorefresh if button is clicked
-//Do this after UI/UX overhaul
-function combinedRackAndRackUSort(hostname, callback) {
-
-
-}
 
 export {
     getInstance,
@@ -551,6 +545,5 @@ export {
     getSuggestedRacks,
     getInstanceAt,
     validateInstanceForm,
-    combinedRackAndRackUSort,
     sortInstancesByRackAndRackU
 }
