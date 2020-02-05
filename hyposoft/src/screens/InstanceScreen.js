@@ -15,6 +15,7 @@ import FilterBarInstances from '../components/FilterBarInstances'
 import SearchInstances from '../components/SearchInstances'
 import InstanceTable from '../components/InstanceTable'
 import * as userutils from "../utils/userutils";
+import * as instutils from "../utils/instanceutils";
 import { ToastsContainer, ToastsStore } from "react-toasts";
 
 const algoliasearch = require('algoliasearch')
@@ -32,6 +33,7 @@ class InstanceScreen extends Component {
         super(props);
         this.state = {
             instances: [],
+            sortedInstances:[],
             popupType: "",
             deleteID: "",
             deleteModel: "",
@@ -46,6 +48,8 @@ class InstanceScreen extends Component {
             updateComment: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
+            rackSortChoice: "asc",//by default, will be ascending
+            rackUSortChoice: "asc",
             searchQuery: ""
 
         }
@@ -56,6 +60,8 @@ class InstanceScreen extends Component {
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleChangeRange = this.handleChangeRange.bind(this);
+        this.handleRadioButtonChange = this.handleRadioButtonChange.bind(this);
+        this.handleCombinedSort = this.handleCombinedSort.bind(this);
         this.handleSearch = this.handleSearch.bind(this);
 
 
@@ -80,6 +86,40 @@ class InstanceScreen extends Component {
         } else {
             this.instanceTable.current.restoreDefault();
         }
+    }
+    handleRadioButtonChange(event) {
+        if (event.target.name === "rackSortChoice") {
+            console.log(event.target.value)
+            this.rackSort = event.target.value;
+            this.state.rackSortChoice = event.target.value
+
+        }
+        else if (event.target.name === "rackUSortChoice") {
+            console.log(event.target.value)
+            this.rackUSort = event.target.value;
+            this.state.rackUSortChoice = event.target.value
+        }
+    }
+
+    handleCombinedSort(event) {
+        let rackBool=this.state.rackSortChoice === "asc"? true : false;
+        let rackUBool=this.state.rackUSortChoice === "asc"? true : false;
+
+        instutils.sortInstancesByRackAndRackU(rackBool, rackUBool, sortedInst => {
+            console.log("Will be sorting racks: " + this.state.rackSortChoice)
+            console.log("Will be sorting rackU: " + this.state.rackUSortChoice)
+
+            if(sortedInst){
+                this.state.sortedInstances=sortedInst;
+                console.log(this.state.sortedInstances)
+                this.instanceTable.current.handleRackRackUSort(sortedInst)
+            }
+            else{
+                console.log("Done goofed somehow trying to sort")
+
+            }
+
+        })
     }
 
     handleCancelRefreshPopupChange() {
@@ -120,6 +160,7 @@ class InstanceScreen extends Component {
         });
 
     }
+
 
     addButton() {
         if (userutils.isLoggedInUserAdmin()) {
@@ -341,7 +382,9 @@ class InstanceScreen extends Component {
                                                         </Stack>
                                                     </Box>
                                                 </Box>
-                                                {/* This box is for combined sort on Rack and Rack U */}
+
+
+                                                {/* Box for Combined Rack and Rack U sort */}
                                                 <Box style={{
                                                     borderRadius: 10,
                                                     borderColor: '#EDEDED'
@@ -361,47 +404,68 @@ class InstanceScreen extends Component {
                                                                 <Box direction="row" justify="start" margin="small">
                                                                     <RadioButtonGroup
                                                                         label="Rack"
-                                                                        name="rack"
+                                                                        name="rackSortChoice"
+                                                                        value={this.state.rackSortChoice}
+
                                                                         options={[
-                                                                            { label: "Ascending", value: "rackAsc" },
-                                                                            { label: "Descending", value: "rackDesc" },
+                                                                            { label: "Ascending", value: "asc" },
+                                                                            { label: "Descending", value: "desc" },
 
                                                                         ]}
-                                                                        //value={this.rackSort}
-                                                                        // onChange={this.setState(rackSort= value)}
-                                                                        {...props}
+
+                                                                        onClick={e => {
+
+                                                                            this.value = e.target.value
+                                                                            this.setState(oldState => ({ ...oldState, rackSortChoice: this.value }))
+                                                                            this.handleRadioButtonChange(e)
+
+                                                                        }}
+
                                                                     />
 
                                                                 </Box>
                                                                 <Text size='small'><b>Rack U</b></Text>
                                                                 <Box direction="row" justify="start" margin="small">
                                                                     <RadioButtonGroup
-                                                                        label="Rack U"
-                                                                        name="rackU"
+                                                                        label="Rack"
+                                                                        name="rackUSortChoice"
+                                                                        value={this.state.rackUSortChoice}
+
                                                                         options={[
-                                                                            { label: "Ascending", value: "rackUAsc" },
-                                                                            { label: "Descending", value: "rackUDesc" },
+                                                                            { label: "Ascending", value: "asc" },
+                                                                            { label: "Descending", value: "desc" },
 
                                                                         ]}
-                                                                        //value={this.rackSort}
-                                                                        // onChange={this.setState(rackSort= value)}
-                                                                        {...props}
+
+                                                                        onClick={e => {
+
+                                                                            this.value = e.target.value
+                                                                            this.setState(oldState => ({ ...oldState, rackUSortChoice: this.value }))
+                                                                            this.handleRadioButtonChange(e)
+
+                                                                        }}
+
                                                                     />
+
                                                                 </Box>
-                                                                <Box margin="17px"  direction="column" justify="center">
-                                                                    <Button label={<Text size="small"> Apply sort</Text>} />
+                                                                <Box margin="17px" direction="column" justify="center">
+                                                                    <Button label={<Text size="small"> Apply sort</Text>} onClick={this.handleCombinedSort}/>
                                                                 </Box>
 
 
                                                             </Box>
 
                                                         </Stack>
+
+
+
                                                     </Box>
                                                 </Box>
                                                 {/* Button to Add an Instance: */}
                                                 <Box margin="17px" align="center" direction="column" justify="center">
                                                     {this.addButton()}
                                                 </Box>
+
                                             </Box>
                                             {/* END OFF FILTER BAR ================= */}
 

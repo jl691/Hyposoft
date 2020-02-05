@@ -16,12 +16,14 @@ export default class InstanceTable extends Component {
         {
             property: 'model',
             header: <Text size='small'>Model</Text>,
+            align:"start",
             render: datum => <Text size='small'>{datum.model}</Text>,
 
         },
         {
             property: 'hostname',
             header: <Text size='small'>Hostname</Text>,
+            align:"start",
             render: datum => <Text size='small'>{datum.hostname}</Text>,
             primary: true
         },
@@ -56,12 +58,14 @@ export default class InstanceTable extends Component {
 
         this.handleFilter = this.handleFilter.bind(this);
         this.restoreDefault = this.restoreDefault.bind(this);
+        this.handleRackRackUSort = this.handleRackRackUSort.bind(this);
     }
 
     componentDidMount() {
         instutils.getInstance((newStartAfter, instancesdb) => {
             if (!(newStartAfter === null) && !(instancesdb === null)) {
                 this.startAfter = newStartAfter;
+                console.log(instancesdb)
                 this.defaultInstances = instancesdb;
                 this.setState({ instances: instancesdb, initialLoaded: true })
             }
@@ -200,6 +204,11 @@ export default class InstanceTable extends Component {
         })
 
         this.setState({ instances: newInstances })
+    }
+
+    handleRackRackUSort(sortedInstances){
+        this.setState({instances:sortedInstances})
+
     }
 
 
