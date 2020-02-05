@@ -359,4 +359,4 @@ function getAllModels (callback) {
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
 getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel,
 getModelsForExport, escapeStringForCSV, validateImportedModels, addModelsFromImport, getVendorAndNumberFromModel,
-getModelIdFromModelName, getAllModels }
+getModelIdFromModelName, getAllModels, combineVendorAndModelNumber }

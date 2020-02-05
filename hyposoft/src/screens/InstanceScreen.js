@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
 
-import { Text, Button, Layer, Grommet, Heading, Box, TextInput, RadioButtonGroup, Stack } from 'grommet'
+import { Text, Button, Layer, Form, Grommet, Heading, Box, TextInput, RadioButtonGroup, Stack } from 'grommet'
 import { Add } from 'grommet-icons'
 import AddInstanceForm from '../components/AddInstanceForm'
 import DeleteInstancePopup from '../components/DeleteInstancePopup'
@@ -161,24 +161,11 @@ class InstanceScreen extends Component {
 
     }
 
-
-    addButton() {
-        if (userutils.isLoggedInUserAdmin()) {
-            return (<Button
-                icon={<Add />}
-                label={
-                    <Text>
-                        Add Instance
-                    </Text>
-                }
-
-                onClick={() => this.setState({ popupType: "Add" })}
-            />);
-        }
-    }
-
     componentDidMount() {
-        ToastsStore.info("Tip: Click on a column name to sort by it", 10000)
+        if (localStorage.getItem('tipShown') !== 'yes') {
+            ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
+            localStorage.setItem('tipShown', 'yes')
+        }
     }
 
     handleSearch () {
@@ -295,9 +282,23 @@ class InstanceScreen extends Component {
                                         justify='center'
                                         wrap={true}
                                         overflow="scroll">
-                                        <Box direction='row' justify='center' overflow="scroll">
-                                            <Box direction='row' justify='center' overflow="scroll">
-                                                <Box width='large' direction='column' align='stretch' justify='start' overflow="scroll">
+                                        <Box direction='row' justify='center'>
+                                            <Box direction='row' justify='center'>
+                                                <Box width='large' direction='column' align='stretch' justify='start'>
+                                                    <Box margin={{top: 'medium'}}>
+                                                        <Form onSubmit={() => this.handleSearch()}>
+                                                            <TextInput style={styles.TIStyle}
+                                                                placeholder="Search for instances (type your query and press enter)"
+                                                                type='search'
+                                                                onChange={e => {
+                                                                    const value = e.target.value
+                                                                    this.setState(oldState => ({...oldState, searchQuery: value}))
+                                                                }}
+                                                                value={this.state.searchQuery}
+                                                                title='Search'
+                                                                />
+                                                         </Form>
+                                                    </Box>
                                                     <Box style={{
                                                         borderRadius: 10,
                                                         borderColor: '#EDEDED'
@@ -321,11 +322,15 @@ class InstanceScreen extends Component {
                                                                     UpdateButtonCallbackFromParent={this.handleUpdateButton}
                                                                     searchResults={this.state.searchResults}
                                                                     ref={this.instanceTable}
+                                                                    parent={this}
 
                                                                 />
                                                             </Box>
                                                         </Box>
                                                     </Box>
+                                                    {userutils.isLoggedInUserAdmin() && (
+                                                         <Button primary icon={<Add />} label="Add Instance" alignSelf='center' onClick={() => this.setState({ popupType: "Add" })} />
+                                                    )}
                                                 </Box>
                                             </Box>
                                         </Box>
@@ -337,27 +342,6 @@ class InstanceScreen extends Component {
                                                 align='center'
                                                 margin={{ left: 'medium', right: 'medium' }}
                                                 justify='start' >
-                                                {/* This box below is for Search */}
-                                                <Box style={{
-                                                    borderRadius: 10,
-                                                    borderColor: '#EDEDED'
-                                                }}
-                                                    direction='row'
-                                                    alignSelf='stretch'
-                                                    background='#FFFFFF'
-                                                    width={'medium'}
-                                                    margin={{ top: 'medium', left: 'medium', right: 'medium' }}
-                                                    pad='small' >
-                                                    <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
-
-
-
-                                                        <Text size='small'><b>Search Instances</b></Text>
-                                                        <Stack margin={{ top: 'small' }}>
-                                                            <SearchInstances parent={this} />
-                                                        </Stack>
-                                                    </Box>
-                                                </Box>
                                                 {/* This box below is for range of racks */}
                                                 <Box style={{
                                                     borderRadius: 10,
@@ -372,11 +356,11 @@ class InstanceScreen extends Component {
                                                     <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
                                                         <Text size='small'><b>Filter By Rack Range</b></Text>
                                                         <Stack margin={{ top: 'small' }}>
-                                                            <Box gap='small' direction="column" margin='small'>
+                                                            <Box gap='small' direction="column" margin='none' align='center'>
 
-                                                                <TextInput name="rangeNumberStart" placeholder="eg. B1" size="xsmall" onChange={this.handleChangeRange} />
-                                                                to
-                                                                <TextInput name="rangeNumberEnd" placeholder="eg. C21" size="xsmall" onChange={this.handleChangeRange} />
+                                                                <TextInput style={styles.TIStyle2} name="rangeNumberStart" placeholder="eg. B1" size="xsmall" onChange={this.handleChangeRange} />
+                                                                <span>to</span>
+                                                                <TextInput style={styles.TIStyle2} name="rangeNumberEnd" placeholder="eg. C21" size="xsmall" onChange={this.handleChangeRange} />
                                                             </Box>
 
                                                         </Stack>
@@ -394,10 +378,9 @@ class InstanceScreen extends Component {
                                                     background='#FFFFFF'
                                                     width={'medium'}
                                                     margin={{ top: 'medium', left: 'medium', right: 'medium' }}
-                                                    pad='small' >
+                                                    pad='xxsmall' >
                                                     <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
-                                                        <Text size='small'><b>Combined Sort</b></Text>
-                                                        <Stack margin={{ top: 'small' }}>
+                                                        <Stack >
                                                             <Box gap='small' direction="column" margin='small'>
                                                                 {/* Put sort buttons here */}
                                                                 <Text size='small'><b>Rack</b></Text>
@@ -448,8 +431,8 @@ class InstanceScreen extends Component {
                                                                     />
 
                                                                 </Box>
-                                                                <Box margin="17px" direction="column" justify="center">
-                                                                    <Button label={<Text size="small"> Apply sort</Text>} onClick={this.handleCombinedSort}/>
+                                                                <Box direction="column" justify="center" margin={{top: 'small'}}>
+                                                                    <Button label={<Text size="small"> Apply</Text>} onClick={this.handleCombinedSort}/>
                                                                 </Box>
 
 
@@ -460,10 +443,6 @@ class InstanceScreen extends Component {
 
 
                                                     </Box>
-                                                </Box>
-                                                {/* Button to Add an Instance: */}
-                                                <Box margin="17px" align="center" direction="column" justify="center">
-                                                    {this.addButton()}
                                                 </Box>
 
                                             </Box>
@@ -491,6 +470,15 @@ class InstanceScreen extends Component {
     }
 }
 
-
+const styles = {
+    TIStyle: {
+        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#FFFFFF',
+        width: '100%', paddingLeft: 20, fontWeight: 'normal'
+    },
+    TIStyle2: {
+        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
+        width: '100%', paddingLeft: 20, fontWeight: 'normal'
+    }
+}
 
 export default InstanceScreen

@@ -197,6 +197,9 @@ class UsersScreen extends Component {
                                                                 })
                                                             }
                                                         }}
+                                                        onClickRow={({datum}) => {
+                                                            this.props.history.push('/instances/'+datum.id)
+                                                        }}
                                                         columns={
                                                             [
                                                                 {

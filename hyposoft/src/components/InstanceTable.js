@@ -73,31 +73,36 @@ export default class InstanceTable extends Component {
         this.adminButtons();
 
 
-        this.columns.push({
-            property: "details",
-            header: <Text size='small'>Details</Text>,
-            sortable: false,
-
-            render: data => (
-
-
-                //need to pass down instance_id to know which page to display to detailedInstanceScreen
-                <React.Fragment>
-                    <Link to={`/instances/${data.instance_id}`} >
-
-                        <Button icon={< FormFolder/>}
-                            margin="small"
-                            onClick={new DetailedInstanceScreen()}
-
-                        />
-
-                        {/* this.props.history.push */}
-                    </Link>
-
-                </React.Fragment>
-            )
-
-        })
+        // this.columns.push({
+        //     property: "details",
+        //     header: <Text size='small'>Details</Text>,
+        //     sortable: false,
+        //
+        //     render: data => (
+        //
+        //
+        //         //need to pass down instance_id to know which page to display to detailedInstanceScreen
+        //         <React.Fragment>
+        //             <Link to={`/instances/${data.instance_id}`} >
+        //
+        //                 <Button icon={< FormFolder/>}
+        //                     margin="none"
+        //                     onClick={e => {
+        //                         e.persist()
+        //                         e.nativeEvent.stopImmediatePropagation()
+        //                         e.stopPropagation()
+        //                         new DetailedInstanceScreen()
+        //                     }}
+        //
+        //                 />
+        //
+        //                 {/* this.props.history.push */}
+        //             </Link>
+        //
+        //         </React.Fragment>
+        //     )
+        //
+        // })
 
     }
 
@@ -111,15 +116,14 @@ export default class InstanceTable extends Component {
                 sortable: false,
 
                 render: datum => (
-                    <Button
-                        icon={<FormTrash />}
-                        margin="small"
-
-                        onClick={() => {
+                    <FormTrash
+                        style={{cursor: 'pointer'}}
+                        onClick={(e) => {
                             console.log(datum)
+                            e.persist()
+                            e.nativeEvent.stopImmediatePropagation()
+                            e.stopPropagation()
                             this.props.deleteButtonCallbackFromParent(datum)
-
-
                         }} />
                 )
             });
@@ -129,11 +133,12 @@ export default class InstanceTable extends Component {
                 sortable: false,
 
                 render: data => (
-                    <Button
-                        icon={< FormEdit />}
-                        margin="small"
-                        onClick={() => {
-
+                    <FormEdit
+                        style={{cursor: 'pointer'}}
+                        onClick={(e) => {
+                            e.persist()
+                            e.nativeEvent.stopImmediatePropagation()
+                            e.stopPropagation()
                             this.props.UpdateButtonCallbackFromParent(
                                 data.instance_id,
                                 data.model,
@@ -198,8 +203,15 @@ export default class InstanceTable extends Component {
                 newInstances.push(instance);
             }*/
             if ((rackRowTemp === rackRowStart && rackNumTemp >= rackNumStart) || (rackRowTemp === rackRowEnd && rackNumTemp <= rackNumEnd) || (rackRowTemp.charCodeAt(0) > rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) < rackRowEnd.charCodeAt(0))) {
-                console.log("found a match!")
-                newInstances.push(instance);
+                if (rackRowStart === rackRowEnd && rackRowEnd === rackRowTemp) {
+                    if (rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd) {
+                        console.log("found a match!")
+                        newInstances.push(instance);
+                    }
+                } else {
+                    console.log("found a match!")
+                    newInstances.push(instance);
+                }
             }
         })
 
@@ -258,11 +270,12 @@ export default class InstanceTable extends Component {
                                                     });
                                                 }
                                             }}
-                                            pad="17px"
                                             sortable={true}
                                             columns={this.columns}
-                                            size="large"
-
+                                            size="medium"
+                                            onClickRow={({datum}) => {
+                                                this.props.parent.props.history.push('/instances/'+datum.instance_id)
+                                            }}
 
                                             data={this.props.searchResults||this.state.instances}
 
