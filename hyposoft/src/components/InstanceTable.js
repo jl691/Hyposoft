@@ -114,6 +114,7 @@ export default class InstanceTable extends Component {
                 property: "delete",
                 header: <Text size='small'>Delete</Text>,
                 sortable: false,
+                align: 'center',
 
                 render: datum => (
                     <FormTrash
@@ -131,7 +132,7 @@ export default class InstanceTable extends Component {
                 property: "update",
                 header: <Text size='small'>Update</Text>,
                 sortable: false,
-
+                align: 'center',
                 render: data => (
                     <FormEdit
                         style={{cursor: 'pointer'}}

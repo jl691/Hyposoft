@@ -297,7 +297,7 @@ class RackView extends React.Component {
                 render: datum => (<View
                     onClick={() => {
                         this.props.history.push({
-                            pathname: '/rackdiagram',
+                            pathname: '/rackelevation',
                             state: {
                                 id: datum.id
                             }
@@ -346,7 +346,7 @@ class RackView extends React.Component {
         } else {
             //we gucci
             this.props.history.push({
-                pathname: '/rackdiagram',
+                pathname: '/rackelevation',
                 state: {
                     letterStart: this.state.letterStart,
                     letterEnd: this.state.letterEnd,
@@ -368,7 +368,7 @@ class RackView extends React.Component {
             ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
             localStorage.setItem('tipShown', 'yes')
         }
-        
+
         if (popupType === 'Delete') {
             let deleteID = this.state.deleteID;
             popup = (
@@ -457,20 +457,6 @@ class RackView extends React.Component {
                 </Layer>
             )
         }
-
-        if (!this.state.initialLoaded) {
-            return (<Grommet theme={theme} full className='fade'>
-                <Box fill background='light-2'>
-                    <AppBar>
-                        <HomeButton alignSelf='start' this={this}/>
-                        <Heading alignSelf='center' level='4' margin={{
-                            top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
-                        }}>Racks</Heading>
-                        <UserMenu alignSelf='end' this={this}/>
-                    </AppBar>
-                    <Text>Please wait...</Text></Box></Grommet>);
-        }
-
         return (
             <Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
@@ -502,9 +488,10 @@ class RackView extends React.Component {
                                          pad='small'>
                                         <Box margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
                                              direction='column'
-                                             justify='start' alignSelf='stretch' height={"810px"} flex>
+                                             justify='start' alignSelf='stretch' flex>
                                             <Box align="center">
                                                 <DataTable step={25}
+                                                size="medium"
                                                            onMore={() => {
                                                                if (this.startAfter) {
                                                                    rackutils.getRackAt((newStartAfter, newRacks) => {
@@ -513,7 +500,7 @@ class RackView extends React.Component {
                                                                    }, this.startAfter);
                                                                }
                                                            }}
-                                                           columns={this.generateColumns()} data={this.state.racks} size={"large"}/>
+                                                           columns={this.generateColumns()} data={this.state.racks}/>
                                             </Box>
                                         </Box>
                                     </Box>
@@ -587,7 +574,7 @@ class RackView extends React.Component {
                                                                        {this.RackDeleteButton(datum)}
                                                                        <Button icon={<View/>} label="View" onClick={() => {
                                                                            this.props.history.push({
-                                                                               pathname: '/rackdiagram',
+                                                                               pathname: '/rackelevation',
                                                                                state: {
                                                                                    id: datum.id
                                                                                }

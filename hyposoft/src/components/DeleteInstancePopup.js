@@ -45,27 +45,26 @@ export default class DeleteInstancePopup extends Component {
 
         return (
             <Grommet theme={theme}>
-                <Box height="250px" width="medium" pad="medium" gap="xxsmall" overflow="auto" margin="medium">
+                <Box width="medium" gap="xxsmall" overflow="auto" margin="medium">
                     <Heading
                         size="small"
-                        margin="small"
+                        margin="none"
                         level="4"
                     >Delete Instance</Heading>
                     <Form onSubmit={this.handleDelete}
                         name="deleteInst"
                     >
 
-                        <Text>Are you sure you want to delete instance <strong>{this.props.deleteModel} {this.props.deleteHostname}</strong>? This cannot be undone. </Text>
+                        <p>Are you sure you want to delete instance <strong>{this.props.deleteModel} {this.props.deleteHostname}</strong>? This cannot be undone. </p>
 
                         <Box direction={"row"}>
                             <Button
                                 alignSelf="center"
-                                margin="small"
                                 type="submit"
                                 primary label="Yes"
                             />
                             <Button
-                                margin="small"
+                                margin={{left: 'small'}}
                                 label="Cancel"
                                 onClick={() => this.props.cancelCallback()}
                             />
@@ -86,8 +85,3 @@ export default class DeleteInstancePopup extends Component {
     }
 
 }
-
-
-
-
-
