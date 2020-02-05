@@ -31,12 +31,15 @@ function createModel(id, vendor, modelNumber, height, displayColor, ethernetPort
 
 function modifyModel(id, vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment, callback) {
     var model = packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)
-    firebaseutils.modelsRef.doc(id).update(model).then(() => {
-        callback(model, id)
-    })
 
     // Now update all instances of this model just in case the modelNumber or vendor changed
     firebaseutils.instanceRef.where('modelId', '==', id).get().then(qs => {
+        if (!qs.empty) {
+            delete model.height // Don't change height if instances exist
+        }
+        firebaseutils.modelsRef.doc(id).update(model).then(() => {
+            callback(model, id)
+        })
         qs.forEach(doc => {
             doc.ref.update({
                 vendor: vendor,
@@ -51,14 +54,14 @@ function deleteModel(modelId, callback) {
     firebaseutils.modelsRef.doc(modelId).delete().then(() => callback())
 }
 
-function getModel(vendor, modelNumber, callback) {
+function getModel(vendor, modelNumber, callback, extra_data=null) {
     firebaseutils.modelsRef.where('vendor', '==', vendor)
     .where('modelNumber', '==', modelNumber)
     .get().then(qs => {
         if (!qs.empty) {
-            callback({...qs.docs[0].data(), id: qs.docs[0].id})
+            callback({...qs.docs[0].data(), id: qs.docs[0].id, found: true, extra_data: extra_data})
         } else {
-            callback(null)
+            callback({found: false, vendor: vendor, modelNumber: modelNumber, extra_data: extra_data})
         }
     })
 }
@@ -187,6 +190,143 @@ function getInstancesByModel(model, startAfter, callback) {
     })
 }
 
+function escapeStringForCSV(string) {
+    if (!string || string.trim() === '') {
+        return ''
+    } else {
+        return '"'+string.split('"').join('""')+'"'
+    }
+}
+
+function getModelsForExport(callback) {
+    firebaseutils.modelsRef.orderBy('vendor').get().then(qs => {
+        var rows = [
+            ["vendor", "model_number", "height", "display_color", "ethernet_ports", "power_ports", "cpu", "memory", "storage", "comment"]
+        ]
+
+        for (var i = 0; i < qs.size; i++) {
+            rows = [...rows, [
+                escapeStringForCSV(qs.docs[i].data().vendor),
+                escapeStringForCSV(qs.docs[i].data().modelNumber),
+                ''+qs.docs[i].data().height,
+                ''+qs.docs[i].data().displayColor,
+                ''+(qs.docs[i].data().ethernetPorts || ''),
+                ''+(qs.docs[i].data().powerPorts || ''),
+                escapeStringForCSV(qs.docs[i].data().cpu),
+                ''+(qs.docs[i].data().memory || ''),
+                escapeStringForCSV(qs.docs[i].data().storage),
+                escapeStringForCSV(qs.docs[i].data().comment)
+            ]]
+            if (rows.length === qs.size+1) {
+                callback(rows)
+            }
+        }
+    })
+}
+
+function validateImportedModels (data, callback) {
+    var errors = []
+    var modelsSeen = {}
+    for (var i = 0; i < data.length; i++) {
+        const datum = data[i]
+        var modelAndVendorFound = true
+        if (!datum.vendor || String(datum.vendor).trim() === '') {
+            errors = [...errors, [i+1, 'Vendor not found']]
+            modelAndVendorFound = false
+        }
+        if (!datum.model_number || String(datum.model_number).trim() === '') {
+            errors = [...errors, [i+1, 'Model number not found']]
+            modelAndVendorFound = false
+        }
+        if (modelAndVendorFound) {
+            if (!(datum.vendor in modelsSeen)) {
+                modelsSeen[datum.vendor] = {}
+            }
+            if (datum.model_number in modelsSeen[datum.vendor]) {
+                errors = [...errors, [i+1, 'Duplicate row (this model already exists on row '+modelsSeen[datum.vendor][datum.model_number]+')']]
+            } else {
+                modelsSeen[datum.vendor][datum.model_number] = i+1
+            }
+        }
+        if (!datum.height || String(datum.height).trim() === '') {
+            errors = [...errors, [i+1, 'Height not found']]
+        } else if (isNaN(String(datum.height).trim()) || !Number.isInteger(parseFloat(String(datum.height).trim())) || parseInt(String(datum.height).trim()) <= 0) {
+            errors = [...errors, [i+1, 'Height is not a positive integer']]
+        }
+        if (datum.ethernet_ports !== null && String(datum.ethernet_ports).trim() !== '' &&
+         (isNaN(String(datum.ethernet_ports).trim()) || !Number.isInteger(parseFloat(String(datum.ethernet_ports).trim())) || parseInt(String(datum.ethernet_ports).trim()) < 0)) {
+             errors = [...errors, [i+1, 'Ethernet ports is not a non-negative integer']]
+        }
+        if (datum.power_ports !== null && String(datum.power_ports).trim() !== '' &&
+         (isNaN(String(datum.power_ports).trim()) || !Number.isInteger(parseFloat(String(datum.power_ports).trim())) || parseInt(String(datum.power_ports).trim()) < 0)) {
+             errors = [...errors, [i+1, 'Power ports is not a non-negative integer']]
+        }
+        if (datum.memory !== null && String(datum.memory).trim() !== '' &&
+         (isNaN(String(datum.memory).trim()) || !Number.isInteger(parseFloat(String(datum.memory).trim())) || parseInt(String(datum.memory).trim()) < 0)) {
+             errors = [...errors, [i+1, 'Memory is not a non-negative integer']]
+        }
+    }
+    callback(errors)
+}
+
+function addModelsFromImport (models, force, callback) {
+    var modelsProcessed = 0
+    var modelsPending = []
+    var modelsPendingInfo = []
+    var modelIndices = {}
+    for (var i = 0; i < models.length; i++) {
+        const model = models[i]
+        var ignoredModels = 0
+        var modifiedModels = 0
+        var createdModels = 0
+
+        if (!modelIndices[''+model.vendor])
+            modelIndices[''+model.vendor] = {}
+        modelIndices[''+model.vendor][''+model.model_number] = i
+        getModel(''+model.vendor, ''+model.model_number, modelFromDb => {
+            const model = models[modelIndices[''+modelFromDb.vendor][''+modelFromDb.modelNumber]]
+            const height = parseInt(model.height)
+            const ethernet_ports = (model.ethernet_ports !== null ? parseInt(model.ethernet_ports) : null)
+            const power_ports = (model.power_ports !== null ? parseInt(model.power_ports) : null)
+            const memory = (model.memory !== null ? parseInt(model.memory) : null)
+            const storage = (model.storage !== null ? model.storage.trim() : "")
+            const cpu = (model.cpu !== null ? model.cpu.trim() : "")
+            const comment = (model.comment !== null ? model.comment.trim() : "")
+
+            const modelMemory = (modelFromDb.memory > 0 ? modelFromDb.memory : null)
+            const ethernetPorts = (modelFromDb.ethernetPorts > 0 ? modelFromDb.ethernetPorts : null)
+            const powerPorts = (modelFromDb.powerPorts > 0 ? modelFromDb.powerPorts : null)
+            const modelStorage = (modelFromDb.storage !== undefined ? modelFromDb.storage.trim() : "")
+            const modelCpu = (modelFromDb.cpu !== undefined ? modelFromDb.cpu.trim() : "")
+            const modelComment = (modelFromDb.comment !== undefined ? modelFromDb.comment.trim() : "")
+
+            if (!modelFromDb.found) {
+                createModel(null, ''+model.vendor, ''+model.model_number, height, ''+model.display_color, ethernet_ports, power_ports, cpu, memory, storage, comment, () => {})
+                createdModels += 1
+            } else if (!(modelFromDb.height == height && modelFromDb.displayColor == model.display_color
+                    && ethernetPorts == ethernet_ports && powerPorts == power_ports
+                    &&  cpu == modelCpu && storage == modelStorage && modelMemory == memory
+                    && comment == modelComment)) {
+                modifiedModels += 1
+                if (force) {
+                    // Modify model
+                    modifyModel(modelFromDb.id, ''+model.vendor, ''+model.model_number, height, ''+model.display_color, ethernet_ports, power_ports, cpu, memory, storage, comment, () => {})
+                } else {
+                    modelsPending = [...modelsPending, model]
+                    modelsPendingInfo = [...modelsPendingInfo, [modelIndices[''+modelFromDb.vendor][''+modelFromDb.modelNumber]+1, model.vendor+' '+model.model_number]]
+                }
+            } else {
+                ignoredModels += 1
+            }
+
+            modelsProcessed++
+            if (modelsProcessed === models.length) {
+                callback({modelsPending, modelsPendingInfo, createdModels, ignoredModels, modifiedModels})
+            }
+        })
+    }
+}
+
 function getVendorAndNumberFromModel(modelName, callback) {
     firebaseutils.modelsRef.where('modelName','==',modelName).get()
     .then( docSnaps => {
@@ -202,5 +342,21 @@ function getVendorAndNumberFromModel(modelName, callback) {
     })
 }
 
+function getAllModels (callback) {
+    var listOfModels = {}
+    firebaseutils.modelsRef.get().then(qs => {
+        for (var i = 0; i < qs.size; i++) {
+            if (!(qs.docs[i].data().vendor.trim() in listOfModels)) {
+                listOfModels[qs.docs[i].data().vendor.trim()] = [qs.docs[i].data().modelNumber.trim()]
+            } else {
+                listOfModels[qs.docs[i].data().vendor.trim()] = [...listOfModels[qs.docs[i].data().vendor.trim()], qs.docs[i].data().modelNumber.trim()]
+            }
+        }
+        callback(listOfModels)
+    })
+}
+
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
-getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel, getVendorAndNumberFromModel, getModelIdFromModelName }
+getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel,
+getModelsForExport, escapeStringForCSV, validateImportedModels, addModelsFromImport, getVendorAndNumberFromModel,
+getModelIdFromModelName, getAllModels }

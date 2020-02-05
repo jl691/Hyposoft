@@ -289,7 +289,7 @@ function checkInstanceFits(position, height, rack, callback, id = null) { //rack
                     //ignore own self
                     console.log("instanceid is " + instanceID + " and id is " + id)
                     if(instanceID != id){
-                     
+
                         console.log(docRefInstance)
                         modelutils.getModelByModelname(docRefInstance.data().model, result => {
                             if (result) {

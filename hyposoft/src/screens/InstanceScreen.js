@@ -17,6 +17,10 @@ import InstanceTable from '../components/InstanceTable'
 import * as userutils from "../utils/userutils";
 import { ToastsContainer, ToastsStore } from "react-toasts";
 
+const algoliasearch = require('algoliasearch')
+const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
+const index = client.initIndex('instances')
+
 class InstanceScreen extends Component {
 
     rangeStart;
@@ -42,6 +46,7 @@ class InstanceScreen extends Component {
             updateComment: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
+            searchQuery: ""
 
         }
 
@@ -51,6 +56,7 @@ class InstanceScreen extends Component {
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleChangeRange = this.handleChangeRange.bind(this);
+        this.handleSearch = this.handleSearch.bind(this);
 
 
         this.instanceTable = React.createRef();
@@ -134,9 +140,37 @@ class InstanceScreen extends Component {
         ToastsStore.info("Tip: Click on a column name to sort by it", 10000)
     }
 
+    handleSearch () {
+        if (this.state.searchQuery.trim() !== "") {
+            index.search(this.state.searchQuery)
+            .then(({ hits }) => {
+                var results = []
+                var itemNo = 1
+                for (var i = 0; i < hits.length; i++) {
+                    results = [...results, {...hits[i], id: hits[i].objectID, itemNo: itemNo++, instance_id: hits[i].objectID}]
+                }
+                console.log(results)
+                this.setState(oldState => ({
+                    ...oldState,
+                    searchResults: results
+                }))
+            })
+        } else {
+            // reset
+            this.setState(oldState => ({
+                ...oldState,
+                searchResults: undefined
+            }))
+        }
+    }
+
     render() {
         const { popupType } = this.state;
         let popup;
+        if (localStorage.getItem('tipShown') !== 'yes') {
+            ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
+            localStorage.setItem('tipShown', 'yes')
+        }
 
         if (popupType === 'Add') {
 
@@ -244,7 +278,7 @@ class InstanceScreen extends Component {
                                                                     deleteButtonCallbackFromParent={this.handleDeleteButton}
 
                                                                     UpdateButtonCallbackFromParent={this.handleUpdateButton}
-
+                                                                    searchResults={this.state.searchResults}
                                                                     ref={this.instanceTable}
 
                                                                 />
@@ -279,7 +313,7 @@ class InstanceScreen extends Component {
 
                                                         <Text size='small'><b>Search Instances</b></Text>
                                                         <Stack margin={{ top: 'small' }}>
-                                                            <SearchInstances />
+                                                            <SearchInstances parent={this} />
                                                         </Stack>
                                                     </Box>
                                                 </Box>
@@ -376,11 +410,9 @@ class InstanceScreen extends Component {
 
                                     </Box>
 
-
                                     <ToastsContainer store={ToastsStore} />
 
                                 </Box>
-
 
                             </Grommet>
 

@@ -204,7 +204,6 @@ export default class InstanceTable extends Component {
 
 
     render() {
-
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
         }
@@ -243,7 +242,7 @@ export default class InstanceTable extends Component {
                                         <DataTable
                                             step={5}
                                             onMore={() => {
-                                                if (this.startAfter) {
+                                                if (this.startAfter && !this.props.searchResults) {
                                                     instutils.getInstanceAt(this.startAfter, (newStartAfter, newInstances) => {
                                                         this.startAfter = newStartAfter
                                                         this.setState({ instances: this.state.instances.concat(newInstances) })
@@ -254,9 +253,9 @@ export default class InstanceTable extends Component {
                                             sortable={true}
                                             columns={this.columns}
                                             size="large"
-                                        
 
-                                            data={this.state.instances}
+
+                                            data={this.props.searchResults||this.state.instances}
 
 
                                         />
@@ -275,6 +274,3 @@ export default class InstanceTable extends Component {
 
     }
 }
-
-
-
