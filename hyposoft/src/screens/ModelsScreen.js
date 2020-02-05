@@ -63,6 +63,7 @@ class ModelsScreen extends React.Component {
         memoryFilterMax: 1200,
         memoryFilterStart: 0,
         memoryFilterEnd: 1000,
+        heightFilterMax: 42,
         filters: {
             heightStart: 0, heightEnd: 42,
             ethernetPortsStart: 0, ethernetPortsEnd: 25,
@@ -403,14 +404,20 @@ class ModelsScreen extends React.Component {
                                                    <RangeSelector
                                                      direction="horizontal"
                                                      min={0}
-                                                     max={42}
+                                                     max={this.state.heightFilterMax}
                                                      step={1}
                                                      round="large"
                                                      values={[this.state.heightFilterStart,this.state.heightFilterEnd]}
                                                      onChange={nextRange => {
+                                                         var newMax = this.state.heightFilterMax
+                                                         if (nextRange[1] === this.state.heightFilterMax) {
+                                                             newMax = parseInt(newMax*1.1)
+                                                         }
+
                                                          this.setState(oldState => ({
                                                              ...oldState, heightFilterStart: nextRange[0],
                                                              heightFilterEnd: nextRange[1],
+                                                             heightFilterMax: newMax,
                                                              filters: {...oldState.filters, heightStart: nextRange[0], heightEnd: nextRange[1]}
                                                          }))
                                                      }}

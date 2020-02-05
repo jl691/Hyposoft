@@ -54,14 +54,14 @@ function deleteModel(modelId, callback) {
     firebaseutils.modelsRef.doc(modelId).delete().then(() => callback())
 }
 
-function getModel(vendor, modelNumber, callback) {
+function getModel(vendor, modelNumber, callback, extra_data=null) {
     firebaseutils.modelsRef.where('vendor', '==', vendor)
     .where('modelNumber', '==', modelNumber)
     .get().then(qs => {
         if (!qs.empty) {
-            callback({...qs.docs[0].data(), id: qs.docs[0].id, found: true})
+            callback({...qs.docs[0].data(), id: qs.docs[0].id, found: true, extra_data: extra_data})
         } else {
-            callback({found: false, vendor: vendor, modelNumber: modelNumber})
+            callback({found: false, vendor: vendor, modelNumber: modelNumber, extra_data: extra_data})
         }
     })
 }
@@ -342,7 +342,21 @@ function getVendorAndNumberFromModel(modelName, callback) {
     })
 }
 
+function getAllModels (callback) {
+    var listOfModels = {}
+    firebaseutils.modelsRef.get().then(qs => {
+        for (var i = 0; i < qs.size; i++) {
+            if (!(qs.docs[i].data().vendor.trim() in listOfModels)) {
+                listOfModels[qs.docs[i].data().vendor.trim()] = [qs.docs[i].data().modelNumber.trim()]
+            } else {
+                listOfModels[qs.docs[i].data().vendor.trim()] = [...listOfModels[qs.docs[i].data().vendor.trim()], qs.docs[i].data().modelNumber.trim()]
+            }
+        }
+        callback(listOfModels)
+    })
+}
+
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
 getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel,
 getModelsForExport, escapeStringForCSV, validateImportedModels, addModelsFromImport, getVendorAndNumberFromModel,
-getModelIdFromModelName }
+getModelIdFromModelName, getAllModels }

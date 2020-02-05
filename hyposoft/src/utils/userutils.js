@@ -200,7 +200,17 @@ function removeRecovery(secret) {
     })
 }
 
+function getAllUsers (callback) {
+    var listOfUsers = []
+    firebaseutils.usersRef.get().then(qs => {
+        for (var i = 0; i < qs.size; i++) {
+            listOfUsers = [...listOfUsers, qs.docs[i].data().username.trim()]
+        }
+        callback(listOfUsers)
+    })
+}
+
 export { isUserLoggedIn, createUser, modifyUser, deleteUser, isLoggedInUserAdmin,
 isLoginValid, logUserIn, logout, getUser, changePassword, loadUsers, addClaim,
 fetchClaim, usernameTaken, validEmail, removeClaim, updateUsername, sendRecoveryEmail,
-fetchRecovery, removeRecovery, changePasswordByEmail }
+fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers }

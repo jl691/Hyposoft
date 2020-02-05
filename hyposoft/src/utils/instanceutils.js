@@ -1,6 +1,7 @@
 import {instanceRef, racksRef, modelsRef, usersRef, firebase} from './firebaseutils'
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
+import * as userutils from './userutils'
 
 //TODO: admin vs. user privileges
 
@@ -44,7 +45,92 @@ function getInstanceAt(start, callback) {
         callback(null, null);
     })
 }
+function forceAddInstancesToDb(toBeAdded) {
+    var rackIDs = {}
+    var modelIDs = {}
+    function addAll() {
+        for (var i = 0; i < toBeAdded.length; i++) {
+            const instance = toBeAdded[i]
+            console.log(modelIDs)
+            instanceRef.add({
+                modelId: modelIDs[instance.vendor+' '+instance.model_number],
+                model: instance.vendor+' '+instance.model_number,
+                hostname: instance.hostname,
+                rack: instance.rack,
+                rackU: instance.rack_position,
+                owner: instance.owner,
+                comment: instance.comment,
+                rackID: rackIDs[instance.rack],
+                //This is for rack usage reports
+                modelNumber: instance.model_number,
+                vendor: instance.vendor,
+            }).then(function (docRef) {
+                docRef.get().then(ds => {
+                    racksRef.doc(ds.data().rackID).update({
+                        instances: firebase.firestore.FieldValue.arrayUnion(ds.id)
+                    })
+                })
+            })
+        }
+    }
+    for (var i = 0; i < toBeAdded.length; i++) {
+        const instance = toBeAdded[i]
+        rackutils.getRackID(String(instance.rack)[0], parseInt(String(instance.rack).substring(1)), id => {
+            rackIDs[instance.rack] = id
+            if (Object.keys(rackIDs).length === toBeAdded.length && Object.keys(modelIDs).length === toBeAdded.length) {
+                addAll()
+            }
+        })
+        modelutils.getModelByModelname(instance.vendor+' '+instance.model_number, doc => {
+            modelIDs[doc.data().vendor+' '+doc.data().modelNumber] = doc.id
+            if (Object.keys(rackIDs).length === toBeAdded.length && Object.keys(modelIDs).length === toBeAdded.length) {
+                addAll()
+            }
+        })
+    }
+}
 
+function forceModifyInstancesInDb(toBeModified) {
+    var rackIDs = {}
+    var modelIDs = {}
+    function modifyAll() {
+        for (var i = 0; i < toBeModified.length; i++) {
+            const instance = toBeModified[i]
+            instanceRef.doc(instance.instanceIdInDb).get().then(ds => {
+                const oldRackID = ds.data().rackID
+                racksRef.doc(oldRackID).update({
+                    instances: firebase.firestore.FieldValue.arrayRemove(oldRackID)
+                })
+            })
+
+            instanceRef.doc(instance.instanceIdInDb).update({
+                rack: instance.rack,
+                rackU: instance.rack_position,
+                owner: instance.owner,
+                comment: instance.comment,
+                rackID: rackIDs[instance.rack],
+            })
+            racksRef.doc(rackIDs[instance.rack]).update({
+                instances: firebase.firestore.FieldValue.arrayUnion(instance.instanceIdInDb)
+            })
+        }
+    }
+    for (var i = 0; i < toBeModified.length; i++) {
+        const instance = toBeModified[i]
+        rackutils.getRackID(String(instance.rack)[0], parseInt(String(instance.rack).substring(1)), id => {
+            rackIDs[instance.rack] = id
+            if (Object.keys(rackIDs).length === toBeModified.length && Object.keys(modelIDs).length === toBeModified.length) {
+                modifyAll()
+            }
+        })
+        modelutils.getModelByModelname(instance.vendor+' '+instance.model_number, doc => {
+            modelIDs[doc.data().vendor+' '+doc.data().mode_number] = doc.id
+            if (Object.keys(rackIDs).length === toBeModified.length && Object.keys(modelIDs).length === toBeModified.length) {
+                modifyAll()
+            }
+        })
+    }
+}
 function addInstance(model, hostname, rack, racku, owner, comment, callback) {
 
     validateInstanceForm(model, hostname, rack, racku, owner, valid => {
@@ -108,8 +194,9 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
 
 
 // This will check if the instance fits on rack (after checking rack exists): fits within in the height of rack, and does not conflict with other instances
-
-function instanceFitsOnRack(instanceRack,  rackU, model, callback, instance_id=null) {
+// The echo param was added by Anshu and will be passed back via callback to the import functions as-is
+// The param does NOT affect this function at all
+function instanceFitsOnRack(instanceRack,  rackU, model, callback, instance_id=null, echo=null) {
 
     let splitRackArray = instanceRack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
@@ -159,13 +246,23 @@ function instanceFitsOnRack(instanceRack,  rackU, model, callback, instance_id=n
                                     if (conflictCount === status.length) {
                                         console.log(conflictNew)
                                         var errMessage = "instance of height " + height + " racked at " + rackedAt + "U conflicts with instance(s) " + conflictNew.join(', ').toString();
-                                        callback(errMessage);
+                                        if (!echo) {
+                                            callback(errMessage);
+                                        }
+                                        else {
+                                           callback({error: errMessage, echo: echo})
+                                        }
                                     }
                                 });
                             })
                         } else {//status callback is null, no conflits
                             console.log("Instance fits in rack with no conflicts")
-                            callback(null, doc.data().modelNumber, doc.data().vendor, rackID)
+                            if (!echo) {
+                                callback(null, doc.data().modelNumber, doc.data().vendor, rackID)
+                            }
+                            else {
+                                callback({error: null, echo: echo})
+                            }
 
                         }
                     }, instance_id) //if you pass in a null to checkInstanceFits
@@ -173,14 +270,22 @@ function instanceFitsOnRack(instanceRack,  rackU, model, callback, instance_id=n
                 else {
                     console.log("Instance of this model at this rackU will not fit on the rack")
                     var errMessage = "Instance of this model at this RackU will not fit on this rack";
-                    callback(errMessage);
+                    if (!echo) {
+                        callback(errMessage);
+                    } else {
+                        callback({error: errMessage, echo: echo})
+                    }
 
                 }
             })
         } else {
             console.log("Rack doesn't exist")
             var errMessage2 = "Rack does not exist"
-            callback(errMessage2)
+            if (!echo) {
+                callback(errMessage2)
+            } else {
+                callback({error: errMessage2, echo: echo})
+            }
         }
     })
 }
@@ -479,7 +584,17 @@ function replaceInstanceRack(oldRack, newRack, id, callback) {
 
 function checkHostnameExists(hostname, id, callback) {
     instanceRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
-        callback(!docSnaps.empty && id != docSnaps.docs[0].id)
+        callback(!docSnaps.empty && id !== docSnaps.docs[0].id)
+    })
+}
+
+function getInstanceByHostname(hostname, callback, echo=null) {
+    instanceRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
+        if(!docSnaps.empty) {
+            callback({...docSnaps.docs[0].data(), found: true, echo: echo, id: docSnaps.docs[0].id})
+        } else {
+            callback({found: false, echo: echo, id: null})
+        }
     })
 }
 
@@ -513,6 +628,145 @@ function getInstancesForExport (callback) {
     })
 }
 
+function validateImportedInstances (data, callback) {
+    modelutils.getAllModels(listOfModels => {
+        userutils.getAllUsers(listOfUsers => {
+            console.log(listOfModels)
+            console.log(listOfUsers)
+            var errors = []
+            var toBeAdded = []
+            var toBeModified = []
+            var toBeIgnored = []
+
+            var instancesSeen = {}
+            var instancesProcessed = 0
+
+            function checkAndCallback() {
+                instancesProcessed++
+                if (instancesProcessed === data.length) {
+                    callback({errors, toBeAdded, toBeModified, toBeIgnored})
+                }
+            }
+
+            for (var i = 0; i < data.length; i++) {
+                const datum = data[i]
+                var canProceedWithDbValidation = true
+                var vendorAndModelFound = true
+                if (!datum.vendor || String(datum.vendor).trim() === '') {
+                    errors = [...errors, [i+1, 'Vendor not found']]
+                    canProceedWithDbValidation = false
+                    vendorAndModelFound = false
+                }
+                if (!datum.model_number || String(datum.model_number).trim() === '') {
+                    errors = [...errors, [i+1, 'Model number not found']]
+                    canProceedWithDbValidation = false
+                    vendorAndModelFound = false
+                }
+                if (!datum.hostname || String(datum.hostname).trim() === '') {
+                    errors = [...errors, [i+1, 'Hostname not found']]
+                    canProceedWithDbValidation = false
+                } else {
+                    if(!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(datum.hostname)){
+                        //not a valid hostname
+                        errors = [...errors, [i+1, 'Invalid hostname (does not follow RFC-1034 specs)']]
+                        canProceedWithDbValidation = false
+                    }
+
+                    if (!(datum.hostname in instancesSeen)) {
+                        instancesSeen[datum.hostname] = i
+                    } else {
+                        canProceedWithDbValidation = false
+                        errors = [...errors, [i+1, 'Duplicate row (an instance with this hostname already exists on row '+(instancesSeen[datum.hostname]+1)+')']]
+                    }
+                }
+                if (!datum.rack_position || String(datum.rack_position).trim() === '') {
+                    errors = [...errors, [i+1, 'Rack position not found']]
+                    canProceedWithDbValidation = false
+                } else if (isNaN(String(datum.rack_position).trim()) || !Number.isInteger(parseFloat(String(datum.rack_position).trim())) || parseInt(String(datum.rack_position).trim()) <= 0) {
+                    errors = [...errors, [i+1, 'Rack position is not a positive integer']]
+                    canProceedWithDbValidation = false
+                }
+                if (!datum.rack || String(datum.rack).trim() === '') {
+                    errors = [...errors, [i+1, 'Rack field missing']]
+                    canProceedWithDbValidation = false
+                } else if(!/[A-Z]\d+/.test(datum.rack)){
+                    //not a valid rack
+                    errors = [...errors, [i+1, 'Invalid rack']]
+                    canProceedWithDbValidation = false
+                }
+                if (!datum.owner || String(datum.owner).trim() === '') {
+                    // errors = [...errors, [i+1, 'Owner field missing']]
+                    // canProceedWithDbValidation = false
+                } else if (!listOfUsers.includes(datum.owner)) {
+                    errors = [...errors, [i+1, 'Owner does not exist']]
+                    canProceedWithDbValidation = false
+                }
+
+                if (!(vendorAndModelFound && String(datum.vendor).trim() in listOfModels && listOfModels[String(datum.vendor).trim()].includes(String(datum.model_number).trim()))) {
+                    errors = [...errors, [i+1, 'Model does not exist']]
+                    canProceedWithDbValidation = false
+                }
+
+                if (canProceedWithDbValidation) {
+                    data[i].hostname = String(datum.hostname).trim()
+                    data[i].vendor = String(datum.vendor).trim()
+                    data[i].rack= String(datum.rack).trim()
+                    data[i].model_number = String(datum.model_number).trim()
+                    data[i].owner = (datum.owner ? String(datum.owner) : "")
+                    data[i].comment = (datum.comment ? String(datum.comment) : "")
+
+                    getInstanceByHostname(datum.hostname.trim(), instance => {
+                        const datum = data[instance.echo]
+                        const datumOwner = (!datum.owner ? "" : datum.owner.trim())
+                        const datumComment = (!datum.comment ? "" : datum.comment.trim())
+
+                        const instanceOwner = (!instance.owner ? "" : instance.owner.trim())
+                        const instanceComment = (!instance.comment ? "" : instance.comment.trim())
+
+                        if (instance.found) {
+                            if (instance.vendor.trim() !== datum.vendor.trim() || instance.modelNumber.trim() !== datum.model_number.trim()) {
+                                errors = [...errors, [instance.echo+1, 'Another instance (of a different model) that has the same hostname exists']]
+                                checkAndCallback()
+                            } else if (datum.rack_position === instance.rackU && datum.rack.trim() === instance.rack.trim()
+                                && datumOwner === instanceOwner && datumComment === instanceComment) {
+                                // IGNORE CASE
+                                toBeIgnored = [...toBeIgnored, datum]
+                                checkAndCallback()
+                            } else {
+                                // MODIFY CASE
+                                instanceFitsOnRack(datum.rack,  datum.rack_position, datum.vendor+' '+datum.model_number, ({error, echo}) => {
+                                    const datum = data[instance.echo]
+                                    if (error) {
+                                        errors = [...errors, [instance.echo+1, 'This instance could not be placed at the requested location']]
+                                        checkAndCallback()
+                                    } else {
+                                        toBeModified = [...toBeModified, {...datum, row: instance.echo+1, instanceIdInDb: instance.id}]
+                                        checkAndCallback()
+                                    }
+                                }, instance.id, instance.echo)
+                            }
+                        } else {
+                            // ADDITION CASE
+                            instanceFitsOnRack(datum.rack,  datum.rack_position, datum.vendor+' '+datum.model_number, ({error, echo}) => {
+                                const datum = data[instance.echo]
+                                if (error) {
+                                    errors = [...errors, [instance.echo+1, 'This instance could not be placed at the requested location']]
+                                    checkAndCallback()
+                                } else {
+                                    toBeAdded = [...toBeAdded, datum]
+                                    checkAndCallback()
+                                }
+                            }, null, instance.echo)
+                        }
+                    }, i)
+                } else {
+                    checkAndCallback()
+                }
+            }
+        })
+    })
+}
+
 export {
     getInstance,
     addInstance,
@@ -528,5 +782,8 @@ export {
     getInstanceAt,
     validateInstanceForm,
     combinedRackAndRackUSort,
-    getInstancesForExport
+    getInstancesForExport,
+    validateImportedInstances,
+    forceAddInstancesToDb,
+    forceModifyInstancesInDb
 }
