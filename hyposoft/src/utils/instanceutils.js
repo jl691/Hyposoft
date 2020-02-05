@@ -4,6 +4,9 @@ import * as modelutils from './modelutils'
 import * as userutils from './userutils'
 
 //TODO: admin vs. user privileges
+const algoliasearch = require('algoliasearch')
+const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
+const index = client.initIndex('instances')
 
 function getInstance(callback) {
     instanceRef.limit(25).get().then(docSnaps => {
@@ -65,10 +68,12 @@ function forceAddInstancesToDb(toBeAdded) {
                 modelNumber: instance.model_number,
                 vendor: instance.vendor,
             }).then(function (docRef) {
+
                 docRef.get().then(ds => {
                     racksRef.doc(ds.data().rackID).update({
                         instances: firebase.firestore.FieldValue.arrayUnion(ds.id)
                     })
+                    index.saveObject({...ds.data(), objectID: ds.id})
                 })
             })
         }
@@ -109,6 +114,10 @@ function forceModifyInstancesInDb(toBeModified) {
                 owner: instance.owner,
                 comment: instance.comment,
                 rackID: rackIDs[instance.rack],
+            }).then(() => {
+                instanceRef.doc(instance.instanceIdInDb).get().then(ds => {
+                    index.saveObject({...ds.data(), objectID: ds.id})
+                })
             })
             racksRef.doc(rackIDs[instance.rack]).update({
                 instances: firebase.firestore.FieldValue.arrayUnion(instance.instanceIdInDb)
@@ -173,6 +182,9 @@ function addInstance(model, hostname, rack, racku, owner, comment, callback) {
                                         }).then(function (docRef) {
                                             racksRef.doc(String(rackID)).update({
                                                 instances: firebase.firestore.FieldValue.arrayUnion(docRef.id)
+                                            })
+                                            docRef.get().then(ds => {
+                                                index.saveObject({...ds.data(), objectID: ds.id})
                                             })
                                             callback(null);
                                         }).catch(function (error) {
@@ -321,7 +333,7 @@ function deleteInstance(instanceid, callback) {
 
                     instances: firebase.firestore.FieldValue.arrayRemove(instanceid)
                 })
-
+                index.deleteObject(instanceid)
                 callback(instanceid);
             }).catch(function (error) {
                 callback(null);
@@ -403,6 +415,9 @@ function updateInstance(instanceid, model, hostname, rack, rackU, owner, comment
 
                                                                 }).then(function () {
                                                                     console.log("Updated model successfully")
+                                                                    instanceRef.doc(String(instanceid)).get().then(docRef => {
+                                                                        index.saveObject({...docRef.data(), objectID: docRef.id})
+                                                                    })
                                                                     callback(null);
                                                                 }).catch(function (error) {
                                                                     console.log(error)

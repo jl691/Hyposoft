@@ -57,6 +57,7 @@ class PortScreen extends Component {
     }
 
     importModels (data, fileName) {
+        this.setState(oldState => ({...oldState, showLoadingDialog: true}))
         if (data.length === 0) {
             ToastsStore.info('No records found in imported file', 3000, 'burntToast')
             return
@@ -72,21 +73,21 @@ class PortScreen extends Component {
         modelutils.validateImportedModels(data, errors => {
             if (errors.length > 0) {
                 this.setState(oldState => ({
-                    ...oldState, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
+                    ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
                 }))
             } else {
-                this.setState(oldState => ({...oldState, errors: undefined}))
+                this.setState(oldState => ({...oldState, showLoadingDialog: false, errors: undefined}))
                 modelutils.addModelsFromImport(data, false, ({modelsPending, modelsPendingInfo, ignoredModels, createdModels, modifiedModels}) => {
                     if (modelsPending.length > 0) {
                         // Show confirmation
                         this.setState(oldState => ({
-                            ...oldState,
+                            ...oldState, showLoadingDialog: false,
                             ignoredModels: ignoredModels, modifiedModels: modifiedModels, createdModels: createdModels,
                             showStatsForModels: false,
                             modifications: modelsPending, modificationsInfo: modelsPendingInfo.map(m => <div><b>Row {m[0]}:</b> {m[1]}</div>)
                         }))
                     } else {
-                        this.setState(oldState => ({...oldState,
+                        this.setState(oldState => ({...oldState, showLoadingDialog: false,
                         ignoredModels: ignoredModels, modifiedModels: modifiedModels, createdModels: createdModels,
                         showStatsForModels: true, modifications: undefined, modificationsInfo: undefined}))
                     }
@@ -96,6 +97,7 @@ class PortScreen extends Component {
     }
 
     importInstances (data, fileName) {
+        this.setState(oldState => ({...oldState, showLoadingDialog: true}))
         if (data.length === 0) {
             ToastsStore.info('No records found in imported file', 3000, 'burntToast')
             return
@@ -111,18 +113,18 @@ class PortScreen extends Component {
         instanceutils.validateImportedInstances(data, ({errors, toBeAdded, toBeModified, toBeIgnored}) => {
             if (errors.length > 0) {
                 this.setState(oldState => ({
-                    ...oldState, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
+                    ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
                 }))
             } else {
                 if (toBeModified.length > 0) {
                     // Confirm modifications
                     this.setState(oldState => ({
-                        ...oldState, errors: undefined, instancesToBeAdded: toBeAdded, instancesToBeIgnored: toBeIgnored, instancesToBeModified: toBeModified, instancesModified: undefined
+                        ...oldState, showLoadingDialog: false, errors: undefined, instancesToBeAdded: toBeAdded, instancesToBeIgnored: toBeIgnored, instancesToBeModified: toBeModified, instancesModified: undefined
                     }))
                 } else {
                     // Just add the ones to be added
                     this.setState(oldState => ({
-                        ...oldState, errors: undefined, instancesToBeAdded: toBeAdded, instancesToBeIgnored: toBeIgnored, instancesModified: [], instancesToBeModified: undefined
+                        ...oldState, showLoadingDialog: false, errors: undefined, instancesToBeAdded: toBeAdded, instancesToBeIgnored: toBeIgnored, instancesModified: [], instancesToBeModified: undefined
                     }))
                 }
 
@@ -195,7 +197,7 @@ class PortScreen extends Component {
                 </Box>
                 <ToastsContainer store={ToastsStore} lightBackground/>
                 {this.state.showLoadingDialog && (
-                    <Layer position="center" modal onClickOutside={this.hideDeleteDialog} onEsc={this.hideDeleteDialog}>
+                    <Layer position="center" modal>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
                                 Please wait
@@ -207,7 +209,7 @@ class PortScreen extends Component {
                                 direction="row"
                                 align="center"
                                 justify="start" >
-                                We're preparing your export.
+                                We're processing your file.
                             </Box>
                         </Box>
                     </Layer>
