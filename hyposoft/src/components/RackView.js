@@ -50,8 +50,11 @@ class RackView extends React.Component {
     }
 
     componentDidMount() {
-        rackutils.getRackAt((startAfterCallback, rackCallback) => {
-            if (!(startAfterCallback === null) && !(rackCallback === null)) {
+        rackutils.getRackAt((startAfterCallback, rackCallback, empty) => {
+            if(empty){
+                console.log("eptyyyy")
+                this.setState({initialLoaded: true});
+            } else if (!(startAfterCallback === null) && !(rackCallback === null)) {
                 this.startAfter = startAfterCallback;
                 console.log("loaded up until " + this.startAfter)
                 console.log(this.startAfter.data())

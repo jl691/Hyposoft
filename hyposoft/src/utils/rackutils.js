@@ -8,48 +8,59 @@ function getRackAt(callback, start = null) {
     let racks = [];
     if(start){
         firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).startAfter(start).get().then(docSnaps => {
-            const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-            docSnaps.forEach(doc => {
-                racks.push({
-                    count: rackCount,
-                    id: doc.id,
-                    letter: doc.data().letter,
-                    number: doc.data().number,
-                    height: doc.data().height,
-                    instances: (doc.data().instances ? Object.keys(doc.data().instances).length : 0)
+            console.log("eyyyy")
+            if(docSnaps.empty){
+                console.log(docSnaps.empty)
+                callback(null, null, true);
+            } else {
+                console.log(docSnaps.size)
+                const newStart = docSnaps.docs[docSnaps.docs.length - 1];
+                docSnaps.forEach(doc => {
+                    racks.push({
+                        count: rackCount,
+                        id: doc.id,
+                        letter: doc.data().letter,
+                        number: doc.data().number,
+                        height: doc.data().height,
+                        instances: (doc.data().instances ? Object.keys(doc.data().instances).length : 0)
+                    });
+                    rackCount++;
                 });
-                rackCount++;
-            });
-            /*const racks = docSnaps.docs.map(doc => (
-                {
-                    id: doc.id,
-                    letter: doc.data().letter,
-                    number: doc.data().number,
-                    height: doc.data().height,
-                    instances: (doc.data().instances ? Object.keys(doc.data().instances).length : 0)
-                }));*/
-            console.log(racks);
-            callback(newStart, racks);
+                /*const racks = docSnaps.docs.map(doc => (
+                    {
+                        id: doc.id,
+                        letter: doc.data().letter,
+                        number: doc.data().number,
+                        height: doc.data().height,
+                        instances: (doc.data().instances ? Object.keys(doc.data().instances).length : 0)
+                    }));*/
+                console.log(racks);
+                callback(newStart, racks, false);
+            }
         }).catch(function (error) {
-            callback(null, null);
+            callback(null, null, null);
         })
     } else {
         firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).get().then(docSnaps => {
-            const startAfter = docSnaps.docs[docSnaps.docs.length - 1]
-            docSnaps.forEach(doc => {
-                racks.push({
-                    count: rackCount,
-                    id: doc.id,
-                    letter: doc.data().letter,
-                    number: doc.data().number,
-                    height: doc.data().height,
-                    instances: (doc.data().instances ? Object.keys(doc.data().instances).length : 0)
+            if(docSnaps.empty){
+                callback(null, null, true);
+            } else {
+                const startAfter = docSnaps.docs[docSnaps.docs.length - 1]
+                docSnaps.forEach(doc => {
+                    racks.push({
+                        count: rackCount,
+                        id: doc.id,
+                        letter: doc.data().letter,
+                        number: doc.data().number,
+                        height: doc.data().height,
+                        instances: (doc.data().instances ? Object.keys(doc.data().instances).length : 0)
+                    });
+                    rackCount++;
                 });
-                rackCount++;
-            });
-            callback(startAfter, racks);
+                callback(startAfter, racks, false);
+            }
         }).catch(function (error) {
-            callback(null, null);
+            callback(null, null, null);
         })
     }
 }
