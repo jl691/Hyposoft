@@ -233,98 +233,137 @@ class RackView extends React.Component {
         }
     }
 
-    generateColumns() {
-        let cols = [
-            /*                                  {
-                                                  property: "checkbox",
-                                                  render: datum => (
-                                                      <CheckBox key={datum.id}
-                                                                checked={this.state.checkedBoxes.includes(datum.id)}
-                                                                onChange={e => {
-                                                                    if (e.target.checked) {
-                                                                        this.state.checkedBoxes.push(datum.id);
-                                                                    } else {
-                                                                        this.setState({checkedBoxes: this.state.checkedBoxes.filter(item => item !== datum.id)})
-                                                                    }
-                                                                }}/>
-                                                  )
-                                              },*/
-            /*                                   {
-                                                   property: "id",
-                                                   header: "ID",
-                                                   primary: true
-                                               },*/
-            {
-                property: "count",
-                header: <Text size={"small"}>ID</Text>,
-                primary: true,
-                render: datum => (<Text size={"small"}>{datum.count}</Text> )
-            },
-            {
-                property: "letter",
-                header: <Text size='small'>Row</Text>,
-                render: datum => (
-                    <Text size='small'>{datum.letter}</Text>)
-            },
-            {
-                property: "number",
-                header: <Text size='small'>Position</Text>,
-                render: datum => (
-                    <Text size='small'>{datum.number}</Text>)
-            },
-            /*                                   {
-                                                   property: "height",
-                                                   header: "Occupied",
-                                                   render: datum => (
-                                                       <Box pad={{vertical: 'xsmall'}}>
-                                                           <Meter
-                                                               values={[{value: datum.instances / 42 * 100}]}
-                                                               thickness="small"
-                                                               size="small"
-                                                           />
-                                                       </Box>
-                                                   )
-                                               },*/
-            {
-                property: "instances",
-                header: <Text size='small'>Instances</Text>,
-                render: datum => (
-                    <Text size='small'>{datum.instances}</Text>)
-            },
-            {
-                property: "view",
-                header: <Text size='small'>View</Text>,
-                render: datum => (<View
-                    onClick={() => {
-                        this.props.history.push({
-                            pathname: '/rackdiagram',
-                            state: {
-                                id: datum.id
-                            }
-                        })
-                    }}/>)
-            },
-            {
-                property: "report",
-                header: <Text size='small'>Report</Text>,
-                render: datum => (<Analytics
-                    onClick={() => {
-                        this.setState({
-                            popupType: 'Report',
-                            rackReport: datum.id
-                        })
-                    }}/>)
-            }
-        ];
-        if(userutils.isLoggedInUserAdmin()){
-            cols.push({
-                property: "delete",
-                header: <Text size='small'>Delete</Text>,
-                render: datum =>
-                    this.RackDeleteButton(datum)
-            });
+    DataTable() {
+        if(!this.state.initialLoaded){
+            return (
+                <Text>Please wait...</Text>
+            )
+        } else {
+            return (
+                <DataTable step={25}
+                           onMore={() => {
+                               if (this.startAfter) {
+                                   rackutils.getRackAt((newStartAfter, newRacks) => {
+                                       this.startAfter = newStartAfter
+                                       this.setState({racks: this.state.racks.concat(newRacks)})
+                                   }, this.startAfter);
+                               }
+                           }}
+                           columns={[
+                               /*                                  {
+                                                                     property: "checkbox",
+                                                                     render: datum => (
+                                                                         <CheckBox key={datum.id}
+                                                                                   checked={this.state.checkedBoxes.includes(datum.id)}
+                                                                                   onChange={e => {
+                                                                                       if (e.target.checked) {
+                                                                                           this.state.checkedBoxes.push(datum.id);
+                                                                                       } else {
+                                                                                           this.setState({checkedBoxes: this.state.checkedBoxes.filter(item => item !== datum.id)})
+                                                                                       }
+                                                                                   }}/>
+                                                                     )
+                                                                 },*/
+                               /*                                   {
+                                                                      property: "id",
+                                                                      header: "ID",
+                                                                      primary: true
+                                                                  },*/
+                               {
+                                   property: "count",
+                                   header: <Text size={"small"}>ID</Text>,
+                                   primary: true,
+                                   render: datum => (<Text size={"small"}>{datum.count}</Text> )
+                               },
+                               {
+                                   property: "letter",
+                                   header: <Text size='small'>Row</Text>,
+                                   render: datum => (
+                                       <Text size='small'>{datum.letter}</Text>)
+                               },
+                               {
+                                   property: "number",
+                                   header: <Text size='small'>Position</Text>,
+                                   render: datum => (
+                                       <Text size='small'>{datum.number}</Text>)
+                               },
+                               /*                                   {
+                                                                      property: "height",
+                                                                      header: "Occupied",
+                                                                      render: datum => (
+                                                                          <Box pad={{vertical: 'xsmall'}}>
+                                                                              <Meter
+                                                                                  values={[{value: datum.instances / 42 * 100}]}
+                                                                                  thickness="small"
+                                                                                  size="small"
+                                                                              />
+                                                                          </Box>
+                                                                      )
+                                                                  },*/
+                               {
+                                   property: "instances",
+                                   header: <Text size='small'>Instances</Text>,
+                                   render: datum => (
+                                       <Text size='small'>{datum.instances}</Text>)
+                               },
+                               {
+                                   property: "delete",
+                                   header: <Text size='small'>Delete</Text>,
+                                   render: datum =>
+                                       this.RackDeleteButton(datum)
+                               },
+                               {
+                                   property: "view",
+                                   header: <Text size='small'>View</Text>,
+                                   render: datum => (<View
+                                       onClick={() => {
+                                           this.props.history.push({
+                                               pathname: '/rackdiagram',
+                                               state: {
+                                                   id: datum.id
+                                               }
+                                           })
+                                       }}/>)
+                               },
+                               {
+                                   property: "report",
+                                   header: <Text size='small'>Report</Text>,
+                                   render: datum => (<Analytics
+                                       onClick={() => {
+                                           this.setState({
+                                               popupType: 'Report',
+                                               rackReport: datum.id
+                                           })
+                                       }}/>)
+                               }
+                               /*{
+                                   property: "modify",
+                                   header: <Text size='small'>Actions</Text>,
+                                   render: datum => (
+                                       <Box direction="row">
+                                           {this.RackDeleteButton(datum)}
+                                           <Button icon={<View/>} label="View"
+                                                   onClick={() => {
+                                                       this.props.history.push({
+                                                           pathname: '/rackdiagram',
+                                                           state: {
+                                                               id: datum.id
+                                                           }
+                                                       })
+                                                   }}/>
+                                           <Button icon={<Analytics/>} label="Report"
+                                                   onClick={() => {
+                                                       this.setState({
+                                                           popupType: 'Report',
+                                                           rackReport: datum.id
+                                                       })
+                                                   }}/>
+                                       </Box>
+                                   )
+                               }*/
+                           ]} data={this.state.racks} size={"large"} sortable={"true"}/>
+            )
         }
-        return cols;
     }
 
     handleSubmit(event) {
@@ -453,7 +492,7 @@ class RackView extends React.Component {
             )
         }
 
-        if (!this.state.initialLoaded) {
+/*        if (!this.state.initialLoaded) {
             return (<Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
                     <AppBar>
@@ -464,7 +503,7 @@ class RackView extends React.Component {
                         <UserMenu alignSelf='end' this={this}/>
                     </AppBar>
                     <Text>Please wait...</Text></Box></Grommet>);
-        }
+        }*/
 
         return (
             <Grommet theme={theme} full className='fade'>
@@ -499,16 +538,9 @@ class RackView extends React.Component {
                                              direction='column'
                                              justify='start' alignSelf='stretch' height={"810px"} flex>
                                             <Box align="center">
-                                                <DataTable step={25}
-                                                           onMore={() => {
-                                                               if (this.startAfter) {
-                                                                   rackutils.getRackAt((newStartAfter, newRacks) => {
-                                                                       this.startAfter = newStartAfter
-                                                                       this.setState({racks: this.state.racks.concat(newRacks)})
-                                                                   }, this.startAfter);
-                                                               }
-                                                           }}
-                                                           columns={this.generateColumns()} data={this.state.racks} size={"large"}/>
+
+                                                {this.DataTable()}
+
                                             </Box>
                                         </Box>
                                     </Box>
