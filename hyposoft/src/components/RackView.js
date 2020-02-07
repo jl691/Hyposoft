@@ -50,8 +50,11 @@ class RackView extends React.Component {
     }
 
     componentDidMount() {
-        rackutils.getRackAt((startAfterCallback, rackCallback) => {
-            if (!(startAfterCallback === null) && !(rackCallback === null)) {
+        rackutils.getRackAt((startAfterCallback, rackCallback, empty) => {
+            if(empty){
+                console.log("eptyyyy")
+                this.setState({initialLoaded: true});
+            } else if (!(startAfterCallback === null) && !(rackCallback === null)) {
                 this.startAfter = startAfterCallback;
                 console.log("loaded up until " + this.startAfter)
                 console.log(this.startAfter.data())
@@ -327,6 +330,29 @@ class RackView extends React.Component {
         return cols;
     }
 
+    DataTable() {
+        if(!this.state.initialLoaded){
+            return (
+                <Text>Please wait...</Text>
+            )
+        } else {
+            return (
+                <DataTable step={25}
+                           onMore={() => {
+                               if (this.startAfter) {
+                                   rackutils.getRackAt((newStartAfter, newRacks, empty) => {
+                                       if(!empty){
+                                           this.startAfter = newStartAfter
+                                           this.setState({racks: this.state.racks.concat(newRacks)})
+                                       }
+                                   }, this.startAfter);
+                               }
+                           }}
+                           columns={this.generateColumns()} data={this.state.racks} size={"large"}/>
+            )
+        }
+    }
+
     handleSubmit(event) {
         if (!this.state.letterStart || !this.state.letterEnd || !this.state.numberStart || !this.state.numberEnd) {
             //invalid length
@@ -458,7 +484,7 @@ class RackView extends React.Component {
             )
         }
 
-        if (!this.state.initialLoaded) {
+/*        if (!this.state.initialLoaded) {
             return (<Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
                     <AppBar>
@@ -469,7 +495,7 @@ class RackView extends React.Component {
                         <UserMenu alignSelf='end' this={this}/>
                     </AppBar>
                     <Text>Please wait...</Text></Box></Grommet>);
-        }
+        }*/
 
         return (
             <Grommet theme={theme} full className='fade'>
@@ -504,16 +530,9 @@ class RackView extends React.Component {
                                              direction='column'
                                              justify='start' alignSelf='stretch' height={"810px"} flex>
                                             <Box align="center">
-                                                <DataTable step={25}
-                                                           onMore={() => {
-                                                               if (this.startAfter) {
-                                                                   rackutils.getRackAt((newStartAfter, newRacks) => {
-                                                                       this.startAfter = newStartAfter
-                                                                       this.setState({racks: this.state.racks.concat(newRacks)})
-                                                                   }, this.startAfter);
-                                                               }
-                                                           }}
-                                                           columns={this.generateColumns()} data={this.state.racks} size={"large"}/>
+
+                                                {this.DataTable()}
+
                                             </Box>
                                         </Box>
                                     </Box>
