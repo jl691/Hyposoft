@@ -90,6 +90,7 @@ function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback
     let dbPromises = [];
     let rowStartNumber = rowStart.charCodeAt(0);
     let rowEndNumber = rowEnd.charCodeAt(0);
+    let skippedRacks = [];
     for (let i = rowStartNumber; i <= rowEndNumber; i++) {
         let currLetter = String.fromCharCode(i);
         for (let j = numberStart; j <= numberEnd; j++) {
@@ -101,14 +102,17 @@ function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback
                         height: height,
                         instances: []
                     }).catch(function (error) {
-                        callback(null);
+                        callback(null, null);
                     }))
+                } else {
+                    let skippedRack = currLetter + j;
+                    skippedRacks.push(skippedRack);
                 }
             })
         }
     }
     Promise.all(dbPromises).then(() => {
-        callback(true);
+        callback(true, skippedRacks);
     })
 }
 
@@ -162,6 +166,7 @@ function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, callback) {
     let dbPromises = [];
     let rowStartNumber = rowStart.charCodeAt(0);
     let rowEndNumber = rowEnd.charCodeAt(0);
+    let skippedRacks = [];
     checkInstances(rowStart, rowEnd, numberStart, numberEnd, status => {
         if (status) {
             for (let i = rowStartNumber; i <= rowEndNumber; i++) {

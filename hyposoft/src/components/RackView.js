@@ -66,8 +66,11 @@ class RackView extends React.Component {
     forceRefresh() {
         this.startAfter = null;
         this.setState({initialLoaded: false, racks: [], popupType: "", deleteID: ""});
-        rackutils.getRackAt((startAfterCallback, rackCallback) => {
-            if (startAfterCallback && rackCallback) {
+        rackutils.getRackAt((startAfterCallback, rackCallback, empty) => {
+            if(empty){
+                console.log("eptyyyy")
+                this.setState({initialLoaded: true});
+            } else if (startAfterCallback && rackCallback) {
                 this.startAfter = startAfterCallback;
                 this.setState({racks: rackCallback, initialLoaded: true});
             }
