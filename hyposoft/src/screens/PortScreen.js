@@ -65,12 +65,12 @@ class PortScreen extends Component {
             return
         }
 
-        if (!('vendor' in data[0] && 'model_number' in data[0] && 'rack' in data[0]
-            && 'rack_position' in data[0] && 'hostname' in data[0] && 'owner' in data[0]
-            && 'comment' in data[0])) {
-            ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
-            return
-        }
+        if (!('vendor' in data[0] && 'model_number' in data[0] && 'height' in data[0]
+           && 'display_color' in data[0] && 'ethernet_ports' in data[0] && 'power_ports' in data[0]
+           && 'cpu' in data[0] && 'memory' in data[0] && 'storage' in data[0] && 'comment' in data[0])) {
+           ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
+           return
+       }
 
         modelutils.validateImportedModels(data, errors => {
             if (errors.length > 0) {
