@@ -69,9 +69,12 @@ class AddRackView extends React.Component {
                 //ranges incorrect
                 ToastsStore.error('The starting row or number must come before the ending row or number.');
             } else {
-                rackutils.addRackRange(this.state.rangeLetterStart, this.state.rangeLetterEnd, parseInt(this.state.rangeNumberStart), parseInt(this.state.rangeNumberEnd), parseInt(this.state.rangeHeight), status => {
+                rackutils.addRackRange(this.state.rangeLetterStart, this.state.rangeLetterEnd, parseInt(this.state.rangeNumberStart), parseInt(this.state.rangeNumberEnd), parseInt(this.state.rangeHeight), (status, skipped) => {
                     if (status) {
                         ToastsStore.success('Successfully added racks!');
+                        if(skipped.length){
+                            ToastsStore.info('Skipped the following racks since they already exist: ' + skipped.join(', '));
+                        }
                         this.props.parentCallback(true);
                     } else {
                         ToastsStore.error('Error adding racks.');

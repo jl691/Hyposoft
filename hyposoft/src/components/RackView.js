@@ -50,24 +50,17 @@ class RackView extends React.Component {
     }
 
     componentDidMount() {
-        rackutils.getRackAt((startAfterCallback, rackCallback, empty) => {
-            if(empty){
-                console.log("eptyyyy")
-                this.setState({initialLoaded: true});
-            } else if (!(startAfterCallback === null) && !(rackCallback === null)) {
-                this.startAfter = startAfterCallback;
-                console.log("loaded up until " + this.startAfter)
-                console.log(this.startAfter.data())
-                this.setState({racks: rackCallback, initialLoaded: true});
-            }
-        });
+        this.forceRefresh();
     }
 
     forceRefresh() {
         this.startAfter = null;
         this.setState({initialLoaded: false, racks: [], popupType: "", deleteID: ""});
-        rackutils.getRackAt((startAfterCallback, rackCallback) => {
-            if (startAfterCallback && rackCallback) {
+        rackutils.getRackAt((startAfterCallback, rackCallback, empty) => {
+            if(empty){
+                console.log("eptyyyy")
+                this.setState({initialLoaded: true});
+            } else if (startAfterCallback && rackCallback) {
                 this.startAfter = startAfterCallback;
                 this.setState({racks: rackCallback, initialLoaded: true});
             }
