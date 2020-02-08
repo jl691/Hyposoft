@@ -2,18 +2,18 @@ import React, { Component } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
 import { Link } from 'react-router-dom'
 import { Button, Grommet, Heading, Box, List } from 'grommet'
-import * as instutils from '../utils/instanceutils'
+import * as assetutils from '../utils/assetutils'
 import theme from '../theme'
 import ModelPermaScreen from '../screens/ModelPermaScreen'
 import BackButton from '../components/BackButton'
 import AppBar from '../components/AppBar'
 import UserMenu from '../components/UserMenu'
 
-export default class DetailedInstanceScreen extends Component {
+export default class DetailedAssetScreen extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            instance: "",
+            asset: "",
 
 
         }
@@ -22,15 +22,15 @@ export default class DetailedInstanceScreen extends Component {
         router: () => true, // replace with PropTypes.object if you use them
     }
     componentDidMount() {
-        console.log("DetailedInstanceScreen")
+        console.log("DetailedAssetScreen")
         this.setState({
-            instance: ""
+            asset: ""
         })
-        instutils.getInstanceDetails(
-            this.props.match.params.instanceID,
-            instancesdb => {
+        assetutils.getAssetDetails(
+            this.props.match.params.assetID,
+            assetsdb => {
                 this.setState({
-                    instance: instancesdb
+                    asset: assetsdb
 
                 })
 
@@ -39,15 +39,14 @@ export default class DetailedInstanceScreen extends Component {
     }
 
     render() {
-        console.log(this.state.instance)
-        console.log(this.props.match.params.instanceID)
+        console.log(this.props.match.params.assetID)
         return (
 
             <Router>
                 <React.Fragment>
 
                     {/* CHange exact path to be custom, also call this.props.InstanceIDFromparent */}
-                    <Route path={`/instances/${this.props.match.params.instanceID}`} />
+                    <Route path={`/assets/${this.props.match.params.assetID}`} />
 
                     <Grommet theme={theme} full className='fade'>
                         <Box fill background='light-2'>
@@ -76,21 +75,21 @@ export default class DetailedInstanceScreen extends Component {
                                      margin={{top: 'medium', left: 'medium', right: 'medium'}}
                                      pad='small' >
                                      <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}} direction='column' justify='start'>
-                                         <Heading level='4' margin='none'>Instance Details</Heading>
+                                         <Heading level='4' margin='none'>Asset Details</Heading>
                                          <table style={{marginTop: '10px', marginBottom: '10px'}}>
-                                             <tr><td><b>Hostname</b></td><td style={{textAlign: 'right'}}>{this.state.instance.hostname}</td></tr>
-                                             <tr><td><b>Model</b></td><td style={{textAlign: 'right'}}>{this.state.instance.model}</td></tr>
-                                             <tr><td><b>Rack</b></td><td style={{textAlign: 'right'}}>{this.state.instance.rack}</td></tr>
-                                             <tr><td><b>Rack U</b></td><td style={{textAlign: 'right'}}>{this.state.instance.rackU}</td></tr>
-                                             <tr><td><b>Owner</b></td><td style={{textAlign: 'right'}}>@{this.state.instance.owner || 'N/A'}</td></tr>
+                                             <tr><td><b>Hostname</b></td><td style={{textAlign: 'right'}}>{this.state.asset.hostname}</td></tr>
+                                             <tr><td><b>Model</b></td><td style={{textAlign: 'right'}}>{this.state.asset.model}</td></tr>
+                                             <tr><td><b>Rack</b></td><td style={{textAlign: 'right'}}>{this.state.asset.rack}</td></tr>
+                                             <tr><td><b>Rack U</b></td><td style={{textAlign: 'right'}}>{this.state.asset.rackU}</td></tr>
+                                             <tr><td><b>Owner</b></td><td style={{textAlign: 'right'}}>@{this.state.asset.owner || 'N/A'}</td></tr>
                                          </table>
                                          <span style={{maxHeight: 100, overflow: 'scroll'}}>
-                                         {this.state.instance.comment && this.state.instance.comment.split('\n').map((i,key) => {
+                                         {this.state.asset.comment && this.state.asset.comment.split('\n').map((i,key) => {
                                              return <div key={key}>{i}</div>
                                          })}
                                          </span>
                                          <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}} gap='small'>
-                                             <Button label="View Model Details" onClick={() => {this.props.history.push('/models/'+this.state.instance.vendor+'/'+this.state.instance.modelNum)}} />
+                                             <Button label="View Model Details" onClick={() => {this.props.history.push('/models/'+this.state.asset.vendor+'/'+this.state.asset.modelNum)}} />
                                          </Box>
                                      </Box>
                                  </Box>

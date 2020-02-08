@@ -30,7 +30,7 @@ class DeleteRackView extends React.Component {
                 ToastsStore.success('Successfully deleted racks!');
                 this.props.parentCallback(true);
             } else {
-                ToastsStore.error('Error deleting racks. Ensure none of them contain instances.');
+                ToastsStore.error('Error deleting racks. Ensure none of them contain assets.');
             }
         })
     }

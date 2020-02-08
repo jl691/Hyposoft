@@ -8,48 +8,59 @@ function getRackAt(callback, start = null) {
     let racks = [];
     if(start){
         firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).startAfter(start).get().then(docSnaps => {
-            const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-            docSnaps.forEach(doc => {
-                racks.push({
-                    count: rackCount,
-                    id: doc.id,
-                    letter: doc.data().letter,
-                    number: doc.data().number,
-                    height: doc.data().height,
-                    instances: (doc.data().instances ? Object.keys(doc.data().instances).length : 0)
+            console.log("eyyyy")
+            if(docSnaps.empty){
+                console.log(docSnaps.empty)
+                callback(null, null, true);
+            } else {
+                console.log(docSnaps.size)
+                const newStart = docSnaps.docs[docSnaps.docs.length - 1];
+                docSnaps.forEach(doc => {
+                    racks.push({
+                        count: rackCount,
+                        id: doc.id,
+                        letter: doc.data().letter,
+                        number: doc.data().number,
+                        height: doc.data().height,
+                        assets: (doc.data().assets ? Object.keys(doc.data().assets).length : 0)
+                    });
+                    rackCount++;
                 });
-                rackCount++;
-            });
-            /*const racks = docSnaps.docs.map(doc => (
-                {
-                    id: doc.id,
-                    letter: doc.data().letter,
-                    number: doc.data().number,
-                    height: doc.data().height,
-                    instances: (doc.data().instances ? Object.keys(doc.data().instances).length : 0)
-                }));*/
-            console.log(racks);
-            callback(newStart, racks);
+                /*const racks = docSnaps.docs.map(doc => (
+                    {
+                        id: doc.id,
+                        letter: doc.data().letter,
+                        number: doc.data().number,
+                        height: doc.data().height,
+                        instances: (doc.data().instances ? Object.keys(doc.data().instances).length : 0)
+                    }));*/
+                console.log(racks);
+                callback(newStart, racks, false);
+            }
         }).catch(function (error) {
-            callback(null, null);
+            callback(null, null, null);
         })
     } else {
         firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).get().then(docSnaps => {
-            const startAfter = docSnaps.docs[docSnaps.docs.length - 1]
-            docSnaps.forEach(doc => {
-                racks.push({
-                    count: rackCount,
-                    id: doc.id,
-                    letter: doc.data().letter,
-                    number: doc.data().number,
-                    height: doc.data().height,
-                    instances: (doc.data().instances ? Object.keys(doc.data().instances).length : 0)
+            if(docSnaps.empty){
+                callback(null, null, true);
+            } else {
+                const startAfter = docSnaps.docs[docSnaps.docs.length - 1]
+                docSnaps.forEach(doc => {
+                    racks.push({
+                        count: rackCount,
+                        id: doc.id,
+                        letter: doc.data().letter,
+                        number: doc.data().number,
+                        height: doc.data().height,
+                        assets: (doc.data().assets ? Object.keys(doc.data().assets).length : 0)
+                    });
+                    rackCount++;
                 });
-                rackCount++;
-            });
-            callback(startAfter, racks);
+                callback(startAfter, racks, false);
+            }
         }).catch(function (error) {
-            callback(null, null);
+            callback(null, null, null);
         })
     }
 }
@@ -62,7 +73,7 @@ function addSingleRack(row, number, height, callback) {
                 letter: row,
                 number: number,
                 height: height,
-                instances: []
+                assets: []
             }).then(function (docRef) {
                 callback(docRef.id);
             }).catch(function (error) {
@@ -88,7 +99,7 @@ function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback
                         letter: currLetter,
                         number: j,
                         height: height,
-                        instances: []
+                        assets: []
                     }).catch(function (error) {
                         callback(null);
                     }))
@@ -101,14 +112,14 @@ function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback
     })
 }
 
-function checkInstances(rowStart, rowEnd, numberStart, numberEnd, callback) {
+function checkAssets(rowStart, rowEnd, numberStart, numberEnd, callback) {
     let rowStartNumber = rowStart.charCodeAt(0);
     let rowEndNumber = rowEnd.charCodeAt(0);
     for (let i = rowStartNumber; i <= rowEndNumber; i++) {
         let currLetter = String.fromCharCode(i);
         for (let j = numberStart; j <= numberEnd; j++) {
             firebaseutils.racksRef.where("letter", "==", currLetter).where("number", "==", j).get().then(function (querySnapshot) {
-                if (!querySnapshot.empty && querySnapshot.docs[0].data().instances && Object.keys(querySnapshot.docs[0].data().instances).length > 0) {
+                if (!querySnapshot.empty && querySnapshot.docs[0].data().assets && Object.keys(querySnapshot.docs[0].data().assets).length > 0) {
                     callback(null);
                 }
             })
@@ -120,7 +131,7 @@ function checkInstances(rowStart, rowEnd, numberStart, numberEnd, callback) {
 function deleteSingleRack(id, callback) {
     firebaseutils.racksRef.doc(id).get().then(function (doc) {
         if (doc.exists) {
-            if (doc.data().instances && Object.keys(doc.data().instances).length > 0) {
+            if (doc.data().assets && Object.keys(doc.data().assets).length > 0) {
                 callback(null)
             } else {
                 firebaseutils.racksRef.doc(id).delete().then(function () {
@@ -151,7 +162,7 @@ function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, callback) {
     let dbPromises = [];
     let rowStartNumber = rowStart.charCodeAt(0);
     let rowEndNumber = rowEnd.charCodeAt(0);
-    checkInstances(rowStart, rowEnd, numberStart, numberEnd, status => {
+    checkAssets(rowStart, rowEnd, numberStart, numberEnd, status => {
         if (status) {
             for (let i = rowStartNumber; i <= rowEndNumber; i++) {
                 let currLetter = String.fromCharCode(i);
@@ -160,7 +171,7 @@ function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, callback) {
                         if (!querySnapshot.empty) {
                             let docID;
                             docID = querySnapshot.docs[0].id;
-                            if(!(querySnapshot.docs[0].data().instances && Object.keys(querySnapshot.docs[0].data().instances).length > 0)){
+                            if(!(querySnapshot.docs[0].data().assets && Object.keys(querySnapshot.docs[0].data().assets).length > 0)){
                                 firebaseutils.racksRef.doc(docID).delete().catch(function (error) {
                                     callback(null);
                                 })
@@ -195,19 +206,17 @@ function generateRackDiagram(rackID, callback) {
     //find position of instance
     //height as defined by model, hostname
     //find model vendor name
-    let rackInstances = [];
+    let rackAssets = [];
     firebaseutils.racksRef.doc(rackID).get().then(function (docRefRack) {
         let letter = docRefRack.data().letter;
         let number = docRefRack.data().number;
-        if (docRefRack.data().instances.length) {
-            docRefRack.data().instances.forEach(instanceID => {
-                console.log("found instances for " + rackID)
-                getInstanceData(instanceID, result => {
+        if (docRefRack.data().assets.length) {
+            docRefRack.data().assets.forEach(assetID => {
+                getAssetData(assetID, result => {
                     if (result) {
-                        console.log("found instance data for " + instanceID)
-                        rackInstances.push(result);
-                        if (rackInstances.length === docRefRack.data().instances.length) {
-                            callback(letter, number, rackInstances);
+                        rackAssets.push(result);
+                        if (rackAssets.length === docRefRack.data().assets.length) {
+                            callback(letter, number, rackAssets);
                         }
                     }
                 })
@@ -220,18 +229,17 @@ function generateRackDiagram(rackID, callback) {
     })
 }
 
-function getInstanceData(instanceID, callback) {
+function getAssetData(assetID, callback) {
     let position, model, hostname;
-    firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
-        console.log("found the instance doc for  " + instanceID)
-        hostname = docRefInstance.data().hostname;
-        position = docRefInstance.data().rackU;
-        model = docRefInstance.data().model;
+    firebaseutils.assetRef.doc(assetID).get().then(function (docRefAsset) {
+        hostname = docRefAsset.data().hostname;
+        position = docRefAsset.data().rackU;
+        model = docRefAsset.data().model;
         getModelHeightColor(model, (height, color) => {
             if (height) {
-                console.log("got the height for " + instanceID)
+                console.log("got the height for " + assetID)
                 callback({
-                    id: instanceID,
+                    id: assetID,
                     model: model,
                     hostname: hostname,
                     height: height,
@@ -267,9 +275,7 @@ function getModelHeightColor(model, callback) {
     })
 }
 
-function checkInstanceFits(position, height, rack, callback, id = null) { //rackU, modelHeight, rack
-    console.log("checking for instance fit of height " + height + " for " + rack + position)
-    console.log("This is the instance")
+function checkAssetFits(position, height, rack, callback, id = null) { //rackU, modelHeight, rack
     //create promise array
     //create array of conflicting instances
     let conflicting = [];
@@ -280,38 +286,33 @@ function checkInstanceFits(position, height, rack, callback, id = null) { //rack
         console.log("pushing " + i + " to array")
     }
     firebaseutils.racksRef.doc(rack).get().then(function (docRefRack) {
-        let instanceCount = 0;
-        if (docRefRack.data().instances.length) {
-            docRefRack.data().instances.forEach(instanceID => {
-                console.log("this rack contains " + instanceID);
-                firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
-                    console.log(docRefInstance)
-                    //ignore own self
-                    console.log("instanceid is " + instanceID + " and id is " + id)
-                    if(instanceID != id){
-
-                        console.log(docRefInstance)
-                        modelutils.getModelByModelname(docRefInstance.data().model, result => {
+        let assetCount = 0;
+        if (docRefRack.data().assets.length) {
+            docRefRack.data().assets.forEach(assetID => {
+                console.log("this rack contains " + assetID);
+                firebaseutils.assetRef.doc(assetID).get().then(function (docRefAsset) {
+                    if(assetID != id){
+                     
+                        console.log(docRefAsset)
+                        modelutils.getModelByModelname(docRefAsset.data().model, result => {
                             if (result) {
                                 console.log("found a model!")
                                 console.log(result)
-                                getModelHeightColor((docRefInstance.data().model), (height, color) => {
+                                getModelHeightColor((docRefAsset.data().model), (height, color) => {
                                     if (height) {
                                         console.log("found the model height! " + height);
                                         let instPositions = [];
-                                        for (let i = docRefInstance.data().rackU; i < docRefInstance.data().rackU + height; i++) {
+                                        for (let i = docRefAsset.data().rackU; i < docRefAsset.data().rackU + height; i++) {
                                             instPositions.push(i);
                                         }
                                         //check for intersection
                                         let intersection = tentPositions.filter(value => instPositions.includes(value));
                                         if (intersection.length) {
                                             console.log("conflicting!")
-                                            conflicting.push(docRefInstance.id);
+                                            conflicting.push(docRefAsset.id);
                                         }
-                                        instanceCount++;
-                                        if (instanceCount === docRefRack.data().instances.length) {
-                                            console.log("done! calling back")
-                                            console.log("instancecount is " + instanceCount + " and length is " + docRefRack.data().instances.length)
+                                        assetCount++;
+                                        if (assetCount === docRefRack.data().assets.length) {
                                             callback(conflicting);
                                         }
                                     }
@@ -322,10 +323,8 @@ function checkInstanceFits(position, height, rack, callback, id = null) { //rack
                             }
                         })
                     } else {
-                        instanceCount++;
-                        if (instanceCount === docRefRack.data().instances.length) {
-                            console.log("done! calling back")
-                            console.log("instancecount is " + instanceCount + " and length is " + docRefRack.data().instances.length)
+                        assetCount++;
+                        if (assetCount === docRefRack.data().assets.length) {
                             callback(conflicting);
                         }
                     }
@@ -355,26 +354,26 @@ function generateRackUsageReport(rack, callback) {
     let modelCounts = new Map();
     let ownerCounts = new Map();
     firebaseutils.racksRef.doc(rack).get().then(function (docRefRack) {
-        if (docRefRack.data().instances.length) {
-            docRefRack.data().instances.forEach(instanceID => {
-                firebaseutils.instanceRef.doc(instanceID).get().then(function (docRefInstance) {
+        if (docRefRack.data().assets.length) {
+            docRefRack.data().assets.forEach(assetID => {
+                firebaseutils.assetRef.doc(assetID).get().then(function (docRefAsset) {
                     //update used count
-                    getModelHeightColor(docRefInstance.data().model, (height, color) => {
+                    getModelHeightColor(docRefAsset.data().model, (height, color) => {
                         //start with vendor
-                        if (vendorCounts.has(docRefInstance.data().vendor)) {
-                            vendorCounts.set(docRefInstance.data().vendor, vendorCounts.get(docRefInstance.data().vendor) + height);
+                        if (vendorCounts.has(docRefAsset.data().vendor)) {
+                            vendorCounts.set(docRefAsset.data().vendor, vendorCounts.get(docRefAsset.data().vendor) + height);
                         } else {
-                            vendorCounts.set(docRefInstance.data().vendor, height);
+                            vendorCounts.set(docRefAsset.data().vendor, height);
                         }
                         //then model
-                        if (modelCounts.has(docRefInstance.data().modelNumber)) {
-                            modelCounts.set(docRefInstance.data().modelNumber, modelCounts.get(docRefInstance.data().modelNumber) + height);
+                        if (modelCounts.has(docRefAsset.data().modelNumber)) {
+                            modelCounts.set(docRefAsset.data().modelNumber, modelCounts.get(docRefAsset.data().modelNumber) + height);
                         } else {
-                            modelCounts.set(docRefInstance.data().modelNumber, height);
+                            modelCounts.set(docRefAsset.data().modelNumber, height);
                         }
 
                         //then owner
-                        let owner = docRefInstance.data().owner ? docRefInstance.data().owner : "No owner";
+                        let owner = docRefAsset.data().owner ? docRefAsset.data().owner : "No owner";
                         if (ownerCounts.has(owner)) {
                             ownerCounts.set(owner, ownerCounts.get(owner) + height);
                         } else {
@@ -402,7 +401,7 @@ function generateAllRackUsageReports(callback) {
     let modelCounts = new Map();
     let ownerCounts = new Map();
     let queryCount = 0;
-    firebaseutils.instanceRef.get().then(function (querySnapshot) {
+    firebaseutils.assetRef.get().then(function (querySnapshot) {
         querySnapshot.forEach(function (doc) {
             console.log(" in the foreach for doc " + doc);
             /* generateRackUsageReport(doc.id, (used, height, vendor, model, owner) => {
@@ -500,7 +499,7 @@ export {
     deleteRackRange,
     generateRackDiagram,
     getRackID,
-    checkInstanceFits,
+    checkAssetFits,
     generateRackUsageReport,
     generateAllRackUsageReports
 }

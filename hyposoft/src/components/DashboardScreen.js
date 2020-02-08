@@ -24,9 +24,9 @@ class DashboardScreen extends Component {
     actions = [
         {title: 'Users', desc: 'View and manage users'},
         {title: 'Models', desc: 'View and manage models'},
-        {title: 'Instances', desc: 'View and manage instances of models'},
+        {title: 'Assets', desc: 'View and manage assets'},
         {title: 'Racks', desc: 'View and manage racks'},
-        {title: 'Import / Export', desc: 'Import and export models and instances'},
+        {title: 'Import / Export', desc: 'Import and export models and assets'},
         {title: 'Reports', desc: 'Generate rack usage reports'}
     ]
 

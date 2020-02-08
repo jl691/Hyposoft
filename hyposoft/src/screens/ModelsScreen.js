@@ -210,9 +210,9 @@ class ModelsScreen extends React.Component {
             return
         }
 
-        modelutils.doesModelHaveInstances(this.modelToDelete.id, yes => {
+        modelutils.doesModelHaveAssets(this.modelToDelete.id, yes => {
             if (yes) {
-                ToastsStore.info("Can't delete model with live instances", 3000, 'burntToast')
+                ToastsStore.info("Can't delete model with live assets", 3000, 'burntToast')
                 return
             }
 

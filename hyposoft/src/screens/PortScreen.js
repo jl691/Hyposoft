@@ -7,7 +7,7 @@ import { ToastsContainer, ToastsStore } from 'react-toasts'
 import { saveAs } from 'file-saver'
 import * as userutils from '../utils/userutils'
 import * as modelutils from '../utils/modelutils'
-import * as instanceutils from '../utils/instanceutils'
+import * as assetutils from '../utils/assetutils'
 import CSVReader from 'react-csv-reader'
 
 import {
@@ -29,10 +29,10 @@ class PortScreen extends Component {
     constructor () {
         super()
         this.exportModels = this.exportModels.bind(this)
-        this.exportInstances = this.exportInstances.bind(this)
+        this.exportAssets = this.exportAssets.bind(this)
         this.importModels = this.importModels.bind(this)
-        this.importInstances = this.importInstances.bind(this)
-        this.addInstancesToDb = this.addInstancesToDb.bind(this)
+        this.importAssets = this.importAssets.bind(this)
+        this.addAssetsToDb = this.addAssetsToDb.bind(this)
         this.showFormatDocumentation = this.showFormatDocumentation.bind(this)
     }
 
@@ -47,13 +47,13 @@ class PortScreen extends Component {
         })
     }
 
-    exportInstances () {
+    exportAssets () {
         this.setState(oldState => ({...oldState, showLoadingDialog: true}))
-        instanceutils.getInstancesForExport(rows => {
+        assetutils.getAssetsForExport(rows => {
             var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
                 type: "data:text/csv;charset=utf-8;",
             })
-            saveAs(blob, "hyposoft_instances.csv")
+            saveAs(blob, "hyposoft_assets.csv")
             this.setState(oldState => ({...oldState, showLoadingDialog: false}))
         })
     }
@@ -98,7 +98,7 @@ class PortScreen extends Component {
         })
     }
 
-    importInstances (data, fileName) {
+    importAssets (data, fileName) {
         this.setState(oldState => ({...oldState, showLoadingDialog: true}))
         if (data.length === 0) {
             ToastsStore.info('No records found in imported file', 3000, 'burntToast')
@@ -112,7 +112,7 @@ class PortScreen extends Component {
             return
         }
 
-        instanceutils.validateImportedInstances(data, ({errors, toBeAdded, toBeModified, toBeIgnored}) => {
+        assetutils.validateImportedAssets(data, ({errors, toBeAdded, toBeModified, toBeIgnored}) => {
             if (errors.length > 0) {
                 this.setState(oldState => ({
                     ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
@@ -121,26 +121,26 @@ class PortScreen extends Component {
                 if (toBeModified.length > 0) {
                     // Confirm modifications
                     this.setState(oldState => ({
-                        ...oldState, showLoadingDialog: false, errors: undefined, instancesToBeAdded: toBeAdded, instancesToBeIgnored: toBeIgnored, instancesToBeModified: toBeModified, instancesModified: undefined
+                        ...oldState, showLoadingDialog: false, errors: undefined, assetsToBeAdded: toBeAdded, assetsToBeIgnored: toBeIgnored, assetsToBeModified: toBeModified, assetsModified: undefined
                     }))
                 } else {
                     // Just add the ones to be added
                     this.setState(oldState => ({
-                        ...oldState, showLoadingDialog: false, errors: undefined, instancesToBeAdded: toBeAdded, instancesToBeIgnored: toBeIgnored, instancesModified: [], instancesToBeModified: undefined
+                        ...oldState, showLoadingDialog: false, errors: undefined, assetsToBeAdded: toBeAdded, assetsToBeIgnored: toBeIgnored, assetsModified: [], assetsToBeModified: undefined
                     }))
                 }
 
-                this.addInstancesToDb(toBeAdded)
+                this.addAssetsToDb(toBeAdded)
             }
         })
     }
 
-    addInstancesToDb(toBeAdded) {
-        instanceutils.forceAddInstancesToDb(toBeAdded)
+    addAssetsToDb(toBeAdded) {
+        assetutils.forceAddAssetsToDb(toBeAdded)
     }
 
-    modifyInstancesInDb(toBeModified) {
-        instanceutils.forceModifyInstancesInDb(toBeModified)
+    modifyAssetsInDb(toBeModified) {
+        assetutils.forceModifyAssetsInDb(toBeModified)
     }
 
     showFormatDocumentation() {
@@ -161,8 +161,8 @@ class PortScreen extends Component {
         var content = [
                 <Button primary label="Export Models" onClick={this.exportModels}/>,
                 <Button label="Import Models" onClick={()=>{document.getElementById('csvreadermodels').click()}}/>,
-                <Button primary label="Export Instances" onClick={this.exportInstances}/>,
-                <Button label="Import Instances" onClick={()=>{document.getElementById('csvreaderinstances').click()}}/>
+                <Button primary label="Export Assets" onClick={this.exportAssets}/>,
+                <Button label="Import Assets" onClick={()=>{document.getElementById('csvreaderassets').click()}}/>
         ]
         if (!userutils.isLoggedInUserAdmin()) {
             content = [
@@ -221,7 +221,7 @@ class PortScreen extends Component {
                                 <span>
                                     Files must be CSV files (comma-separated values) for import purposes. Files for model import must contain all 10 headers (columns) that can potentially be specified, although individual values for these columns may be left empty.
                                     These columns are: <b>vendor, model_number, height, display_color, ethernet_ports, power_ports, cpu, memory, storage,</b> and <b>comments.</b> <br/> <br/>
-                                    The same rules apply for files intended for instance imports. However, the columns for instance import files are: <b>hostname, rack, rack_position, vendor, model_number, owner,</b> and <b>comments.</b> <br/><br/>
+                                    The same rules apply for files intended for asset imports. However, the columns for asset import files are: <b>hostname, rack, rack_position, vendor, model_number, owner,</b> and <b>comments.</b> <br/><br/>
                                     All the restrictions that would apply to values inputted via the web form also apply to values provided in the import files. Any issues will be reported to you, and your import will safely abort.<br/><br/>
                                     <Anchor href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Click here</Anchor> for more detailed technical information on the file format specification.
                                 </span>
@@ -302,13 +302,13 @@ class PortScreen extends Component {
                         </Box>
                     </Layer>
                 )}
-                {this.state.instancesToBeModified && (
+                {this.state.assetsToBeModified && (
                     <Layer position="center" modal onClickOutside={()=>{}} onEsc={()=>{}}>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
                                 Update or ignore?
                             </Heading>
-                            <p>The following instances already exist in the database, and their fields' values are different from those you've supplied. Would you like to ignore these entries or update the existing values to your new values?</p>
+                            <p>The following assets already exist in the database, and their fields' values are different from those you've supplied. Would you like to ignore these entries or update the existing values to your new values?</p>
                             <Box
                                 margin={{top: 'small'}}
                                 as="footer"
@@ -316,7 +316,7 @@ class PortScreen extends Component {
                                 direction="column"
                                 align="start"
                                 justify="start" >
-                                {this.state.instancesToBeModified.map(tbm => <div><b>Row {tbm.row}:</b> {tbm.hostname} ({tbm.vendor} {tbm.model_number})</div>)}
+                                {this.state.assetsToBeModified.map(tbm => <div><b>Row {tbm.row}:</b> {tbm.hostname} ({tbm.vendor} {tbm.model_number})</div>)}
                             </Box>
                             <Box
                                 margin={{top: 'small'}}
@@ -326,16 +326,16 @@ class PortScreen extends Component {
                                 align="center"
                                 justify="end" >
                                 <Button label="Ignore" primary onClick={() => this.setState(oldState => ({
-                                    ...oldState, errors: undefined, instancesToBeAdded: oldState.instancesToBeAdded, instancesToBeIgnored: [...oldState.instancesToBeIgnored, oldState.instancesToBeModified], instancesToBeModified: undefined,
-                                    instancesModified: []
+                                    ...oldState, errors: undefined, assetsToBeAdded: oldState.assetsToBeAdded, assetsToBeIgnored: [...oldState.assetsToBeIgnored, oldState.assetsToBeModified], assetsToBeModified: undefined,
+                                    assetsModified: []
                                 }))} />
                                 <Button
                                     label="Update"
                                     onClick={() => {
-                                        this.modifyInstancesInDb(this.state.instancesToBeModified)
+                                        this.modifyAssetsInDb(this.state.assetsToBeModified)
                                         this.setState(oldState => ({
-                                            ...oldState, errors: undefined, instancesToBeAdded: oldState.instancesToBeAdded, instancesToBeIgnored: [...oldState.instancesToBeIgnored], instancesToBeModified: undefined,
-                                            instancesModified: [...oldState.instancesToBeModified]
+                                            ...oldState, errors: undefined, assetsToBeAdded: oldState.assetsToBeAdded, assetsToBeIgnored: [...oldState.assetsToBeIgnored], assetsToBeModified: undefined,
+                                            assetsModified: [...oldState.assetsToBeModified]
                                         }))
                                     }}
                                     />
@@ -343,12 +343,12 @@ class PortScreen extends Component {
                         </Box>
                     </Layer>
                 )}
-                {(this.state.instancesToBeAdded && this.state.instancesToBeIgnored && this.state.instancesModified
-                && !this.state.errors && !this.state.instancesToBeModified) && (
+                {(this.state.assetsToBeAdded && this.state.assetsToBeIgnored && this.state.assetsModified
+                && !this.state.errors && !this.state.assetsToBeModified) && (
                     <Layer position="center" modal onClickOutside={()=>{this.setState(oldState=>({
-                        ...oldState, instancesToBeAdded: undefined, instancesToBeIgnored: undefined, instancesModified: undefined
+                        ...oldState, assetsToBeAdded: undefined, assetsToBeIgnored: undefined, assetsModified: undefined
                     }))}} onEsc={()=>{this.setState(oldState=>({
-                        ...oldState, instancesToBeAdded: undefined, instancesToBeIgnored: undefined, instancesModified: undefined
+                        ...oldState, assetsToBeAdded: undefined, assetsToBeIgnored: undefined, assetsModified: undefined
                     }))}}>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
@@ -362,9 +362,9 @@ class PortScreen extends Component {
                                 direction="column"
                                 align="start"
                                 justify="start" >
-                                <div><b>Instances created:</b> {this.state.instancesToBeAdded.length}</div>
-                                <div><b>Instances modified:</b> {this.state.instancesModified.length}</div>
-                                <div><b>Records ignored:</b> {this.state.instancesToBeIgnored.length}</div>
+                                <div><b>Assets created:</b> {this.state.assetsToBeAdded.length}</div>
+                                <div><b>Assets modified:</b> {this.state.assetsModified.length}</div>
+                                <div><b>Records ignored:</b> {this.state.assetsToBeIgnored.length}</div>
                             </Box>
                         </Box>
                     </Layer>
@@ -405,10 +405,10 @@ class PortScreen extends Component {
                 />
                 <CSVReader
                     cssClass="react-csv-input"
-                    onFileLoaded={this.importInstances}
+                    onFileLoaded={this.importAssets}
                     parserOptions={this.papaparseOptions}
                     inputStyle={{ display: "none" }}
-                    inputId='csvreaderinstances'
+                    inputId='csvreaderassets'
                 />
             </Grommet>
         )

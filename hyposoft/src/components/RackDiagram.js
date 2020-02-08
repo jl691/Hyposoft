@@ -66,41 +66,42 @@ class RackDiagram extends React.Component {
                 });
                 canvas.add(header);
                 //header.centerH();
-                result.forEach(instance => {
-                    console.log("yeetersssss " + instance.position)
-                    let instanceBox = new fabric.Rect({
+                result.forEach(asset => {
+                    console.log("yeetersssss " + asset.position)
+                    let assetBox
+                        = new fabric.Rect({
                         left: (400*x)+30,
-                        top: (1113*y) + 50 + (20*(42-instance.position)) - (20*instance.height),
-                        fill: instance.color,
+                        top: (1113*y) + 50 + (20*(42-asset.position)) - (20*asset.height),
+                        fill: asset.color,
                         width: 290,
-                        height: (20*instance.height),
+                        height: (20*asset.height),
                         stroke: 'black',
                         strokeWidth: 1,
                         selectable: false
                     });
 
-                    let instanceText = new fabric.Text(instance.model.substr(0, 20), {
-                        fill: this.getContrastYIQ(instance.color),
+                    let assetText = new fabric.Text(asset.model.substr(0, 20), {
+                        fill: this.getContrastYIQ(asset.color),
                         fontFamily: 'Arial',
                         fontSize: 15,
-                        top: (1113*y) + 30 + (20*(42-instance.position)),
+                        top: (1113*y) + 30 + (20*(42-asset.position)),
                         left: (400*x) + 35,
                         selectable: false
                     });
 
-                    let instanceHostname = new fabric.Text(instance.hostname.substr(0, 15), {
-                        fill: this.getContrastYIQ(instance.color),
+                    let assetHostname = new fabric.Text(asset.hostname.substr(0, 15), {
+                        fill: this.getContrastYIQ(asset.color),
                         fontFamily: 'Arial',
                         fontSize: 15,
-                        top: (1113*y) + 30 + (20*(42-instance.position)),
+                        top: (1113*y) + 30 + (20*(42-asset.position)),
                         left: (400*x) + 200,
                         selectable: false
                     });
 
-                    canvas.add(instanceBox, instanceText, instanceHostname);
+                    canvas.add(assetBox, assetText, assetHostname);
 
-                    instanceBox.on("mousedown", function (options) {
-                        window.location.href = "/instances/" + instance.id;
+                    assetBox.on("mousedown", function (options) {
+                        window.location.href = "/assets/" + asset.id;
                     })
                 })
             } else {
