@@ -300,7 +300,7 @@ class RackView extends React.Component {
                 render: datum => (<View
                     onClick={() => {
                         this.props.history.push({
-                            pathname: '/rackelevation',
+                            pathname: '/rackdiagram',
                             state: {
                                 id: datum.id
                             }
