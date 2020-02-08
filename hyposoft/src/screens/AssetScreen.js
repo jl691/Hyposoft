@@ -359,7 +359,7 @@ class AssetScreen extends Component {
                                                 align='center'
                                                 margin={{ left: 'medium', right: 'medium' }}
                                                 justify='start' >
-                                                
+
                                                 {/* This box below is for range of racks */}
                                                 <Box style={{
                                                     borderRadius: 10,
