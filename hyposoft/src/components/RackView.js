@@ -300,7 +300,7 @@ class RackView extends React.Component {
                 render: datum => (<View
                     onClick={() => {
                         this.props.history.push({
-                            pathname: '/rackdiagram',
+                            pathname: '/rackelevation',
                             state: {
                                 id: datum.id
                             }
@@ -372,7 +372,7 @@ class RackView extends React.Component {
         } else {
             //we gucci
             this.props.history.push({
-                pathname: '/rackdiagram',
+                pathname: '/rackelevation',
                 state: {
                     letterStart: this.state.letterStart,
                     letterEnd: this.state.letterEnd,
@@ -390,6 +390,11 @@ class RackView extends React.Component {
 
         const {popupType} = this.state;
         let popup;
+        if (localStorage.getItem('tipShown') !== 'yes') {
+            ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
+            localStorage.setItem('tipShown', 'yes')
+        }
+
         if (popupType === 'Delete') {
             let deleteID = this.state.deleteID;
             popup = (
@@ -601,7 +606,7 @@ class RackView extends React.Component {
                                                                        {this.RackDeleteButton(datum)}
                                                                        <Button icon={<View/>} label="View" onClick={() => {
                                                                            this.props.history.push({
-                                                                               pathname: '/rackdiagram',
+                                                                               pathname: '/rackelevation',
                                                                                state: {
                                                                                    id: datum.id
                                                                                }

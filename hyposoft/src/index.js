@@ -29,7 +29,7 @@ ReactDOM.render((
                 <Switch>
                     <Route exact path='/' component={HomeScreen} />
                     <Route exact path='/racks' component={RackView} />
-                    <Route exact path='/rackdiagram' component={RackDiagram} />
+                    <Route exact path='/rackelevation' component={RackDiagram} />
                     <Route exact path='/dashboard' component={DashboardScreen} />
                     <Route exact path='/settings' component={SettingsScreen} />
                     <Route exact path='/users' component={UsersScreen} />

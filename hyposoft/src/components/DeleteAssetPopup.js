@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { Button, Grommet, Form, Heading, Text, Box } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
-import * as instutils from '../utils/assetutils'
+import * as assetutils from '../utils/assetutils'
 import * as userutils from "../utils/userutils";
 import {Redirect} from "react-router-dom";
 import theme from "../theme";
@@ -23,7 +23,7 @@ export default class DeleteAssetPopup extends Component {
     handleDelete(event) {
         console.log(this.props.deleteIDFromParent)
         if (event.target.name === "deleteInst") {
-            instutils.deleteAsset(this.props.deleteIDFromParent, status => {
+            assetutils.deleteAsset(this.props.deleteIDFromParent, status => {
                 if (status) {
 
                     ToastsStore.success('Deleted asset');
@@ -45,10 +45,10 @@ export default class DeleteAssetPopup extends Component {
 
         return (
             <Grommet theme={theme}>
-                <Box height="250px" width="medium" pad="medium" gap="xxsmall" overflow="auto" margin="medium">
+                <Box width="medium" gap="xxsmall" overflow="auto" margin="medium">
                     <Heading
                         size="small"
-                        margin="small"
+                        margin="none"
                         level="4"
                     >Delete Asset</Heading>
                     <Form onSubmit={this.handleDelete}
@@ -60,12 +60,11 @@ export default class DeleteAssetPopup extends Component {
                         <Box direction={"row"}>
                             <Button
                                 alignSelf="center"
-                                margin="small"
                                 type="submit"
                                 primary label="Yes"
                             />
                             <Button
-                                margin="small"
+                                margin={{left: 'small'}}
                                 label="Cancel"
                                 onClick={() => this.props.cancelCallback()}
                             />
@@ -86,8 +85,3 @@ export default class DeleteAssetPopup extends Component {
     }
 
 }
-
-
-
-
-

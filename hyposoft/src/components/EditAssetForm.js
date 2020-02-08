@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { Button, Grommet, Form, FormField, Heading, TextInput, Box } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
-import * as instutils from '../utils/assetutils'
+import * as assetutils from '../utils/assetutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
 import {Redirect} from "react-router-dom";
@@ -55,7 +55,7 @@ export default class EditAssetForm extends Component {
             } else if(!formvalidationutils.checkPositive(this.state.rackU)){
                 ToastsStore.error("Rack elevation must be positive.");
             } else {
-                instutils.updateAsset(
+                assetutils.updateAsset(
                     this.props.updateIDFromParent,
                     this.state.model,
                     this.state.hostname,
@@ -107,14 +107,14 @@ export default class EditAssetForm extends Component {
                                 onChange={e => {
                                     const value = e.target.value
                                     this.setState(oldState => ({...oldState, model: value}))
-                                    instutils.getSuggestedModels(value, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))
+                                    assetutils.getSuggestedModels(value, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))
                                 }}
                                 onSelect={e => {
                                   this.setState(oldState => ({...oldState, model: e.suggestion}))
                                 }}
                                 value={this.state.model}
                                 suggestions={this.state.modelSuggestions}
-                                onClick={() => instutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))}
+                                onClick={() => assetutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))}
                                 title='Model'
                               />
                                 {/* or value can be */}
@@ -134,14 +134,14 @@ export default class EditAssetForm extends Component {
                                 onChange={e => {
                                     const value = e.target.value
                                     this.setState(oldState => ({...oldState, rack: value}))
-                                    instutils.getSuggestedRacks(value, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))
+                                    assetutils.getSuggestedRacks(value, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))
                                 }}
                                 onSelect={e => {
                                     this.setState(oldState => ({...oldState, rack: e.suggestion}))
                                 }}
                                 value={this.state.rack}
                                 suggestions={this.state.rackSuggestions}
-                                onClick={() => instutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))}
+                                onClick={() => assetutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))}
                                 title='Rack'
                               />
                         </FormField>
@@ -159,14 +159,14 @@ export default class EditAssetForm extends Component {
                                 onChange={e => {
                                     const value = e.target.value
                                     this.setState(oldState => ({...oldState, owner: value}))
-                                    instutils.getSuggestedOwners(value, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))
+                                    assetutils.getSuggestedOwners(value, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))
                                 }}
                                 onSelect={e => {
                                     this.setState(oldState => ({...oldState, owner: e.suggestion}))
                                 }}
                                 value={this.state.owner}
                                 suggestions={this.state.ownerSuggestions}
-                                onClick={() => instutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))}
+                                onClick={() => assetutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))}
                                 title='Owner'
                               />
                         </FormField>

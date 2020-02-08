@@ -16,12 +16,14 @@ export default class AssetTable extends Component {
         {
             property: 'model',
             header: <Text size='small'>Model</Text>,
+            align:"start",
             render: datum => <Text size='small'>{datum.model}</Text>,
 
         },
         {
             property: 'hostname',
             header: <Text size='small'>Hostname</Text>,
+            align:"start",
             render: datum => <Text size='small'>{datum.hostname}</Text>,
             primary: true
         },
@@ -56,6 +58,7 @@ export default class AssetTable extends Component {
 
         this.handleFilter = this.handleFilter.bind(this);
         this.restoreDefault = this.restoreDefault.bind(this);
+        this.handleRackRackUSort = this.handleRackRackUSort.bind(this);
     }
 
     componentDidMount() {
@@ -69,31 +72,36 @@ export default class AssetTable extends Component {
         this.adminButtons();
 
 
-        this.columns.push({
-            property: "details",
-            header: <Text size='small'>Details</Text>,
-            sortable: false,
-
-            render: data => (
-
-
-                //need to pass down instance_id to know which page to display to detailedInstanceScreen
-                <React.Fragment>
-                    <Link to={`/assets/${data.asset_id}`} >
-
-                        <Button icon={< FormFolder/>}
-                            margin="small"
-                            onClick={new DetailedAssetScreen()}
-
-                        />
-
-                        {/* this.props.history.push */}
-                    </Link>
-
-                </React.Fragment>
-            )
-
-        })
+        // this.columns.push({
+        //     property: "details",
+        //     header: <Text size='small'>Details</Text>,
+        //     sortable: false,
+        //
+        //     render: data => (
+        //
+        //
+        //         //need to pass down instance_id to know which page to display to detailedInstanceScreen
+        //         <React.Fragment>
+        //             <Link to={`/instances/${data.instance_id}`} >
+        //
+        //                 <Button icon={< FormFolder/>}
+        //                     margin="none"
+        //                     onClick={e => {
+        //                         e.persist()
+        //                         e.nativeEvent.stopImmediatePropagation()
+        //                         e.stopPropagation()
+        //                         new DetailedInstanceScreen()
+        //                     }}
+        //
+        //                 />
+        //
+        //                 {/* this.props.history.push */}
+        //             </Link>
+        //
+        //         </React.Fragment>
+        //     )
+        //
+        // })
 
     }
 
@@ -105,17 +113,17 @@ export default class AssetTable extends Component {
                 property: "delete",
                 header: <Text size='small'>Delete</Text>,
                 sortable: false,
+                align: 'center',
 
                 render: datum => (
-                    <Button
-                        icon={<FormTrash />}
-                        margin="small"
-
-                        onClick={() => {
+                    <FormTrash
+                        style={{cursor: 'pointer'}}
+                        onClick={(e) => {
                             console.log(datum)
+                            e.persist()
+                            e.nativeEvent.stopImmediatePropagation()
+                            e.stopPropagation()
                             this.props.deleteButtonCallbackFromParent(datum)
-
-
                         }} />
                 )
             });
@@ -123,13 +131,14 @@ export default class AssetTable extends Component {
                 property: "update",
                 header: <Text size='small'>Update</Text>,
                 sortable: false,
-
+                align: 'center',
                 render: data => (
-                    <Button
-                        icon={< FormEdit />}
-                        margin="small"
-                        onClick={() => {
-
+                    <FormEdit
+                        style={{cursor: 'pointer'}}
+                        onClick={(e) => {
+                            e.persist()
+                            e.nativeEvent.stopImmediatePropagation()
+                            e.stopPropagation()
                             this.props.UpdateButtonCallbackFromParent(
                                 data.asset_id,
                                 data.model,
@@ -194,17 +203,28 @@ export default class AssetTable extends Component {
                 newInstances.push(asset);
             }*/
             if ((rackRowTemp === rackRowStart && rackNumTemp >= rackNumStart) || (rackRowTemp === rackRowEnd && rackNumTemp <= rackNumEnd) || (rackRowTemp.charCodeAt(0) > rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) < rackRowEnd.charCodeAt(0))) {
-                console.log("found a match!")
-                newAssets.push(asset);
+                if (rackRowStart === rackRowEnd && rackRowEnd === rackRowTemp) {
+                    if (rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd) {
+                        console.log("found a match!")
+                        newAssets.push(asset);
+                    }
+                } else {
+                    console.log("found a match!")
+                    newAssets.push(asset);
+                }
             }
         })
 
         this.setState({ assets: newAssets })
     }
 
+    handleRackRackUSort(sortedAssets){
+        this.setState({assets:sortedAssets})
+
+    }
+
 
     render() {
-
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
         }
@@ -243,20 +263,21 @@ export default class AssetTable extends Component {
                                         <DataTable
                                             step={5}
                                             onMore={() => {
-                                                if (this.startAfter) {
+                                                if (this.startAfter && !this.props.searchResults) {
                                                     assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
                                                         this.startAfter = newStartAfter
                                                         this.setState({ assets: this.state.assets.concat(newAssets) })
                                                     });
                                                 }
                                             }}
-                                            pad="17px"
                                             sortable={true}
                                             columns={this.columns}
-                                            size="large"
-                                        
+                                            size="medium"
+                                            onClickRow={({datum}) => {
+                                                this.props.parent.props.history.push('/assets/'+datum.asset_id)
+                                            }}
 
-                                            data={this.state.assets}
+                                            data={this.props.searchResults||this.state.assets}
 
 
                                         />
@@ -275,6 +296,3 @@ export default class AssetTable extends Component {
 
     }
 }
-
-
-

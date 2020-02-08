@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
 
-import { Text, Button, Layer, Grommet, Heading, Box, TextInput, RadioButtonGroup, Stack } from 'grommet'
+import { Text, Button, Layer, Form, Grommet, Heading, Box, TextInput, RadioButtonGroup, Stack } from 'grommet'
 import { Add } from 'grommet-icons'
 import AddAssetForm from '../components/AddAssetForm'
 import DeleteAssetPopup from '../components/DeleteAssetPopup'
@@ -15,7 +15,12 @@ import FilterBarAssets from '../components/FilterBarAssets'
 import SearchAssets from '../components/SearchAssets'
 import AssetTable from '../components/AssetTable'
 import * as userutils from "../utils/userutils";
+import * as assetutils from "../utils/assetutils";
 import { ToastsContainer, ToastsStore } from "react-toasts";
+
+const algoliasearch = require('algoliasearch')
+const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
+const index = client.initIndex('assets')
 
 class AssetScreen extends Component {
 
@@ -28,6 +33,7 @@ class AssetScreen extends Component {
         super(props);
         this.state = {
             assets: [],
+            sortedAssets: [],
             popupType: "",
             deleteID: "",
             deleteModel: "",
@@ -42,6 +48,9 @@ class AssetScreen extends Component {
             updateComment: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
+            rackSortChoice: "asc",//by default, will be ascending
+            rackUSortChoice: "asc",
+            searchQuery: ""
 
         }
 
@@ -51,6 +60,9 @@ class AssetScreen extends Component {
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleChangeRange = this.handleChangeRange.bind(this);
+        this.handleRadioButtonChange = this.handleRadioButtonChange.bind(this);
+        this.handleCombinedSort = this.handleCombinedSort.bind(this);
+        this.handleSearch = this.handleSearch.bind(this);
 
 
         this.assetTable = React.createRef();
@@ -74,6 +86,40 @@ class AssetScreen extends Component {
         } else {
             this.assetTable.current.restoreDefault();
         }
+    }
+    handleRadioButtonChange(event) {
+        if (event.target.name === "rackSortChoice") {
+            console.log(event.target.value)
+            this.rackSort = event.target.value;
+            this.state.rackSortChoice = event.target.value
+
+        }
+        else if (event.target.name === "rackUSortChoice") {
+            console.log(event.target.value)
+            this.rackUSort = event.target.value;
+            this.state.rackUSortChoice = event.target.value
+        }
+    }
+
+    handleCombinedSort(event) {
+        let rackBool=this.state.rackSortChoice === "asc"? true : false;
+        let rackUBool=this.state.rackUSortChoice === "asc"? true : false;
+
+        assetutils.sortAssetsByRackAndRackU(rackBool, rackUBool, sortedInst => {
+            console.log("Will be sorting racks: " + this.state.rackSortChoice)
+            console.log("Will be sorting rackU: " + this.state.rackUSortChoice)
+
+            if(sortedInst){
+                this.state.sortedAssets=sortedInst;
+                console.log(this.state.sortedAssets)
+                this.assetTable.current.handleRackRackUSort(sortedInst)
+            }
+            else{
+                console.log("Done goofed somehow trying to sort")
+
+            }
+
+        })
     }
 
     handleCancelRefreshPopupChange() {
@@ -131,12 +177,43 @@ class AssetScreen extends Component {
     }
 
     componentDidMount() {
-        ToastsStore.info("Tip: Click on a column name to sort by it", 10000)
+        if (localStorage.getItem('tipShown') !== 'yes') {
+            ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
+            localStorage.setItem('tipShown', 'yes')
+        }
+    }
+
+    handleSearch () {
+        if (this.state.searchQuery.trim() !== "") {
+            index.search(this.state.searchQuery)
+            .then(({ hits }) => {
+                var results = []
+                var itemNo = 1
+                for (var i = 0; i < hits.length; i++) {
+                    results = [...results, {...hits[i], id: hits[i].objectID, itemNo: itemNo++, asset_id: hits[i].objectID}]
+                }
+                console.log(results)
+                this.setState(oldState => ({
+                    ...oldState,
+                    searchResults: results
+                }))
+            })
+        } else {
+            // reset
+            this.setState(oldState => ({
+                ...oldState,
+                searchResults: undefined
+            }))
+        }
     }
 
     render() {
         const { popupType } = this.state;
         let popup;
+        if (localStorage.getItem('tipShown') !== 'yes') {
+            ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
+            localStorage.setItem('tipShown', 'yes')
+        }
 
         if (popupType === 'Add') {
 
@@ -220,9 +297,23 @@ class AssetScreen extends Component {
                                         justify='center'
                                         wrap={true}
                                         overflow="scroll">
-                                        <Box direction='row' justify='center' overflow="scroll">
-                                            <Box direction='row' justify='center' overflow="scroll">
-                                                <Box width='large' direction='column' align='stretch' justify='start' overflow="scroll">
+                                        <Box direction='row' justify='center'>
+                                            <Box direction='row' justify='center'>
+                                                <Box width='large' direction='column' align='stretch' justify='start'>
+                                                    <Box margin={{top: 'medium'}}>
+                                                        <Form onSubmit={() => this.handleSearch()}>
+                                                            <TextInput style={styles.TIStyle}
+                                                                placeholder="Search for assets (type your query and press enter)"
+                                                                type='search'
+                                                                onChange={e => {
+                                                                    const value = e.target.value
+                                                                    this.setState(oldState => ({...oldState, searchQuery: value}))
+                                                                }}
+                                                                value={this.state.searchQuery}
+                                                                title='Search'
+                                                                />
+                                                         </Form>
+                                                    </Box>
                                                     <Box style={{
                                                         borderRadius: 10,
                                                         borderColor: '#EDEDED'
@@ -246,11 +337,17 @@ class AssetScreen extends Component {
                                                                     UpdateButtonCallbackFromParent={this.handleUpdateButton}
 
                                                                     ref={this.assetTable}
+                                                                    searchResults={this.state.searchResults}
+                                                                    ref={this.assetTable}
+                                                                    parent={this}
 
                                                                 />
                                                             </Box>
                                                         </Box>
                                                     </Box>
+                                                    {userutils.isLoggedInUserAdmin() && (
+                                                         <Button primary icon={<Add />} label="Add Asset" alignSelf='center' onClick={() => this.setState({ popupType: "Add" })} />
+                                                    )}
                                                 </Box>
                                             </Box>
                                         </Box>
@@ -262,27 +359,7 @@ class AssetScreen extends Component {
                                                 align='center'
                                                 margin={{ left: 'medium', right: 'medium' }}
                                                 justify='start' >
-                                                {/* This box below is for Search */}
-                                                <Box style={{
-                                                    borderRadius: 10,
-                                                    borderColor: '#EDEDED'
-                                                }}
-                                                    direction='row'
-                                                    alignSelf='stretch'
-                                                    background='#FFFFFF'
-                                                    width={'medium'}
-                                                    margin={{ top: 'medium', left: 'medium', right: 'medium' }}
-                                                    pad='small' >
-                                                    <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
-
-
-
-                                                        <Text size='small'><b>Search Assets</b></Text>
-                                                        <Stack margin={{ top: 'small' }}>
-                                                            <SearchAssets />
-                                                        </Stack>
-                                                    </Box>
-                                                </Box>
+                                                
                                                 {/* This box below is for range of racks */}
                                                 <Box style={{
                                                     borderRadius: 10,
@@ -297,17 +374,19 @@ class AssetScreen extends Component {
                                                     <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
                                                         <Text size='small'><b>Filter By Rack Range</b></Text>
                                                         <Stack margin={{ top: 'small' }}>
-                                                            <Box gap='small' direction="column" margin='small'>
+                                                            <Box gap='small' direction="column" margin='none' align='center'>
 
-                                                                <TextInput name="rangeNumberStart" placeholder="eg. B1" size="xsmall" onChange={this.handleChangeRange} />
-                                                                to
-                                                                <TextInput name="rangeNumberEnd" placeholder="eg. C21" size="xsmall" onChange={this.handleChangeRange} />
+                                                                <TextInput style={styles.TIStyle2} name="rangeNumberStart" placeholder="eg. B1" size="xsmall" onChange={this.handleChangeRange} />
+                                                                <span>to</span>
+                                                                <TextInput style={styles.TIStyle2} name="rangeNumberEnd" placeholder="eg. C21" size="xsmall" onChange={this.handleChangeRange} />
                                                             </Box>
 
                                                         </Stack>
                                                     </Box>
                                                 </Box>
-                                                {/* This box is for combined sort on Rack and Rack U */}
+
+
+                                                {/* Box for Combined Rack and Rack U sort */}
                                                 <Box style={{
                                                     borderRadius: 10,
                                                     borderColor: '#EDEDED'
@@ -317,57 +396,73 @@ class AssetScreen extends Component {
                                                     background='#FFFFFF'
                                                     width={'medium'}
                                                     margin={{ top: 'medium', left: 'medium', right: 'medium' }}
-                                                    pad='small' >
+                                                    pad='xxsmall' >
                                                     <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
-                                                        <Text size='small'><b>Combined Sort</b></Text>
-                                                        <Stack margin={{ top: 'small' }}>
+                                                        <Stack >
                                                             <Box gap='small' direction="column" margin='small'>
                                                                 {/* Put sort buttons here */}
                                                                 <Text size='small'><b>Rack</b></Text>
                                                                 <Box direction="row" justify="start" margin="small">
                                                                     <RadioButtonGroup
                                                                         label="Rack"
-                                                                        name="rack"
+                                                                        name="rackSortChoice"
+                                                                        value={this.state.rackSortChoice}
+
                                                                         options={[
-                                                                            { label: "Ascending", value: "rackAsc" },
-                                                                            { label: "Descending", value: "rackDesc" },
+                                                                            { label: "Ascending", value: "asc" },
+                                                                            { label: "Descending", value: "desc" },
 
                                                                         ]}
-                                                                        //value={this.rackSort}
-                                                                        // onChange={this.setState(rackSort= value)}
-                                                                        {...props}
+
+                                                                        onClick={e => {
+
+                                                                            this.value = e.target.value
+                                                                            this.setState(oldState => ({ ...oldState, rackSortChoice: this.value }))
+                                                                            this.handleRadioButtonChange(e)
+
+                                                                        }}
+
                                                                     />
 
                                                                 </Box>
                                                                 <Text size='small'><b>Rack U</b></Text>
                                                                 <Box direction="row" justify="start" margin="small">
                                                                     <RadioButtonGroup
-                                                                        label="Rack U"
-                                                                        name="rackU"
+                                                                        label="Rack"
+                                                                        name="rackUSortChoice"
+                                                                        value={this.state.rackUSortChoice}
+
                                                                         options={[
-                                                                            { label: "Ascending", value: "rackUAsc" },
-                                                                            { label: "Descending", value: "rackUDesc" },
+                                                                            { label: "Ascending", value: "asc" },
+                                                                            { label: "Descending", value: "desc" },
 
                                                                         ]}
-                                                                        //value={this.rackSort}
-                                                                        // onChange={this.setState(rackSort= value)}
-                                                                        {...props}
+
+                                                                        onClick={e => {
+
+                                                                            this.value = e.target.value
+                                                                            this.setState(oldState => ({ ...oldState, rackUSortChoice: this.value }))
+                                                                            this.handleRadioButtonChange(e)
+
+                                                                        }}
+
                                                                     />
+
                                                                 </Box>
-                                                                <Box margin="17px"  direction="column" justify="center">
-                                                                    <Button label={<Text size="small"> Apply sort</Text>} />
+                                                                <Box direction="column" justify="center" margin={{top: 'small'}}>
+                                                                    <Button label={<Text size="small"> Apply</Text>} onClick={this.handleCombinedSort}/>
                                                                 </Box>
 
 
                                                             </Box>
 
                                                         </Stack>
+
+
+
                                                     </Box>
                                                 </Box>
-                                                {/* Button to Add an Instance: */}
-                                                <Box margin="17px" align="center" direction="column" justify="center">
-                                                    {this.addButton()}
-                                                </Box>
+
                                             </Box>
                                             {/* END OFF FILTER BAR ================= */}
 
@@ -376,11 +471,9 @@ class AssetScreen extends Component {
 
                                     </Box>
 
-
                                     <ToastsContainer store={ToastsStore} />
 
                                 </Box>
-
 
                             </Grommet>
 
@@ -395,6 +488,15 @@ class AssetScreen extends Component {
     }
 }
 
-
+const styles = {
+    TIStyle: {
+        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#FFFFFF',
+        width: '100%', paddingLeft: 20, fontWeight: 'normal'
+    },
+    TIStyle2: {
+        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
+        width: '100%', paddingLeft: 20, fontWeight: 'normal'
+    }
+}
 
 export default AssetScreen

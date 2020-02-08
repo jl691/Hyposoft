@@ -27,7 +27,7 @@ class DashboardScreen extends Component {
         {id: 2, title: 'Assets', desc: 'View and manage assets'},
         {id: 3, title: 'Racks', desc: 'View and manage racks'},
         {id: 4, title: 'Import / Export', desc: 'Import and export models and assets'},
-        {id: 5, title: 'Reports', desc: 'Generate rack usage reports'}
+        //{id: 5, title: 'Reports', desc: 'Generate rack usage reports'}
     ]
 
     doAction (action) {

@@ -79,14 +79,16 @@ class ModelSettingsLayer extends React.Component {
 
         if (isNaN(this.state.height.trim()) || !Number.isInteger(parseFloat(this.state.height.trim())) || parseInt(this.state.height.trim()) <= 0) {
             ToastsStore.info('Height should be a positive integer', 3000, 'burntToast')
+            this.setState(oldState => ({...oldState, height: ''}))
             return
         }
 
 
         var ethernetPorts = null
         if (this.state.ethernetPorts.trim() !== '' &&
-         (isNaN(this.state.ethernetPorts.trim()) || !Number.isInteger(parseFloat(this.state.ethernetPorts.trim())) || parseInt(this.state.ethernetPorts.trim()) <= 0)) {
+         (isNaN(this.state.ethernetPorts.trim()) || !Number.isInteger(parseFloat(this.state.ethernetPorts.trim())) || parseInt(this.state.ethernetPorts.trim()) < 0)) {
              ToastsStore.info('Ethernet ports should be a non-negative integer', 3000, 'burntToast')
+             this.setState(oldState => ({...oldState, ethernetPorts: ''}))
              return
          } else if (this.state.ethernetPorts.trim() !== '') {
             ethernetPorts=parseInt(this.state.ethernetPorts)
@@ -94,8 +96,9 @@ class ModelSettingsLayer extends React.Component {
 
         var powerPorts = null
          if (this.state.powerPorts.trim() !== '' &&
-          (isNaN(this.state.powerPorts.trim()) || !Number.isInteger(parseFloat(this.state.powerPorts.trim())) || parseInt(this.state.powerPorts.trim()) <= 0)) {
+          (isNaN(this.state.powerPorts.trim()) || !Number.isInteger(parseFloat(this.state.powerPorts.trim())) || parseInt(this.state.powerPorts.trim()) < 0)) {
               ToastsStore.info('Power ports should be a non-negative integer', 3000, 'burntToast')
+              this.setState(oldState => ({...oldState, powerPorts: ''}))
               return
           } else if (this.state.powerPorts.trim() !== '') {
               powerPorts=parseInt(this.state.powerPorts)
@@ -105,13 +108,14 @@ class ModelSettingsLayer extends React.Component {
 
           var memory = null
           if (this.state.memory.trim() !== '' &&
-           (isNaN(this.state.memory.trim()) || !Number.isInteger(parseFloat(this.state.memory.trim())) || parseInt(this.state.memory.trim()) <= 0)) {
+           (isNaN(this.state.memory.trim()) || !Number.isInteger(parseFloat(this.state.memory.trim())) || parseInt(this.state.memory.trim()) < 0)) {
                ToastsStore.info('Memory should be a non-negative integer', 3000, 'burntToast')
+               this.setState(oldState => ({...oldState, memory: ''}))
                return
            } else if (this.state.memory.trim() !== '') {
                memory=parseInt(this.state.memory)
            }
-        modelutils.getModel(this.state.vendor.trim(), this.state.modelNumber.trim(), doc => {
+        modelutils.getModelByModelname(this.state.vendor.trim()+' '+this.state.modelNumber.trim(), doc => {
             if (doc && doc.id !== this.state.id) {
                 ToastsStore.info(this.state.modelNumber.trim() + ' by ' + this.state.vendor.trim() + ' exists', 3000, 'burntToast')
                 return
