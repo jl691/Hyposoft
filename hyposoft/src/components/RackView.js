@@ -282,10 +282,10 @@ class RackView extends React.Component {
                                                    )
                                                },*/
             {
-                property: "instances",
-                header: <Text size='small'>Instances</Text>,
+                property: "assets",
+                header: <Text size='small'>Assets</Text>,
                 render: datum => (
-                    <Text size='small'>{datum.instances}</Text>)
+                    <Text size='small'>{datum.assets}</Text>)
             },
             {
                 property: "view",
@@ -365,7 +365,7 @@ class RackView extends React.Component {
         } else {
             //we gucci
             this.props.history.push({
-                pathname: '/rackdiagram',
+                pathname: '/rackelevation',
                 state: {
                     letterStart: this.state.letterStart,
                     letterEnd: this.state.letterEnd,
@@ -383,6 +383,11 @@ class RackView extends React.Component {
 
         const {popupType} = this.state;
         let popup;
+        if (localStorage.getItem('tipShown') !== 'yes') {
+            ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
+            localStorage.setItem('tipShown', 'yes')
+        }
+
         if (popupType === 'Delete') {
             let deleteID = this.state.deleteID;
             popup = (
@@ -399,7 +404,7 @@ class RackView extends React.Component {
                                         this.forceRefresh();
                                         ToastsStore.success('Successfully deleted!');
                                     } else {
-                                        ToastsStore.error('Failed to delete rack. Please insure that it contains no instances and try again.');
+                                        ToastsStore.error('Failed to delete rack. Please insure that it contains no assets and try again.');
                                         this.setState({popupType: ""})
                                     }
                                 });
@@ -594,7 +599,7 @@ class RackView extends React.Component {
                                                                        {this.RackDeleteButton(datum)}
                                                                        <Button icon={<View/>} label="View" onClick={() => {
                                                                            this.props.history.push({
-                                                                               pathname: '/rackdiagram',
+                                                                               pathname: '/rackelevation',
                                                                                state: {
                                                                                    id: datum.id
                                                                                }

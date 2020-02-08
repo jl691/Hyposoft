@@ -6,7 +6,7 @@ import { Box, Stack, Text } from 'grommet'
 // Might be a better idea to make each of these its own component, then come to this class to put all those
 //components together. But that is a later me problem
 
-const FilterBarInstances = (props) => (
+const FilterBarAssets = (props) => (
     <Box
         width='medium'
         align='center'
@@ -38,4 +38,4 @@ const FilterBarInstances = (props) => (
 
 )
 
-export default FilterBarInstances
+export default FilterBarAssets

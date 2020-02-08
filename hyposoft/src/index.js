@@ -7,7 +7,7 @@ import './utils/firebaseutils'
 
 import './animation.css'
 import RackDiagram from "./components/RackDiagram";
-import DetailedInstanceScreen from './screens/DetailedInstanceScreen'
+import DetailedAssetScreen from './screens/DetailedAssetScreen'
 
 
 import HomeScreen from './screens/HomeScreen'
@@ -22,14 +22,14 @@ import ModelPermaScreen from './screens/ModelPermaScreen'
 import PortScreen from './screens/PortScreen'
 
 import RackView from "./components/RackView";
-import InstanceScreen from './screens/InstanceScreen'
+import AssetScreen from './screens/AssetScreen'
 
 ReactDOM.render((
             <BrowserRouter>
                 <Switch>
                     <Route exact path='/' component={HomeScreen} />
                     <Route exact path='/racks' component={RackView} />
-                    <Route exact path='/rackdiagram' component={RackDiagram} />
+                    <Route exact path='/rackelevation' component={RackDiagram} />
                     <Route exact path='/dashboard' component={DashboardScreen} />
                     <Route exact path='/settings' component={SettingsScreen} />
                     <Route exact path='/users' component={UsersScreen} />
@@ -39,9 +39,9 @@ ReactDOM.render((
                     <Route exact path='/models' component={ModelsScreen} />
                     <Route exact path='/models/:vendor/:modelNumber' component={ModelPermaScreen} />
                     {/* TODO: have url be the ID of the instance */}
-                    <Route exact path='/instances/:instanceID' component={DetailedInstanceScreen}/>
+                    <Route exact path='/assets/:assetID' component={DetailedAssetScreen}/>
                     {/* TODO: implement a functionality to take you to instance screen vs http://localhost:3000/instances*/}
-                    <Route exact path='/instances' component={InstanceScreen} />
+                    <Route exact path='/assets' component={AssetScreen} />
                     <Route path='/port' component={PortScreen} />
                 </Switch>
             </BrowserRouter>

@@ -89,8 +89,8 @@ class UsersScreen extends Component {
             return
         }
 
-        if (this.state.instances.length > 0) {
-            ToastsStore.info("Can't delete model with live instances", 3000, 'burntToast')
+        if (this.state.assets.length > 0) {
+            ToastsStore.info("Can't delete model with live assets", 3000, 'burntToast')
         } else {
             modelutils.deleteModel(this.state.id, () => {
                 ToastsStore.info("Model deleted", 3000, 'burntToast')
@@ -111,7 +111,7 @@ class UsersScreen extends Component {
             }))
         })
 
-        firebaseutils.instanceRef
+        firebaseutils.assetRef
         .where('model', '==', this.props.match.params.vendor+' '+this.props.match.params.modelNumber)
         .limit(25)
         .get().then(docSnaps => {
@@ -119,7 +119,7 @@ class UsersScreen extends Component {
                 this.startAfter = docSnaps.docs[docSnaps.docs.length-1]
             }
             var i = 1
-            this.setState({instances: docSnaps.docs.map(doc => (
+            this.setState({assets: docSnaps.docs.map(doc => (
                 {...doc.data(), id: doc.id, itemNo: i++}
             ))})
         })
@@ -166,7 +166,7 @@ class UsersScreen extends Component {
                                            shrink: 0
                                        }}
                                        pad='small' >
-                                       <Heading level='5' margin={{left: 'medium', top: 'none', bottom: 'none'}}>Deployed Instances</Heading>
+                                       <Heading level='5' margin={{left: 'medium', top: 'none', bottom: 'none'}}>Deployed Assets</Heading>
                                    </Box>
                                        <Box style={{
                                                 borderRadius: 10,
@@ -197,6 +197,9 @@ class UsersScreen extends Component {
                                                                 })
                                                             }
                                                         }}
+                                                        onClickRow={({datum}) => {
+                                                            this.props.history.push('/assets/'+datum.id)
+                                                        }}
                                                         columns={
                                                             [
                                                                 {
@@ -225,7 +228,7 @@ class UsersScreen extends Component {
                                                                 },
                                                             ]
                                                         }
-                                                        data={this.state.instances}
+                                                        data={this.state.assets}
                                                         sortable={true}
                                                         size="medium"
                                                     />
@@ -270,9 +273,11 @@ class UsersScreen extends Component {
                                                     <tr><td><b>Memory</b></td><td style={{textAlign: 'right'}}>{this.state.memory || 'N/A'} GB</td></tr>
                                                     <tr><td><b>Storage</b></td><td style={{textAlign: 'right'}}>{this.state.storage || 'N/A'}</td></tr>
                                                 </table>
+                                                <span style={{maxHeight: 100, overflow: 'scroll'}}>
                                                 {this.state.comment.split('\n').map((i,key) => {
                                                     return <div key={key}>{i}</div>
                                                 })}
+                                                </span>
                                                 <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}} gap='small'>
                                                     <Button primary label="Edit" onClick={this.showEditDialog} />
                                                     <Button label="Delete" onClick={this.showDeleteDialog} />

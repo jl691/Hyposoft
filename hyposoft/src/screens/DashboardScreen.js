@@ -24,10 +24,10 @@ class DashboardScreen extends Component {
     actions = [
         {id: 0, title: 'Users', desc: 'View and manage users'},
         {id: 1, title: 'Models', desc: 'View and manage models'},
-        {id: 2, title: 'Instances', desc: 'View and manage instances of models'},
+        {id: 2, title: 'Assets', desc: 'View and manage assets'},
         {id: 3, title: 'Racks', desc: 'View and manage racks'},
-        {id: 4, title: 'Import / Export', desc: 'Import and export models and instances'},
-        {id: 5, title: 'Reports', desc: 'Generate rack usage reports'}
+        {id: 4, title: 'Import / Export', desc: 'Import and export models and assets'},
+        //{id: 5, title: 'Reports', desc: 'Generate rack usage reports'}
     ]
 
     doAction (action) {
@@ -39,7 +39,7 @@ class DashboardScreen extends Component {
                 this.setState({redirect: '/models'})
                 break
             case 2:
-                this.setState({redirect: '/instances'})
+                this.setState({redirect: '/assets'})
                 break
             case 3:
                 this.setState({redirect: '/racks'})
