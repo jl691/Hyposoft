@@ -2,15 +2,15 @@ import React, { Component } from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { DataTable, Button, Text, Box } from 'grommet'
 import {  FormEdit, FormTrash, FormFolder } from "grommet-icons"
-import * as instutils from '../utils/instanceutils'
-import DetailedInstanceScreen from '../screens/DetailedInstanceScreen'
+import * as assetutils from '../utils/assetutils'
+import DetailedAssetScreen from '../screens/DetailedAssetScreen'
 
 import * as userutils from "../utils/userutils";
 
 
-export default class InstanceTable extends Component {
+export default class AssetTable extends Component {
 
-    defaultInstances = [];
+    defaultAssets = [];
     startAfter = null;
     columns = [
         {
@@ -49,7 +49,7 @@ export default class InstanceTable extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            instances: [],
+            assets: [],
             initialLoaded: false,
 
         }
@@ -59,11 +59,11 @@ export default class InstanceTable extends Component {
     }
 
     componentDidMount() {
-        instutils.getInstance((newStartAfter, instancesdb) => {
-            if (!(newStartAfter === null) && !(instancesdb === null)) {
+        assetutils.getAsset((newStartAfter, assetdb) => {
+            if (!(newStartAfter === null) && !(assetdb === null)) {
                 this.startAfter = newStartAfter;
-                this.defaultInstances = instancesdb;
-                this.setState({ instances: instancesdb, initialLoaded: true })
+                this.defaultAssets = assetdb;
+                this.setState({ assets: assetdb, initialLoaded: true })
             }
         })
         this.adminButtons();
@@ -79,11 +79,11 @@ export default class InstanceTable extends Component {
 
                 //need to pass down instance_id to know which page to display to detailedInstanceScreen
                 <React.Fragment>
-                    <Link to={`/instances/${data.instance_id}`} >
+                    <Link to={`/assets/${data.asset_id}`} >
 
                         <Button icon={< FormFolder/>}
                             margin="small"
-                            onClick={new DetailedInstanceScreen()}
+                            onClick={new DetailedAssetScreen()}
 
                         />
 
@@ -131,7 +131,7 @@ export default class InstanceTable extends Component {
                         onClick={() => {
 
                             this.props.UpdateButtonCallbackFromParent(
-                                data.instance_id,
+                                data.asset_id,
                                 data.model,
                                 data.hostname,
                                 data.rack,
@@ -155,19 +155,19 @@ export default class InstanceTable extends Component {
     forceRefresh() {
         this.startAfter = null;
         this.setState({
-            instances: [],
+            assets: [],
             initialLoaded: false
         });
-        instutils.getInstance((newStartAfter, instancesdb) => {
-            if (newStartAfter && instancesdb) {
+        assetutils.getAsset((newStartAfter, assetdb) => {
+            if (newStartAfter && assetdb) {
                 this.startAfter = newStartAfter;
-                this.setState({ instances: instancesdb, initialLoaded: true })
+                this.setState({ assets: assetdb, initialLoaded: true })
             }
         })
     }
 
     restoreDefault() {
-        this.setState({ instances: this.defaultInstances });
+        this.setState({ assets: this.defaultAssets });
     }
 
     handleFilter(start, end) {
@@ -180,26 +180,26 @@ export default class InstanceTable extends Component {
         let rackRowEnd = splitRackArrayEnd[0];
         let rackNumEnd = parseInt(splitRackArrayEnd[1]);
 
-        let newInstances = [];
+        let newAssets = [];
         let splitRackArrayTemp, rackRowTemp, rackNumTemp;
-        this.defaultInstances.forEach(instance => {
-            splitRackArrayTemp = instance.rack.split(/(\d+)/);
+        this.defaultAssets.forEach(asset => {
+            splitRackArrayTemp = asset.rack.split(/(\d+)/);
             rackRowTemp = splitRackArrayTemp[0];
             rackNumTemp = parseInt(splitRackArrayTemp[1]);
-            console.log("current instance: " + rackRowTemp.charCodeAt(0) + " " + rackNumTemp)
+            console.log("current asset: " + rackRowTemp.charCodeAt(0) + " " + rackNumTemp)
             console.log("rackRowTemp " + rackRowTemp + " rackNumTemp " + rackNumTemp)
             console.log("rackRowStart " + rackRowStart.charCodeAt(0) + " rackRowEnd " + rackRowEnd.charCodeAt(0) + " rackNumStart " + rackNumStart + " rackNumEnd " + rackNumEnd)
             /*if(rackRowTemp.charCodeAt(0) >= rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) <= rackRowEnd.charCodeAt(0) && rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd){
                 console.log("found a match!")
-                newInstances.push(instance);
+                newInstances.push(asset);
             }*/
             if ((rackRowTemp === rackRowStart && rackNumTemp >= rackNumStart) || (rackRowTemp === rackRowEnd && rackNumTemp <= rackNumEnd) || (rackRowTemp.charCodeAt(0) > rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) < rackRowEnd.charCodeAt(0))) {
                 console.log("found a match!")
-                newInstances.push(instance);
+                newAssets.push(asset);
             }
         })
 
-        this.setState({ instances: newInstances })
+        this.setState({ assets: newAssets })
     }
 
 
@@ -244,9 +244,9 @@ export default class InstanceTable extends Component {
                                             step={5}
                                             onMore={() => {
                                                 if (this.startAfter) {
-                                                    instutils.getInstanceAt(this.startAfter, (newStartAfter, newInstances) => {
+                                                    assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
                                                         this.startAfter = newStartAfter
-                                                        this.setState({ instances: this.state.instances.concat(newInstances) })
+                                                        this.setState({ assets: this.state.assets.concat(newAssets) })
                                                     });
                                                 }
                                             }}
@@ -256,7 +256,7 @@ export default class InstanceTable extends Component {
                                             size="large"
                                         
 
-                                            data={this.state.instances}
+                                            data={this.state.assets}
 
 
                                         />

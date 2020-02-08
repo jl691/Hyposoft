@@ -33,7 +33,7 @@ class PortScreen extends Component {
         var content = [
                 <Button label="Export Models" onClick={()=>{}}/>,
                 <Button label="Import Models" onClick={()=>{}}/>,
-                <Button label="Export Instances" onClick={()=>{}}/>,
+                <Button label="Export Assets" onClick={()=>{}}/>,
                 <Button label="Import Models" onClick={()=>{}}/>
         ]
         if (!userutils.isLoggedInUserAdmin()) {

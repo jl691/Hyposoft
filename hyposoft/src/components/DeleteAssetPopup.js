@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { Button, Grommet, Form, Heading, Text, Box } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
-import * as instutils from '../utils/instanceutils'
+import * as instutils from '../utils/assetutils'
 import * as userutils from "../utils/userutils";
 import {Redirect} from "react-router-dom";
 import theme from "../theme";
@@ -9,7 +9,7 @@ import theme from "../theme";
 
 //Instance table has a layer, that holds the button to add instance and the form
 
-export default class DeleteInstancePopup extends Component {
+export default class DeleteAssetPopup extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -23,14 +23,14 @@ export default class DeleteInstancePopup extends Component {
     handleDelete(event) {
         console.log(this.props.deleteIDFromParent)
         if (event.target.name === "deleteInst") {
-            instutils.deleteInstance(this.props.deleteIDFromParent, status => {
+            instutils.deleteAsset(this.props.deleteIDFromParent, status => {
                 if (status) {
 
-                    ToastsStore.success('Deleted instance');
+                    ToastsStore.success('Deleted asset');
                     this.props.parentCallback(true);
 
                 } else {
-                    ToastsStore.error('Error deleting instance.');
+                    ToastsStore.error('Error deleting asset.');
                 }
             }
             );
@@ -50,12 +50,12 @@ export default class DeleteInstancePopup extends Component {
                         size="small"
                         margin="small"
                         level="4"
-                    >Delete Instance</Heading>
+                    >Delete Asset</Heading>
                     <Form onSubmit={this.handleDelete}
                         name="deleteInst"
                     >
 
-                        <Text>Are you sure you want to delete instance <strong>{this.props.deleteModel} {this.props.deleteHostname}</strong>? This cannot be undone. </Text>
+                        <Text>Are you sure you want to delete asset <strong>{this.props.deleteModel} {this.props.deleteHostname}</strong>? This cannot be undone. </Text>
 
                         <Box direction={"row"}>
                             <Button

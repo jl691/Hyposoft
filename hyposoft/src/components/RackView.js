@@ -289,10 +289,10 @@ class RackView extends React.Component {
                                                    )
                                                },*/
             {
-                property: "instances",
-                header: <Text size='small'>Instances</Text>,
+                property: "assets",
+                header: <Text size='small'>Assets</Text>,
                 render: datum => (
-                    <Text size='small'>{datum.instances}</Text>)
+                    <Text size='small'>{datum.assets}</Text>)
             },
             {
                 property: "view",
@@ -406,7 +406,7 @@ class RackView extends React.Component {
                                         this.forceRefresh();
                                         ToastsStore.success('Successfully deleted!');
                                     } else {
-                                        ToastsStore.error('Failed to delete rack. Please insure that it contains no instances and try again.');
+                                        ToastsStore.error('Failed to delete rack. Please insure that it contains no assets and try again.');
                                         this.setState({popupType: ""})
                                     }
                                 });

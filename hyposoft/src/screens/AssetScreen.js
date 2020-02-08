@@ -3,21 +3,21 @@ import { BrowserRouter as Router, Route } from 'react-router-dom'
 
 import { Text, Button, Layer, Grommet, Heading, Box, TextInput, RadioButtonGroup, Stack } from 'grommet'
 import { Add } from 'grommet-icons'
-import AddInstanceForm from '../components/AddInstanceForm'
-import DeleteInstancePopup from '../components/DeleteInstancePopup'
-import EditInstanceForm from '../components/EditInstanceForm'
+import AddAssetForm from '../components/AddAssetForm'
+import DeleteAssetPopup from '../components/DeleteAssetPopup'
+import EditAssetForm from '../components/EditAssetForm'
 
 import theme from '../theme'
 import AppBar from '../components/AppBar'
 import HomeButton from '../components/HomeButton'
 import UserMenu from '../components/UserMenu'
-import FilterBarInstances from '../components/FilterBarInstances'
-import SearchInstances from '../components/SearchInstances'
-import InstanceTable from '../components/InstanceTable'
+import FilterBarAssets from '../components/FilterBarAssets'
+import SearchAssets from '../components/SearchAssets'
+import AssetTable from '../components/AssetTable'
 import * as userutils from "../utils/userutils";
 import { ToastsContainer, ToastsStore } from "react-toasts";
 
-class InstanceScreen extends Component {
+class AssetScreen extends Component {
 
     rangeStart;
     rangeEnd;
@@ -27,7 +27,7 @@ class InstanceScreen extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            instances: [],
+            assets: [],
             popupType: "",
             deleteID: "",
             deleteModel: "",
@@ -53,7 +53,7 @@ class InstanceScreen extends Component {
         this.handleChangeRange = this.handleChangeRange.bind(this);
 
 
-        this.instanceTable = React.createRef();
+        this.assetTable = React.createRef();
     }
     handleChange(event) {
         this.setState({
@@ -70,9 +70,9 @@ class InstanceScreen extends Component {
             this.rangeEnd = event.target.value;
         }
         if (/[A-Z]\d+/.test(this.rangeStart) && /[A-Z]\d+/.test(this.rangeEnd)) {
-            this.instanceTable.current.handleFilter(this.rangeStart, this.rangeEnd);
+            this.assetTable.current.handleFilter(this.rangeStart, this.rangeEnd);
         } else {
-            this.instanceTable.current.restoreDefault();
+            this.assetTable.current.restoreDefault();
         }
     }
 
@@ -81,7 +81,7 @@ class InstanceScreen extends Component {
             popupType: ""
         });
         //TODO: READ https://stackoverflow.com/questions/37949981/call-child-method-from-parent
-        this.instanceTable.current.forceRefresh();
+        this.assetTable.current.forceRefresh();
     }
 
     handleCancelPopupChange() {
@@ -94,7 +94,7 @@ class InstanceScreen extends Component {
         console.log(datum.model);
         this.setState({
             popupType: 'Delete',
-            deleteID: datum.instance_id,
+            deleteID: datum.asset_id,
             deleteModel: datum.model,
             deleteHostname: datum.hostname
         });
@@ -121,7 +121,7 @@ class InstanceScreen extends Component {
                 icon={<Add />}
                 label={
                     <Text>
-                        Add Instance
+                        Add Asset
                     </Text>
                 }
 
@@ -144,7 +144,7 @@ class InstanceScreen extends Component {
                 <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
-                    <AddInstanceForm
+                    <AddAssetForm
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
                     />
@@ -158,7 +158,7 @@ class InstanceScreen extends Component {
                 <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
-                    <DeleteInstancePopup
+                    <DeleteAssetPopup
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
                         deleteIDFromParent={this.state.deleteID}
@@ -178,7 +178,7 @@ class InstanceScreen extends Component {
                 <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
-                    <EditInstanceForm
+                    <EditAssetForm
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
 
@@ -201,7 +201,7 @@ class InstanceScreen extends Component {
             <Router>
 
                 <Route
-                    exact path="/instances" render={props => (
+                    exact path="/assets" render={props => (
                         <React.Fragment>
                             <Grommet theme={theme} full className='fade'>
                                 <Box fill background='light-2'>
@@ -211,7 +211,7 @@ class InstanceScreen extends Component {
                                         <HomeButton alignSelf='start' this={this} />
                                         <Heading alignSelf='center' level='4' margin={{
                                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
-                                        }} >Instances</Heading>
+                                        }} >Assets</Heading>
                                         <UserMenu alignSelf='end' this={this} />
                                     </AppBar>
 
@@ -240,12 +240,12 @@ class InstanceScreen extends Component {
                                                         <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column'
                                                             justify='start' alignSelf='stretch' flex overflow="scroll">
                                                             <Box align="center" overflow="scroll">
-                                                                <InstanceTable
+                                                                <AssetTable
                                                                     deleteButtonCallbackFromParent={this.handleDeleteButton}
 
                                                                     UpdateButtonCallbackFromParent={this.handleUpdateButton}
 
-                                                                    ref={this.instanceTable}
+                                                                    ref={this.assetTable}
 
                                                                 />
                                                             </Box>
@@ -277,9 +277,9 @@ class InstanceScreen extends Component {
 
 
 
-                                                        <Text size='small'><b>Search Instances</b></Text>
+                                                        <Text size='small'><b>Search Assets</b></Text>
                                                         <Stack margin={{ top: 'small' }}>
-                                                            <SearchInstances />
+                                                            <SearchAssets />
                                                         </Stack>
                                                     </Box>
                                                 </Box>
@@ -397,4 +397,4 @@ class InstanceScreen extends Component {
 
 
 
-export default InstanceScreen
+export default AssetScreen

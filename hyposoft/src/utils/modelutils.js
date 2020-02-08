@@ -36,7 +36,7 @@ function modifyModel(id, vendor, modelNumber, height, displayColor, ethernetPort
     })
 
     // Now update all instances of this model just in case the modelNumber or vendor changed
-    firebaseutils.instanceRef.where('modelId', '==', id).get().then(qs => {
+    firebaseutils.assetRef.where('modelId', '==', id).get().then(qs => {
         qs.forEach(doc => {
             doc.ref.update({
                 vendor: vendor,
@@ -128,8 +128,8 @@ function doesModelDocExist(vendor, modelNumber, callback) {
     })
 }
 
-function doesModelHaveInstances(modelId, callback) {
-    firebaseutils.instanceRef.where('modelId', '==', modelId).get().then(qs => {
+function doesModelHaveAssets(modelId, callback) {
+    firebaseutils.assetRef.where('modelId', '==', modelId).get().then(qs => {
         callback(!qs.empty)
     })
 }
@@ -167,8 +167,8 @@ function getSuggestedVendors(userInput, callback) {
     })
 }
 
-function getInstancesByModel(model, startAfter, callback) {
-    firebaseutils.instanceRef.startAfter(startAfter)
+function getAssetsByModel(model, startAfter, callback) {
+    firebaseutils.assetRef.startAfter(startAfter)
     .where('model', '==', model)
     .limit(25)
     .startAfter(startAfter)
@@ -180,10 +180,10 @@ function getInstancesByModel(model, startAfter, callback) {
         newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
       }
 
-      const instances = docSnaps.docs.map( doc => (
+      const assets = docSnaps.docs.map( doc => (
         {...doc.data(), id: doc.id}
       ))
-      callback(instances,newStartAfter)
+      callback(assets,newStartAfter)
     })
 }
 
@@ -203,4 +203,4 @@ function getVendorAndNumberFromModel(modelName, callback) {
 }
 
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
-getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel, getVendorAndNumberFromModel, getModelIdFromModelName }
+getModelByModelname, doesModelHaveAssets, matchesFilters, getAssetsByModel, getVendorAndNumberFromModel, getModelIdFromModelName }

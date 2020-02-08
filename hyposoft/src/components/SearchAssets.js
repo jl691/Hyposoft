@@ -7,7 +7,7 @@ const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
 const index = client.initIndex('models')
 
-export default class SearchInstances extends Component {
+export default class SearchAssets extends Component {
 
 
     render() {
@@ -18,7 +18,7 @@ export default class SearchInstances extends Component {
         return (
             <Box width="200px" gap="small">
                 <Form margin='small'>
-                    <FormField name="Search Instances">
+                    <FormField name="Search Assets">
                         <TextInput placeholder="Type here" size="xsmall"/>
                     </FormField>
                     <Button type="submit" primary label="Submit" />
