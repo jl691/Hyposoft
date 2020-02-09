@@ -23,13 +23,14 @@ import PortScreen from './screens/PortScreen'
 
 import RackView from "./components/RackView";
 import AssetScreen from './screens/AssetScreen'
+import RackElevations from "./components/RackElevations";
 
 ReactDOM.render((
             <BrowserRouter>
                 <Switch>
                     <Route exact path='/' component={HomeScreen} />
                     <Route exact path='/racks' component={RackView} />
-                    <Route exact path='/rackelevation' component={RackDiagram} />
+                    <Route exact path='/rackelevation' component={RackElevations} />
                     <Route exact path='/dashboard' component={DashboardScreen} />
                     <Route exact path='/settings' component={SettingsScreen} />
                     <Route exact path='/users' component={UsersScreen} />
