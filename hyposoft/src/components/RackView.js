@@ -13,6 +13,8 @@ import AppBar from "./AppBar";
 import RackUsageReport from "./RackUsageReport";
 import * as formvalidationutils from "../utils/formvalidationutils";
 import {Redirect} from "react-router-dom";
+import {fabric} from "fabric";
+import SingleRackElevation from "./SingleRackElevation";
 
 class RackView extends React.Component {
 
@@ -32,7 +34,8 @@ class RackView extends React.Component {
             letterStart: "",
             letterEnd: "",
             numberStart: "",
-            numberEnd: ""
+            numberEnd: "",
+            elevation: ""
         }
 
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -292,11 +295,9 @@ class RackView extends React.Component {
                 header: <Text size='small'>View</Text>,
                 render: datum => (<View
                     onClick={() => {
-                        this.props.history.push({
-                            pathname: '/rackelevation',
-                            state: {
-                                id: datum.id
-                            }
+                        this.setState({
+                            popupType: 'Elevation',
+                            elevation: datum.id
                         })
                     }}/>)
             },
@@ -475,6 +476,16 @@ class RackView extends React.Component {
                             onClick={() => this.setState({popupType: ""})}/>
                 </Layer>
             )
+        }
+        else if (popupType === 'Elevation') {
+            popup = (
+                <Layer onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+                    <SingleRackElevation rackID={this.state.elevation}/>
+                    <Button label="Close" icon={<Close/>}
+                            onClick={() => this.setState({popupType: ""})}/>
+                </Layer>
+            );
         }
 
 /*        if (!this.state.initialLoaded) {

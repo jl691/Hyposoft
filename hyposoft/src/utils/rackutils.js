@@ -1,15 +1,16 @@
 import * as firebaseutils from "./firebaseutils";
 import * as modelutils from "./modelutils";
+import {fabric} from "fabric";
 
 var rackCount = 1;
 
 function getRackAt(callback, start = null) {
     console.log("calling getrackat with start ")
     let racks = [];
-    if(start){
+    if (start) {
         firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).startAfter(start).get().then(docSnaps => {
             console.log("eyyyy")
-            if(docSnaps.empty){
+            if (docSnaps.empty) {
                 console.log(docSnaps.empty)
                 callback(null, null, true);
             } else {
@@ -42,7 +43,7 @@ function getRackAt(callback, start = null) {
         })
     } else {
         firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).get().then(docSnaps => {
-            if(docSnaps.empty){
+            if (docSnaps.empty) {
                 callback(null, null, true);
             } else {
                 const startAfter = docSnaps.docs[docSnaps.docs.length - 1]
@@ -87,33 +88,36 @@ function addSingleRack(row, number, height, callback) {
 
 function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback) {
     //assume form validated
-    let dbPromises = [];
     let rowStartNumber = rowStart.charCodeAt(0);
     let rowEndNumber = rowEnd.charCodeAt(0);
     let skippedRacks = [];
+    let count = 0;
+    let totalRacks = (numberEnd - numberStart + 1) * (rowEndNumber - rowStartNumber + 1);
     for (let i = rowStartNumber; i <= rowEndNumber; i++) {
         let currLetter = String.fromCharCode(i);
         for (let j = numberStart; j <= numberEnd; j++) {
             checkRackExists(currLetter, j, status => {
                 if (!status) {
-                    dbPromises.push(firebaseutils.racksRef.add({
+                    firebaseutils.racksRef.add({
                         letter: currLetter,
                         number: j,
                         height: height,
                         assets: []
                     }).catch(function (error) {
                         callback(null, null);
-                    }))
+                    });
                 } else {
                     let skippedRack = currLetter + j;
                     skippedRacks.push(skippedRack);
                 }
+                count++;
+                if (count === totalRacks) {
+                    console.log(skippedRacks)
+                    callback(true, skippedRacks);
+                }
             })
         }
     }
-    Promise.all(dbPromises).then(() => {
-        callback(true, skippedRacks);
-    })
 }
 
 function checkAssets(rowStart, rowEnd, numberStart, numberEnd, callback) {
@@ -163,35 +167,36 @@ function getRackID(row, number, callback) {
 function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, callback) {
     //first check all racks for instances
     //assume form validated
-    let dbPromises = [];
     let rowStartNumber = rowStart.charCodeAt(0);
     let rowEndNumber = rowEnd.charCodeAt(0);
     let skippedRacks = [];
-    checkAssets(rowStart, rowEnd, numberStart, numberEnd, status => {
-        if (status) {
-            for (let i = rowStartNumber; i <= rowEndNumber; i++) {
-                let currLetter = String.fromCharCode(i);
-                for (let j = numberStart; j <= numberEnd; j++) {
-                    dbPromises.push(firebaseutils.racksRef.where("letter", "==", currLetter).where("number", "==", parseInt(j)).get().then(function (querySnapshot) {
-                        if (!querySnapshot.empty) {
-                            let docID;
-                            docID = querySnapshot.docs[0].id;
-                            if(!(querySnapshot.docs[0].data().assets && Object.keys(querySnapshot.docs[0].data().assets).length > 0)){
-                                firebaseutils.racksRef.doc(docID).delete().catch(function (error) {
-                                    callback(null);
-                                })
-                            }
-                        }
-                    }));
+    let count = 0;
+    let totalRacks = (numberEnd - numberStart + 1) * (rowEndNumber - rowStartNumber + 1);
+
+    for (let i = rowStartNumber; i <= rowEndNumber; i++) {
+        let currLetter = String.fromCharCode(i);
+        for (let j = numberStart; j <= numberEnd; j++) {
+            firebaseutils.racksRef.where("letter", "==", currLetter).where("number", "==", parseInt(j)).get().then(function (querySnapshot) {
+                if (!querySnapshot.empty) {
+                    let docID;
+                    docID = querySnapshot.docs[0].id;
+                    if (!(querySnapshot.docs[0].data().assets && Object.keys(querySnapshot.docs[0].data().assets).length > 0)) {
+                        firebaseutils.racksRef.doc(docID).delete().catch(function (error) {
+                            callback(null);
+                        })
+                    } else {
+                        skippedRacks.push(currLetter + parseInt(j));
+                    }
+                } else {
+                    skippedRacks.push(currLetter + parseInt(j));
                 }
-            }
-            Promise.all(dbPromises).then(() => {
-                callback(true);
-            })
-        } else {
-            callback(null);
+                count++;
+                if (count === totalRacks) {
+                    callback(true, skippedRacks)
+                }
+            });
         }
-    })
+    }
 }
 
 function checkRackExists(letter, number, callback) {
@@ -296,8 +301,8 @@ function checkAssetFits(position, height, rack, callback, id = null) { //rackU, 
             docRefRack.data().assets.forEach(assetID => {
                 console.log("this rack contains " + assetID);
                 firebaseutils.assetRef.doc(assetID).get().then(function (docRefAsset) {
-                    if(assetID != id){
-                     
+                    if (assetID != id) {
+
                         console.log(docRefAsset)
                         modelutils.getModelByModelname(docRefAsset.data().model, result => {
                             if (result) {
@@ -456,7 +461,7 @@ function generateAllRackUsageReports(callback) {
                     console.log("querycount is " + queryCount)
                     if (queryCount === querySnapshot.size) {
                         getTotalRackHeight(result => {
-                            if(result){
+                            if (result) {
                                 callback(usedCount, result, vendorCounts, modelCounts, ownerCounts)
                             } else {
                                 console.log("failing here " + result)
@@ -475,17 +480,17 @@ function generateAllRackUsageReports(callback) {
     })
 }
 
-function getTotalRackHeight(callback){
+function getTotalRackHeight(callback) {
     let height = 0;
     let count = 0;
     firebaseutils.racksRef.get().then(function (querySnapshot) {
         querySnapshot.forEach(function (doc) {
-            if(!isNaN(doc.data().height)){
+            if (!isNaN(doc.data().height)) {
                 height += parseInt(doc.data().height);
                 console.log("just added a height of " + doc.data().height)
             }
             count++;
-            if(count === querySnapshot.size){
+            if (count === querySnapshot.size) {
                 callback(height);
             }
         })
@@ -494,6 +499,117 @@ function getTotalRackHeight(callback){
         console.log(error)
         callback(null);
     })
+}
+
+function drawRackElevation(rackID, canvas){
+// left banner
+    let rect = new fabric.Rect({
+        left: 0,
+        top: 0,
+        fill: 'black',
+        width: 30,
+        height: 900,
+        selectable: false
+    });
+
+    // right banner
+    let rect2 = new fabric.Rect({
+        left: 320,
+        top: 0,
+        fill: 'black',
+        width: 30,
+        height: 900,
+        selectable: false
+    });
+
+    //top banner
+    let rect3 = new fabric.Rect({
+        left: 0,
+        top: 0,
+        fill: 'black',
+        width: 350,
+        height: 30,
+        selectable: false
+    });
+
+    //bottom banner
+    let rect4 = new fabric.Rect({
+        left: 0,
+        top: 870,
+        fill: 'black',
+        width: 350,
+        height: 30,
+        selectable: false
+    });
+
+    canvas.add(rect, rect2, rect3, rect4);
+
+    generateRackDiagram(rackID, (letter, number, result) => {
+        if(result) {
+            let header = new fabric.Text(letter + number, {
+                fill: 'white',
+                fontFamily: 'Arial',
+                fontSize: 20,
+                top: 5,
+                selectable: false
+                //left: 400*x + (350-Math.round(header.getScaledWidth()))/2
+            });
+            header.set({
+                left: (350-Math.round(header.getScaledWidth()))/2
+            });
+            canvas.add(header);
+            console.log("added the header")
+            //header.centerH();
+            result.forEach(asset => {
+                let assetBox
+                    = new fabric.Rect({
+                    left: 30,
+                    top: 50 + (20*(42-asset.position)) - (20*asset.height),
+                    fill: asset.color,
+                    width: 290,
+                    height: (20*asset.height),
+                    stroke: 'black',
+                    strokeWidth: 1,
+                    selectable: false
+                });
+
+                let assetText = new fabric.Text(asset.model.substr(0, 20), {
+                    fill: getContrastYIQ(asset.color),
+                    fontFamily: 'Arial',
+                    fontSize: 15,
+                    top: 30 + (20*(42-asset.position)),
+                    left: 35,
+                    selectable: false
+                });
+
+                let assetHostname = new fabric.Text(asset.hostname.substr(0, 15), {
+                    fill: getContrastYIQ(asset.color),
+                    fontFamily: 'Arial',
+                    fontSize: 15,
+                    top: 30 + (20*(42-asset.position)),
+                    left: 200,
+                    selectable: false
+                });
+
+                canvas.add(assetBox, assetText, assetHostname);
+
+                assetBox.on("mousedown", function (options) {
+                    window.location.href = "/assets/" + asset.id;
+                })
+            })
+        } else {
+            console.log("error");
+        }
+    })
+}
+
+function getContrastYIQ(hexcolor){
+    //hexcolor = hexcolor.replace("#", "");
+    let r = parseInt(hexcolor.substr(0,2),16);
+    let g = parseInt(hexcolor.substr(2,2),16);
+    let b = parseInt(hexcolor.substr(4,2),16);
+    let yiq = ((r*299)+(g*587)+(b*114))/1000;
+    return (yiq >= 128) ? 'black' : 'white';
 }
 
 export {
@@ -506,5 +622,6 @@ export {
     getRackID,
     checkAssetFits,
     generateRackUsageReport,
-    generateAllRackUsageReports
+    generateAllRackUsageReports,
+    drawRackElevation
 }
