@@ -31,9 +31,12 @@ function createModel(id, vendor, modelNumber, height, displayColor, ethernetPort
 
 function modifyModel(id, vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment, callback) {
     var model = packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)
+    firebaseutils.modelsRef.doc(id).update(model).then(() => {
+        callback(model, id)
+    })
 
     // Now update all instances of this model just in case the modelNumber or vendor changed
-    firebaseutils.instanceRef.where('modelId', '==', id).get().then(qs => {
+    firebaseutils.assetRef.where('modelId', '==', id).get().then(qs => {
         if (!qs.empty) {
             delete model.height // Don't change height if instances exist
         }
@@ -131,8 +134,8 @@ function doesModelDocExist(vendor, modelNumber, callback) {
     })
 }
 
-function doesModelHaveInstances(modelId, callback) {
-    firebaseutils.instanceRef.where('modelId', '==', modelId).get().then(qs => {
+function doesModelHaveAssets(modelId, callback) {
+    firebaseutils.assetRef.where('modelId', '==', modelId).get().then(qs => {
         callback(!qs.empty)
     })
 }
@@ -170,8 +173,8 @@ function getSuggestedVendors(userInput, callback) {
     })
 }
 
-function getInstancesByModel(model, startAfter, callback) {
-    firebaseutils.instanceRef.startAfter(startAfter)
+function getAssetsByModel(model, startAfter, callback) {
+    firebaseutils.assetRef.startAfter(startAfter)
     .where('model', '==', model)
     .limit(25)
     .startAfter(startAfter)
@@ -183,10 +186,10 @@ function getInstancesByModel(model, startAfter, callback) {
         newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
       }
 
-      const instances = docSnaps.docs.map( doc => (
+      const assets = docSnaps.docs.map( doc => (
         {...doc.data(), id: doc.id}
       ))
-      callback(instances,newStartAfter)
+      callback(assets,newStartAfter)
     })
 }
 
@@ -228,7 +231,7 @@ function validateImportedModels (data, callback) {
     var errors = []
     var modelsSeen = {}
     for (var i = 0; i < data.length; i++) {
-        const datum = data[i]
+        var datum = data[i]
         var modelAndVendorFound = true
         if (!datum.vendor || String(datum.vendor).trim() === '') {
             errors = [...errors, [i+1, 'Vendor not found']]
@@ -252,6 +255,11 @@ function validateImportedModels (data, callback) {
             errors = [...errors, [i+1, 'Height not found']]
         } else if (isNaN(String(datum.height).trim()) || !Number.isInteger(parseFloat(String(datum.height).trim())) || parseInt(String(datum.height).trim()) <= 0) {
             errors = [...errors, [i+1, 'Height is not a positive integer']]
+        }
+        if (!datum.display_color || String(datum.display_color).trim() === '') {
+            datum.display_color = '#000000'
+        } else if (/^#[0-9A-F]{6}$/i.test(String(datum.display_color))) {
+            errors = [...errors, [i+1, 'Invalid display color']]
         }
         if (datum.ethernet_ports !== null && String(datum.ethernet_ports).trim() !== '' &&
          (isNaN(String(datum.ethernet_ports).trim()) || !Number.isInteger(parseFloat(String(datum.ethernet_ports).trim())) || parseInt(String(datum.ethernet_ports).trim()) < 0)) {
@@ -357,6 +365,6 @@ function getAllModels (callback) {
 }
 
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
-getModelByModelname, doesModelHaveInstances, matchesFilters, getInstancesByModel,
+getModelByModelname, doesModelHaveAssets, matchesFilters, getAssetsByModel,
 getModelsForExport, escapeStringForCSV, validateImportedModels, addModelsFromImport, getVendorAndNumberFromModel,
-getModelIdFromModelName, getAllModels }
+getModelIdFromModelName, getAllModels, combineVendorAndModelNumber }

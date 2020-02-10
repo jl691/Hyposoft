@@ -13,6 +13,8 @@ import AppBar from "./AppBar";
 import RackUsageReport from "./RackUsageReport";
 import * as formvalidationutils from "../utils/formvalidationutils";
 import {Redirect} from "react-router-dom";
+import {fabric} from "fabric";
+import SingleRackElevation from "./SingleRackElevation";
 
 class RackView extends React.Component {
 
@@ -32,7 +34,8 @@ class RackView extends React.Component {
             letterStart: "",
             letterEnd: "",
             numberStart: "",
-            numberEnd: ""
+            numberEnd: "",
+            elevation: ""
         }
 
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -50,21 +53,17 @@ class RackView extends React.Component {
     }
 
     componentDidMount() {
-        rackutils.getRackAt((startAfterCallback, rackCallback) => {
-            if (!(startAfterCallback === null) && !(rackCallback === null)) {
-                this.startAfter = startAfterCallback;
-                console.log("loaded up until " + this.startAfter)
-                console.log(this.startAfter.data())
-                this.setState({racks: rackCallback, initialLoaded: true});
-            }
-        });
+        this.forceRefresh();
     }
 
     forceRefresh() {
         this.startAfter = null;
         this.setState({initialLoaded: false, racks: [], popupType: "", deleteID: ""});
-        rackutils.getRackAt((startAfterCallback, rackCallback) => {
-            if (startAfterCallback && rackCallback) {
+        rackutils.getRackAt((startAfterCallback, rackCallback, empty) => {
+            if(empty){
+                console.log("eptyyyy")
+                this.setState({initialLoaded: true});
+            } else if (startAfterCallback && rackCallback) {
                 this.startAfter = startAfterCallback;
                 this.setState({racks: rackCallback, initialLoaded: true});
             }
@@ -286,21 +285,19 @@ class RackView extends React.Component {
                                                    )
                                                },*/
             {
-                property: "instances",
-                header: <Text size='small'>Instances</Text>,
+                property: "assets",
+                header: <Text size='small'>Assets</Text>,
                 render: datum => (
-                    <Text size='small'>{datum.instances}</Text>)
+                    <Text size='small'>{datum.assets}</Text>)
             },
             {
                 property: "view",
                 header: <Text size='small'>View</Text>,
                 render: datum => (<View
                     onClick={() => {
-                        this.props.history.push({
-                            pathname: '/rackdiagram',
-                            state: {
-                                id: datum.id
-                            }
+                        this.setState({
+                            popupType: 'Elevation',
+                            elevation: datum.id
                         })
                     }}/>)
             },
@@ -327,6 +324,29 @@ class RackView extends React.Component {
         return cols;
     }
 
+    DataTable() {
+        if(!this.state.initialLoaded){
+            return (
+                <Text>Please wait...</Text>
+            )
+        } else {
+            return (
+                <DataTable step={25}
+                           onMore={() => {
+                               if (this.startAfter) {
+                                   rackutils.getRackAt((newStartAfter, newRacks, empty) => {
+                                       if(!empty){
+                                           this.startAfter = newStartAfter
+                                           this.setState({racks: this.state.racks.concat(newRacks)})
+                                       }
+                                   }, this.startAfter);
+                               }
+                           }}
+                           columns={this.generateColumns()} data={this.state.racks} size={"large"}/>
+            )
+        }
+    }
+
     handleSubmit(event) {
         if (!this.state.letterStart || !this.state.letterEnd || !this.state.numberStart || !this.state.numberEnd) {
             //invalid length
@@ -346,7 +366,7 @@ class RackView extends React.Component {
         } else {
             //we gucci
             this.props.history.push({
-                pathname: '/rackdiagram',
+                pathname: '/rackelevation',
                 state: {
                     letterStart: this.state.letterStart,
                     letterEnd: this.state.letterEnd,
@@ -368,7 +388,7 @@ class RackView extends React.Component {
             ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
             localStorage.setItem('tipShown', 'yes')
         }
-        
+
         if (popupType === 'Delete') {
             let deleteID = this.state.deleteID;
             popup = (
@@ -385,7 +405,7 @@ class RackView extends React.Component {
                                         this.forceRefresh();
                                         ToastsStore.success('Successfully deleted!');
                                     } else {
-                                        ToastsStore.error('Failed to delete rack. Please insure that it contains no instances and try again.');
+                                        ToastsStore.error('Failed to delete rack. Please insure that it contains no assets and try again.');
                                         this.setState({popupType: ""})
                                     }
                                 });
@@ -457,8 +477,18 @@ class RackView extends React.Component {
                 </Layer>
             )
         }
+        else if (popupType === 'Elevation') {
+            popup = (
+                <Layer onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+                    <SingleRackElevation rackID={this.state.elevation}/>
+                    <Button label="Close" icon={<Close/>}
+                            onClick={() => this.setState({popupType: ""})}/>
+                </Layer>
+            );
+        }
 
-        if (!this.state.initialLoaded) {
+/*        if (!this.state.initialLoaded) {
             return (<Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
                     <AppBar>
@@ -469,7 +499,7 @@ class RackView extends React.Component {
                         <UserMenu alignSelf='end' this={this}/>
                     </AppBar>
                     <Text>Please wait...</Text></Box></Grommet>);
-        }
+        }*/
 
         return (
             <Grommet theme={theme} full className='fade'>
@@ -504,16 +534,9 @@ class RackView extends React.Component {
                                              direction='column'
                                              justify='start' alignSelf='stretch' height={"810px"} flex>
                                             <Box align="center">
-                                                <DataTable step={25}
-                                                           onMore={() => {
-                                                               if (this.startAfter) {
-                                                                   rackutils.getRackAt((newStartAfter, newRacks) => {
-                                                                       this.startAfter = newStartAfter
-                                                                       this.setState({racks: this.state.racks.concat(newRacks)})
-                                                                   }, this.startAfter);
-                                                               }
-                                                           }}
-                                                           columns={this.generateColumns()} data={this.state.racks} size={"large"}/>
+
+                                                {this.DataTable()}
+
                                             </Box>
                                         </Box>
                                     </Box>
@@ -587,7 +610,7 @@ class RackView extends React.Component {
                                                                        {this.RackDeleteButton(datum)}
                                                                        <Button icon={<View/>} label="View" onClick={() => {
                                                                            this.props.history.push({
-                                                                               pathname: '/rackdiagram',
+                                                                               pathname: '/rackelevation',
                                                                                state: {
                                                                                    id: datum.id
                                                                                }

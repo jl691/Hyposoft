@@ -1,7 +1,7 @@
 import React, {Component} from 'react'
 import {Button, Grommet, Form, FormField, Heading, TextInput, Box} from 'grommet'
 import {ToastsContainer, ToastsStore} from 'react-toasts';
-import * as instutils from '../utils/instanceutils'
+import * as assetutils from '../utils/assetutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
 import {Redirect} from "react-router-dom";
@@ -10,11 +10,11 @@ import theme from "../theme";
 
 //Instance table has a layer, that holds the button to add instance and the form
 
-export default class AddInstanceForm extends Component {
+export default class AddAssetForm extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            instance_id: "",
+            asset_id: "",
             model: "",
             hostname: "",
             rack: "",
@@ -50,7 +50,7 @@ export default class AddInstanceForm extends Component {
             } else if(!formvalidationutils.checkPositive(this.state.rackU)){
                 ToastsStore.error("Rack U must be positive.");
             } else {
-                instutils.addInstance(
+                assetutils.addAsset(
                     this.state.model,
                     this.state.hostname,
                     this.state.rack,
@@ -61,7 +61,7 @@ export default class AddInstanceForm extends Component {
                         if (errorMessage) {
                             ToastsStore.error(errorMessage, 10000)
                         } else {
-                            ToastsStore.success('Successfully added instance!');
+                            ToastsStore.success('Successfully added asset!');
 
                             this.props.parentCallback(true);
                         }
@@ -84,7 +84,7 @@ export default class AddInstanceForm extends Component {
                         size="small"
                         margin="small"
                         level="4"
-                    >Add Instance</Heading>
+                    >Add Asset</Heading>
                     <Form onSubmit={this.handleSubmit} name="addInst">
 
                         <FormField name="model" label="Model">
@@ -94,14 +94,14 @@ export default class AddInstanceForm extends Component {
                                 onChange={e => {
                                     const value = e.target.value
                                     this.setState(oldState => ({...oldState, model: value}))
-                                    instutils.getSuggestedModels(value, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))
+                                    assetutils.getSuggestedModels(value, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))
                                 }}
                                 onSelect={e => {
                                     this.setState(oldState => ({...oldState, model: e.suggestion}))
                                 }}
                                 value={this.state.model}
                                 suggestions={this.state.modelSuggestions}
-                                onClick={() => instutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))}
+                                onClick={() => assetutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))}
                                 title='Model'
                                 />
                         </FormField>
@@ -126,14 +126,14 @@ export default class AddInstanceForm extends Component {
                                   onChange={e => {
                                       const value = e.target.value
                                       this.setState(oldState => ({...oldState, rack: value}))
-                                      instutils.getSuggestedRacks(value, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))
+                                      assetutils.getSuggestedRacks(value, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))
                                   }}
                                   onSelect={e => {
                                       this.setState(oldState => ({...oldState, rack: e.suggestion}))
                                   }}
                                   value={this.state.rack}
                                   suggestions={this.state.rackSuggestions}
-                                  onClick={() => instutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))}
+                                  onClick={() => assetutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))}
                                   title='Rack'
                                   required="true"
                                 />
@@ -155,14 +155,14 @@ export default class AddInstanceForm extends Component {
                                 onChange={e => {
                                     const value = e.target.value
                                     this.setState(oldState => ({...oldState, owner: value}))
-                                    instutils.getSuggestedOwners(value, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))
+                                    assetutils.getSuggestedOwners(value, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))
                                 }}
                                 onSelect={e => {
                                     this.setState(oldState => ({...oldState, owner: e.suggestion}))
                                 }}
                                 value={this.state.owner}
                                 suggestions={this.state.ownerSuggestions}
-                                onClick={() => instutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))}
+                                onClick={() => assetutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))}
                                 title='Owner'
                               />
                         </FormField>

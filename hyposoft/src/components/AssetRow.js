@@ -6,7 +6,7 @@ import { AccordionPanel, Box, Text } from 'grommet'
 
 //I can't figure out the props passing shit and undefined/null erros, this class is dead for now
 
-export class InstanceRow extends Component {
+export class AssetRow extends Component {
 
     
     render(){
@@ -30,10 +30,10 @@ export class InstanceRow extends Component {
 
 }
 
-// InstanceRow.propTypes = {
+// AssetRow.propTypes = {
 //     instance: PropTypes.object.isRequired,
 // }
 
 
-export default InstanceRow
+export default AssetRow
 
