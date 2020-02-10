@@ -1,8 +1,18 @@
 import React from "react";
 import {fabric} from "fabric";
 import {generateRackDiagram} from "../utils/rackutils";
+import {Box, Button, Grommet} from "grommet";
+import * as jsPDF from 'jspdf'
 
 class SingleRackElevation extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            letter: "",
+            number: ""
+        };
+    }
 
     getContrastYIQ(hexcolor) {
         //hexcolor = hexcolor.replace("#", "");
@@ -14,11 +24,56 @@ class SingleRackElevation extends React.Component {
     }
 
     componentDidMount() {
-        this.drawDiagram(this.props.rackID);
+        let canvas = new fabric.Canvas(this.props.rackID);
+        this.drawDiagram(this.props.rackID, canvas);
+        //this.sendPNGToParent(canvas, this.state.letter, this.state.number);
     }
 
-    drawDiagram(rackID) {
-        const canvas = new fabric.Canvas(this.props.rackID);
+    canvasToPNG(canvas){
+        //return canvas.toDataURL();
+        return "";
+    }
+
+    cloneCanvas(oldCanvas) {
+
+        //create a new canvas
+        var newCanvas = document.createElement('canvas');
+        var context = newCanvas.getContext('2d');
+
+        //set dimensions
+        newCanvas.width = oldCanvas.width;
+        newCanvas.height = oldCanvas.height;
+
+        //apply the old canvas to the new one
+        context.drawImage(oldCanvas, 0, 0);
+
+        //return the new canvas
+        return newCanvas;
+    }
+
+    sendPNGToParent(image, row, number) {
+        //let png = canvas.toDataURL();
+
+        this.props.sendPNG(image, row+number);
+    }
+
+    canvasToPDF(){
+        let doc = new jsPDF({
+            format: 'letter',
+            orientation: 'landscape',
+            unit: 'in'
+        });
+        doc.addImage(this.canvasToPNG(), "PNG", 0.2, 1.04, 2.5, 6.43);
+        doc.addImage(this.canvasToPNG(), "PNG", 2.9, 1.04, 2.5, 6.43);
+        doc.addImage(this.canvasToPNG(), "PNG", 5.6, 1.04, 2.5, 6.43);
+        doc.addImage(this.canvasToPNG(), "PNG", 8.3, 1.04, 2.5, 6.43);
+        doc.output('dataurlnewwindow');
+
+        //doc.save('a4.pdf')
+    }
+
+    drawDiagram(rackID, canvas) {
+        console.log("Drawdiagram being called for " + rackID)
 
         // left banner
         let rect = new fabric.Rect({
@@ -62,8 +117,37 @@ class SingleRackElevation extends React.Component {
 
         canvas.add(rect, rect2, rect3, rect4);
 
+        let count;
+        for(count = 1; count < 43; count++){
+            canvas.add(
+                new fabric.Text((43-count).toString(), {
+                    fill: 'white',
+                    fontFamily: 'Arial',
+                    fontSize: 15,
+                    top: 10 + (20*count),
+                    left: 5,
+                    selectable: false
+                }));
+            canvas.add(
+                new fabric.Text((43-count).toString(), {
+                    fill: 'white',
+                    fontFamily: 'Arial',
+                    fontSize: 15,
+                    top: 10 + (20*count),
+                    left: 325,
+                    selectable: false
+                }));
+        }
+        console.log("generating for rackid of " + rackID)
+
         generateRackDiagram(rackID, (letter, number, result) => {
-            if (result) {
+            console.log("the result is ", result)
+            console.log("letter and number are " + letter + number)
+            this.setState({
+                letter: letter,
+                number: number
+            })
+            if (letter) {
                 let header = new fabric.Text(letter + number, {
                     fill: 'white',
                     fontFamily: 'Arial',
@@ -78,12 +162,20 @@ class SingleRackElevation extends React.Component {
                 canvas.add(header);
                 console.log("added the header")
                 //header.centerH();
+                let count = 0;
+                if(this.props.sendPNG && !result.length){
+                    console.log("sending for empty rack")
+                    this.sendPNGToParent(canvas.toDataURL(), letter, number);
+                    canvas.renderAll();
+                    console.log("callbackkk")
+                }
+                console.log("mde it here")
                 result.forEach(asset => {
                     let assetBox
                         = new fabric.Rect({
                         left: 30,
                         top: 50 + (20 * (42 - asset.position)) - (20 * asset.height),
-                        fill: asset.color,
+                        fill: "#" + asset.color,
                         width: 290,
                         height: (20 * asset.height),
                         stroke: 'black',
@@ -114,7 +206,16 @@ class SingleRackElevation extends React.Component {
                     assetBox.on("mousedown", function (options) {
                         window.location.href = "/assets/" + asset.id;
                     })
-                })
+
+                    count++;
+                    if(this.props.sendPNG && count === result.length){
+                        console.log("sending a rack with instance to parent " + count)
+                        //let png = canvas.toDataURL();
+                        this.sendPNGToParent(canvas.toDataURL(), letter, number);
+                        canvas.renderAll();
+                        //this.sendPNGToParent(canvas.toDataURL(), letter, number);
+                    }
+                });
             } else {
                 console.log("error");
             }
@@ -123,7 +224,18 @@ class SingleRackElevation extends React.Component {
 
     render() {
         return (
-            <canvas id={this.props.rackID} width="350" height="900"></canvas>
+            <Grommet>
+                <Box>
+                    <canvas id={this.props.rackID} width="350" height="900"></canvas>
+                </Box>
+ {/*               <Box>
+                    <Button label={"PNG"} onClick={() => {
+                        window.open(this.canvasToPNG());
+                    }}/>
+                    <Button label={"PDF"} onClick={() => { this.canvasToPDF();
+                    }}/>
+                </Box>*/}
+            </Grommet>
         );
     }
 }

@@ -211,6 +211,7 @@ function checkRackExists(letter, number, callback) {
 }
 
 function generateRackDiagram(rackID, callback) {
+    console.log("function called")
     //first get all instances on rack
     //for each instance:
     //find position of instance
@@ -232,9 +233,11 @@ function generateRackDiagram(rackID, callback) {
                 })
             })
         } else {
+            console.log("1")
             callback(letter, number, []);
         }
     }).catch(function (error) {
+        console.log("2")
         callback(null);
     })
 }
