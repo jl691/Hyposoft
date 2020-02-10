@@ -327,7 +327,7 @@ class AssetScreen extends Component {
                                                             shrink: 0
                                                         }}
 
-                                                        pad='small' overflow="scroll">
+                                                        pad='small' >
                                                         <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column'
                                                             justify='start' alignSelf='stretch' flex overflow="scroll">
                                                             <Box align="center" overflow="scroll">
