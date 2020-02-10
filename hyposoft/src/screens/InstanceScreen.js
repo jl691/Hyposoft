@@ -294,10 +294,10 @@ class InstanceScreen extends Component {
                                     <Box direction='row'
                                         justify='center'
                                         wrap={true}
-                                        overflow="scroll">
-                                        <Box direction='row' justify='center' overflow="scroll">
-                                            <Box direction='row' justify='center' overflow="scroll">
-                                                <Box width='large' direction='column' align='stretch' justify='start' overflow="scroll">
+                                        >
+                                        <Box direction='row' justify='center' >
+                                            <Box direction='row' justify='center' >
+                                                <Box width='large' direction='column' align='stretch' justify='start' >
                                                     <Box style={{
                                                         borderRadius: 10,
                                                         borderColor: '#EDEDED'
@@ -311,10 +311,10 @@ class InstanceScreen extends Component {
                                                             shrink: 0
                                                         }}
 
-                                                        pad='small' overflow="scroll">
+                                                        pad='small' >
                                                         <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column'
-                                                            justify='start' alignSelf='stretch' flex overflow="scroll">
-                                                            <Box align="center" overflow="scroll">
+                                                            justify='start' alignSelf='stretch' flex >
+                                                            <Box align="center" >
                                                                 <InstanceTable
                                                                     deleteButtonCallbackFromParent={this.handleDeleteButton}
 
