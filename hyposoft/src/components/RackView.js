@@ -368,10 +368,10 @@ class RackView extends React.Component {
             this.props.history.push({
                 pathname: '/rackelevation',
                 state: {
-                    letterStart: this.state.letterStart,
-                    letterEnd: this.state.letterEnd,
-                    numberStart: this.state.numberStart,
-                    numberEnd: this.state.numberEnd
+                    startRow: this.state.letterStart,
+                    endRow: this.state.letterEnd,
+                    startNumber: this.state.numberStart,
+                    endNumber: this.state.numberEnd
                 }
             })
         }
