@@ -25,6 +25,8 @@ import RackView from "./components/RackView";
 import AssetScreen from './screens/AssetScreen'
 import RackElevations from "./components/RackElevations";
 
+import PostOAuthHandler from './handlers/PostOAuthHandler'
+
 ReactDOM.render((
             <BrowserRouter>
                 <Switch>
@@ -44,6 +46,7 @@ ReactDOM.render((
                     {/* TODO: implement a functionality to take you to instance screen vs http://localhost:3000/instances*/}
                     <Route exact path='/assets' component={AssetScreen} />
                     <Route path='/port' component={PortScreen} />
+                    <Route path='/postoauth' component={PostOAuthHandler} />
                 </Switch>
             </BrowserRouter>
         ), document.getElementById('root'))
