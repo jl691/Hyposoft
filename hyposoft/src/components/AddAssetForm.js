@@ -113,7 +113,7 @@ export default class AddAssetForm extends Component {
 
                             <TextInput padding="medium" name="hostname" placeholder="eg. server9"
                                        onChange={this.handleChange}
-                                       value={this.state.hostname} required="true"/>
+                                       value={this.state.hostname} required="false"/>
                         </FormField>
 
 
@@ -165,6 +165,27 @@ export default class AddAssetForm extends Component {
                                 title='Owner'
                               />
                         </FormField>
+
+{/* NEW FIELDS HERE> TODO: change the values/integrate with the backend======================================== */}
+                        <FormField name="datacenterName" label="Datacenter name">
+                            <TextInput name="datacenterName" placeholder="eg. Research triangle Park 1" onChange={this.handleChange}
+                                       //value={this.state.rackU} 
+                                       required="true"/>
+                        </FormField>
+
+                        <FormField name="datacenterAbbrev" label="Datacenter Abbreviation">
+                            <TextInput name="datacenterAbbrev" placeholder="eg. RTP1" onChange={this.handleChange}
+                                       //value={this.state.rackU} 
+                                       required="true"/>
+                        </FormField>
+
+                        <FormField name="macAddr" label="MAC Address">
+                            <TextInput name="macAddr" placeholder="eg. 11:ab:cd:79:aa:c9" onChange={this.handleChange}
+                                       //value={this.state.rackU} 
+                                       required="false"/>
+                        </FormField>
+
+{/* NEW FIELDS END HERE ============================================================================================*/}
 
                         <FormField name="comment" label="Comment">
 
