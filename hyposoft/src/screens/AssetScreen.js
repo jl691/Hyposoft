@@ -296,7 +296,7 @@ class AssetScreen extends Component {
                                     <Box direction='row'
                                         justify='center'
                                         wrap={true}
-                                        overflow="scroll">
+                                        >
                                         <Box direction='row' justify='center'>
                                             <Box direction='row' justify='center'>
                                                 <Box width='large' direction='column' align='stretch' justify='start'>
@@ -329,8 +329,8 @@ class AssetScreen extends Component {
 
                                                         pad='small' >
                                                         <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column'
-                                                            justify='start' alignSelf='stretch' flex overflow="scroll">
-                                                            <Box align="center" overflow="scroll">
+                                                            justify='start' alignSelf='stretch' flex >
+                                                            <Box align="center" >
                                                                 <AssetTable
                                                                     deleteButtonCallbackFromParent={this.handleDeleteButton}
 

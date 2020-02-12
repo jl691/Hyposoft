@@ -197,7 +197,7 @@ function addAsset(model, hostname, rack, racku, owner, comment, callback) {
                                             docRef.get().then(ds => {
                                                 index.saveObject({...ds.data(), objectID: ds.id})
                                             })
-                                            callback(null);
+                                            //callback(null);
                                         }).catch(function (error) {
                                             // callback("Error");
                                         })
@@ -367,7 +367,7 @@ function deleteAsset(assetID, callback) {
                     assets: firebase.firestore.FieldValue.arrayRemove(assetID)
                 })
                 index.deleteObject(assetID)
-                callback(assetID);
+                //callback(assetID);
             }).catch(function (error) {
                 callback(null);
             })
