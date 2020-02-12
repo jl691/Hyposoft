@@ -61,9 +61,8 @@ export default class AddAssetForm extends Component {
                         if (errorMessage) {
                             ToastsStore.error(errorMessage, 10000)
                         } else {
-                            ToastsStore.success('Successfully added asset!');
-
                             this.props.parentCallback(true);
+                            ToastsStore.success('Successfully added asset!');  
                         }
                     }
                 );
