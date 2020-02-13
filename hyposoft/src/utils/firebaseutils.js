@@ -30,5 +30,6 @@ var recoveriesRef = db.collection('recoveries')
 var assetRef = db.collection('assets')
 var racksRef = db.collection('racks')
 var modelsRef = db.collection('models')
+var datacentersRef = db.collection('datacenters')
 
-export { hashAndSalt, usersRef, racksRef, assetRef, modelsRef, claimsRef, recoveriesRef, db, firebase }
+export { hashAndSalt, usersRef, racksRef, assetRef, modelsRef, claimsRef, recoveriesRef, datacentersRef, db, firebase }
