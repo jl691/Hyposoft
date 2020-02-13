@@ -4,30 +4,39 @@ import { assetRef,  firebase } from './firebaseutils'
 // import * as userutils from './userutils'
 
 function generateAssetID() {
-    //Asset ideas are 6 digits longs
+    //Asset IDs are 6 digits long. CONFIRM THIS
 
-    var result = '';
-    var characters = '0123456789';
-    var charactersLength = characters.length;
-    for (var i = 0; i <= 6; i++) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
-
-    }
-    //Checking if the generated ID is unique: call function here
-    isUniqueAssetID(result, status => {
-        if(status){
-            console.log('Newly generated asset ID: ' + result)
-            return result;
+    return new Promise((resolve, reject) => {
+        var triesLeft = 5;
+        var result = '';
+        var characters = '0123456789';
+        var charactersLength = characters.length;
+        for (var i = 0; i <= 6; i++) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    
         }
-        else{
-            //Is this a thing in javascript lol
-            console.log("This newly generated asset ID was not unique. Trying again.")
-            generateAssetID()
+        //Checking if the generated ID is unique: call function here
+        isUniqueAssetID(result, status => {
+            if(status){
+                console.log('Newly generated asset ID: ' + result);
+                resolve(result)
+                //return result;
+            }
+            else{
+                console.log("This newly generated asset ID was not unique. Trying again.")
+                triesLeft--;
+                if(triesLeft >= 0){
 
-        }
+                    generateAssetID()
+                }
+                else{
+                    reject("Error trying to generate unique assetID: timeout")
+                }
+              
+    
+            }
+        })
     })
-    console.log("End of generateAssetID()")
-
 }
 
 function isUniqueAssetID(id, callback) {

@@ -150,7 +150,6 @@ function addAsset(model, hostname, rack, racku, owner, comment, callback) {
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
-    let assetID = assetIDutils.generateAssetID()
 
     validateAssetForm(null, model, hostname, rack, racku, owner).then(
         _ => {
@@ -168,40 +167,41 @@ function addAsset(model, hostname, rack, racku, owner, comment, callback) {
                         }
                         //The rack doesn't exist, or it doesn't fit on the rack at rackU
                         else {
-                            //Trying to not add another level of callback hell
+                            assetIDutils.generateAssetID().then(newID =>
+                                // console.log(newID)
+                                // assetRef.add({
+                                assetRef.doc(newID).set({
+                                    modelId: doc.id,
+                                    model: model,
+                                    hostname: hostname,
+                                    rack: rack,
+                                    rackU: racku,
+                                    owner: owner,
+                                    comment: comment,
+                                    rackID: rackID,
+                                    //This is for rack usage reports
+                                    modelNumber: modelNum,
+                                    vendor: modelVendor,
+                                    //This is for sorting
+                                    rackRow: rackRow,
+                                    rackNum: rackNum,
+                                }).then(function (docRef) {
+                                    racksRef.doc(String(rackID)).update({
+                                        assets: firebase.firestore.FieldValue.arrayUnion(newID)//docref.id
+                                    }).then(function () {
+                                        console.log("Document successfully updated in racks!");
+                                        callback(null);
+                                    })
+                                    docRef.get().then(ds => {
+                                        index.saveObject({ ...ds.data(), objectID: ds.id })
+                                    })
+                                }).catch(function (error) {
+                                    // callback("Error");
+                                    console.log(error)
+                                })
 
-                            console.log("ID of new asset: " + assetID)
-                            assetRef.add({
-                                //assetRef.doc(assetID).set({
-                                modelId: doc.id,
-                                model: model,
-                                hostname: hostname,
-                                rack: rack,
-                                rackU: racku,
-                                owner: owner,
-                                comment: comment,
-                                rackID: rackID,
-                                //This is for rack usage reports
-                                modelNumber: modelNum,
-                                vendor: modelVendor,
-                                //This is for sorting
-                                rackRow: rackRow,
-                                rackNum: rackNum,
-                            }).then(function (docRef) {
-                                racksRef.doc(String(rackID)).update({
-                                    assets: firebase.firestore.FieldValue.arrayUnion(docRef.id)
-                                }).then(function () {
-                                    console.log("Document successfully updated in racks!");
-                                    callback(null);
-                                })
-                                docRef.get().then(ds => {
-                                    index.saveObject({ ...ds.data(), objectID: ds.id })
-                                })
-                                //callback(null);
-                            }).catch(function (error) {
-                                // callback("Error");
-                                console.log(error)
-                            })
+                            ).catch("Ran out of tries to generate unique ID")
+
                         }
                     })
 
@@ -470,8 +470,8 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, call
         }).catch(errMessage => {
             callback(errMessage)
             console.log(errMessage)
-    
-    
+
+
         })
 
 }
