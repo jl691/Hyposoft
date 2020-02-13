@@ -6,7 +6,6 @@ import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
 import { Redirect } from "react-router-dom";
 import theme from "../theme";
-import AssetIDForm from './AssetIDForm';
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -23,13 +22,11 @@ export default class AddAssetForm extends Component {
             rackU: "",
             owner: "",
             comment: "",
-            popupType: ""
+            macAddress:"",
 
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
-        this.handleAssetIDButton = this.handleAssetIDButton.bind(this);
-        this.handleCancelAssetIDOverride = this.handleCancelAssetIDOverride.bind(this)
     }
 
     handleChange(event) {
@@ -56,7 +53,7 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Rack U must be positive.");
             } else {
                 assetutils.addAsset(
-                    //this.state.asset_id,
+                    this.state.asset_id,
                     this.state.model,
                     this.state.hostname,
                     this.state.rack,
@@ -76,41 +73,12 @@ export default class AddAssetForm extends Component {
 
         }
     }
-    handleAssetIDButton(event) {
-        this.setState({
-            popupType: "override",
-        })
-        console.log("Made it to this method")
-
-    }
-    handleCancelAssetIDOverride() {
-        this.setState({
-            popupType: ""
-        });
-    }
 
     render() {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
         }
-        const { popupType } = this.state
-        let popup;
-
-        if (popupType === 'override') {
-            console.log("Popup bitch!")
-            popup = (
-
-                <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: "Add" })}
-                    onClickOutside={() => this.setState({ popupType: "Add" })}>
-
-                    <AssetIDForm
-                    //parentCallback={this.handleCancelRefreshPopupChange}
-                    //cancelCallback={this.handleCancelPopupChange}
-                    />
-
-                </Layer>
-            )
-        }
+    
 
         return (
             <Grommet theme={theme}>
@@ -123,7 +91,7 @@ export default class AddAssetForm extends Component {
                     <Form onSubmit={this.handleSubmit} name="addInst">
 
                         <FormField name="model" label="Model">
-                        {popup}
+                
 
                             <TextInput name="model" required="true"
                                 placeholder="eg. Dell R710"
@@ -213,9 +181,9 @@ export default class AddAssetForm extends Component {
                                        required="true"/>
                         </FormField> */}
 
-                        <FormField name="macAddr" label="MAC Address">
-                            <TextInput name="macAddr" placeholder="eg. 11-ab-cd-79-aa-c9" onChange={this.handleChange}
-                            //value={this.state.rackU} 
+                        <FormField name="macAddress" label="MAC Address">
+                            <TextInput name="macAddress" placeholder="eg. 11-ab-cd-79-aa-c9" onChange={this.handleChange}
+                            value={this.state.macAddress} 
                             />
                         </FormField>
 
@@ -232,6 +200,11 @@ export default class AddAssetForm extends Component {
                             //value={this.state.rackU} 
                             />
                         </FormField>
+                        <FormField name="asset_id" label="Override Asset ID">
+                            <TextInput name="asset_id" placeholder="If left blank, will auto-generate" onChange={this.handleChange}
+                            value={this.state.asset_id} 
+                            />
+                        </FormField>
 
                         {/* NEW FIELDS END HERE ============================================================================================*/}
 
@@ -240,14 +213,6 @@ export default class AddAssetForm extends Component {
                             <TextInput name="comment" placeholder="Optional" onChange={this.handleChange}
                                 value={this.state.comment} />
                         </FormField>
-
-                        <Button
-                            margin="small"
-                            label="Override Asset ID"
-                            onClick={e => { this.handleAssetIDButton(e) }
-                            }
-
-                        />
 
                         <Box direction={"row"}>
 

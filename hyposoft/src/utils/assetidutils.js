@@ -11,7 +11,7 @@ function generateAssetID() {
         var result = '';
         var characters = '0123456789';
         var charactersLength = characters.length;
-        for (var i = 0; i <= 6; i++) {
+        for (var i = 0; i < 6; i++) {
             result += characters.charAt(Math.floor(Math.random() * charactersLength));
     
         }
@@ -65,6 +65,7 @@ function overrideAssetID(inputID) {
         if(parseInt(inputID) <=999999 && parseInt(inputID) >= 100000){
             isUniqueAssetID(inputID, result => {
                 if(result){
+                    console.log("The admin input a valid asset ID")
                     resolve(null)
                 }
                 else{
@@ -73,8 +74,7 @@ function overrideAssetID(inputID) {
             })
         }
         else{
-            reject("Not a valid asset ID. Must be within range.")
-
+            reject("Not a valid asset ID. The ID must be in range.")
         }
 
     })

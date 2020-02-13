@@ -144,7 +144,7 @@ function forceModifyAssetsInDb(toBeModified) {
     }
 }
 //Need to add in a parameter here: if the user chooses to input an assetID
-function addAsset(model, hostname, rack, racku, owner, comment, callback) {
+function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, callback) {
 
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
@@ -166,43 +166,84 @@ function addAsset(model, hostname, rack, racku, owner, comment, callback) {
                         }
                         //The rack doesn't exist, or it doesn't fit on the rack at rackU
                         else {
-                            //if field has been left empty
-                            let assetDocID = null;
-                            assetIDutils.generateAssetID().then(newID =>
-                               
-                                // assetRef.add({
-                                assetRef.doc(newID).set({
-                                    modelId: doc.id,
-                                    model: model,
-                                    hostname: hostname,
-                                    rack: rack,
-                                    rackU: racku,
-                                    owner: owner,
-                                    comment: comment,
-                                    rackID: rackID,
-                                    //This is for rack usage reports
-                                    modelNumber: modelNum,
-                                    vendor: modelVendor,
-                                    //This is for sorting
-                                    rackRow: rackRow,
-                                    rackNum: rackNum,
-                                }).then(function (docRef) {
-                                    racksRef.doc(String(rackID)).update({
-                                        assets: firebase.firestore.FieldValue.arrayUnion(newID)//docref.id
-                                    }).then(function () {
-                                        console.log("Document successfully updated in racks!");
-                                        callback(null);
-                                    })
-                                    docRef.get().then(ds => {
-                                        index.saveObject({ ...ds.data(), objectID: ds.id })
-                                    })
-                                }).catch(function (error) {
-                                    // callback("Error");
-                                    console.log(error)
-                                })
+                            //if field has been left empty, then call generate
+                            //otherwise, use ovverride method and throw correct errors
+                         
+                            if (overrideAssetID.trim() != "") {
+                                assetIDutils.overrideAssetID(overrideAssetID).then(
+                                    _ => {
+                                        assetRef.doc(overrideAssetID).set({
+                                            modelId: doc.id,
+                                            model: model,
+                                            hostname: hostname,
+                                            rack: rack,
+                                            rackU: racku,
+                                            owner: owner,
+                                            comment: comment,
+                                            rackID: rackID,
+                                            //This is for rack usage reports
+                                            modelNumber: modelNum,
+                                            vendor: modelVendor,
+                                            //This is for sorting
+                                            rackRow: rackRow,
+                                            rackNum: rackNum,
+                                        }).then(function (docRef) {
+                                            racksRef.doc(String(rackID)).update({
+                                                assets: firebase.firestore.FieldValue.arrayUnion(overrideAssetID)//docref.id
+                                            }).then(function () {
+                                                console.log("Document successfully updated in racks!");
+                                                callback(null);
+                                            })
+                                            docRef.get().then(ds => {
+                                                index.saveObject({ ...ds.data(), objectID: ds.id })
+                                            })
+                                        }).catch(function (error) {
+                                            // callback("Error");
+                                            console.log(error)
+                                        })
 
-                            ).catch("Ran out of tries to generate unique ID")
+                                    }).catch(errMessage => {
+                                        callback(errMessage)
+                                    })
 
+                            }
+                            else {
+                                assetIDutils.generateAssetID().then(newID =>
+
+                                    // assetRef.add({
+                                    assetRef.doc(newID).set({
+                                        modelId: doc.id,
+                                        model: model,
+                                        hostname: hostname,
+                                        rack: rack,
+                                        rackU: racku,
+                                        owner: owner,
+                                        comment: comment,
+                                        rackID: rackID,
+                                        //This is for rack usage reports
+                                        modelNumber: modelNum,
+                                        vendor: modelVendor,
+                                        //This is for sorting
+                                        rackRow: rackRow,
+                                        rackNum: rackNum,
+                                    }).then(function (docRef) {
+                                        racksRef.doc(String(rackID)).update({
+                                            assets: firebase.firestore.FieldValue.arrayUnion(newID)//docref.id
+                                        }).then(function () {
+                                            console.log("Document successfully updated in racks!");
+                                            callback(null);
+                                        })
+                                        docRef.get().then(ds => {
+                                            index.saveObject({ ...ds.data(), objectID: ds.id })
+                                        })
+                                    }).catch(function (error) {
+                                        // callback("Error");
+                                        console.log(error)
+                                    })
+
+                                ).catch("Ran out of tries to generate unique ID")
+
+                            }
                         }
                     })
 
@@ -210,12 +251,10 @@ function addAsset(model, hostname, rack, racku, owner, comment, callback) {
 
                 }
 
-
             })
         }).catch(errMessage => {
             callback(errMessage)
             console.log(errMessage)
-
 
         })
 }
