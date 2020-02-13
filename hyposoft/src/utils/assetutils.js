@@ -144,6 +144,7 @@ function forceModifyAssetsInDb(toBeModified) {
     }
 }
 
+//TO REFACTOR
 function addAsset(model, hostname, rack, racku, owner, comment, callback) {
 
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
