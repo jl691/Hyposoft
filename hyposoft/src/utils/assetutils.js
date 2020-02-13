@@ -152,7 +152,7 @@ function addAsset(model, hostname, rack, racku, owner, comment, callback) {
     let rackNum = parseInt(splitRackArray[1])
     let assetID = assetIDutils.generateAssetID()
 
-    validateAssetForm(model, hostname, rack, racku, owner, valid => {
+    validateAssetForm(null, model, hostname, rack, racku, owner, valid => {
         if (valid) {
             callback(valid)
         } else {
@@ -388,7 +388,7 @@ function deleteAsset(assetID, callback) {
 
 function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, callback) {
 
-    validateAssetForm(model, hostname, rack, rackU, owner, valid => {
+    validateAssetForm(assetID, model, hostname, rack, rackU, owner, valid => {
         if (valid) {
             callback(valid)
         } else {
@@ -588,30 +588,32 @@ function getAssetDetails(assetID, callback) {
 
 }
 
-//as long as it's not in the render, not accessible by the user ??
-function validateAssetForm(model, hostname, rack, racku, owner, callback) {
-    //check required fields aren't empty
-    //check model exists
-    //legal hostname: done in AddAssetForm and EditAssetForm
-    //racku : fits within height of the rack (what if they fill out the racku before rack?)
-    //owner: must be someone in the system??
-
-    // } TODO: see if Joyce breaks this
-
-    //if owner is not null, need to check username in system
-    if (owner !== "") {
-        let username = owner;
-        usersRef.where('username', '==', username).get().then(querySnapshot => {
-            if (!querySnapshot.empty) {
-                callback(null)
-            } else {
-                callback("This user does not exist")
+//REFACTORED to be a promise. Combined checkHostnameExists into this function
+function validateAssetForm(assetID, model, hostname, rack, racku, owner) {
+    return new Promise((resolve, reject) => {
+        assetRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
+            if(!docSnaps.empty && assetID !== docSnaps.docs[0].id){
+                resolve(null)
             }
+            else{
+                reject("Hostname already exists.")
+            }
+            
         })
-    } else {
-        callback(null)
-    }
-
+        if (owner !== "") {
+            let username = owner;
+            usersRef.where('username', '==', username).get().then(querySnapshot => {
+                if (!querySnapshot.empty) {
+                    resolve(null)
+                } else {
+                    reject("This user does not exist in the system")
+                }
+            })
+        }       
+        else {
+            resolve(null)
+        }
+    })
 }
 
 function replaceAssetRack(oldRack, newRack, id, callback) {
