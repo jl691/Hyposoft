@@ -143,8 +143,7 @@ function forceModifyAssetsInDb(toBeModified) {
         })
     }
 }
-
-//TO REFACTOR
+//Need to add in a parameter here: if the user chooses to input an assetID
 function addAsset(model, hostname, rack, racku, owner, comment, callback) {
 
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
@@ -167,8 +166,10 @@ function addAsset(model, hostname, rack, racku, owner, comment, callback) {
                         }
                         //The rack doesn't exist, or it doesn't fit on the rack at rackU
                         else {
+                            //if field has been left empty
+                            let assetDocID = null;
                             assetIDutils.generateAssetID().then(newID =>
-                                // console.log(newID)
+                               
                                 // assetRef.add({
                                 assetRef.doc(newID).set({
                                     modelId: doc.id,

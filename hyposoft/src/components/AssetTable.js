@@ -16,9 +16,9 @@ export default class AssetTable extends Component {
         {
             property: 'assetID',
             header: <Text size='small'> Asset ID</Text>,
-            //primary: true,
+            primary: true,
             render: datum => <Text size='small'>
-                {/* {datum.owner} */}
+                {datum.asset_id}
             </Text>,
 
         },

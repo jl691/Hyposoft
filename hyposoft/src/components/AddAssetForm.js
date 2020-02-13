@@ -1,11 +1,12 @@
-import React, {Component} from 'react'
-import {Button, Grommet, Form, FormField, Heading, TextInput, Box} from 'grommet'
-import {ToastsContainer, ToastsStore} from 'react-toasts';
+import React, { Component } from 'react'
+import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer } from 'grommet'
+import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
-import {Redirect} from "react-router-dom";
+import { Redirect } from "react-router-dom";
 import theme from "../theme";
+import AssetIDForm from './AssetIDForm';
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -21,11 +22,14 @@ export default class AddAssetForm extends Component {
             rack: "",
             rackU: "",
             owner: "",
-            comment: ""
+            comment: "",
+            popupType: ""
 
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
+        this.handleAssetIDButton = this.handleAssetIDButton.bind(this);
+        this.handleCancelAssetIDOverride = this.handleCancelAssetIDOverride.bind(this)
     }
 
     handleChange(event) {
@@ -36,22 +40,23 @@ export default class AddAssetForm extends Component {
 
     handleSubmit(event) {
         if (event.target.name === "addInst") {
-            if(!this.state.model || !this.state.hostname || !this.state.rack || !this.state.rackU){
+            if (!this.state.model || !this.state.hostname || !this.state.rack || !this.state.rackU) {
                 //not all required fields filled out
                 ToastsStore.error("Please fill out all required fields.");
-            } else if(!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)){
+            } else if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)) {
                 //not a valid hostname
                 ToastsStore.error("Invalid hostname. It must start with a letter or number, contain only letters, numbers, or hyphens, and end with a letter or number. It must be 63 characters or less.");
-            } else if(!/[A-Z]\d+/.test(this.state.rack)){
+            } else if (!/[A-Z]\d+/.test(this.state.rack)) {
                 //not a valid rack
                 ToastsStore.error("Invalid rack.");
-            } else if(!parseInt(this.state.rackU)){
+            } else if (!parseInt(this.state.rackU)) {
                 //invalid number
                 ToastsStore.error("Rack U must be a number.");
-            } else if(!formvalidationutils.checkPositive(this.state.rackU)){
+            } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
                 ToastsStore.error("Rack U must be positive.");
             } else {
                 assetutils.addAsset(
+                    //this.state.asset_id,
                     this.state.model,
                     this.state.hostname,
                     this.state.rack,
@@ -63,7 +68,7 @@ export default class AddAssetForm extends Component {
                             ToastsStore.error(errorMessage, 10000)
                         } else {
                             this.props.parentCallback(true);
-                            ToastsStore.success('Successfully added asset!');  
+                            ToastsStore.success('Successfully added asset!');
                         }
                     }
                 );
@@ -71,10 +76,40 @@ export default class AddAssetForm extends Component {
 
         }
     }
+    handleAssetIDButton(event) {
+        this.setState({
+            popupType: "override",
+        })
+        console.log("Made it to this method")
+
+    }
+    handleCancelAssetIDOverride() {
+        this.setState({
+            popupType: ""
+        });
+    }
 
     render() {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
+        }
+        const { popupType } = this.state
+        let popup;
+
+        if (popupType === 'override') {
+            console.log("Popup bitch!")
+            popup = (
+
+                <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: "Add" })}
+                    onClickOutside={() => this.setState({ popupType: "Add" })}>
+
+                    <AssetIDForm
+                    //parentCallback={this.handleCancelRefreshPopupChange}
+                    //cancelCallback={this.handleCancelPopupChange}
+                    />
+
+                </Layer>
+            )
         }
 
         return (
@@ -88,33 +123,31 @@ export default class AddAssetForm extends Component {
                     <Form onSubmit={this.handleSubmit} name="addInst">
 
                         <FormField name="model" label="Model">
+                        {popup}
 
-                            <TextInput name="model"  required="true"
+                            <TextInput name="model" required="true"
                                 placeholder="eg. Dell R710"
                                 onChange={e => {
                                     const value = e.target.value
-                                    this.setState(oldState => ({...oldState, model: value}))
-                                    assetutils.getSuggestedModels(value, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))
+                                    this.setState(oldState => ({ ...oldState, model: value }))
+                                    assetutils.getSuggestedModels(value, results => this.setState(oldState => ({ ...oldState, modelSuggestions: results })))
                                 }}
                                 onSelect={e => {
-                                    this.setState(oldState => ({...oldState, model: e.suggestion}))
+                                    this.setState(oldState => ({ ...oldState, model: e.suggestion }))
                                 }}
                                 value={this.state.model}
                                 suggestions={this.state.modelSuggestions}
-                                onClick={() => assetutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))}
+                                onClick={() => assetutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({ ...oldState, modelSuggestions: results })))}
                                 title='Model'
-                                />
+                            />
                         </FormField>
-
-
-
 
                         <FormField name="hostname" label="Hostname">
 
 
                             <TextInput padding="medium" name="hostname" placeholder="eg. server9"
-                                       onChange={this.handleChange}
-                                       value={this.state.hostname} />
+                                onChange={this.handleChange}
+                                value={this.state.hostname} />
                         </FormField>
 
 
@@ -122,21 +155,21 @@ export default class AddAssetForm extends Component {
 
 
                             <TextInput name="rack"
-                                  placeholder="eg. B12"
-                                  onChange={e => {
-                                      const value = e.target.value
-                                      this.setState(oldState => ({...oldState, rack: value}))
-                                      assetutils.getSuggestedRacks(value, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))
-                                  }}
-                                  onSelect={e => {
-                                      this.setState(oldState => ({...oldState, rack: e.suggestion}))
-                                  }}
-                                  value={this.state.rack}
-                                  suggestions={this.state.rackSuggestions}
-                                  onClick={() => assetutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))}
-                                  title='Rack'
-                                  required="true"
-                                />
+                                placeholder="eg. B12"
+                                onChange={e => {
+                                    const value = e.target.value
+                                    this.setState(oldState => ({ ...oldState, rack: value }))
+                                    assetutils.getSuggestedRacks(value, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))
+                                }}
+                                onSelect={e => {
+                                    this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
+                                }}
+                                value={this.state.rack}
+                                suggestions={this.state.rackSuggestions}
+                                onClick={() => assetutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
+                                title='Rack'
+                                required="true"
+                            />
                         </FormField>
 
 
@@ -144,7 +177,7 @@ export default class AddAssetForm extends Component {
 
 
                             <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
-                                       value={this.state.rackU} required="true"/>
+                                value={this.state.rackU} required="true" />
                         </FormField>
 
 
@@ -154,20 +187,20 @@ export default class AddAssetForm extends Component {
                                 placeholder="Optional"
                                 onChange={e => {
                                     const value = e.target.value
-                                    this.setState(oldState => ({...oldState, owner: value}))
-                                    assetutils.getSuggestedOwners(value, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))
+                                    this.setState(oldState => ({ ...oldState, owner: value }))
+                                    assetutils.getSuggestedOwners(value, results => this.setState(oldState => ({ ...oldState, ownerSuggestions: results })))
                                 }}
                                 onSelect={e => {
-                                    this.setState(oldState => ({...oldState, owner: e.suggestion}))
+                                    this.setState(oldState => ({ ...oldState, owner: e.suggestion }))
                                 }}
                                 value={this.state.owner}
                                 suggestions={this.state.ownerSuggestions}
-                                onClick={() => assetutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))}
+                                onClick={() => assetutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({ ...oldState, ownerSuggestions: results })))}
                                 title='Owner'
-                              />
+                            />
                         </FormField>
 
-{/* NEW FIELDS HERE> TODO: change the values/integrate with the backend, move datacenter stuff up the form========= */}
+                        {/* NEW FIELDS HERE> TODO: change the values/integrate with the backend, move datacenter stuff up the form========= */}
                         {/* <FormField name="datacenterName" label="Datacenter name">
                             <TextInput name="datacenterName" placeholder="eg. Research Triangle Park 1" onChange={this.handleChange}
                                        //value={this.state.rackU} 
@@ -182,33 +215,42 @@ export default class AddAssetForm extends Component {
 
                         <FormField name="macAddr" label="MAC Address">
                             <TextInput name="macAddr" placeholder="eg. 11-ab-cd-79-aa-c9" onChange={this.handleChange}
-                                       //value={this.state.rackU} 
-                                       />
+                            //value={this.state.rackU} 
+                            />
                         </FormField>
 
                         {/* For these last two, need to think carefully about UI since they are 'multistep' to add */}
 
                         <FormField name="networkPortConns" label="Network Port Connections">
                             <TextInput name="networkPortConns" placeholder="WORK IN PROGRESS" onChange={this.handleChange}
-                                       //value={this.state.rackU} 
-                                       />
+                            //value={this.state.rackU} 
+                            />
                         </FormField>
 
                         <FormField name="powerConns" label="Power Connections">
                             <TextInput name="powerConns" placeholder="WORK IN PROGRESS" onChange={this.handleChange}
-                                       //value={this.state.rackU} 
-                                       />
+                            //value={this.state.rackU} 
+                            />
                         </FormField>
 
-{/* NEW FIELDS END HERE ============================================================================================*/}
+                        {/* NEW FIELDS END HERE ============================================================================================*/}
 
                         <FormField name="comment" label="Comment">
 
                             <TextInput name="comment" placeholder="Optional" onChange={this.handleChange}
-                                       value={this.state.comment}/>
+                                value={this.state.comment} />
                         </FormField>
 
+                        <Button
+                            margin="small"
+                            label="Override Asset ID"
+                            onClick={e => { this.handleAssetIDButton(e) }
+                            }
+
+                        />
+
                         <Box direction={"row"}>
+
                             <Button
                                 margin="small"
                                 type="submit"
@@ -225,7 +267,7 @@ export default class AddAssetForm extends Component {
                 </Box>
 
 
-                <ToastsContainer store={ToastsStore}/>
+                <ToastsContainer store={ToastsStore} />
             </Grommet>
 
 

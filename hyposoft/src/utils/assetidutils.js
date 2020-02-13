@@ -15,6 +15,7 @@ function generateAssetID() {
             result += characters.charAt(Math.floor(Math.random() * charactersLength));
     
         }
+
         //Checking if the generated ID is unique: call function here
         isUniqueAssetID(result, status => {
             if(status){
@@ -23,7 +24,7 @@ function generateAssetID() {
                 //return result;
             }
             else{
-                console.log("This newly generated asset ID was not unique. Trying again.")
+                console.log("This asset ID is not unique. Trying again.")
                 triesLeft--;
                 if(triesLeft >= 0){
 
@@ -56,8 +57,32 @@ function isUniqueAssetID(id, callback) {
 
 }
 
+//Called in the AssetIDForm popup component
+function overrideAssetID(inputID) {
+    return new Promise((resolve, reject) => {
+        //needs to be within range
+        //needs to be unique
+        if(parseInt(inputID) <=999999 && parseInt(inputID) >= 100000){
+            isUniqueAssetID(inputID, result => {
+                if(result){
+                    resolve(null)
+                }
+                else{
+                    reject("Not a valid asset ID. Must be unique.")
+                }
+            })
+        }
+        else{
+            reject("Not a valid asset ID. Must be within range.")
+
+        }
+
+    })
+}
+
 export {
     generateAssetID,
     isUniqueAssetID,
+    overrideAssetID,
 
 }
