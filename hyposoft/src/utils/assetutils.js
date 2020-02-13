@@ -2,6 +2,7 @@ import {assetRef, racksRef, modelsRef, usersRef, firebase} from './firebaseutils
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
 import * as userutils from './userutils'
+import * as assetIDutils from './assetidutils'
 
 //TODO: admin vs. user privileges
 const algoliasearch = require('algoliasearch')
@@ -148,6 +149,7 @@ function addAsset(model, hostname, rack, racku, owner, comment, callback) {
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
+    let assetID = assetIDutils.generateAssetID()
 
     validateAssetForm(model, hostname, rack, racku, owner, valid => {
         if (valid) {
@@ -172,7 +174,11 @@ function addAsset(model, hostname, rack, racku, owner, comment, callback) {
                                     }
                                     //The rack doesn't exist, or it doesn't fit on the rack at rackU
                                     else {
-                                        assetRef.add({
+                                        //Trying to not add another level of callback hell
+                                      
+                                        console.log("ID of new asset: " + assetID)
+                                        //assetRef.add({
+                                         assetRef.doc(assetID).set({
                                             modelId: doc.id,
                                             model: model,
                                             hostname: hostname,
@@ -261,6 +267,7 @@ function assetFitsOnRack(assetRack, rackU, model, callback, asset_id=null,  echo
         if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number) {
             let rackHeight = querySnapshot.docs[0].data().height
 
+            console.log(model)
             modelutils.getModelByModelname(model, doc => {
                 //doc.data().height refers to model height
                 if (rackHeight >= parseInt(rackU) + doc.data().height) {
@@ -801,6 +808,8 @@ function validateImportedAssets (data, callback) {
     })
 }
 
+
+
 export {
     getAsset,
     addAsset,
@@ -819,5 +828,6 @@ export {
     validateImportedAssets,
     forceAddAssetsToDb,
     forceModifyAssetsInDb,
-    sortAssetsByRackAndRackU
+    sortAssetsByRackAndRackU,
+ 
 }
