@@ -13,7 +13,6 @@ import AppBar from "./AppBar";
 import RackUsageReport from "./RackUsageReport";
 import * as formvalidationutils from "../utils/formvalidationutils";
 import {Redirect} from "react-router-dom";
-import {fabric} from "fabric";
 import SingleRackElevation from "./SingleRackElevation";
 
 class RackView extends React.Component {
@@ -234,25 +233,6 @@ class RackView extends React.Component {
 
     generateColumns() {
         let cols = [
-            /*                                  {
-                                                  property: "checkbox",
-                                                  render: datum => (
-                                                      <CheckBox key={datum.id}
-                                                                checked={this.state.checkedBoxes.includes(datum.id)}
-                                                                onChange={e => {
-                                                                    if (e.target.checked) {
-                                                                        this.state.checkedBoxes.push(datum.id);
-                                                                    } else {
-                                                                        this.setState({checkedBoxes: this.state.checkedBoxes.filter(item => item !== datum.id)})
-                                                                    }
-                                                                }}/>
-                                                  )
-                                              },*/
-            /*                                   {
-                                                   property: "id",
-                                                   header: "ID",
-                                                   primary: true
-                                               },*/
             {
                 property: "count",
                 header: <Text size={"small"}>ID</Text>,
@@ -271,19 +251,6 @@ class RackView extends React.Component {
                 render: datum => (
                     <Text size='small'>{datum.number}</Text>)
             },
-            /*                                   {
-                                                   property: "height",
-                                                   header: "Occupied",
-                                                   render: datum => (
-                                                       <Box pad={{vertical: 'xsmall'}}>
-                                                           <Meter
-                                                               values={[{value: datum.instances / 42 * 100}]}
-                                                               thickness="small"
-                                                               size="small"
-                                                           />
-                                                       </Box>
-                                                   )
-                                               },*/
             {
                 property: "assets",
                 header: <Text size='small'>Assets</Text>,
@@ -488,19 +455,6 @@ class RackView extends React.Component {
             );
         }
 
-/*        if (!this.state.initialLoaded) {
-            return (<Grommet theme={theme} full className='fade'>
-                <Box fill background='light-2'>
-                    <AppBar>
-                        <HomeButton alignSelf='start' this={this}/>
-                        <Heading alignSelf='center' level='4' margin={{
-                            top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
-                        }}>Racks</Heading>
-                        <UserMenu alignSelf='end' this={this}/>
-                    </AppBar>
-                    <Text>Please wait...</Text></Box></Grommet>);
-        }*/
-
         return (
             <Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
@@ -545,84 +499,6 @@ class RackView extends React.Component {
                             </Box>
                         </Box>
                     </Box>
-
-                    {/*<Heading margin={"none"}>Racks</Heading>*/}
-
-                    {/* <DataTable step={25}
-                               onMore={() => {
-                                   if(this.startAfter){
-                                       rackutils.getRackAt(this.startAfter, (newStartAfter, newRacks) => {
-                                           this.startAfter = newStartAfter
-                                           this.setState({racks: this.state.racks.concat(newRacks)})
-                                       });
-                                   }
-                               }}
-                               columns={[
-                                                                     {
-                                                                         property: "checkbox",
-                                                                         render: datum => (
-                                                                             <CheckBox key={datum.id}
-                                                                                       checked={this.state.checkedBoxes.includes(datum.id)}
-                                                                                       onChange={e => {
-                                                                                           if (e.target.checked) {
-                                                                                               this.state.checkedBoxes.push(datum.id);
-                                                                                           } else {
-                                                                                               this.setState({checkedBoxes: this.state.checkedBoxes.filter(item => item !== datum.id)})
-                                                                                           }
-                                                                                       }}/>
-                                                                         )
-                                                                     },*/
-                        /*                                   {
-                                                               property: "id",
-                                                               header: "ID",
-                                                               primary: true
-                                                           },
-                                                           {
-                                                               property: "letter",
-                                                               header: "Row",
-                                                           },
-                                                           {
-                                                               property: "number",
-                                                               header: "Position"
-                                                           },
-                                                                                              {
-                                                                                                  property: "height",
-                                                                                                  header: "Occupied",
-                                                                                                  render: datum => (
-                                                                                                      <Box pad={{vertical: 'xsmall'}}>
-                                                                                                          <Meter
-                                                                                                              values={[{value: datum.instances / 42 * 100}]}
-                                                                                                              thickness="small"
-                                                                                                              size="small"
-                                                                                                          />
-                                                                                                      </Box>
-                                                                                                  )
-                                                                                              },
-                                                           {
-                                                               property: "instances",
-                                                               header: "Instances"
-                                                           },
-                                                           {
-                                                               property: "modify",
-                                                               header: "Actions",
-                                                               render: datum => (
-                                                                   <Box direction="row">
-                                                                       {this.RackDeleteButton(datum)}
-                                                                       <Button icon={<View/>} label="View" onClick={() => {
-                                                                           this.props.history.push({
-                                                                               pathname: '/rackelevation',
-                                                                               state: {
-                                                                                   id: datum.id
-                                                                               }
-                                                                           })
-                                                                       }}/>
-                                                                       <Button icon={<Analytics/>} label="Report" onClick={() => {
-                                                                           this.setState({popupType: 'Report', rackReport: datum.id})
-                                                                       }}/>
-                                                                   </Box>
-                                                               )
-                                                           }
-                                                       ]} data={this.state.racks}/>*/}
                 </Box>
                 {popup}
                 <ToastsContainer store={ToastsStore}/>

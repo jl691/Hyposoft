@@ -2,9 +2,8 @@ import * as firebaseutils from "./firebaseutils";
 import * as modelutils from "./modelutils";
 import {fabric} from "fabric";
 
-var rackCount = 1;
-
 function getRackAt(callback, start = null) {
+    var rackCount = 1;
     console.log("calling getrackat with start ")
     let racks = [];
     if (start) {
@@ -500,6 +499,16 @@ function getValidRackCount(startLetter, endLetter, startNumber, endNumber, callb
     }
 }
 
+function updateDatacenter(rackID, datacenterID, callback){
+    firebaseutils.racksRef.doc(rackID).set({
+        datacenter: datacenterID
+    }).then(function () {
+        callback(true);
+    }).catch(function (error) {
+        callback(null);
+    })
+}
+
 export {
     getRackAt,
     addSingleRack,
@@ -511,5 +520,6 @@ export {
     checkAssetFits,
     generateRackUsageReport,
     generateAllRackUsageReports,
-    getValidRackCount
+    getValidRackCount,
+    updateDatacenter
 }
