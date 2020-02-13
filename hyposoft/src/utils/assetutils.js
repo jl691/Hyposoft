@@ -212,11 +212,11 @@ function addAsset(model, hostname, rack, racku, owner, comment, callback) {
 
             })
         }).catch(errMessage => {
-        callback(errMessage)
-        console.log(errMessage)
+            callback(errMessage)
+            console.log(errMessage)
 
 
-    })
+        })
 }
 
 // rackAsc should be a boolean corresponding to true if rack is ascending
@@ -383,98 +383,97 @@ function deleteAsset(assetID, callback) {
     })
 }
 
+//TODO: double check this still works:
+//hostname updating works, owner updating works, conflicts, etc.
 
 function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, callback) {
 
-    validateAssetForm(assetID, model, hostname, rack, rackU, owner, valid => {
-        if (valid) {
-            callback(valid)
-        } else {
+    validateAssetForm(assetID, model, hostname, rack, rackU, owner).then(
+        _ => {
             modelutils.getModelByModelname(model, doc => {
                 if (!doc) {
                     var errMessage = "Model does not exist"
                     callback(errMessage)
                 } else {
 
-                    if (model.trim() === "" || hostname.trim() === "" || rack.trim() === "" || rackU == null) {
-                        callback("Required fields cannot be empty")
-                    } else {
-                        checkHostnameExists(hostname, assetID, result => {
-                            if (result) {
-                                callback("Hostname already exists.")
-                            } else {
-                                assetFitsOnRack(rack, rackU, model, stat => {
-                                    //returned an error message
-                                    if (stat) {
 
-                                        var errMessage = stat
-                                        //need to pass up errormessage if model updated and instance no longer fits
-                                        callback(errMessage)
-                                    }
-                                    //returns null if no issues/conflicts.
-                                    else {
-                                        let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
-                                        let rackRow = splitRackArray[0]
-                                        let rackNum = parseInt(splitRackArray[1])
-                                        //get new rack document
-                                        rackutils.getRackID(rackRow, rackNum, result => {
-                                            if (result) {
-                                                //get old rack document
-                                                assetRef.doc(assetID).get().then(docSnap => {
-                                                    let oldRack = docSnap.data().rack;
-                                                    let oldSplitRackArray = oldRack.split(/(\d+)/).filter(Boolean)
-                                                    let oldRackRow = oldSplitRackArray[0]
-                                                    let oldRackNum = parseInt(oldSplitRackArray[1])
-                                                    var modelStuff = []
-                                                    modelutils.getVendorAndNumberFromModel(model, name => modelStuff = name)
-                                                    var rackId = ''
-                                                    rackutils.getRackID(rack.slice(0, 1), rack.slice(1, rack.length), name => rackId = name)
-                                                    var modelId = ''
-                                                    modelutils.getModelIdFromModelName(model, name => modelId = name)
-                                                    rackutils.getRackID(oldRackRow, oldRackNum, oldResult => {
-                                                        if (oldResult) {
-                                                            //get new rack document
-                                                            //get instance id
-                                                            replaceAssetRack(oldResult, result, assetID, result => {
-                                                                assetRef.doc(String(assetID)).update({
-                                                                    model: model,
-                                                                    modelId: modelId,
-                                                                    vendor: modelStuff[0],
-                                                                    modelNumber: modelStuff[1],
-                                                                    hostname: hostname,
-                                                                    rack: rack,
-                                                                    rackU: rackU,
-                                                                    rackID: rackId,
-                                                                    owner: owner,
-                                                                    comment: comment,
-                                                                    rackRow: rackRow,
-                                                                    rackNum: rackNum
-                                                                    //these are the fields in the document to update
+                    assetFitsOnRack(rack, rackU, model, stat => {
+                        //returned an error message
+                        if (stat) {
 
-                                                                }).then(function () {
-                                                                    console.log("Updated model successfully")
-                                                                    assetRef.doc(String(assetID)).get().then(docRef => {
-                                                                        index.saveObject({ ...docRef.data(), objectID: docRef.id })
-                                                                    })
-                                                                    callback(null);
-                                                                }).catch(function (error) {
-                                                                    callback(error);
-                                                                })
-                                                            })
-                                                        }
+                            var errMessage = stat
+                            //need to pass up errormessage if model updated and instance no longer fits
+                            callback(errMessage)
+                        }
+                        //returns null if no issues/conflicts.
+                        else {
+                            let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
+                            let rackRow = splitRackArray[0]
+                            let rackNum = parseInt(splitRackArray[1])
+                            //get new rack document
+                            rackutils.getRackID(rackRow, rackNum, result => {
+                                if (result) {
+                                    //get old rack document
+                                    assetRef.doc(assetID).get().then(docSnap => {
+                                        let oldRack = docSnap.data().rack;
+                                        let oldSplitRackArray = oldRack.split(/(\d+)/).filter(Boolean)
+                                        let oldRackRow = oldSplitRackArray[0]
+                                        let oldRackNum = parseInt(oldSplitRackArray[1])
+                                        var modelStuff = []
+                                        modelutils.getVendorAndNumberFromModel(model, name => modelStuff = name)
+                                        var rackId = ''
+                                        rackutils.getRackID(rack.slice(0, 1), rack.slice(1, rack.length), name => rackId = name)
+                                        var modelId = ''
+                                        modelutils.getModelIdFromModelName(model, name => modelId = name)
+                                        rackutils.getRackID(oldRackRow, oldRackNum, oldResult => {
+                                            if (oldResult) {
+                                                //get new rack document
+                                                //get instance id
+                                                replaceAssetRack(oldResult, result, assetID, result => {
+                                                    assetRef.doc(String(assetID)).update({
+                                                        model: model,
+                                                        modelId: modelId,
+                                                        vendor: modelStuff[0],
+                                                        modelNumber: modelStuff[1],
+                                                        hostname: hostname,
+                                                        rack: rack,
+                                                        rackU: rackU,
+                                                        rackID: rackId,
+                                                        owner: owner,
+                                                        comment: comment,
+                                                        rackRow: rackRow,
+                                                        rackNum: rackNum
+                                                        //these are the fields in the document to update
+
+                                                    }).then(function () {
+                                                        console.log("Updated model successfully")
+                                                        assetRef.doc(String(assetID)).get().then(docRef => {
+                                                            index.saveObject({ ...docRef.data(), objectID: docRef.id })
+                                                        })
+                                                        callback(null);
+                                                    }).catch(function (error) {
+                                                        callback(error);
                                                     })
                                                 })
                                             }
                                         })
-                                    }
-                                }, assetID)
-                            }
-                        })
-                    }
+                                    })
+                                }
+                            })
+                        }
+                    }, assetID)
+
+
+
                 }
             })
-        }
-    })
+        }).catch(errMessage => {
+            callback(errMessage)
+            console.log(errMessage)
+    
+    
+        })
+
 }
 
 
@@ -614,7 +613,7 @@ function validateAssetForm(assetID, model, hostname, rack, racku, owner) {
             }
 
         })
-        
+
     })
 }
 
