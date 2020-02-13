@@ -14,23 +14,33 @@ export default class AssetTable extends Component {
     startAfter = null;
     columns = [
         {
+            property: 'assetID',
+            header: <Text size='small'> Asset ID</Text>,
+            //primary: true,
+            render: datum => <Text size='small'>
+                {/* {datum.owner} */}
+            </Text>,
+
+        },
+        {
             property: 'model',
             header: <Text size='small'>Model</Text>,
-            align:"start",
+           // align:"start",
             render: datum => <Text size='small'>{datum.model}</Text>,
 
         },
         {
             property: 'hostname',
             header: <Text size='small'>Hostname</Text>,
-            align:"start",
+           // align:"start",
             render: datum => <Text size='small'>{datum.hostname}</Text>,
+            //TODO: Take out primary here
             primary: true
         },
         {
             property: 'rack',
             header: <Text size='small'>Rack</Text>,
-            align:"end",
+            //align:"end",
             render: datum => <Text size='small'>{datum.rack}</Text>,
 
         },
@@ -45,7 +55,31 @@ export default class AssetTable extends Component {
             header: <Text size='small'> Owner</Text>,
             render: datum => <Text size='small'>{datum.owner}</Text>,
 
-        }
+        },
+        // {
+        //     property: 'datacenterName',
+        //     header: <Text size='small'> Datacenter Name</Text>,
+        //     render: datum => <Text size='small'>
+        //         {/* {datum.owner} */}
+        //     </Text>,
+
+        // },
+        {
+            property: 'datacenterAbbrev',
+            header: <Text size='small'> Datacenter Abbrev.</Text>,
+            render: datum => <Text size='small'>
+                {/* {datum.owner} */}
+            </Text>,
+
+        },
+        // {
+        //     property: 'powerConnections',
+        //     header: <Text size='small'> Power Connections</Text>,
+        //     render: datum => <Text size='small'>
+        //         {/* {datum.owner} */}
+        //     </Text>,
+
+        // },
     ];
 
     constructor(props) {
@@ -69,40 +103,7 @@ export default class AssetTable extends Component {
                 this.setState({ assets: assetdb, initialLoaded: true })
             }
         })
-        this.adminButtons();
-
-
-        // this.columns.push({
-        //     property: "details",
-        //     header: <Text size='small'>Details</Text>,
-        //     sortable: false,
-        //
-        //     render: data => (
-        //
-        //
-        //         //need to pass down instance_id to know which page to display to detailedInstanceScreen
-        //         <React.Fragment>
-        //             <Link to={`/instances/${data.instance_id}`} >
-        //
-        //                 <Button icon={< FormFolder/>}
-        //                     margin="none"
-        //                     onClick={e => {
-        //                         e.persist()
-        //                         e.nativeEvent.stopImmediatePropagation()
-        //                         e.stopPropagation()
-        //                         new DetailedInstanceScreen()
-        //                     }}
-        //
-        //                 />
-        //
-        //                 {/* this.props.history.push */}
-        //             </Link>
-        //
-        //         </React.Fragment>
-        //     )
-        //
-        // })
-
+        this.adminButtons();       
     }
 
 
@@ -148,18 +149,13 @@ export default class AssetTable extends Component {
                                 data.owner,
                                 data.comment,
                             )
-
                             console.log(data)
-
 
                         }} />
                 )
             })
         }
-
     }
-
-
 
     forceRefresh() {
         this.startAfter = null;
@@ -258,8 +254,8 @@ export default class AssetTable extends Component {
 
             //                     pad='small' >
             //                     <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column'
-            //                         justify='start' alignSelf='stretch' flex overflow="scroll">
-            //                         <Box align="center" overflow="scroll">
+            //                         justify='start' alignSelf='stretch' flex >
+            //                         <Box align="center" >
                                         <DataTable
                                             step={5}
                                             onMore={() => {
@@ -270,15 +266,18 @@ export default class AssetTable extends Component {
                                                     });
                                                 }
                                             }}
-                                            sortable={true}
+                                            
                                             columns={this.columns}
-                                            size="medium"
+                                            size="large"
+                                            //pad={{ horizontal: "medium", vertical: "xsmall" }}
+                                           
                                             onClickRow={({datum}) => {
                                                 this.props.parent.props.history.push('/assets/'+datum.asset_id)
                                             }}
 
                                             data={this.props.searchResults||this.state.assets}
-
+                                            sortable
+                                         
 
                                         />
             //                         </Box>

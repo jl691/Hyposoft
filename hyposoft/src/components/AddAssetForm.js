@@ -10,6 +10,7 @@ import theme from "../theme";
 
 //Instance table has a layer, that holds the button to add instance and the form
 
+//TODO: need to change states in here, screen, elsewhere
 export default class AddAssetForm extends Component {
     constructor(props) {
         super(props);
@@ -113,7 +114,7 @@ export default class AddAssetForm extends Component {
 
                             <TextInput padding="medium" name="hostname" placeholder="eg. server9"
                                        onChange={this.handleChange}
-                                       value={this.state.hostname} required="false"/>
+                                       value={this.state.hostname} />
                         </FormField>
 
 
@@ -166,9 +167,9 @@ export default class AddAssetForm extends Component {
                               />
                         </FormField>
 
-{/* NEW FIELDS HERE> TODO: change the values/integrate with the backend======================================== */}
+{/* NEW FIELDS HERE> TODO: change the values/integrate with the backend, move datacenter stuff up the form========= */}
                         <FormField name="datacenterName" label="Datacenter name">
-                            <TextInput name="datacenterName" placeholder="eg. Research triangle Park 1" onChange={this.handleChange}
+                            <TextInput name="datacenterName" placeholder="eg. Research Triangle Park 1" onChange={this.handleChange}
                                        //value={this.state.rackU} 
                                        required="true"/>
                         </FormField>
@@ -180,9 +181,23 @@ export default class AddAssetForm extends Component {
                         </FormField>
 
                         <FormField name="macAddr" label="MAC Address">
-                            <TextInput name="macAddr" placeholder="eg. 11:ab:cd:79:aa:c9" onChange={this.handleChange}
+                            <TextInput name="macAddr" placeholder="eg. 11-ab-cd-79-aa-c9" onChange={this.handleChange}
                                        //value={this.state.rackU} 
-                                       required="false"/>
+                                       />
+                        </FormField>
+
+                        {/* For these last two, need to think carefully about UI since they are 'multistep' to add */}
+
+                        <FormField name="networkPortConns" label="Network Port Connections">
+                            <TextInput name="networkPortConns" placeholder="WORK IN PROGRESS" onChange={this.handleChange}
+                                       //value={this.state.rackU} 
+                                       />
+                        </FormField>
+
+                        <FormField name="powerConns" label="Power Connections">
+                            <TextInput name="powerConns" placeholder="WORK IN PROGRESS" onChange={this.handleChange}
+                                       //value={this.state.rackU} 
+                                       />
                         </FormField>
 
 {/* NEW FIELDS END HERE ============================================================================================*/}
