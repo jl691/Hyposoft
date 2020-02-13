@@ -349,7 +349,7 @@ function checkAssetFits(position, height, rack, callback, id = null) { //rackU, 
 
         }
     }).catch(function (error) {
-        console.log("No matching racks")
+        console.log("No matching racks: " +error)
         callback(null);
     })
 }
