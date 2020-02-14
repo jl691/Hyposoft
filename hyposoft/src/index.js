@@ -24,6 +24,7 @@ import RackView from "./components/RackView";
 import AssetScreen from './screens/AssetScreen'
 import RackElevations from "./components/RackElevations";
 import DatacenterScreen from "./screens/DatacenterScreen";
+import LogScreen from "./screens/LogScreen"
 
 ReactDOM.render((
             <BrowserRouter>
@@ -32,6 +33,7 @@ ReactDOM.render((
                     <Route exact path='/racks' component={RackView} />
                     <Route exact path='/rackelevation' component={RackElevations} />
                     <Route exact path='/datacenters' component={DatacenterScreen} />
+                    <Route exact path='/logs' component={LogScreen} />
                     <Route exact path='/dashboard' component={DashboardScreen} />
                     <Route exact path='/settings' component={SettingsScreen} />
                     <Route exact path='/users' component={UsersScreen} />
