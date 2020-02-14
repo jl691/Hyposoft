@@ -63,6 +63,27 @@ function getDatacenters(callback, start = null) {
     }
 }
 
+function getAllDatacenterNames (callback) {
+    let datacenters = [];
+    let count = 0;
+    firebaseutils.datacentersRef.orderBy("name").orderBy("abbreviation").get().then(docSnaps => {
+        if(docSnaps.empty){
+            callback([]);
+        } else {
+            console.log(docSnaps.docs)
+            docSnaps.docs.forEach(document => {
+                datacenters.push(document.data().name);
+                count++;
+                if(count === docSnaps.size){
+                    callback(datacenters);
+                }
+            })
+        }
+    }).catch(function (error) {
+        callback([]);
+    })
+}
+
 function checkNameUnique(name, callback, self = null) {
     if (self && name === self) {
         callback(true);
@@ -172,4 +193,14 @@ function updateDatacenter(oldName, oldAbbrev, newName, newAbbrev, callback) {
     })
 }
 
-export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter}
+function getIDFromName(name, callback){
+    firebaseutils.datacentersRef.where("name", "==", name).get().then(querySnapshot => {
+        if(querySnapshot.empty){
+            callback(null);
+        } else {
+            callback(querySnapshot.docs[0].id);
+        }
+    })
+}
+
+export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getIDFromName}
