@@ -72,7 +72,7 @@ function isLoginValid(username, password, callback) {
     .where('password', '==', firebaseutils.hashAndSalt(password.trim())).get()
     .then(querySnapshot => {
         if (!querySnapshot.empty) {
-            callback(querySnapshot.docs[0].data())
+            callback({...querySnapshot.docs[0].data(), docId: querySnapshot.docs[0].id})
         } else {
             callback(null)
         }
@@ -84,6 +84,11 @@ function logUserIn(userObject) {
     localStorage.setItem('displayName', userObject.displayName)
     localStorage.setItem('username', userObject.username)
     localStorage.setItem('email', userObject.email)
+    localStorage.setItem('userDocId', userObject.docId)
+}
+
+function getLoggedInUser() {
+    localStorage.getItem('userDocId')
 }
 
 function logout() {
@@ -213,4 +218,4 @@ function getAllUsers (callback) {
 export { isUserLoggedIn, createUser, modifyUser, deleteUser, isLoggedInUserAdmin,
 isLoginValid, logUserIn, logout, getUser, changePassword, loadUsers, addClaim,
 fetchClaim, usernameTaken, validEmail, removeClaim, updateUsername, sendRecoveryEmail,
-fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers }
+fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers, getLoggedInUser }
