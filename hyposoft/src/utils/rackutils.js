@@ -8,9 +8,9 @@ function getRackAt(callback, datacenter = null, start = null) {
     console.log("calling getrackat with start ")
     let racks = [];
     if (start) {
-        if(datacenter){
+        if (datacenter) {
             datacenterutils.getIDFromName(datacenter, result => {
-                if(result){
+                if (result) {
                     firebaseutils.racksRef.where("datacenter", "==", result).orderBy("letter").orderBy("number").limit(25).startAfter(start).get().then(docSnaps => {
                         if (docSnaps.empty) {
                             callback(null, null, true);
@@ -61,11 +61,11 @@ function getRackAt(callback, datacenter = null, start = null) {
             })
         }
     } else {
-        if(datacenter){
+        if (datacenter) {
             console.log(datacenter);
             datacenterutils.getIDFromName(datacenter, result => {
                 console.log(result)
-                if(result){
+                if (result) {
                     console.log("yeet")
                     firebaseutils.racksRef.where("datacenter", "==", result).orderBy("letter").orderBy("number").limit(25).get().then(docSnaps => {
                         console.log("Yeet 2", docSnaps.docs)
@@ -120,19 +120,32 @@ function getRackAt(callback, datacenter = null, start = null) {
     }
 }
 
-function addSingleRack(row, number, height, callback) {
+function addSingleRack(row, number, height, datacenter, callback) {
     //assume form validated
-    checkRackExists(row, number, status => {
+    checkRackExists(row, number, datacenter, status => {
         if (!status) {
-            firebaseutils.racksRef.add({
-                letter: row,
-                number: number,
-                height: height,
-                assets: []
-            }).then(function (docRef) {
-                callback(docRef.id);
-            }).catch(function (error) {
-                callback(null);
+            datacenterutils.getIDFromName(datacenter, datacenterID => {
+                if (datacenterID) {
+                    firebaseutils.racksRef.add({
+                        letter: row,
+                        number: number,
+                        height: height,
+                        assets: [],
+                        datacenter: datacenterID
+                    }).then(function (docRef) {
+                        datacenterutils.addRackToDatacenter(docRef.id, datacenter, result => {
+                            if (result) {
+                                callback(docRef.id);
+                            } else {
+                                callback(null);
+                            }
+                        })
+                    }).catch(function (error) {
+                        callback(null);
+                    })
+                } else {
+                    callback(null);
+                }
             })
         } else {
             callback(null)
@@ -140,38 +153,58 @@ function addSingleRack(row, number, height, callback) {
     })
 }
 
-function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, callback) {
-    //assume form validated
-    let rowStartNumber = rowStart.charCodeAt(0);
-    let rowEndNumber = rowEnd.charCodeAt(0);
-    let skippedRacks = [];
-    let count = 0;
-    let totalRacks = (numberEnd - numberStart + 1) * (rowEndNumber - rowStartNumber + 1);
-    for (let i = rowStartNumber; i <= rowEndNumber; i++) {
-        let currLetter = String.fromCharCode(i);
-        for (let j = numberStart; j <= numberEnd; j++) {
-            checkRackExists(currLetter, j, status => {
-                if (!status) {
-                    firebaseutils.racksRef.add({
-                        letter: currLetter,
-                        number: j,
-                        height: height,
-                        assets: []
-                    }).catch(function (error) {
-                        callback(null, null);
-                    });
-                } else {
-                    let skippedRack = currLetter + j;
-                    skippedRacks.push(skippedRack);
+function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, datacenter, callback) {
+    //check datacenter exists
+    datacenterutils.getIDFromName(datacenter, datacenterID => {
+        if (datacenterID) {
+//assume form validated
+            let rowStartNumber = rowStart.charCodeAt(0);
+            let rowEndNumber = rowEnd.charCodeAt(0);
+            let skippedRacks = [];
+            let count = 0;
+            let totalRacks = (numberEnd - numberStart + 1) * (rowEndNumber - rowStartNumber + 1);
+            for (let i = rowStartNumber; i <= rowEndNumber; i++) {
+                let currLetter = String.fromCharCode(i);
+                for (let j = numberStart; j <= numberEnd; j++) {
+                    checkRackExists(currLetter, j, datacenter, status => {
+                        if (!status) {
+                            firebaseutils.racksRef.add({
+                                letter: currLetter,
+                                number: j,
+                                height: height,
+                                assets: [],
+                                datacenter: datacenterID
+                            }).then(function (docRef) {
+                                datacenterutils.addRackToDatacenter(docRef.id, datacenter, result => {
+                                    if (result) {
+                                        count++;
+                                        if (count === totalRacks) {
+                                            console.log(skippedRacks)
+                                            callback(true, skippedRacks);
+                                        }
+                                    } else {
+                                        callback(null, null);
+                                    }
+                                })
+                            }).catch(function (error) {
+                                callback(null, null);
+                            });
+                        } else {
+                            let skippedRack = currLetter + j;
+                            skippedRacks.push(skippedRack);
+                            count++;
+                            if (count === totalRacks) {
+                                console.log(skippedRacks)
+                                callback(true, skippedRacks);
+                            }
+                        }
+                    })
                 }
-                count++;
-                if (count === totalRacks) {
-                    console.log(skippedRacks)
-                    callback(true, skippedRacks);
-                }
-            })
+            }
+        } else {
+            callback(null, null);
         }
-    }
+    })
 }
 
 function checkAssets(rowStart, rowEnd, numberStart, numberEnd, callback) {
@@ -193,11 +226,18 @@ function checkAssets(rowStart, rowEnd, numberStart, numberEnd, callback) {
 function deleteSingleRack(id, callback) {
     firebaseutils.racksRef.doc(id).get().then(function (doc) {
         if (doc.exists) {
+            let datacenterID = doc.data().datacenter;
             if (doc.data().assets && Object.keys(doc.data().assets).length > 0) {
                 callback(null)
             } else {
                 firebaseutils.racksRef.doc(id).delete().then(function () {
-                    callback(id);
+                    firebaseutils.datacentersRef.doc(datacenterID).update({
+                        racks: firebaseutils.firebase.firestore.FieldValue.arrayRemove(id)
+                    }).then(function () {
+                        callback(true);
+                    }).catch(function (error) {
+                        callback(null);
+                    })
                 }).catch(function (error) {
                     callback(null);
                 })
@@ -208,58 +248,93 @@ function deleteSingleRack(id, callback) {
     })
 }
 
-function getRackID(row, number, callback) {
-    firebaseutils.racksRef.where("letter", "==", row).where("number", "==", parseInt(number)).get().then(function (querySnapshot) {
-        if (!querySnapshot.empty) {
-            callback(querySnapshot.docs[0].id);
+function getRackID(row, number, datacenter, callback) {
+    datacenterutils.getIDFromName(datacenter, datacenterID => {
+        if (datacenterID) {
+            firebaseutils.racksRef.where("letter", "==", row).where("number", "==", parseInt(number)).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
+                if (!querySnapshot.empty) {
+                    callback(querySnapshot.docs[0].id);
+                } else {
+                    callback(null);
+                }
+            })
         } else {
             callback(null);
         }
     })
 }
 
-function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, callback) {
-    //first check all racks for instances
-    //assume form validated
-    let rowStartNumber = rowStart.charCodeAt(0);
-    let rowEndNumber = rowEnd.charCodeAt(0);
-    let skippedRacks = [];
-    let count = 0;
-    let totalRacks = (numberEnd - numberStart + 1) * (rowEndNumber - rowStartNumber + 1);
+function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, datacenter, callback) {
+    //first check if datacenter exists
+    datacenterutils.getIDFromName(datacenter, datacenterID => {
+        if (datacenterID) {
+            //first check all racks for instances
+            //assume form validated
+            let rowStartNumber = rowStart.charCodeAt(0);
+            let rowEndNumber = rowEnd.charCodeAt(0);
+            let skippedRacks = [];
+            let count = 0;
+            let totalRacks = (numberEnd - numberStart + 1) * (rowEndNumber - rowStartNumber + 1);
 
-    for (let i = rowStartNumber; i <= rowEndNumber; i++) {
-        let currLetter = String.fromCharCode(i);
-        for (let j = numberStart; j <= numberEnd; j++) {
-            firebaseutils.racksRef.where("letter", "==", currLetter).where("number", "==", parseInt(j)).get().then(function (querySnapshot) {
-                if (!querySnapshot.empty) {
-                    let docID;
-                    docID = querySnapshot.docs[0].id;
-                    if (!(querySnapshot.docs[0].data().assets && Object.keys(querySnapshot.docs[0].data().assets).length > 0)) {
-                        firebaseutils.racksRef.doc(docID).delete().catch(function (error) {
-                            callback(null);
-                        })
-                    } else {
-                        skippedRacks.push(currLetter + parseInt(j));
-                    }
-                } else {
-                    skippedRacks.push(currLetter + parseInt(j));
+            for (let i = rowStartNumber; i <= rowEndNumber; i++) {
+                let currLetter = String.fromCharCode(i);
+                for (let j = numberStart; j <= numberEnd; j++) {
+                    firebaseutils.racksRef.where("letter", "==", currLetter).where("number", "==", parseInt(j)).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
+                        if (!querySnapshot.empty) {
+                            let docID;
+                            docID = querySnapshot.docs[0].id;
+                            if (!(querySnapshot.docs[0].data().assets && Object.keys(querySnapshot.docs[0].data().assets).length > 0)) {
+                                firebaseutils.racksRef.doc(docID).delete().then(function () {
+                                    datacenterutils.removeRackFromDatacenter(docID, datacenter, result => {
+                                        if(result){
+                                            count++;
+                                            if (count === totalRacks) {
+                                                callback(true, skippedRacks)
+                                            }
+                                        } else {
+                                            callback(null);
+                                        }
+                                    })
+                                }).catch(function (error) {
+                                    callback(null, null);
+                                })
+                            } else {
+                                skippedRacks.push(currLetter + parseInt(j));
+                                count++;
+                                if (count === totalRacks) {
+                                    callback(true, skippedRacks)
+                                }
+                            }
+                        } else {
+                            skippedRacks.push(currLetter + parseInt(j));
+                            count++;
+                            if (count === totalRacks) {
+                                callback(true, skippedRacks)
+                            }
+                        }
+                    });
                 }
-                count++;
-                if (count === totalRacks) {
-                    callback(true, skippedRacks)
-                }
-            });
+            }
+        } else {
+            callback(null, null);
         }
-    }
+    })
 }
 
-function checkRackExists(letter, number, callback) {
+function checkRackExists(letter, number, datacenter, callback) {
+    console.log("checking if rack " + letter + number + " in datacenter " + datacenter + " exists")
     let parsedNumber = parseInt(number);
-    firebaseutils.racksRef.where("letter", "==", letter).where("number", "==", parsedNumber).get().then(function (querySnapshot) {
-        if (!querySnapshot.empty) {
-            callback(true);
+    datacenterutils.getIDFromName(datacenter, datacenterID => {
+        if (datacenterID) {
+            firebaseutils.racksRef.where("letter", "==", letter).where("number", "==", parsedNumber).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
+                if (!querySnapshot.empty) {
+                    callback(true);
+                } else {
+                    callback(false);
+                }
+            })
         } else {
-            callback(false);
+            callback(null);
         }
     })
 }
@@ -413,6 +488,7 @@ function generateRackUsageReport(rack, callback) {
     let vendorCounts = new Map();
     let modelCounts = new Map();
     let ownerCounts = new Map();
+    console.log("rack is " + rack)
     firebaseutils.racksRef.doc(rack).get().then(function (docRefRack) {
         if (docRefRack.data().assets.length) {
             docRefRack.data().assets.forEach(assetID => {
@@ -452,6 +528,41 @@ function generateRackUsageReport(rack, callback) {
     }).catch(function (error) {
         console.log("couldn't find")
         callback(null);
+    })
+}
+
+function generateRackUsageReportDatacenter(datacenter, callback) {
+    datacenterutils.getIDFromName(datacenter, datacenterID => {
+        if (datacenterID) {
+            firebaseutils.datacentersRef.doc(datacenterID).get().then(docSnapshot => {
+                if (docSnapshot.exists) {
+                    let count = 0;
+                    let used = 0;
+                    let height = 0;
+                    let vendorCounts = new Map();
+                    let modelCounts = new Map();
+                    let ownerCounts = new Map();
+                    docSnapshot.data().racks.forEach(rackID => {
+                        generateRackUsageReport(rackID, (rackUsed, rackHeight, rackVendorCounts, rackModelCounts, rackOwnerCounts) => {
+                            console.log("rackvendoroccunts is ", rackVendorCounts, rackUsed)
+                            used += rackUsed;
+                            height += rackHeight;
+                            vendorCounts = new Map([...vendorCounts, ...rackVendorCounts]);
+                            modelCounts = new Map([...modelCounts, ...rackModelCounts]);
+                            ownerCounts = new Map([...ownerCounts, ...rackOwnerCounts]);
+                            count++;
+                            if (count === docSnapshot.data().racks.length) {
+                                callback(used, height, vendorCounts, modelCounts, ownerCounts);
+                            }
+                        })
+                    })
+                } else {
+                    callback(null);
+                }
+            })
+        } else {
+            callback(null);
+        }
     })
 }
 
@@ -531,36 +642,28 @@ function getTotalRackHeight(callback) {
     })
 }
 
-function getValidRackCount(startLetter, endLetter, startNumber, endNumber, callback) {
-    let rowStartNumber = startLetter.charCodeAt(0);
-    let rowEndNumber = endLetter.charCodeAt(0);
-    let count = 0;
-    let totalRacks = (rowEndNumber - rowStartNumber + 1) * (endNumber - startNumber + 1);
-    let checked = 0;
+function getValidRackCount(startLetter, endLetter, startNumber, endNumber, datacenter, callback) {
+    datacenterutils.getIDFromName(datacenter, datacenterID => {
+        let rowStartNumber = startLetter.charCodeAt(0);
+        let rowEndNumber = endLetter.charCodeAt(0);
+        let count = 0;
+        let totalRacks = (rowEndNumber - rowStartNumber + 1) * (endNumber - startNumber + 1);
+        let checked = 0;
 
-    for (let i = rowStartNumber; i <= rowEndNumber; i++) {
-        let currLetter = String.fromCharCode(i);
-        for (let j = parseInt(startNumber); j <= parseInt(endNumber); j++) {
-            checkRackExists(currLetter, j, result => {
-                if(result){
-                    count++;
-                }
-                checked++;
-                if(checked === totalRacks){
-                    callback(count);
-                }
-            })
+        for (let i = rowStartNumber; i <= rowEndNumber; i++) {
+            let currLetter = String.fromCharCode(i);
+            for (let j = parseInt(startNumber); j <= parseInt(endNumber); j++) {
+                checkRackExists(currLetter, j, datacenter, result => {
+                    if (result) {
+                        count++;
+                    }
+                    checked++;
+                    if (checked === totalRacks) {
+                        callback(count);
+                    }
+                })
+            }
         }
-    }
-}
-
-function updateDatacenter(rackID, datacenterID, callback){
-    firebaseutils.racksRef.doc(rackID).set({
-        datacenter: datacenterID
-    }).then(function () {
-        callback(true);
-    }).catch(function (error) {
-        callback(null);
     })
 }
 
@@ -576,5 +679,5 @@ export {
     generateRackUsageReport,
     generateAllRackUsageReports,
     getValidRackCount,
-    updateDatacenter
+    generateRackUsageReportDatacenter
 }

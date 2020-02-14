@@ -203,4 +203,36 @@ function getIDFromName(name, callback){
     })
 }
 
-export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getIDFromName}
+function addRackToDatacenter(rackID, datacenterName, callback){
+    getIDFromName(datacenterName, datacenterID => {
+        if(datacenterID){
+            firebaseutils.datacentersRef.doc(datacenterID).update({
+                racks: firebaseutils.firebase.firestore.FieldValue.arrayUnion(rackID)
+            }).then(function () {
+                callback(true);
+            }).catch(function (error) {
+                callback(null);
+            })
+        } else {
+            callback(null);
+        }
+    })
+}
+
+function removeRackFromDatacenter(rackID, datacenterName, callback) {
+    getIDFromName(datacenterName, datacenterID => {
+        if(datacenterID){
+            firebaseutils.datacentersRef.doc(datacenterID).update({
+                racks: firebaseutils.firebase.firestore.FieldValue.arrayRemove(rackID)
+            }).then(function () {
+                callback(true);
+            }).catch(function (error) {
+                callback(null);
+            })
+        } else {
+            callback(null);
+        }
+    })
+}
+
+export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getIDFromName, addRackToDatacenter, removeRackFromDatacenter}

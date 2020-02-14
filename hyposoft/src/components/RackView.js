@@ -12,7 +12,7 @@ import {
     TextInput,
     Stack,
     RangeSelector,
-    Menu
+    Menu, Select
 } from "grommet";
 import {Add, Trash, Close, View, Analytics, FormEdit, FormTrash, FormView} from "grommet-icons";
 import * as userutils from "../utils/userutils";
@@ -105,26 +105,10 @@ class RackView extends React.Component {
         datacenterutils.getAllDatacenterNames(names => {
             if (names.length) {
                 names.forEach(name => {
-                    this.datacenters.push({
-                        label: name,
-                        onClick: () => {
-                            this.setState({
-                                datacenter: name
-                            });
-                            this.forceRefresh(name);
-                        }
-                    });
+                    this.datacenters.push(name);
                     count++;
                     if (count === names.length) {
-                        this.datacenters.push({
-                            label: "Show all racks",
-                            onClick: () => {
-                                this.setState({
-                                    datacenter: "All"
-                                });
-                                this.forceRefresh("All");
-                            }
-                        })
+                        this.datacenters.push(name);
                         console.log(items)
                         this.setState({
                             datacentersLoaded: true
@@ -133,9 +117,7 @@ class RackView extends React.Component {
                 })
             } else {
                 console.log("no datacenters")
-                this.datacenters.push({
-                    label: "No datacenters exist."
-                })
+                this.datacenters.push("No datacenters exist.")
                 this.setState({
                     datacentersLoaded: true
                 });
@@ -151,9 +133,16 @@ class RackView extends React.Component {
         } else {
             console.log(this.datacenters)
             return (
-                <Menu
-                    label="Select one..."
-                    items={this.datacenters}
+                <Select
+                    placeholder="Select one..."
+                    options={this.datacenters}
+                    value={this.state.datacenter}
+                    onChange={(option) => {
+                        this.setState({
+                            datacenter: option.value
+                        });
+                        this.forceRefresh(option.value)
+                    }}
                 />
             )
         }
@@ -201,7 +190,11 @@ class RackView extends React.Component {
                             <p>Add a single rack or a range of racks.</p>
                             <Box direction='column' flex alignSelf='stretch'>
                                 <Button primary icon={<Add/>} label="Add" onClick={() => {
-                                    this.setState({popupType: "Add"})
+                                    if(this.state.datacenter){
+                                        this.setState({popupType: "Add"})
+                                    } else {
+                                        ToastsStore.error("Please select a datacenter first.");
+                                    }
                                 }}/>
                             </Box>
                         </Box>
@@ -223,7 +216,11 @@ class RackView extends React.Component {
                             <p>Remove a range of racks.</p>
                             <Box direction='column' flex alignSelf='stretch'>
                                 <Button primary icon={<Trash/>} label="Remove" onClick={() => {
-                                    this.setState({popupType: "Remove"})
+                                    if(this.state.datacenter){
+                                        this.setState({popupType: "Remove"});
+                                    } else {
+                                        ToastsStore.error("Please select a datacenter first.");
+                                    }
                                 }}/>
                             </Box>
                         </Box>
@@ -245,7 +242,11 @@ class RackView extends React.Component {
                             <p>View rack elevations for a range of racks.</p>
                             <Box direction='column' flex alignSelf='stretch'>
                                 <Button primary icon={<View/>} label="Elevation" onClick={() => {
-                                    this.setState({popupType: "Diagram"})
+                                    if(this.state.datacenter){
+                                        this.setState({popupType: "Diagram"})
+                                    } else {
+                                        ToastsStore.error("Please select a datacenter first.");
+                                    }
                                 }}/>
                             </Box>
                         </Box>
@@ -264,10 +265,17 @@ class RackView extends React.Component {
                              margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
                              direction='column' justify='start'>
                             <Heading level='4' margin='none'>View rack usage report</Heading>
-                            <p>View an overall rack usage report for all racks.</p>
+                            <p>View an overall rack usage report for all racks, either globally or per datacenter..</p>
                             <Box direction='column' flex alignSelf='stretch'>
-                                <Button primary icon={<Analytics/>} label="Report" onClick={() => {
+                                <Button primary icon={<Analytics/>} margin={"small"} label="Global" onClick={() => {
                                     this.setState({popupType: "ReportAll"})
+                                }}/>
+                                <Button primary icon={<Analytics/>} margin={"small"} label="Datacenter" onClick={() => {
+                                    if(this.state.datacenter){
+                                        this.setState({popupType: "ReportDatacenter"})
+                                    } else {
+                                        ToastsStore.error("Please select a datacenter first.");
+                                    }
                                 }}/>
                             </Box>
                         </Box>
@@ -464,7 +472,8 @@ class RackView extends React.Component {
                     startRow: this.state.letterStart,
                     endRow: this.state.letterEnd,
                     startNumber: this.state.numberStart,
-                    endNumber: this.state.numberEnd
+                    endNumber: this.state.numberEnd,
+                    datacenter: this.state.datacenter
                 }
             })
         }
@@ -513,7 +522,7 @@ class RackView extends React.Component {
             popup = (
                 <Layer onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
-                    <DeleteRackView parentCallback={this.callbackFunction}/>
+                    <DeleteRackView parentCallback={this.callbackFunction} datacenter={this.state.datacenter}/>
                     <Button label="Cancel" icon={<Close/>}
                             onClick={() => this.setState({popupType: ""})}/>
                 </Layer>
@@ -522,7 +531,7 @@ class RackView extends React.Component {
             popup = (
                 <Layer onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
-                    <AddRackView parentCallback={this.callbackFunction}/>
+                    <AddRackView parentCallback={this.callbackFunction} datacenter={this.state.datacenter}/>
                     <Button label="Cancel" icon={<Close/>}
                             onClick={() => this.setState({popupType: ""})}/>
                 </Layer>
@@ -565,6 +574,15 @@ class RackView extends React.Component {
                 <Layer onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
                     <RackUsageReport rack={this.state.rackReport} type={"all"}/>
+                    <Button label="Close" icon={<Close/>}
+                            onClick={() => this.setState({popupType: ""})}/>
+                </Layer>
+            )
+        } else if (popupType === 'ReportDatacenter') {
+            popup = (
+                <Layer onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+                    <RackUsageReport rack={this.state.datacenter} type={"datacenter"}/>
                     <Button label="Close" icon={<Close/>}
                             onClick={() => this.setState({popupType: ""})}/>
                 </Layer>

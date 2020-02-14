@@ -9,8 +9,9 @@ import UserMenu from "./UserMenu";
 import AppBar from "./AppBar";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import BackButton from "./BackButton";
+import * as datacenterutils from "../utils/datacenterutils";
 
-var doc, count, totalRacks;
+var doc, count, totalRacks, datacenterID;
 var images = new Map();
 
 class RackElevations extends React.Component {
@@ -23,14 +24,22 @@ class RackElevations extends React.Component {
     }
 
     componentDidMount() {
-        if(this.props.location.state && this.props.location.state.startRow && this.props.location.state.endRow && this.props.location.state.startNumber && this.props.location.state.endNumber){
-            count = 0;
-            this.getRackIDs();
-            doc = new jsPDF({
-                format: 'letter',
-                orientation: 'landscape',
-                unit: 'in'
-            });
+        console.log("the datacenter is " + this.props.location.state.datacenter)
+        if(this.props.location.state && this.props.location.state.startRow && this.props.location.state.endRow && this.props.location.state.startNumber && this.props.location.state.endNumber && this.props.location.state.datacenter){
+            datacenterutils.getIDFromName(this.props.location.state.datacenter, ID => {
+                if(ID){
+                    datacenterID = ID;
+                    count = 0;
+                    this.getRackIDs();
+                    doc = new jsPDF({
+                        format: 'letter',
+                        orientation: 'landscape',
+                        unit: 'in'
+                    });
+                } else {
+                    ToastsStore.info("Invalid form data. Please go back and try again.")
+                }
+            })
         } else {
             ToastsStore.info("Invalid form data. Please go back and try again.")
         }
@@ -47,12 +56,12 @@ class RackElevations extends React.Component {
 
         let racks = [];
 
-        rackutils.getValidRackCount(startRow, endRow, startNumber, endNumber, result => {
+        rackutils.getValidRackCount(startRow, endRow, startNumber, endNumber, this.props.location.state.datacenter, result => {
             totalRacks = result;
             for (let i = rowStartNumber; i <= rowEndNumber; i++) {
                 let currLetter = String.fromCharCode(i);
                 for (let j = parseInt(startNumber); j <= parseInt(endNumber); j++) {
-                    rackutils.getRackID(currLetter, j, result => {
+                    rackutils.getRackID(currLetter, j, this.props.location.state.datacenter, result => {
                         if (result) {
                             racks.push(result);
                             if (racks.length === totalRacks) {
