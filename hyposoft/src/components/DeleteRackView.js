@@ -26,7 +26,7 @@ class DeleteRackView extends React.Component {
 
     deleteRacks() {
         ToastsStore.info('Please wait...');
-        rackutils.deleteRackRange(this.state.rangeLetterStart, this.state.rangeLetterEnd, this.state.rangeNumberStart, this.state.rangeNumberEnd, (status, skipped) => {
+        rackutils.deleteRackRange(this.state.rangeLetterStart, this.state.rangeLetterEnd, this.state.rangeNumberStart, this.state.rangeNumberEnd, this.props.datacenter, (status, skipped) => {
             if (status) {
                 console.log("not impossible")
                 ToastsStore.success('Successfully deleted racks!');

@@ -6,7 +6,6 @@ import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import './utils/firebaseutils'
 
 import './animation.css'
-import RackDiagram from "./components/RackDiagram";
 import DetailedAssetScreen from './screens/DetailedAssetScreen'
 
 
