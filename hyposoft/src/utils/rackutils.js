@@ -8,6 +8,8 @@ let rackCount = 1;
 function getRackAt(callback, datacenter = null, start = null) {
     let racks = [];
     let query;
+    let count = 1;
+    console.log("startafter ", start);
     if(datacenter){
         datacenterutils.getIDFromName(datacenter, datacenterID => {
             if(datacenterID){
@@ -20,7 +22,7 @@ function getRackAt(callback, datacenter = null, start = null) {
                         const newStart = docSnaps.docs[docSnaps.docs.length - 1];
                         docSnaps.forEach(doc => {
                             racks.push({
-                                count: rackCount,
+                                count: start ? rackCount : count,
                                 id: doc.id,
                                 letter: doc.data().letter,
                                 number: doc.data().number,
@@ -28,6 +30,7 @@ function getRackAt(callback, datacenter = null, start = null) {
                                 assets: (doc.data().assets ? Object.keys(doc.data().assets).length : 0)
                             });
                             rackCount++;
+                            count++;
                         });
                         callback(newStart, racks, false);
                     }
@@ -47,7 +50,7 @@ function getRackAt(callback, datacenter = null, start = null) {
                 const newStart = docSnaps.docs[docSnaps.docs.length - 1];
                 docSnaps.forEach(doc => {
                     racks.push({
-                        count: rackCount,
+                        count: start ? rackCount : count,
                         id: doc.id,
                         letter: doc.data().letter,
                         number: doc.data().number,
@@ -55,6 +58,7 @@ function getRackAt(callback, datacenter = null, start = null) {
                         assets: (doc.data().assets ? Object.keys(doc.data().assets).length : 0)
                     });
                     rackCount++;
+                    count++;
                 });
                 callback(newStart, racks, false);
             }

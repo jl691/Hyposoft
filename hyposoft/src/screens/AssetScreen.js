@@ -46,6 +46,7 @@ class AssetScreen extends Component {
             updateRackU: "",
             updateOwner: "",
             updateComment: "",
+            updateDatacenter: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
             rackSortChoice: "asc",//by default, will be ascending
@@ -145,7 +146,7 @@ class AssetScreen extends Component {
             deleteHostname: datum.hostname
         });
     }
-    handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment) => {
+    handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter) => {
         this.setState({
             popupType: 'Update',
             updateID: datumID,
@@ -155,7 +156,7 @@ class AssetScreen extends Component {
             updateRackU: datumRackU,
             updateOwner: datumOwner,
             updateComment: datumComment,
-
+            updateDatacenter: datumDatacenter
 
         });
 
@@ -266,6 +267,7 @@ class AssetScreen extends Component {
                         updateRackUFromParent={this.state.updateRackU}
                         updateOwnerFromParent={this.state.updateOwner}
                         updateCommentFromParent={this.state.updateComment}
+                        updateDatacenterFromParent={this.state.updateDatacenter}
                     />
                 </Layer>
             )

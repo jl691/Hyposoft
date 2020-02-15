@@ -13,17 +13,20 @@ function getDatacenters(callback, start = null) {
         } else {
             const newStart = docSnaps.docs[docSnaps.docs.length - 1];
             console.log(docSnaps.docs)
+            let count = 0;
             docSnaps.forEach(doc => {
                 console.log(doc.data())
                 datacenters.push({
-                    count: datacenterCount,
+                    count: start ? datacenterCount : count+1,
                     id: doc.id,
                     name: doc.data().name,
                     abbreviation: doc.data().abbreviation,
                     rackCount: doc.data().racks.length
                 });
+                count++;
                 datacenterCount++;
-                if (datacenterCount === docSnaps.docs.length + 1) {
+                if (count === docSnaps.docs.length) {
+                    console.log("")
                     callback(newStart, datacenters, false);
                 }
             });
@@ -173,6 +176,16 @@ function getIDFromName(name, callback){
     })
 }
 
+function getNameFromID(id, callback){
+    firebaseutils.datacentersRef.doc(id).get().then(docSnap => {
+        if(!docSnap.exists){
+            callback(null);
+        } else {
+            callback(docSnap.data().name);
+        }
+    })
+}
+
 function addRackToDatacenter(rackID, datacenterName, callback){
     getIDFromName(datacenterName, datacenterID => {
         if(datacenterID){
@@ -205,4 +218,4 @@ function removeRackFromDatacenter(rackID, datacenterName, callback) {
     })
 }
 
-export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getIDFromName, addRackToDatacenter, removeRackFromDatacenter}
+export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getIDFromName, addRackToDatacenter, removeRackFromDatacenter, getNameFromID}
