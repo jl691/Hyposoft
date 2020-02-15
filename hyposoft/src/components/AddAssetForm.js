@@ -7,6 +7,8 @@ import * as userutils from "../utils/userutils";
 import {Redirect} from "react-router-dom";
 import theme from "../theme";
 
+import AssetPowerPortsForm from './AssetPowerPortsForm'
+
 
 //Instance table has a layer, that holds the button to add instance and the form
 
@@ -102,14 +104,14 @@ export default class AddAssetForm extends Component {
 
         return (
             <Grommet theme={theme}>
-                <Box height="medium" width="medium" pad="medium" gap="xxsmall" overflow="auto">
+                <Box height="550px" width="450px" pad="medium" gap="xxsmall" overflow="auto">
                     <Heading
                         size="small"
                         margin="small"
                         level="4"
                     >Add Asset</Heading>
                     <Form onSubmit={this.handleSubmit} name="addInst">
-
+                    <Box direction="column" pad='xsmall' gap="small" flex overflow={{ vertical: 'scroll' }}>
                         <FormField name="model" label="Model">
 
 
@@ -231,66 +233,57 @@ export default class AddAssetForm extends Component {
                         </FormField>
 
                         {/* NEW FIELDS HERE> TODO: change the values/integrate with the backend, move datacenter stuff up the form========= */}
-                        {/* <FormField name="datacenterName" label="Datacenter name">
-                            <TextInput name="datacenterName" placeholder="eg. Research Triangle Park 1" onChange={this.handleChange}
-                                       //value={this.state.rackU} 
-                                       required="true"/>
-                        </FormField>
 
                         <FormField name="datacenterAbbrev" label="Datacenter Abbreviation">
                             <TextInput name="datacenterAbbrev" placeholder="eg. RTP1" onChange={this.handleChange}
                                        //value={this.state.rackU} 
                                        required="true"/>
-                        </FormField> */}
+                        </FormField> 
 
-                        <FormField name="macAddress" label="MAC Address">
-                            <TextInput name="macAddress" placeholder="eg. 11:ab:cd:79:aa:c9"
-                                       onChange={this.handleChange}
-                                       value={this.state.macAddress}
-                            />
-                        </FormField>
+                            <FormField name="macAddress" label="MAC Address">
+                                <TextInput name="macAddress" placeholder="eg. 11-ab-cd-79-aa-c9" onChange={this.handleChange}
+                                    value={this.state.macAddress}
+                                />
+                            </FormField>
 
-                        {/* For these last two, need to think carefully about UI since they are 'multistep' to add */}
+                            {/* For these last two, need to think carefully about UI since they are 'multistep' to add */}
 
-                        <FormField name="networkPortConns" label="Network Port Connections">
-                            <TextInput name="networkPortConns" placeholder="WORK IN PROGRESS"
-                                       onChange={this.handleChange}
-                                //value={this.state.rackU}
-                            />
-                        </FormField>
+                            <FormField name="networkPortConns" label="Network Port Connections">
+                                <TextInput name="networkPortConns" placeholder="WORK IN PROGRESS" onChange={this.handleChange}
+                                //value={this.state.rackU} 
+                                />
+                            </FormField>
 
-                        <FormField name="powerConns" label="Power Connections">
-                            <TextInput name="powerConns" placeholder="WORK IN PROGRESS" onChange={this.handleChange}
-                                //value={this.state.rackU}
-                            />
-                        </FormField>
-                        <FormField name="asset_id" label="Override Asset ID">
-                            <TextInput name="asset_id" placeholder="If left blank, will auto-generate"
-                                       onChange={this.handleChange}
-                                       value={this.state.asset_id}
-                            />
-                        </FormField>
 
-                        {/* NEW FIELDS END HERE ============================================================================================*/}
+                            <AssetPowerPortsForm/>
 
-                        <FormField name="comment" label="Comment">
+                            <FormField name="asset_id" label="Override Asset ID">
+                                <TextInput name="asset_id" placeholder="If left blank, will auto-generate" onChange={this.handleChange}
+                                    value={this.state.asset_id}
+                                />
+                            </FormField>
 
-                            <TextInput name="comment" placeholder="Optional" onChange={this.handleChange}
-                                       value={this.state.comment}/>
-                        </FormField>
+                            {/* NEW FIELDS END HERE ============================================================================================*/}
 
-                        <Box direction={"row"}>
+                            <FormField name="comment" label="Comment">
 
-                            <Button
-                                margin="small"
-                                type="submit"
-                                primary label="Submit"
-                            />
-                            <Button
-                                margin="small"
-                                label="Cancel"
-                                onClick={() => this.props.cancelCallback()}
-                            />
+                                <TextInput name="comment" placeholder="Optional" onChange={this.handleChange}
+                                    value={this.state.comment} />
+                            </FormField>
+
+                            <Box direction={"row"}>
+
+                                <Button
+                                    margin="small"
+                                    type="submit"
+                                    primary label="Submit"
+                                />
+                                <Button
+                                    margin="small"
+                                    label="Cancel"
+                                    onClick={() => this.props.cancelCallback()}
+                                />
+                            </Box>
                         </Box>
 
                     </Form>

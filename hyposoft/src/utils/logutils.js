@@ -1,7 +1,6 @@
 import * as firebaseutils from './firebaseutils'
 import * as userutils from './userutils'
 
-let itemNo = 1;
 // OBJECT TYPES
 function ASSET() {
     return 'asset'
@@ -86,26 +85,34 @@ function finishAddingLog(object, objectId, objectType, action) {
     }
 }
 
-function getLogs(startAfter,callback) {
+function getLogs(itemNo,startAfter,callback) {
     var query = startAfter ? firebaseutils.logsRef.orderBy('timestamp','desc').limit(25).startAfter(startAfter)
                            : firebaseutils.logsRef.orderBy('timestamp','desc').limit(25)
-    console.log("calling getlogs with startafter ", startAfter)
-    console.log("itemno is " + itemNo)
     query.get().then(docSnaps => {
-        var newStartAfter = null
-        //if (docSnaps.docs.length === 25) {
-            newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
-        //}
+        var newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
 
         const logs = docSnaps.docs.map(doc => (
-            {log: buildLog(doc.data()), date: getDate(doc.data().timestamp), objectId: doc.data().objectId, itemNo: itemNo++}
+            {...doc.data(), log: buildLog(doc.data()), date: getDate(doc.data().timestamp), itemNo: itemNo++}
         ))
-        callback(logs,newStartAfter)
+        callback(logs,newStartAfter,itemNo)
     })
     .catch( error => {
         console.log("Error getting documents: ", error)
-        callback(null,null)
+        callback(null,null,null)
     })
+}
+
+function doesObjectStillExist(objectType,objectId,callback) {
+    switch (objectType) {
+        case ASSET():
+            firebaseutils.assetRef.doc(objectId).get().then(doc => callback(doc.exists))
+            break
+        case MODEL():
+            firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.exists))
+            break
+        default:
+            callback(true)
+    }
 }
 
 function buildLog(data) {
@@ -158,4 +165,4 @@ function getDatacenterName(id,callback) {
     })
 }
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CREATE, MODIFY, DELETE,addLog, getLogs }
+export { ASSET, MODEL, RACK, USER, DATACENTER, CREATE, MODIFY, DELETE,addLog, getLogs, doesObjectStillExist }

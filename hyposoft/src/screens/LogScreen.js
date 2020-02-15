@@ -2,19 +2,19 @@ import React, { Component } from 'react'
 import AppBar from '../components/AppBar'
 import HomeButton from '../components/HomeButton'
 import UserMenu from '../components/UserMenu'
+import {Redirect} from "react-router-dom";
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import { Anchor, Box, Button, DataTable, Grommet, Heading, Text, TextInput } from 'grommet'
 import theme from '../theme'
+import * as userutils from '../utils/userutils'
 import * as logutils from '../utils/logutils'
 
 class LogScreen extends Component {
-    // constructor(props) {
-    //     super(props)
     startAfter = null
+    itemNo = 1
     state = {
         searchQuery: '',
     }
-    // }
 
     constructor(props) {
         super(props);
@@ -29,8 +29,9 @@ class LogScreen extends Component {
     }
 
     init() {
-      logutils.getLogs(this.startAfter, (logs, newStartAfter) => {
+      logutils.getLogs(this.itemNo, this.startAfter, (logs, newStartAfter, itemNo) => {
           this.startAfter = newStartAfter;
+          this.itemNo = itemNo
           this.setState(oldState => (
               {...oldState, logs: logs, initialLoaded: true}
           ))
@@ -44,10 +45,9 @@ class LogScreen extends Component {
             return <DataTable
                 step={25}
                 onMore={() => {
-                    console.log("firing onmore")
-                    logutils.getLogs(this.startAfter, (logs, newStartAfter) => {
+                    logutils.getLogs(this.itemNo, this.startAfter, (logs, newStartAfter, itemNo) => {
                         this.startAfter = newStartAfter;
-                        console.log(logs);
+                        this.itemNo = itemNo
                         this.setState(oldState => (
                             {logs: this.state.logs.concat(logs)}
                         ))
@@ -79,14 +79,30 @@ class LogScreen extends Component {
                 data={this.state.logs}
                 sortable={true}
                 size="medium"
-                // onClickRow={({datum}) => {
-                //     this.props.history.push('/models/'+datum.vendor+'/'+datum.modelNumber)
-                // }}
+                onClickRow={({datum}) => {
+                    logutils.doesObjectStillExist(datum.objectType,datum.objectId,exists => {
+                        if (exists) {
+                            if (datum.objectType == logutils.MODEL()) {
+                                this.props.history.push('/models/'+datum.objectData.vendor+'/'+datum.objectData.modelNumber)
+                            } else if (datum.objectType == logutils.ASSET()) {
+                                this.props.history.push('/assets/'+datum.objectId)
+                            } else {
+                                ToastsStore.error(datum.objectType+' does not have a detailed view', 3000)
+                            }
+                        } else {
+                            ToastsStore.error(datum.objectType+' does not exist anymore', 3000)
+                        }
+                    })
+                }}
             />
         }
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/'/>
+        }
+
         return (
           <Grommet theme={theme} full className='fade'>
               <Box fill background='light-2'>
@@ -129,6 +145,7 @@ class LogScreen extends Component {
                          </Box>
                      </Box>
               </Box>
+              <ToastsContainer store={ToastsStore} lightBackground/>
           </Grommet>
         )
     }
