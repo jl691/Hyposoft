@@ -37,10 +37,10 @@ export default class AddAssetForm extends Component {
 
     handleSubmit(event) {
         if (event.target.name === "addInst") {
-            if (!this.state.model || !this.state.hostname || !this.state.rack || !this.state.rackU) {
+            if (!this.state.model || !this.state.rack || !this.state.rackU) {
                 //not all required fields filled out
                 ToastsStore.error("Please fill out all required fields.");
-            } else if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)) {
+            } else if (this.state.hostname && !/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)) {
                 //not a valid hostname
                 ToastsStore.error("Invalid hostname. It must start with a letter or number, contain only letters, numbers, or hyphens, and end with a letter or number. It must be 63 characters or less.");
             } else if (!/[A-Z]\d+/.test(this.state.rack)) {
