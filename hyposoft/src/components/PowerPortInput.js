@@ -1,44 +1,56 @@
 import React, { Component } from 'react'
-import { Button, Grommet, FormField, TextInput, Box, Select } from 'grommet'
+import { Grommet, FormField, TextInput, Box, Select, Text} from 'grommet'
 import theme from "../theme";
 
 export default class PowerPortInput extends Component {
+
+
     render() {
-        return (
-            <Box direction="column" gap="small" overflow="auto" background="light-2">
+        return(
+        this.props.powerConnections.map((val, idx) => {
+            return (
+                <Grommet key={idx} theme={theme}>
 
-                <Select
-                    margin="medium"
-                    key={pduSideID}
-                    // IS IT APPROPRIATE TO CALL THIS PDU SIDE
-                    placeholder="PDU Side"
-                    value={this.state.powerConnections[idx].pduSide}
+                    <Box direction="column" gap="small" margin="medium" overflow="auto" background="light-2">
+                        {/* This is to clearly label number of power ports you've added */}
+                        <Text>{idx + 1}</Text> 
 
-                    options={["Left", "Right"]}
+                        <Select
+                            margin={{ horizontal: 'medium', vertical: 'xsmall' }}
+                            // IS IT APPROPRIATE TO CALL THIS PDU SIDE
+                            placeholder="PDU Side"
+                            value={this.props.powerConnections[idx].pduSide}
 
-                    onChange={({ option }) => {
-                        this.handleSelectChange(option, idx)
+                            options={["Left", "Right"]}
 
-                    }}
-                />
-                {/* TODO: AUTOCOMPLETE/PICKLIST */}
-                <FormField margin="medium" size="small" name="port" label="Port">
-                    <TextInput name="port"
-                        value={this.state.powerConnections.port}
-                        required="true"
-                        onChange={e => {
-                            this.handleChange(e, idx)
-                        }}
+                            ///passing state up to AssetPowerPortsForm
+                            onChange={({ option }) => {
+                                this.props.handleSelectCallback(option, idx)
 
-                    />
+                            }}
+                        />
+                        {/* TODO: AUTOCOMPLETE/PICKLIST */}
+                        <FormField
+                            margin={{ horizontal: 'medium', vertical: 'xsmall' }}
+                            size="small" name="port" label="Port">
+                            <TextInput name="port"
+                                value={this.props.powerConnections.port}
+                                required="true"
+                                size="small"
 
-                </FormField>
-                {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
-                {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
-                <Button onClick={this.handleConnect}
-                    margin={{ horizontal: 'medium', vertical: 'small' }}
-                    label="Validate Connection" />
-            </Box>
-        )
+                                //passing state up to AssetPowerPortsForm
+                                onChange={e => {
+                                    this.props.handleTextCallback(e, idx)
+                                }}
+
+                            />
+
+                        </FormField>
+
+                    </Box>
+
+                </Grommet>
+            )
+        }))
     }
 }
