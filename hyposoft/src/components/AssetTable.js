@@ -148,6 +148,7 @@ export default class AssetTable extends Component {
                                 data.rackU,
                                 data.owner,
                                 data.comment,
+                                data.datacenter,
                             )
                             console.log(data)
 

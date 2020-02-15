@@ -25,7 +25,7 @@ export default class AddAssetForm extends Component {
             owner: "",
             comment: "",
             macAddress: "",
-
+            datacenter: ""
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
@@ -49,7 +49,7 @@ export default class AddAssetForm extends Component {
 
     handleSubmit(event) {
         if (event.target.name === "addInst") {
-            if (!this.state.model || !this.state.rack || !this.state.rackU) {
+            if (!this.state.model || !this.state.rack || !this.state.rackU || !this.state.datacenter) {
                 //not all required fields filled out
                 ToastsStore.error("Please fill out all required fields.");
             } else if (this.state.hostname && !/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)) {
@@ -81,6 +81,7 @@ export default class AddAssetForm extends Component {
                     parseInt(this.state.rackU),
                     this.state.owner,
                     this.state.comment,
+                    this.state.datacenter,
                     errorMessage => {
                         if (errorMessage) {
                             ToastsStore.error(errorMessage, 10000)
@@ -110,88 +111,128 @@ export default class AddAssetForm extends Component {
                         level="4"
                     >Add Asset</Heading>
                     <Form onSubmit={this.handleSubmit} name="addInst">
-                        <Box direction="column" pad='xsmall' gap="small" flex overflow={{ vertical: 'scroll' }}>
-
-                            <FormField name="model" label="Model">
-
-
-                                <TextInput name="model" required="true"
-                                    placeholder="eg. Dell R710"
-                                    onChange={e => {
-                                        const value = e.target.value
-                                        this.setState(oldState => ({ ...oldState, model: value }))
-                                        assetutils.getSuggestedModels(value, results => this.setState(oldState => ({ ...oldState, modelSuggestions: results })))
-                                    }}
-                                    onSelect={e => {
-                                        this.setState(oldState => ({ ...oldState, model: e.suggestion }))
-                                    }}
-                                    value={this.state.model}
-                                    suggestions={this.state.modelSuggestions}
-                                    onClick={() => assetutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({ ...oldState, modelSuggestions: results })))}
-                                    title='Model'
-                                />
-                            </FormField>
-
-                            <FormField name="hostname" label="Hostname">
+                    <Box direction="column" pad='xsmall' gap="small" flex overflow={{ vertical: 'scroll' }}>
+                        <FormField name="model" label="Model">
 
 
-                                <TextInput padding="medium" name="hostname" placeholder="eg. server9"
-                                    onChange={this.handleChange}
-                                    value={this.state.hostname} />
-                            </FormField>
+                            <TextInput name="model" required="true"
+                                       placeholder="eg. Dell R710"
+                                       onChange={e => {
+                                           const value = e.target.value
+                                           this.setState(oldState => ({...oldState, model: value}))
+                                           assetutils.getSuggestedModels(value, results => this.setState(oldState => ({
+                                               ...oldState,
+                                               modelSuggestions: results
+                                           })))
+                                       }}
+                                       onSelect={e => {
+                                           this.setState(oldState => ({...oldState, model: e.suggestion}))
+                                       }}
+                                       value={this.state.model}
+                                       suggestions={this.state.modelSuggestions}
+                                       onClick={() => assetutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({
+                                           ...oldState,
+                                           modelSuggestions: results
+                                       })))}
+                                       title='Model'
+                            />
+                        </FormField>
+
+                        <FormField name="hostname" label="Hostname">
 
 
-                            <FormField name="rack" label="Rack">
+                            <TextInput padding="medium" name="hostname" placeholder="eg. server9"
+                                       onChange={this.handleChange}
+                                       value={this.state.hostname}/>
+                        </FormField>
+
+                        <FormField name="datacenter" label="Datacenter">
+                            <TextInput name="datacenter"
+                                       placeholder="eg. Research Triangle Park #1"
+                                       onChange={e => {
+                                           const value = e.target.value
+                                           this.setState(oldState => ({...oldState, datacenter: value}))
+                                           assetutils.getSuggestedDatacenters(value, results => this.setState(oldState => ({
+                                               ...oldState,
+                                               datacenterSuggestions: results
+                                           })))
+                                       }}
+                                       onSelect={e => {
+                                           this.setState(oldState => ({...oldState, datacenter: e.suggestion}))
+                                       }}
+                                       value={this.state.datacenter}
+                                       suggestions={this.state.datacenterSuggestions}
+                                       onClick={() => assetutils.getSuggestedDatacenters(this.state.datacenter, results => this.setState(oldState => ({
+                                           ...oldState,
+                                           datacenterSuggestions: results
+                                       })))}
+                                       title='Datacenter'
+                                       required="true"
+                            />
+                        </FormField>
+
+                        <FormField name="rack" label="Rack">
 
 
-                                <TextInput name="rack"
-                                    placeholder="eg. B12"
-                                    onChange={e => {
-                                        const value = e.target.value
-                                        this.setState(oldState => ({ ...oldState, rack: value }))
-                                        assetutils.getSuggestedRacks(value, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))
-                                    }}
-                                    onSelect={e => {
-                                        this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
-                                    }}
-                                    value={this.state.rack}
-                                    suggestions={this.state.rackSuggestions}
-                                    onClick={() => assetutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
-                                    title='Rack'
-                                    required="true"
-                                />
-                            </FormField>
+                            <TextInput name="rack"
+                                       placeholder="eg. B12"
+                                       onChange={e => {
+                                           const value = e.target.value
+                                           this.setState(oldState => ({...oldState, rack: value}))
+                                           assetutils.getSuggestedRacks(value, results => this.setState(oldState => ({
+                                               ...oldState,
+                                               rackSuggestions: results
+                                           })))
+                                       }}
+                                       onSelect={e => {
+                                           this.setState(oldState => ({...oldState, rack: e.suggestion}))
+                                       }}
+                                       value={this.state.rack}
+                                       suggestions={this.state.rackSuggestions}
+                                       onClick={() => assetutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({
+                                           ...oldState,
+                                           rackSuggestions: results
+                                       })))}
+                                       title='Rack'
+                                       required="true"
+                            />
+                        </FormField>
 
 
-                            <FormField name="rackU" label="RackU">
+                        <FormField name="rackU" label="RackU">
 
 
-                                <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
-                                    value={this.state.rackU} required="true" />
-                            </FormField>
+                            <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
+                                       value={this.state.rackU} required="true"/>
+                        </FormField>
 
 
-                            <FormField name="owner" label="Owner">
+                        <FormField name="owner" label="Owner">
 
-                                <TextInput name="owner"
-                                    placeholder="Optional"
-                                    onChange={e => {
-                                        const value = e.target.value
-                                        this.setState(oldState => ({ ...oldState, owner: value }))
-                                        assetutils.getSuggestedOwners(value, results => this.setState(oldState => ({ ...oldState, ownerSuggestions: results })))
-                                    }}
-                                    onSelect={e => {
-                                        this.setState(oldState => ({ ...oldState, owner: e.suggestion }))
-                                    }}
-                                    value={this.state.owner}
-                                    suggestions={this.state.ownerSuggestions}
-                                    onClick={() => assetutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({ ...oldState, ownerSuggestions: results })))}
-                                    title='Owner'
-                                />
-                            </FormField>
+                            <TextInput name="owner"
+                                       placeholder="Optional"
+                                       onChange={e => {
+                                           const value = e.target.value
+                                           this.setState(oldState => ({...oldState, owner: value}))
+                                           assetutils.getSuggestedOwners(value, results => this.setState(oldState => ({
+                                               ...oldState,
+                                               ownerSuggestions: results
+                                           })))
+                                       }}
+                                       onSelect={e => {
+                                           this.setState(oldState => ({...oldState, owner: e.suggestion}))
+                                       }}
+                                       value={this.state.owner}
+                                       suggestions={this.state.ownerSuggestions}
+                                       onClick={() => assetutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({
+                                           ...oldState,
+                                           ownerSuggestions: results
+                                       })))}
+                                       title='Owner'
+                            />
+                        </FormField>
 
-                            {/* NEW FIELDS HERE> TODO: change the values/integrate with the backend, move datacenter stuff up the form========= */}
-                        
+                        {/* NEW FIELDS HERE> TODO: change the values/integrate with the backend, move datacenter stuff up the form========= */}
 
                         <FormField name="datacenterAbbrev" label="Datacenter Abbreviation">
                             <TextInput name="datacenterAbbrev" placeholder="eg. RTP1" onChange={this.handleChange}

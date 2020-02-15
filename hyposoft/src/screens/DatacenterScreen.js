@@ -49,10 +49,13 @@ class DatacenterScreen extends React.Component {
         });
         datacenterutils.getDatacenters((newStart, datacenters, empty) => {
             console.log("got a callback!")
+            console.log("yeeters 1", newStart)
+            console.log("yeeters 2", datacenters)
             if (empty) {
                 console.log("empty")
                 this.setState({initialLoaded: true});
             } else if (newStart && datacenters) {
+                console.log("made it yeeeet")
                 this.startAfter = newStart;
                 this.setState({
                     datacenters: datacenters,
