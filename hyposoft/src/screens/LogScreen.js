@@ -8,13 +8,10 @@ import theme from '../theme'
 import * as logutils from '../utils/logutils'
 
 class LogScreen extends Component {
-    // constructor(props) {
-    //     super(props)
     startAfter = null
     state = {
         searchQuery: '',
     }
-    // }
 
     constructor(props) {
         super(props);

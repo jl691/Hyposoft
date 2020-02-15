@@ -92,10 +92,7 @@ function getLogs(startAfter,callback) {
     console.log("calling getlogs with startafter ", startAfter)
     console.log("itemno is " + itemNo)
     query.get().then(docSnaps => {
-        var newStartAfter = null
-        //if (docSnaps.docs.length === 25) {
-            newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
-        //}
+        var newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
 
         const logs = docSnaps.docs.map(doc => (
             {log: buildLog(doc.data()), date: getDate(doc.data().timestamp), objectId: doc.data().objectId, itemNo: itemNo++}
