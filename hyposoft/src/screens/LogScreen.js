@@ -2,9 +2,11 @@ import React, { Component } from 'react'
 import AppBar from '../components/AppBar'
 import HomeButton from '../components/HomeButton'
 import UserMenu from '../components/UserMenu'
+import {Redirect} from "react-router-dom";
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import { Anchor, Box, Button, DataTable, Grommet, Heading, Text, TextInput } from 'grommet'
 import theme from '../theme'
+import * as userutils from '../utils/userutils'
 import * as logutils from '../utils/logutils'
 
 class LogScreen extends Component {
@@ -93,6 +95,10 @@ class LogScreen extends Component {
     }
 
     render() {
+        if (!userutils.isUserLoggedIn()) {
+            return <Redirect to='/'/>
+        }
+
         return (
           <Grommet theme={theme} full className='fade'>
               <Box fill background='light-2'>
