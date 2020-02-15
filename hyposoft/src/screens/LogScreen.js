@@ -15,17 +15,75 @@ class LogScreen extends Component {
         searchQuery: '',
     }
     // }
-    componentWillMount() {
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            initialLoaded: false
+        }
+    }
+
+
+    componentDidMount() {
         this.init()
     }
 
     init() {
       logutils.getLogs(this.startAfter, (logs, newStartAfter) => {
-          this.startAfter = newStartAfter
+          this.startAfter = newStartAfter;
           this.setState(oldState => (
-              {...oldState, logs: logs}
+              {...oldState, logs: logs, initialLoaded: true}
           ))
       })
+    }
+
+    getTable(){
+        if(!this.state.initialLoaded){
+            return <Text>Please wait...</Text>
+        } else {
+            return <DataTable
+                step={25}
+                onMore={() => {
+                    console.log("firing onmore")
+                    logutils.getLogs(this.startAfter, (logs, newStartAfter) => {
+                        this.startAfter = newStartAfter;
+                        console.log(logs);
+                        this.setState(oldState => (
+                            {logs: this.state.logs.concat(logs)}
+                        ))
+                    })
+                }}
+                columns={
+                    [
+                        {
+                            property: 'itemNo',
+                            header: <Text size='small'>#</Text>,
+                            render: datum => <Text size='small'>{datum.itemNo}</Text>,
+                            primary: true,
+                            sortable: true,
+                        },
+                        {
+                            property: 'date',
+                            header: <Text size='small'>Date and Time (EST)</Text>,
+                            render: datum => <Text size='small'>{datum.date}</Text>,
+                            sortable: true,
+                        },
+                        {
+                            property: 'log',
+                            header: <Text size='small'>Information</Text>,
+                            render: datum => <Text size='small'>{datum.log}</Text>,
+                            sortable: false,
+                        }
+                    ]
+                }
+                data={this.state.logs}
+                sortable={true}
+                size="medium"
+                // onClickRow={({datum}) => {
+                //     this.props.history.push('/models/'+datum.vendor+'/'+datum.modelNumber)
+                // }}
+            />
+        }
     }
 
     render() {
@@ -62,46 +120,7 @@ class LogScreen extends Component {
                                          <Box margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}} direction='column'
                                              justify='start' alignSelf='stretch' flex>
                                              <Box align="center">
-                                                  <DataTable
-                                                      step={25}
-                                                      onMore={() => {
-                                                          logutils.getLogs(this.startAfter, (logs, newStartAfter) => {
-                                                              this.startAfter = newStartAfter
-                                                              this.setState(oldState => (
-                                                                  {...oldState, logs: logs}
-                                                              ))
-                                                          })
-                                                      }}
-                                                      columns={
-                                                          [
-                                                              {
-                                                                  property: 'itemNo',
-                                                                  header: <Text size='small'>#</Text>,
-                                                                  render: datum => <Text size='small'>{datum.itemNo}</Text>,
-                                                                  primary: true,
-                                                                  sortable: true,
-                                                              },
-                                                              {
-                                                                  property: 'date',
-                                                                  header: <Text size='small'>Date and Time (EST)</Text>,
-                                                                  render: datum => <Text size='small'>{datum.date}</Text>,
-                                                                  sortable: true,
-                                                              },
-                                                              {
-                                                                  property: 'log',
-                                                                  header: <Text size='small'>Information</Text>,
-                                                                  render: datum => <Text size='small'>{datum.log}</Text>,
-                                                                  sortable: false,
-                                                              }
-                                                          ]
-                                                      }
-                                                      data={this.state.logs}
-                                                      sortable={true}
-                                                      size="medium"
-                                                      // onClickRow={({datum}) => {
-                                                      //     this.props.history.push('/models/'+datum.vendor+'/'+datum.modelNumber)
-                                                      // }}
-                                                  />
+                                                 {this.getTable()}
                                               </Box>
                                          </Box>
                                      </Box>
