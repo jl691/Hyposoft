@@ -15,6 +15,19 @@ class LogScreen extends Component {
         searchQuery: '',
     }
     // }
+    componentWillMount() {
+        this.init()
+    }
+
+    init() {
+      logutils.getLogs(this.startAfter, (logs, newStartAfter) => {
+          this.startAfter = newStartAfter
+          this.setState(oldState => (
+              {...oldState, logs: logs}
+          ))
+      })
+    }
+
     render() {
         return (
           <Grommet theme={theme} full className='fade'>
@@ -62,10 +75,16 @@ class LogScreen extends Component {
                                                       columns={
                                                           [
                                                               {
+                                                                  property: 'itemNo',
+                                                                  header: <Text size='small'>#</Text>,
+                                                                  render: datum => <Text size='small'>{datum.itemNo}</Text>,
+                                                                  primary: true,
+                                                                  sortable: true,
+                                                              },
+                                                              {
                                                                   property: 'date',
                                                                   header: <Text size='small'>Date and Time (EST)</Text>,
                                                                   render: datum => <Text size='small'>{datum.date}</Text>,
-                                                                  primary: true,
                                                                   sortable: true,
                                                               },
                                                               {

@@ -86,6 +86,7 @@ function finishAddingLog(object, objectId, objectType, action) {
 }
 
 function getLogs(startAfter,callback) {
+    var itemNo = 1
     var query = startAfter ? firebaseutils.logsRef.orderBy('timestamp','desc').limit(25).startAfter(startAfter)
                            : firebaseutils.logsRef.orderBy('timestamp','desc').limit(25)
     query.get().then(docSnaps => {
@@ -95,7 +96,7 @@ function getLogs(startAfter,callback) {
         }
 
         const logs = docSnaps.docs.map(doc => (
-            {log: buildLog(doc.data()), date: getDate(doc.data().timestamp), objectId: doc.data().objectId}
+            {log: buildLog(doc.data()), date: getDate(doc.data().timestamp), objectId: doc.data().objectId, itemNo: itemNo++}
         ))
         callback(logs,newStartAfter)
     })
