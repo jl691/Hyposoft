@@ -68,7 +68,7 @@ export default class AssetTable extends Component {
             property: 'datacenterAbbrev',
             header: <Text size='small'> Datacenter Abbrev.</Text>,
             render: datum => <Text size='small'>
-                {/* {datum.owner} */}
+                {datum.datacenterAbbreviation}
             </Text>,
 
         },

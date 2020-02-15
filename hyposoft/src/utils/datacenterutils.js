@@ -186,6 +186,16 @@ function getNameFromID(id, callback){
     })
 }
 
+function getAbbreviationFromID(id, callback){
+    firebaseutils.datacentersRef.doc(id).get().then(docSnap => {
+        if(!docSnap.exists){
+            callback(null);
+        } else {
+            callback(docSnap.data().abbreviation);
+        }
+    })
+}
+
 function addRackToDatacenter(rackID, datacenterName, callback){
     getIDFromName(datacenterName, datacenterID => {
         if(datacenterID){
@@ -218,4 +228,4 @@ function removeRackFromDatacenter(rackID, datacenterName, callback) {
     })
 }
 
-export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getIDFromName, addRackToDatacenter, removeRackFromDatacenter, getNameFromID}
+export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getIDFromName, addRackToDatacenter, removeRackFromDatacenter, getNameFromID, getAbbreviationFromID}

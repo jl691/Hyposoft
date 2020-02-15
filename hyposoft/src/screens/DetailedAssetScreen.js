@@ -79,6 +79,7 @@ export default class DetailedAssetScreen extends Component {
                                          <table style={{marginTop: '10px', marginBottom: '10px'}}>
                                              <tr><td><b>Hostname</b></td><td style={{textAlign: 'right'}}>{this.state.asset.hostname}</td></tr>
                                              <tr><td><b>Model</b></td><td style={{textAlign: 'right'}}>{this.state.asset.model}</td></tr>
+                                             <tr><td><b>Datacenter</b></td><td style={{textAlign: 'right'}}>{this.state.asset.datacenter || 'N/A'}</td></tr>
                                              <tr><td><b>Rack</b></td><td style={{textAlign: 'right'}}>{this.state.asset.rack}</td></tr>
                                              <tr><td><b>Rack U</b></td><td style={{textAlign: 'right'}}>{this.state.asset.rackU}</td></tr>
                                              <tr><td><b>Owner</b></td><td style={{textAlign: 'right'}}>@{this.state.asset.owner || 'N/A'}</td></tr>

@@ -13,10 +13,36 @@ const index = client.initIndex('assets')
 function getAsset(callback) {
     //TODO: need to rigorously test combined sort
     //TODO: deecide to make rackU unsortable???
+    let assets = [];
+    let count = 0;
 
     assetRef.limit(25).get().then(docSnaps => {
         const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
-        const assets = docSnaps.docs.map(doc => (
+        docSnaps.docs.forEach(doc => {
+            datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
+                if(datacenterAbbrev){
+                    assets.push({
+                        asset_id: doc.id,
+                        model: doc.data().model,
+                        hostname: doc.data().hostname,
+                        rack: doc.data().rack,
+                        rackU: doc.data().rackU,
+                        owner: doc.data().owner,
+                        comment: doc.data().comment,
+                        datacenter: doc.data().datacenter,
+                        datacenterAbbreviation: datacenterAbbrev
+                    });
+                    count++;
+                    if(count === docSnaps.docs.length){
+                        callback(startAfter, assets);
+                    }
+                } else {
+                    callback(null, null);
+                }
+            })
+        })
+
+/*        const assets = docSnaps.docs.map(doc => (
             {
                 asset_id: doc.id,
                 model: doc.data().model,
@@ -28,7 +54,7 @@ function getAsset(callback) {
                 datacenter: doc.data().datacenter
             }
         ))
-        callback(startAfter, assets);
+        callback(startAfter, assets);*/
     }).catch(function (error) {
         callback(null, null)
     })
@@ -36,9 +62,35 @@ function getAsset(callback) {
 
 
 function getAssetAt(start, callback) {
+    let assets = [];
+    let count = 0;
     assetRef.startAfter(start).limit(25).get().then(docSnaps => {
         const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-        const assets = docSnaps.docs.map(doc => (
+        docSnaps.docs.forEach(doc => {
+            datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
+                if(datacenterAbbrev){
+                    assets.push({
+                        asset_id: doc.id,
+                        model: doc.data().model,
+                        hostname: doc.data().hostname,
+                        rack: doc.data().rack,
+                        rackU: doc.data().rackU,
+                        owner: doc.data().owner,
+                        comment: doc.data().comment,
+                        datacenter: doc.data().datacenter,
+                        datacenterAbbreviation: datacenterAbbrev
+                    });
+                    count++;
+                    if(count === docSnaps.docs.length){
+                        callback(newStart, assets);
+                    }
+                } else {
+                    callback(null, null);
+                }
+            })
+        })
+
+        /*const assets = docSnaps.docs.map(doc => (
             {
                 asset_id: doc.id,
                 model: doc.data().model,
@@ -49,7 +101,7 @@ function getAssetAt(start, callback) {
                 comment: doc.data().comment,
                 datacenter: doc.data().datacenter
             }))
-        callback(newStart, assets)
+        callback(newStart, assets)*/
     }).catch(function (error) {
         callback(null, null);
     })
@@ -665,8 +717,8 @@ function getAssetDetails(assetID, callback) {
             owner: doc.data().owner.trim(),
             comment: doc.data().comment.trim(),
             modelNum: doc.data().modelNumber.trim(),
-            vendor: doc.data().vendor.trim()
-
+            vendor: doc.data().vendor.trim(),
+            datacenter: doc.data().datacenter.trim()
 
         }
         callback(inst)
