@@ -1,10 +1,10 @@
-import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer } from 'grommet'
-import { ToastsContainer, ToastsStore } from 'react-toasts';
+import React, {Component} from 'react'
+import {Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer} from 'grommet'
+import {ToastsContainer, ToastsStore} from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
-import { Redirect } from "react-router-dom";
+import {Redirect} from "react-router-dom";
 import theme from "../theme";
 
 
@@ -22,7 +22,7 @@ export default class AddAssetForm extends Component {
             rackU: "",
             owner: "",
             comment: "",
-            macAddress:"",
+            macAddress: "",
 
         }
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -51,6 +51,8 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Rack U must be a number.");
             } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
                 ToastsStore.error("Rack U must be positive.");
+            } else if (this.state.macAddress && !/^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
+                ToastsStore.error("Invalid MAC address. Ensure it is colon-delimited and all lowercase.");
             } else {
                 assetutils.addAsset(
                     this.state.asset_id,
@@ -76,9 +78,9 @@ export default class AddAssetForm extends Component {
 
     render() {
         if (!userutils.isUserLoggedIn()) {
-            return <Redirect to='/' />
+            return <Redirect to='/'/>
         }
-    
+
 
         return (
             <Grommet theme={theme}>
@@ -91,22 +93,28 @@ export default class AddAssetForm extends Component {
                     <Form onSubmit={this.handleSubmit} name="addInst">
 
                         <FormField name="model" label="Model">
-                
+
 
                             <TextInput name="model" required="true"
-                                placeholder="eg. Dell R710"
-                                onChange={e => {
-                                    const value = e.target.value
-                                    this.setState(oldState => ({ ...oldState, model: value }))
-                                    assetutils.getSuggestedModels(value, results => this.setState(oldState => ({ ...oldState, modelSuggestions: results })))
-                                }}
-                                onSelect={e => {
-                                    this.setState(oldState => ({ ...oldState, model: e.suggestion }))
-                                }}
-                                value={this.state.model}
-                                suggestions={this.state.modelSuggestions}
-                                onClick={() => assetutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({ ...oldState, modelSuggestions: results })))}
-                                title='Model'
+                                       placeholder="eg. Dell R710"
+                                       onChange={e => {
+                                           const value = e.target.value
+                                           this.setState(oldState => ({...oldState, model: value}))
+                                           assetutils.getSuggestedModels(value, results => this.setState(oldState => ({
+                                               ...oldState,
+                                               modelSuggestions: results
+                                           })))
+                                       }}
+                                       onSelect={e => {
+                                           this.setState(oldState => ({...oldState, model: e.suggestion}))
+                                       }}
+                                       value={this.state.model}
+                                       suggestions={this.state.modelSuggestions}
+                                       onClick={() => assetutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({
+                                           ...oldState,
+                                           modelSuggestions: results
+                                       })))}
+                                       title='Model'
                             />
                         </FormField>
 
@@ -114,8 +122,8 @@ export default class AddAssetForm extends Component {
 
 
                             <TextInput padding="medium" name="hostname" placeholder="eg. server9"
-                                onChange={this.handleChange}
-                                value={this.state.hostname} />
+                                       onChange={this.handleChange}
+                                       value={this.state.hostname}/>
                         </FormField>
 
 
@@ -123,20 +131,26 @@ export default class AddAssetForm extends Component {
 
 
                             <TextInput name="rack"
-                                placeholder="eg. B12"
-                                onChange={e => {
-                                    const value = e.target.value
-                                    this.setState(oldState => ({ ...oldState, rack: value }))
-                                    assetutils.getSuggestedRacks(value, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))
-                                }}
-                                onSelect={e => {
-                                    this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
-                                }}
-                                value={this.state.rack}
-                                suggestions={this.state.rackSuggestions}
-                                onClick={() => assetutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
-                                title='Rack'
-                                required="true"
+                                       placeholder="eg. B12"
+                                       onChange={e => {
+                                           const value = e.target.value
+                                           this.setState(oldState => ({...oldState, rack: value}))
+                                           assetutils.getSuggestedRacks(value, results => this.setState(oldState => ({
+                                               ...oldState,
+                                               rackSuggestions: results
+                                           })))
+                                       }}
+                                       onSelect={e => {
+                                           this.setState(oldState => ({...oldState, rack: e.suggestion}))
+                                       }}
+                                       value={this.state.rack}
+                                       suggestions={this.state.rackSuggestions}
+                                       onClick={() => assetutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({
+                                           ...oldState,
+                                           rackSuggestions: results
+                                       })))}
+                                       title='Rack'
+                                       required="true"
                             />
                         </FormField>
 
@@ -145,26 +159,32 @@ export default class AddAssetForm extends Component {
 
 
                             <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
-                                value={this.state.rackU} required="true" />
+                                       value={this.state.rackU} required="true"/>
                         </FormField>
 
 
                         <FormField name="owner" label="Owner">
 
                             <TextInput name="owner"
-                                placeholder="Optional"
-                                onChange={e => {
-                                    const value = e.target.value
-                                    this.setState(oldState => ({ ...oldState, owner: value }))
-                                    assetutils.getSuggestedOwners(value, results => this.setState(oldState => ({ ...oldState, ownerSuggestions: results })))
-                                }}
-                                onSelect={e => {
-                                    this.setState(oldState => ({ ...oldState, owner: e.suggestion }))
-                                }}
-                                value={this.state.owner}
-                                suggestions={this.state.ownerSuggestions}
-                                onClick={() => assetutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({ ...oldState, ownerSuggestions: results })))}
-                                title='Owner'
+                                       placeholder="Optional"
+                                       onChange={e => {
+                                           const value = e.target.value
+                                           this.setState(oldState => ({...oldState, owner: value}))
+                                           assetutils.getSuggestedOwners(value, results => this.setState(oldState => ({
+                                               ...oldState,
+                                               ownerSuggestions: results
+                                           })))
+                                       }}
+                                       onSelect={e => {
+                                           this.setState(oldState => ({...oldState, owner: e.suggestion}))
+                                       }}
+                                       value={this.state.owner}
+                                       suggestions={this.state.ownerSuggestions}
+                                       onClick={() => assetutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({
+                                           ...oldState,
+                                           ownerSuggestions: results
+                                       })))}
+                                       title='Owner'
                             />
                         </FormField>
 
@@ -182,27 +202,30 @@ export default class AddAssetForm extends Component {
                         </FormField> */}
 
                         <FormField name="macAddress" label="MAC Address">
-                            <TextInput name="macAddress" placeholder="eg. 11-ab-cd-79-aa-c9" onChange={this.handleChange}
-                            value={this.state.macAddress} 
+                            <TextInput name="macAddress" placeholder="eg. 11:ab:cd:79:aa:c9"
+                                       onChange={this.handleChange}
+                                       value={this.state.macAddress}
                             />
                         </FormField>
 
                         {/* For these last two, need to think carefully about UI since they are 'multistep' to add */}
 
                         <FormField name="networkPortConns" label="Network Port Connections">
-                            <TextInput name="networkPortConns" placeholder="WORK IN PROGRESS" onChange={this.handleChange}
-                            //value={this.state.rackU} 
+                            <TextInput name="networkPortConns" placeholder="WORK IN PROGRESS"
+                                       onChange={this.handleChange}
+                                //value={this.state.rackU}
                             />
                         </FormField>
 
                         <FormField name="powerConns" label="Power Connections">
                             <TextInput name="powerConns" placeholder="WORK IN PROGRESS" onChange={this.handleChange}
-                            //value={this.state.rackU} 
+                                //value={this.state.rackU}
                             />
                         </FormField>
                         <FormField name="asset_id" label="Override Asset ID">
-                            <TextInput name="asset_id" placeholder="If left blank, will auto-generate" onChange={this.handleChange}
-                            value={this.state.asset_id} 
+                            <TextInput name="asset_id" placeholder="If left blank, will auto-generate"
+                                       onChange={this.handleChange}
+                                       value={this.state.asset_id}
                             />
                         </FormField>
 
@@ -211,7 +234,7 @@ export default class AddAssetForm extends Component {
                         <FormField name="comment" label="Comment">
 
                             <TextInput name="comment" placeholder="Optional" onChange={this.handleChange}
-                                value={this.state.comment} />
+                                       value={this.state.comment}/>
                         </FormField>
 
                         <Box direction={"row"}>
@@ -232,7 +255,7 @@ export default class AddAssetForm extends Component {
                 </Box>
 
 
-                <ToastsContainer store={ToastsStore} />
+                <ToastsContainer store={ToastsStore}/>
             </Grommet>
 
 
