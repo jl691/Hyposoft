@@ -1,7 +1,4 @@
-import { assetRef,  firebase } from './firebaseutils'
-// import * as rackutils from './rackutils'
-// import * as modelutils from './modelutils'
-// import * as userutils from './userutils'
+import { assetRef} from './firebaseutils'
 
 function generateAssetID() {
     //Asset IDs are 6 digits long. CONFIRM THIS

@@ -1,11 +1,13 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer } from 'grommet'
+import { Button, Grommet, Form, FormField, Heading, TextInput, Box} from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
 import { Redirect } from "react-router-dom";
 import theme from "../theme";
+
+import AssetPowerPortsForm from './AssetPowerPortsForm'
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -195,11 +197,14 @@ export default class AddAssetForm extends Component {
                             />
                         </FormField>
 
-                        <FormField name="powerConns" label="Power Connections">
+                        {/* <FormField name="powerConns" label="Power Connections">
                             <TextInput name="powerConns" placeholder="WORK IN PROGRESS" onChange={this.handleChange}
                             //value={this.state.rackU} 
                             />
-                        </FormField>
+                        </FormField> */}
+                        <AssetPowerPortsForm>
+
+                        </AssetPowerPortsForm>
                         <FormField name="asset_id" label="Override Asset ID">
                             <TextInput name="asset_id" placeholder="If left blank, will auto-generate" onChange={this.handleChange}
                             value={this.state.asset_id} 
