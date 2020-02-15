@@ -88,8 +88,6 @@ function finishAddingLog(object, objectId, objectType, action) {
 function getLogs(itemNo,startAfter,callback) {
     var query = startAfter ? firebaseutils.logsRef.orderBy('timestamp','desc').limit(25).startAfter(startAfter)
                            : firebaseutils.logsRef.orderBy('timestamp','desc').limit(25)
-    console.log("calling getlogs with startafter ", startAfter)
-    console.log("itemno is " + itemNo)
     query.get().then(docSnaps => {
         var newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
 

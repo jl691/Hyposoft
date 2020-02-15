@@ -43,11 +43,9 @@ class LogScreen extends Component {
             return <DataTable
                 step={25}
                 onMore={() => {
-                    console.log("firing onmore")
                     logutils.getLogs(this.itemNo, this.startAfter, (logs, newStartAfter, itemNo) => {
                         this.startAfter = newStartAfter;
                         this.itemNo = itemNo
-                        console.log(logs);
                         this.setState(oldState => (
                             {logs: this.state.logs.concat(logs)}
                         ))
