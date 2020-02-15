@@ -1,13 +1,12 @@
 import { assetRef, racksRef, modelsRef, usersRef, firebase } from './firebaseutils'
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
-import * as userutils from './userutils'
 import * as assetIDutils from './assetidutils'
 
 //Toast message at the front end level
 
 
-function validatePowerConnections(powerConnections, callback) {
+function validatePowerConnections(powerConnections, PDUs, model, callback) {
     //Both L/R and port number are filled out (no empty fields)
 //Port number is 1-24
 //Assuming all or nothing. If an asset has 2 power ports, can't just plug one in
@@ -15,6 +14,8 @@ function validatePowerConnections(powerConnections, callback) {
 // ^^ Do something on frontend to limit num times you can add connection
 
 //If all the fields are empty, then 'No connection' (see superscript 7 in requirements). use callback or promise apprpriately
+//call checkConflicts
+
 
 }
 
@@ -26,7 +27,7 @@ function autofillPowerConnections(modelNumPorts, callback) {
 
 }
 
-function checkConflicts(powerConnections){
+function checkConflicts(powerConnections, PDUs){
     //No 'double connections': no PDU has more than one power port associated with it: conflicts/availability
 
 }
@@ -37,4 +38,11 @@ function addConnections(powerConnections){
     //validatePowerConnections
 
 
+}
+
+export{
+    validatePowerConnections,
+    autofillPowerConnections,
+    checkConflicts,
+    addConnections,
 }
