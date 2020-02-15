@@ -9,6 +9,7 @@ import * as logutils from '../utils/logutils'
 
 class LogScreen extends Component {
     startAfter = null
+    itemNo = 1
     state = {
         searchQuery: '',
     }
@@ -26,8 +27,9 @@ class LogScreen extends Component {
     }
 
     init() {
-      logutils.getLogs(this.startAfter, (logs, newStartAfter) => {
+      logutils.getLogs(this.itemNo, this.startAfter, (logs, newStartAfter, itemNo) => {
           this.startAfter = newStartAfter;
+          this.itemNo = itemNo
           this.setState(oldState => (
               {...oldState, logs: logs, initialLoaded: true}
           ))
@@ -42,8 +44,9 @@ class LogScreen extends Component {
                 step={25}
                 onMore={() => {
                     console.log("firing onmore")
-                    logutils.getLogs(this.startAfter, (logs, newStartAfter) => {
+                    logutils.getLogs(this.itemNo, this.startAfter, (logs, newStartAfter, itemNo) => {
                         this.startAfter = newStartAfter;
+                        this.itemNo = itemNo
                         console.log(logs);
                         this.setState(oldState => (
                             {logs: this.state.logs.concat(logs)}
@@ -76,9 +79,17 @@ class LogScreen extends Component {
                 data={this.state.logs}
                 sortable={true}
                 size="medium"
-                // onClickRow={({datum}) => {
-                //     this.props.history.push('/models/'+datum.vendor+'/'+datum.modelNumber)
-                // }}
+                onClickRow={({datum}) => {
+                    logutils.doesObjectStillExist(datum.objectType,datum.objectId,exists => {
+                        if (exists) {
+                            if (datum.objectType == logutils.MODEL()) {
+                                this.props.history.push('/models/'+datum.objectData.vendor+'/'+datum.objectData.modelNumber)
+                            } else if (datum.objectType == logutils.ASSET()) {
+                                this.props.history.push('/assets/'+datum.objectId)
+                            }
+                        }
+                    })
+                }}
             />
         }
     }
