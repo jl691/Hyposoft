@@ -66,6 +66,16 @@ function updateUsername(oldUsername, newUsername, callback) {
     })
 }
 
+function updateUserRole(username, newRole, callback) {
+    firebaseutils.usersRef.where('username', '==', username).get().then(qs => {
+        if (!qs.empty) {
+            qs.docs[0].ref.update({
+                role: newRole
+            }).then(() => callback())
+        }
+    })
+}
+
 function deleteUser(username, callback) {
     firebaseutils.usersRef.where('username', '==', username).get().then(qs => {
         if (!qs.empty) {
@@ -231,4 +241,4 @@ export { isUserLoggedIn, createUser, modifyUser, deleteUser, isLoggedInUserAdmin
 isLoginValid, logUserIn, logout, getUser, changePassword, loadUsers, addClaim,
 fetchClaim, usernameTaken, validEmail, removeClaim, updateUsername, sendRecoveryEmail,
 fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers, getLoggedInUser,
-USER_ROLE, ADMIN_ROLE, isLoggedInUserNetID }
+USER_ROLE, ADMIN_ROLE, isLoggedInUserNetID, updateUserRole }
