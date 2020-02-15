@@ -4,8 +4,13 @@ import * as userutils from '../utils/userutils'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import theme from '../theme'
 import axios from 'axios'
+import { Redirect } from 'react-router-dom'
 
 class PostOAuthHandler extends React.Component {
+    state = {
+        redirect: ''
+    }
+
     render() {
         const access_token = window.location.toString().substring(window.location.toString().indexOf('access_token')+13, window.location.toString().indexOf('&'))
         axios.get('https://api.colab.duke.edu/identity/v1/', {
@@ -17,10 +22,25 @@ class PostOAuthHandler extends React.Component {
             const displayName  = response.data.displayName
             const username = response.data.netid
             const email = response.data.mail
-            console.log(displayName)
-            console.log(username)
-            console.log(email)
+
+            userutils.getUser(email, user => {
+                if (!user) {
+                    // Need to create an account
+                    userutils.createUser(displayName, username, email, null, packagedUser => {
+                        userutils.logUserIn(packagedUser)
+                        this.setState({redirect: '/dashboard'})
+                    })
+                } else {
+                    // Log them in
+                    userutils.logUserIn(user)
+                    this.setState({redirect: '/dashboard'})
+                }
+            })
         })
+
+        if (this.state.redirect !== '') {
+            return <Redirect to={this.state.redirect} />
+        }
 
         return (
             <Grommet theme={theme} full className='fade'>
@@ -39,8 +59,8 @@ class PostOAuthHandler extends React.Component {
                                 pad='small' >
                                 <Box margin={{left: 'small', right: 'small'}} direction='column'
                                     justify='start' alignSelf='stretch' flex>
-                                    <Heading level='4' margin={{bottom: 'small', top: 'none'}}>Thanks for letting us know!</Heading>
-                                    <p style={{marginTop: 0}}>Sorry that you got an invite you weren't expecting. We've updated our records. You may safely close this tab now.</p>
+                                    <Heading level='4' margin={{bottom: 'small', top: 'none'}}>Please wait...</Heading>
+                                    <p style={{marginTop: 0}}>We're fetching some details from Duke OIT, and will log you in in just a pinch.</p>
                                 </Box>
                             </Box>
                         </Box>
