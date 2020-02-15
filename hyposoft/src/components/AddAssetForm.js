@@ -35,6 +35,16 @@ export default class AddAssetForm extends Component {
         });
     }
 
+    fixMACAddress(mac){
+        if(mac.charAt(2) == "-"){
+            return mac.replace("-", ":");
+        } else if(mac.charAt(2) == "_") {
+            return mac.replace("_", ":");
+        } else {
+            return mac.substr(0, 2) + ":" + mac.substr(2, 2) + ":" + mac.substr(4, 2) + ":" + mac.substr(6, 2) + ":" + mac.substr(8, 2) + ":" + mac.substr(10, 2);
+        }
+    }
+
     handleSubmit(event) {
         if (event.target.name === "addInst") {
             if (!this.state.model || !this.state.rack || !this.state.rackU) {
@@ -51,9 +61,16 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Rack U must be a number.");
             } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
                 ToastsStore.error("Rack U must be positive.");
-            } else if (this.state.macAddress && !/^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
+            } else if (this.state.macAddress && !/^([0-9a-f]{2}[:\-_]?){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
                 ToastsStore.error("Invalid MAC address. Ensure it is colon-delimited and all lowercase.");
             } else {
+                let fixedMAC;
+                if(this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)){
+                    fixedMAC = this.fixMACAddress(this.state.macAddress);
+                } else if(this.state.macAddress) {
+                    fixedMAC = this.state.macAddress;
+                }
+                //TODO: USE FIXEDMAC AS INSERTION
                 assetutils.addAsset(
                     this.state.asset_id,
                     this.state.model,
