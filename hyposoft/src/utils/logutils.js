@@ -85,24 +85,34 @@ function finishAddingLog(object, objectId, objectType, action) {
     }
 }
 
-function getLogs(callback) {
-    firebaseutils.logsRef.orderBy('timestamp','desc').get()
-    .then(docSnaps => {
+function getLogs(startAfter,callback) {
+    var query = startAfter ? firebaseutils.logsRef.orderBy('timestamp','desc').limit(25).startAfter(startAfter)
+                           : firebaseutils.logsRef.orderBy('timestamp','desc').limit(25)
+    query.get().then(docSnaps => {
+        var newStartAfter = null
+        if (docSnaps.docs.length === 25) {
+            newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
+        }
+
         const logs = docSnaps.docs.map(doc => (
-            {log: buildLog(doc.data()), objectId: doc.data().objectId}
+            {log: buildLog(doc.data()), date: getDate(doc.data().timestamp), objectId: doc.data().objectId}
         ))
-        callback(logs)
+        callback(logs,newStartAfter)
     })
     .catch( error => {
         console.log("Error getting documents: ", error)
-        callback(null)
+        callback(null,null)
     })
 }
 
 function buildLog(data) {
-    var log = new Date(data.timestamp).toString() + ': '
-    log += data.userName + ' ' + data.action + ' ' + data.objectType + ' ' + data.objectName + '.'
+    var log = data.userName + ' ' + data.action + ' ' + data.objectType + ' ' + data.objectName + '.'
     return log
+}
+
+function getDate(timestamp) {
+    var dateArray = new Date(timestamp).toString().split(' ',5)
+    return dateArray.join(' ')
 }
 
 function getUserName(id,callback) {
