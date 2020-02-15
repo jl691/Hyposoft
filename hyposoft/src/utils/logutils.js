@@ -111,7 +111,7 @@ function doesObjectStillExist(objectType,objectId,callback) {
             firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.exists))
             break
         default:
-            callback(false)
+            callback(true)
     }
 }
 

@@ -86,7 +86,11 @@ class LogScreen extends Component {
                                 this.props.history.push('/models/'+datum.objectData.vendor+'/'+datum.objectData.modelNumber)
                             } else if (datum.objectType == logutils.ASSET()) {
                                 this.props.history.push('/assets/'+datum.objectId)
+                            } else {
+                                ToastsStore.error(datum.objectType+' does not have a detailed view', 3000)
                             }
+                        } else {
+                            ToastsStore.error(datum.objectType+' does not exist anymore', 3000)
                         }
                     })
                 }}
@@ -141,6 +145,7 @@ class LogScreen extends Component {
                          </Box>
                      </Box>
               </Box>
+              <ToastsContainer store={ToastsStore} lightBackground/>
           </Grommet>
         )
     }
