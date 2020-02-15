@@ -43,7 +43,7 @@ class AddRackView extends React.Component {
                 ToastsStore.error('Row must be a single uppercase letter.');
             } else {
                 //all good
-                rackutils.addSingleRack(this.state.singleLetter, parseInt(this.state.singleNumber), parseInt(this.state.singleHeight), status => {
+                rackutils.addSingleRack(this.state.singleLetter, parseInt(this.state.singleNumber), parseInt(this.state.singleHeight), this.props.datacenter, status => {
                     if (status) {
                         ToastsStore.success('Successfully added rack!');
                         this.props.parentCallback(true);
@@ -70,7 +70,7 @@ class AddRackView extends React.Component {
                 ToastsStore.error('The starting row or number must come before the ending row or number.');
             } else {
                 ToastsStore.info('Please wait...');
-                rackutils.addRackRange(this.state.rangeLetterStart, this.state.rangeLetterEnd, parseInt(this.state.rangeNumberStart), parseInt(this.state.rangeNumberEnd), parseInt(this.state.rangeHeight), (status, skipped) => {
+                rackutils.addRackRange(this.state.rangeLetterStart, this.state.rangeLetterEnd, parseInt(this.state.rangeNumberStart), parseInt(this.state.rangeNumberEnd), parseInt(this.state.rangeHeight), this.props.datacenter, (status, skipped) => {
                     if (status) {
                         ToastsStore.success('Successfully added racks!');
                         if(skipped.length){

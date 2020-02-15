@@ -20,7 +20,7 @@ export default class EditAssetForm extends Component {
             rackU: this.props.updateRackUFromParent,
             owner: this.props.updateOwnerFromParent,
             comment: this.props.updateCommentFromParent,
-            
+            datacenter: this.props.updateDatacenterFromParent
 
         }
         this.handleUpdate = this.handleUpdate.bind(this);
@@ -63,6 +63,7 @@ export default class EditAssetForm extends Component {
                     parseInt(this.state.rackU),
                     this.state.owner,
                     this.state.comment,
+                    this.state.datacenter,
 
                 
                     status => {
@@ -125,6 +126,31 @@ export default class EditAssetForm extends Component {
 
                             <TextInput padding="medium" name="hostname" placeholder="Update Server" onChange={this.handleChange}
                                 value={this.state.hostname} required="true"/>
+                        </FormField>
+
+                        <FormField name="datacenter" label="Datacenter">
+                            <TextInput name="datacenter"
+                                       placeholder="Update Datacenter"
+                                       onChange={e => {
+                                           const value = e.target.value
+                                           this.setState(oldState => ({...oldState, datacenter: value}))
+                                           assetutils.getSuggestedDatacenters(value, results => this.setState(oldState => ({
+                                               ...oldState,
+                                               datacenterSuggestions: results
+                                           })))
+                                       }}
+                                       onSelect={e => {
+                                           this.setState(oldState => ({...oldState, datacenter: e.suggestion}))
+                                       }}
+                                       value={this.state.datacenter}
+                                       suggestions={this.state.datacenterSuggestions}
+                                       onClick={() => assetutils.getSuggestedDatacenters(this.state.datacenter, results => this.setState(oldState => ({
+                                           ...oldState,
+                                           datacenterSuggestions: results
+                                       })))}
+                                       title='Datacenter'
+                                       required="true"
+                            />
                         </FormField>
 
                         <FormField name="rack" label="Rack" >

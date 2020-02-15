@@ -88,7 +88,7 @@ function logUserIn(userObject) {
 }
 
 function getLoggedInUser() {
-    localStorage.getItem('userDocId')
+    return localStorage.getItem('userDocId')
 }
 
 function logout() {

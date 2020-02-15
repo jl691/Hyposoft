@@ -46,6 +46,7 @@ class AssetScreen extends Component {
             updateRackU: "",
             updateOwner: "",
             updateComment: "",
+            updateDatacenter: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
             rackSortChoice: "asc",//by default, will be ascending
@@ -145,7 +146,7 @@ class AssetScreen extends Component {
             deleteHostname: datum.hostname
         });
     }
-    handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment) => {
+    handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter) => {
         this.setState({
             popupType: 'Update',
             updateID: datumID,
@@ -155,7 +156,7 @@ class AssetScreen extends Component {
             updateRackU: datumRackU,
             updateOwner: datumOwner,
             updateComment: datumComment,
-
+            updateDatacenter: datumDatacenter
 
         });
 
@@ -266,6 +267,7 @@ class AssetScreen extends Component {
                         updateRackUFromParent={this.state.updateRackU}
                         updateOwnerFromParent={this.state.updateOwner}
                         updateCommentFromParent={this.state.updateComment}
+                        updateDatacenterFromParent={this.state.updateDatacenter}
                     />
                 </Layer>
             )
@@ -296,7 +298,7 @@ class AssetScreen extends Component {
                                     <Box direction='row'
                                         justify='center'
                                         wrap={true}
-                                        overflow="scroll">
+                                        >
                                         <Box direction='row' justify='center'>
                                             <Box direction='row' justify='center'>
                                                 <Box width='large' direction='column' align='stretch' justify='start'>
@@ -329,8 +331,8 @@ class AssetScreen extends Component {
 
                                                         pad='small' >
                                                         <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column'
-                                                            justify='start' alignSelf='stretch' flex overflow="scroll">
-                                                            <Box align="center" overflow="scroll">
+                                                            justify='start' alignSelf='stretch' flex >
+                                                            <Box align="center" >
                                                                 <AssetTable
                                                                     deleteButtonCallbackFromParent={this.handleDeleteButton}
 

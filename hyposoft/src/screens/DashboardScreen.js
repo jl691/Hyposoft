@@ -27,6 +27,8 @@ class DashboardScreen extends Component {
         {id: 2, title: 'Assets', desc: 'View and manage assets'},
         {id: 3, title: 'Racks', desc: 'View and manage racks'},
         {id: 4, title: 'Import / Export', desc: 'Import and export models and assets'},
+        {id: 5, title: 'Datacenters', desc: 'View and manage datacenters'},
+        {id: 6, title: 'Logs', desc: 'View global logs'},
         //{id: 5, title: 'Reports', desc: 'Generate rack usage reports'}
     ]
 
@@ -46,6 +48,12 @@ class DashboardScreen extends Component {
                 break
             case 4:
                 this.setState({redirect: '/port'})
+                break
+            case 5:
+                this.setState({redirect: '/datacenters'})
+                break
+            case 6:
+                this.setState({redirect: '/logs'})
                 break
             default:
                 alert(action)
