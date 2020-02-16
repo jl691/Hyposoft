@@ -1,12 +1,12 @@
 import * as firebaseutils from './firebaseutils'
 
-function packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment) {
+function packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment) {
     const model = {
         vendor: vendor.trim(),
         modelNumber: modelNumber.trim(),
         height: height,
         displayColor: displayColor.trim(),
-        ethernetPorts: ethernetPorts,
+        networkPorts: networkPorts,
         powerPorts: powerPorts,
         cpu: cpu.trim(),
         memory: memory,
@@ -21,16 +21,16 @@ function combineVendorAndModelNumber(vendor, modelNumber) {
     return vendor.concat(' ', modelNumber)
 }
 
-function createModel(id, vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment, callback) {
+function createModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, callback) {
     // Ignore the first param
-    var model = packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)
+    var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment)
     firebaseutils.modelsRef.add(model).then(docRef => {
         callback(model, docRef.id)
     })
 }
 
-function modifyModel(id, vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment, callback) {
-    var model = packageModel(vendor, modelNumber, height, displayColor, ethernetPorts, powerPorts, cpu, memory, storage, comment)
+function modifyModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, callback) {
+    var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment)
     firebaseutils.modelsRef.doc(id).update(model).then(() => {
         callback(model, id)
     })
@@ -87,8 +87,8 @@ function matchesFilters(data, filters) {
         data.height <= filters.heightEnd &&
         data.memory >= filters.memoryStart &&
         data.memory <= filters.memoryEnd &&
-        data.ethernetPorts >= filters.ethernetPortsStart &&
-        data.ethernetPorts <= filters.ethernetPortsEnd &&
+        data.networkPorts >= filters.networkPortsStart &&
+        data.networkPorts <= filters.networkPortsEnd &&
         data.powerPorts >= filters.powerPortsStart &&
         data.powerPorts <= filters.powerPortsEnd
     )
@@ -205,7 +205,7 @@ function escapeStringForCSV(string) {
 function getModelsForExport(callback) {
     firebaseutils.modelsRef.orderBy('vendor').get().then(qs => {
         var rows = [
-            ["vendor", "model_number", "height", "display_color", "ethernet_ports", "power_ports", "cpu", "memory", "storage", "comment"]
+            ["vendor", "model_number", "height", "display_color", "network_ports", "power_ports", "cpu", "memory", "storage", "comment"]
         ]
 
         for (var i = 0; i < qs.size; i++) {
@@ -214,7 +214,7 @@ function getModelsForExport(callback) {
                 escapeStringForCSV(qs.docs[i].data().modelNumber),
                 ''+qs.docs[i].data().height,
                 ''+qs.docs[i].data().displayColor,
-                ''+(qs.docs[i].data().ethernetPorts || ''),
+                ''+(qs.docs[i].data().networkPorts || ''),
                 ''+(qs.docs[i].data().powerPorts || ''),
                 escapeStringForCSV(qs.docs[i].data().cpu),
                 ''+(qs.docs[i].data().memory || ''),
@@ -262,9 +262,9 @@ function validateImportedModels (data, callback) {
         } else if (/^#[0-9A-F]{6}$/i.test(String(datum.display_color))) {
             errors = [...errors, [i+1, 'Invalid display color']]
         }
-        if (datum.ethernet_ports !== null && String(datum.ethernet_ports).trim() !== '' &&
-         (isNaN(String(datum.ethernet_ports).trim()) || !Number.isInteger(parseFloat(String(datum.ethernet_ports).trim())) || parseInt(String(datum.ethernet_ports).trim()) < 0)) {
-             errors = [...errors, [i+1, 'Ethernet ports is not a non-negative integer']]
+        if (datum.network_ports !== null && String(datum.network_ports).trim() !== '' &&
+         (isNaN(String(datum.network_ports).trim()) || !Number.isInteger(parseFloat(String(datum.network_ports).trim())) || parseInt(String(datum.network_ports).trim()) < 0)) {
+             errors = [...errors, [i+1, 'Network ports is not a non-negative integer']]
         }
         if (datum.power_ports !== null && String(datum.power_ports).trim() !== '' &&
          (isNaN(String(datum.power_ports).trim()) || !Number.isInteger(parseFloat(String(datum.power_ports).trim())) || parseInt(String(datum.power_ports).trim()) < 0)) {
@@ -295,7 +295,7 @@ function addModelsFromImport (models, force, callback) {
         getModel(''+model.vendor, ''+model.model_number, modelFromDb => {
             const model = models[modelIndices[''+modelFromDb.vendor][''+modelFromDb.modelNumber]]
             const height = parseInt(model.height)
-            const ethernet_ports = (model.ethernet_ports !== null ? parseInt(model.ethernet_ports) : null)
+            const network_ports = (model.network_ports !== null ? parseInt(model.network_ports) : null)
             const power_ports = (model.power_ports !== null ? parseInt(model.power_ports) : null)
             const memory = (model.memory !== null ? parseInt(model.memory) : null)
             const storage = (model.storage !== null ? model.storage.trim() : "")
@@ -303,23 +303,23 @@ function addModelsFromImport (models, force, callback) {
             const comment = (model.comment !== null ? model.comment.trim() : "")
 
             const modelMemory = (modelFromDb.memory > 0 ? modelFromDb.memory : null)
-            const ethernetPorts = (modelFromDb.ethernetPorts > 0 ? modelFromDb.ethernetPorts : null)
+            const networkPorts = (modelFromDb.networkPorts > 0 ? modelFromDb.networkPorts : null)
             const powerPorts = (modelFromDb.powerPorts > 0 ? modelFromDb.powerPorts : null)
             const modelStorage = (modelFromDb.storage !== undefined ? modelFromDb.storage.trim() : "")
             const modelCpu = (modelFromDb.cpu !== undefined ? modelFromDb.cpu.trim() : "")
             const modelComment = (modelFromDb.comment !== undefined ? modelFromDb.comment.trim() : "")
 
             if (!modelFromDb.found) {
-                createModel(null, ''+model.vendor, ''+model.model_number, height, ''+model.display_color, ethernet_ports, power_ports, cpu, memory, storage, comment, () => {})
+                createModel(null, ''+model.vendor, ''+model.model_number, height, ''+model.display_color, network_ports, power_ports, cpu, memory, storage, comment, () => {})
                 createdModels += 1
             } else if (!(modelFromDb.height == height && modelFromDb.displayColor == model.display_color
-                    && ethernetPorts == ethernet_ports && powerPorts == power_ports
+                    && networkPorts == network_ports && powerPorts == power_ports
                     &&  cpu == modelCpu && storage == modelStorage && modelMemory == memory
                     && comment == modelComment)) {
                 modifiedModels += 1
                 if (force) {
                     // Modify model
-                    modifyModel(modelFromDb.id, ''+model.vendor, ''+model.model_number, height, ''+model.display_color, ethernet_ports, power_ports, cpu, memory, storage, comment, () => {})
+                    modifyModel(modelFromDb.id, ''+model.vendor, ''+model.model_number, height, ''+model.display_color, network_ports, power_ports, cpu, memory, storage, comment, () => {})
                 } else {
                     modelsPending = [...modelsPending, model]
                     modelsPendingInfo = [...modelsPendingInfo, [modelIndices[''+modelFromDb.vendor][''+modelFromDb.modelNumber]+1, model.vendor+' '+model.model_number]]
