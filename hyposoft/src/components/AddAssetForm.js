@@ -93,6 +93,8 @@ export default class AddAssetForm extends Component {
                     this.state.owner,
                     this.state.comment,
                     this.state.datacenter,
+                    fixedMAC,
+
                     errorMessage => {
                         if (errorMessage) {
                             ToastsStore.error(errorMessage, 10000)
