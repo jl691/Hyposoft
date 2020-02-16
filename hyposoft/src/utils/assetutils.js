@@ -662,21 +662,27 @@ function getSuggestedOwners(userInput, callback) {
         })
 }
 
-function getSuggestedRacks(userInput, callback) {
+function getSuggestedRacks(datacenter, userInput, callback) {
     // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
     var modelArray = []
-    racksRef.orderBy('letter').orderBy('number').get().then(querySnapshot => {
-        querySnapshot.forEach(doc => {
-            const data = doc.data().letter + doc.data().number.toString()
-            if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
-                modelArray.push(data)
-            }
+    datacentersRef.where('name','==',datacenter).get().then(docSnaps => {
+        const datacenterID = docSnaps.docs[0].id
+        racksRef.where('datacenter','==',datacenterID).orderBy('letter').orderBy('number').get().then(querySnapshot => {
+            querySnapshot.forEach(doc => {
+                const data = doc.data().letter + doc.data().number.toString()
+                if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
+                    modelArray.push(data)
+                }
+            })
+            callback(modelArray)
         })
-        callback(modelArray)
-    })
         .catch(error => {
             callback(null)
         })
+    })
+    .catch(error => {
+        callback(null)
+    })
 }
 
 function getSuggestedDatacenters(userInput, callback){

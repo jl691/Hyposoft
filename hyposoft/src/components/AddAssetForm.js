@@ -179,7 +179,7 @@ export default class AddAssetForm extends Component {
                                        onChange={e => {
                                            const value = e.target.value
                                            this.setState(oldState => ({...oldState, rack: value}))
-                                           assetutils.getSuggestedRacks(value, results => this.setState(oldState => ({
+                                           assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({
                                                ...oldState,
                                                rackSuggestions: results
                                            })))
@@ -189,7 +189,7 @@ export default class AddAssetForm extends Component {
                                        }}
                                        value={this.state.rack}
                                        suggestions={this.state.rackSuggestions}
-                                       onClick={() => assetutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({
+                                       onClick={() => assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
                                            ...oldState,
                                            rackSuggestions: results
                                        })))}
@@ -236,9 +236,9 @@ export default class AddAssetForm extends Component {
 
                         <FormField name="datacenterAbbrev" label="Datacenter Abbreviation">
                             <TextInput name="datacenterAbbrev" placeholder="eg. RTP1" onChange={this.handleChange}
-                                       //value={this.state.rackU} 
+                                       //value={this.state.rackU}
                                        required="true"/>
-                        </FormField> 
+                        </FormField>
 
                             <FormField name="macAddress" label="MAC Address">
                                 <TextInput name="macAddress" placeholder="eg. 11-ab-cd-79-aa-c9" onChange={this.handleChange}
@@ -250,7 +250,7 @@ export default class AddAssetForm extends Component {
 
                             <FormField name="networkPortConns" label="Network Port Connections">
                                 <TextInput name="networkPortConns" placeholder="WORK IN PROGRESS" onChange={this.handleChange}
-                                //value={this.state.rackU} 
+                                //value={this.state.rackU}
                                 />
                             </FormField>
 

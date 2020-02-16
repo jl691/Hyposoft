@@ -65,7 +65,7 @@ export default class EditAssetForm extends Component {
                     this.state.comment,
                     this.state.datacenter,
 
-                
+
                     status => {
                         console.log(status)
                         //returned a null in instanceutils updateInstance function. Means no errormessage
@@ -73,7 +73,7 @@ export default class EditAssetForm extends Component {
                             console.log(this.state)
                             ToastsStore.success('Successfully updated asset!');
                             this.props.parentCallback(true);
-                 
+
                         }
                         else {
                             ToastsStore.error('Error updating asset: ' + status);
@@ -160,14 +160,14 @@ export default class EditAssetForm extends Component {
                                 onChange={e => {
                                     const value = e.target.value
                                     this.setState(oldState => ({...oldState, rack: value}))
-                                    assetutils.getSuggestedRacks(value, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))
+                                    assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))
                                 }}
                                 onSelect={e => {
                                     this.setState(oldState => ({...oldState, rack: e.suggestion}))
                                 }}
                                 value={this.state.rack}
                                 suggestions={this.state.rackSuggestions}
-                                onClick={() => assetutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))}
+                                onClick={() => assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))}
                                 title='Rack'
                               />
                         </FormField>
