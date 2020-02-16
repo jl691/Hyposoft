@@ -35,7 +35,6 @@ export default class PowerPortInput extends Component {
                             size="small" name="port" label="Port">
                             <TextInput name="port"
                                 value={this.props.powerConnections.port}
-                                required="true"
                                 size="small"
 
                                 //passing state up to AssetPowerPortsForm

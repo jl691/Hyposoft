@@ -4,22 +4,31 @@ import HomeButton from '../components/HomeButton'
 import UserMenu from '../components/UserMenu'
 import {Redirect} from "react-router-dom";
 import { ToastsContainer, ToastsStore } from 'react-toasts'
-import { Anchor, Box, Button, DataTable, Grommet, Heading, Text, TextInput } from 'grommet'
+import { Anchor, Box, Button, DataTable, Form, Grommet, Heading, Text, TextInput } from 'grommet'
 import theme from '../theme'
 import * as userutils from '../utils/userutils'
 import * as logutils from '../utils/logutils'
 
+const styles = {
+    TIStyle: {
+        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#FFFFFF',
+        width: '100%', paddingLeft: 20, fontWeight: 'normal'
+    }
+}
+
+// const algoliasearch = require('algoliasearch')
+// const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
+// const index = client.initIndex('logs')
+
 class LogScreen extends Component {
     startAfter = null
     itemNo = 1
-    state = {
-        searchQuery: '',
-    }
 
     constructor(props) {
         super(props);
         this.state = {
-            initialLoaded: false
+            initialLoaded: false,
+            searchQuery: ''
         }
     }
 
@@ -38,6 +47,38 @@ class LogScreen extends Component {
       })
     }
 
+    search() {
+        this.startAfter = null
+        this.itemNo = 1
+        if (this.state.searchQuery.trim() === '') {
+            this.state.initialLoaded = false
+            this.init()
+            return
+        }
+        logutils.filterLogsFromName(this.state.searchQuery, this.itemNo, this.startAfter, (logs, newStartAfter, itemNo) => {
+            this.startAfter = newStartAfter
+            this.itemNo = itemNo
+            this.setState(oldState => (
+                {...oldState, logs: logs, initialLoaded: true}
+            ))
+        })
+        // index.search(this.state.searchQuery)
+        // .then(({ hits }) => {
+        //     var models = []
+        //     var itemNo = 1
+        //     this.startAfter = null
+        //     for (var i = 0; i < hits.length; i++) {
+        //         if (modelutils.matchesFilters(hits[i], this.state.filters)) {
+        //             models = [...models, {...hits[i], id: hits[i].objectID, itemNo: itemNo++}]
+        //         }
+        //     }
+        //     this.setState(oldState => ({
+        //         ...oldState,
+        //         models: models
+        //     }))
+        // })
+    }
+
     getTable(){
         if(!this.state.initialLoaded){
             return <Text>Please wait...</Text>
@@ -45,7 +86,7 @@ class LogScreen extends Component {
             return <DataTable
                 step={25}
                 onMore={() => {
-                    logutils.getLogs(this.itemNo, this.startAfter, (logs, newStartAfter, itemNo) => {
+                    logutils.filterLogsFromName(this.state.searchQuery,this.itemNo, this.startAfter, (logs, newStartAfter, itemNo) => {
                         this.startAfter = newStartAfter;
                         this.itemNo = itemNo
                         this.setState(oldState => (
@@ -82,9 +123,9 @@ class LogScreen extends Component {
                 onClickRow={({datum}) => {
                     logutils.doesObjectStillExist(datum.objectType,datum.objectId,exists => {
                         if (exists) {
-                            if (datum.objectType == logutils.MODEL()) {
+                            if (datum.objectType === logutils.MODEL()) {
                                 this.props.history.push('/models/'+datum.objectData.vendor+'/'+datum.objectData.modelNumber)
-                            } else if (datum.objectType == logutils.ASSET()) {
+                            } else if (datum.objectType === logutils.ASSET()) {
                                 this.props.history.push('/assets/'+datum.objectId)
                             } else {
                                 ToastsStore.error(datum.objectType+' does not have a detailed view', 3000)
@@ -120,6 +161,20 @@ class LogScreen extends Component {
                       <Box direction='row' justify='center'>
                              <Box direction='row' justify='center'>
                                  <Box width='large' direction='column' align='stretch' justify='start'>
+                                    <Box margin={{top: 'medium'}}>
+                                        <Form onSubmit={() => this.search()}>
+                                            <TextInput style={styles.TIStyle}
+                                                placeholder="Search for logs by user or asset (type your query and press enter)"
+                                                type='search'
+                                                onChange={e => {
+                                                    const value = e.target.value
+                                                    this.setState(oldState => ({...oldState, searchQuery: value}))
+                                                }}
+                                                value={this.state.searchQuery}
+                                                title='Search'
+                                                />
+                                        </Form>
+                                    </Box>
                                      <Box style={{
                                               borderRadius: 10,
                                               borderColor: '#EDEDED'

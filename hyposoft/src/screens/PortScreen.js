@@ -66,7 +66,7 @@ class PortScreen extends Component {
         }
 
         if (!('vendor' in data[0] && 'model_number' in data[0] && 'height' in data[0]
-           && 'display_color' in data[0] && 'ethernet_ports' in data[0] && 'power_ports' in data[0]
+           && 'display_color' in data[0] && 'network_ports' in data[0] && 'power_ports' in data[0]
            && 'cpu' in data[0] && 'memory' in data[0] && 'storage' in data[0] && 'comment' in data[0])) {
            ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
            return
@@ -220,7 +220,7 @@ class PortScreen extends Component {
                                 justify="start" >
                                 <span>
                                     Files must be CSV files (comma-separated values) for import purposes. Files for model import must contain all 10 headers (columns) that can potentially be specified, although individual values for these columns may be left empty.
-                                    These columns are: <b>vendor, model_number, height, display_color, ethernet_ports, power_ports, cpu, memory, storage,</b> and <b>comments.</b> <br/> <br/>
+                                    These columns are: <b>vendor, model_number, height, display_color, network_ports, power_ports, cpu, memory, storage,</b> and <b>comments.</b> <br/> <br/>
                                     The same rules apply for files intended for asset imports. However, the columns for asset import files are: <b>hostname, rack, rack_position, vendor, model_number, owner,</b> and <b>comments.</b> <br/><br/>
                                     All the restrictions that would apply to values inputted via the web form also apply to values provided in the import files. Any issues will be reported to you, and your import will safely abort.<br/><br/>
                                     <Anchor href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Click here</Anchor> for more detailed technical information on the file format specification.
