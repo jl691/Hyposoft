@@ -32,33 +32,33 @@ const index = client.initIndex('models')
 
 class ModelsScreen extends React.Component {
     defaultFilters = {
-        ethernetPortsFilterEnd: 25,
-        ethernetPortsFilterStart: 0,
+        networkPortsFilterEnd: 25,
+        networkPortsFilterStart: 0,
         heightFilterEnd: 42,
         heightFilterStart: 0,
         powerFilterEnd: 10,
         powerFilterStart: 0,
-        ethernetPortsFilterMax: 30,
+        networkPortsFilterMax: 30,
         powerFilterMax: 12,
         memoryFilterMax: 1200,
         memoryFilterStart: 0,
         memoryFilterEnd: 1000,
         filters: {
             heightStart: 0, heightEnd: 42,
-            ethernetPortsStart: 0, ethernetPortsEnd: 25,
+            networkPortsStart: 0, networkPortsEnd: 25,
             memoryStart: 0, memoryEnd: 1000,
             powerPortsStart: 0, powerPortsEnd: 10
         }
     }
     state = {
         searchQuery: '',
-        ethernetPortsFilterEnd: 25,
-        ethernetPortsFilterStart: 0,
+        networkPortsFilterEnd: 25,
+        networkPortsFilterStart: 0,
         heightFilterEnd: 42,
         heightFilterStart: 0,
         powerFilterEnd: 10,
         powerFilterStart: 0,
-        ethernetPortsFilterMax: 30,
+        networkPortsFilterMax: 30,
         powerFilterMax: 12,
         memoryFilterMax: 1200,
         memoryFilterStart: 0,
@@ -66,7 +66,7 @@ class ModelsScreen extends React.Component {
         heightFilterMax: 42,
         filters: {
             heightStart: 0, heightEnd: 42,
-            ethernetPortsStart: 0, ethernetPortsEnd: 25,
+            networkPortsStart: 0, networkPortsEnd: 25,
             memoryStart: 0, memoryEnd: 1000,
             powerPortsStart: 0, powerPortsEnd: 10
         }
@@ -348,9 +348,9 @@ class ModelsScreen extends React.Component {
                                                                     sortable: true,
                                                                 },
                                                                 {
-                                                                    property: 'ethernetPorts',
-                                                                    header: <Text size='small'>Ethernet ports #</Text>,
-                                                                    render: datum => <Text size='small'>{datum.ethernetPorts}</Text>,
+                                                                    property: 'networkPorts',
+                                                                    header: <Text size='small'>Network ports #</Text>,
+                                                                    render: datum => <Text size='small'>{datum.networkPorts}</Text>,
                                                                     sortable: true,
                                                                 },
                                                                 {
@@ -439,33 +439,33 @@ class ModelsScreen extends React.Component {
                                              margin={{top: 'medium', left: 'medium', right: 'medium'}}
                                              pad='small' >
                                              <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}} direction='column' justify='start'>
-                                                 <Text size='small'><b>Ethernet ports range</b></Text>
+                                                 <Text size='small'><b>Network ports range</b></Text>
                                                  <Stack margin={{top: 'small'}}>
                                                     <Box background="light-4" height="10px" direction="row" round="large" />
                                                     <RangeSelector
                                                       direction="horizontal"
                                                       min={0}
-                                                      max={this.state.ethernetPortsFilterMax}
+                                                      max={this.state.networkPortsFilterMax}
                                                       step={1}
                                                       round="large"
-                                                      values={[this.state.ethernetPortsFilterStart,this.state.ethernetPortsFilterEnd]}
+                                                      values={[this.state.networkPortsFilterStart,this.state.networkPortsFilterEnd]}
                                                       onChange={nextRange => {
-                                                          var newMax = this.state.ethernetPortsFilterMax
-                                                          if (nextRange[1] === this.state.ethernetPortsFilterMax) {
+                                                          var newMax = this.state.networkPortsFilterMax
+                                                          if (nextRange[1] === this.state.networkPortsFilterMax) {
                                                               newMax = parseInt(newMax*1.1)
                                                           }
 
                                                           this.setState(oldState => ({
-                                                              ...oldState, ethernetPortsFilterStart: nextRange[0],
-                                                              ethernetPortsFilterEnd: nextRange[1],
-                                                              ethernetPortsFilterMax: newMax,
-                                                              filters: {...oldState.filters, ethernetPortsStart: nextRange[0], ethernetPortsEnd: nextRange[1]}
+                                                              ...oldState, networkPortsFilterStart: nextRange[0],
+                                                              networkPortsFilterEnd: nextRange[1],
+                                                              networkPortsFilterMax: newMax,
+                                                              filters: {...oldState.filters, networkPortsStart: nextRange[0], networkPortsEnd: nextRange[1]}
                                                           }))
                                                       }}
                                                     />
                                                 </Stack>
                                                 <Box align="center">
-                                                    <Text size="xsmall" margin={{top: 'xsmall'}}>{this.state.ethernetPortsFilterStart} - {this.state.ethernetPortsFilterEnd} ports</Text>
+                                                    <Text size="xsmall" margin={{top: 'xsmall'}}>{this.state.networkPortsFilterStart} - {this.state.networkPortsFilterEnd} ports</Text>
                                                 </Box>
                                              </Box>
                                          </Box>
