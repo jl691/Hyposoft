@@ -4,9 +4,7 @@ import * as datacenterutils from "./datacenterutils";
 import * as logutils from "./logutils";
 import {fabric} from "fabric";
 
-let rackCount = 1;
-
-function getRackAt(callback, datacenter = null, start = null) {
+function getRackAt(itemCount, callback, datacenter = null, start = null) {
     let racks = [];
     let query;
     let count = 1;
@@ -18,53 +16,51 @@ function getRackAt(callback, datacenter = null, start = null) {
                     firebaseutils.racksRef.where("datacenter", "==", datacenterID).orderBy("letter").orderBy("number").limit(25);
                 query.get().then(docSnaps => {
                     if (docSnaps.empty) {
-                        callback(null, null, true);
+                        callback(null, null, null, true);
                     } else {
                         const newStart = docSnaps.docs[docSnaps.docs.length - 1];
                         docSnaps.forEach(doc => {
                             racks.push({
-                                count: start ? rackCount : count,
+                                count: itemCount++,
                                 id: doc.id,
                                 letter: doc.data().letter,
                                 number: doc.data().number,
                                 height: doc.data().height,
                                 assets: (doc.data().assets ? Object.keys(doc.data().assets).length : 0)
                             });
-                            rackCount++;
                             count++;
                         });
-                        callback(newStart, racks, false);
+                        callback(itemCount, newStart, racks, false);
                     }
                 }).catch(function (error) {
-                    callback(null, null, null);
+                    callback(null, null, null, null);
                 });
             } else {
-                callback(null, null, null);
+                callback(null, null, null, null);
             }
         })
     } else {
         query = start ? firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).startAfter(start) : firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25);
         query.get().then(docSnaps => {
             if (docSnaps.empty) {
-                callback(null, null, true);
+                callback(null, null, null, true);
             } else {
                 const newStart = docSnaps.docs[docSnaps.docs.length - 1];
                 docSnaps.forEach(doc => {
                     racks.push({
-                        count: start ? rackCount : count,
+                        count: itemCount++,
                         id: doc.id,
                         letter: doc.data().letter,
                         number: doc.data().number,
                         height: doc.data().height,
                         assets: (doc.data().assets ? Object.keys(doc.data().assets).length : 0)
                     });
-                    rackCount++;
                     count++;
                 });
-                callback(newStart, racks, false);
+                callback(itemCount, newStart, racks, false);
             }
         }).catch(function (error) {
-            callback(null, null, null);
+            callback(itemCount, null, null, null);
         });
     }
 }
