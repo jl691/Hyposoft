@@ -86,14 +86,40 @@ function finishAddingLog(object, objectId, objectType, action) {
 }
 
 function getLogs(itemNo,startAfter,callback) {
-    var query = startAfter ? firebaseutils.logsRef.orderBy('timestamp','desc').limit(25).startAfter(startAfter)
-                           : firebaseutils.logsRef.orderBy('timestamp','desc').limit(25)
+    var query = startAfter ? firebaseutils.logsRef.orderBy('timestamp','desc').startAfter(startAfter)
+                           : firebaseutils.logsRef.orderBy('timestamp','desc')
     query.get().then(docSnaps => {
         var newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
 
         const logs = docSnaps.docs.map(doc => (
             {...doc.data(), log: buildLog(doc.data()), date: getDate(doc.data().timestamp), itemNo: itemNo++}
         ))
+        callback(logs,newStartAfter,itemNo)
+    })
+    .catch( error => {
+        console.log("Error getting documents: ", error)
+        callback(null,null,null)
+    })
+}
+
+function filterLogsFromName(search,itemNo,startAfter,callback) {
+    var query = startAfter ? firebaseutils.logsRef.orderBy('timestamp','desc').startAfter(startAfter)
+                           : firebaseutils.logsRef.orderBy('timestamp','desc')
+    query.get().then(docSnaps => {
+        var newStartAfter = docSnaps.docs.length >= 25 ? docSnaps.docs[24] : docSnaps.docs[docSnaps.docs.length-1]
+
+        var logs = []
+        const searchName = search.trim().toLowerCase()
+        var loop = 0
+        docSnaps.docs.forEach(doc => {
+            const user = doc.data().userName.toLowerCase()
+            const object = doc.data().objectName.toLowerCase()
+            const includesAsset = doc.data().objectType === ASSET() && object.includes(searchName)
+            const includesUser = user.includes(searchName) || (doc.data().objectType === USER() && object.includes(searchName))
+            if (!search || includesAsset || includesUser) {
+                logs = [...logs,{...doc.data(), log: buildLog(doc.data()), date: getDate(doc.data().timestamp), itemNo: itemNo++}]
+            }
+        })
         callback(logs,newStartAfter,itemNo)
     })
     .catch( error => {
@@ -165,4 +191,4 @@ function getDatacenterName(id,callback) {
     })
 }
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CREATE, MODIFY, DELETE,addLog, getLogs, doesObjectStillExist }
+export { ASSET, MODEL, RACK, USER, DATACENTER, CREATE, MODIFY, DELETE,addLog, getLogs, doesObjectStillExist, filterLogsFromName }
