@@ -10,16 +10,15 @@ const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
 const index = client.initIndex('assets')
 
-function getAsset(callback, field=null, direction=null) {
+function getAsset(callback, field = null, direction = null) {
     console.log(field, direction)
     let query;
-    if(field && direction){
-        query = direction ? assetRef.limit(25).orderBy(field) : assetRef.limit(25).orderBy(field);
-    } else if (field && !direction){
+    if (field && direction !== null) {
         query = direction ? assetRef.limit(25).orderBy(field) : assetRef.limit(25).orderBy(field, "desc");
     } else {
         query = assetRef.limit(25);
     }
+    console.log(query.toString())
 
     //TODO: need to rigorously test combined sort
     //TODO: deecide to make rackU unsortable???
@@ -29,27 +28,22 @@ function getAsset(callback, field=null, direction=null) {
     query.get().then(docSnaps => {
         const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
         docSnaps.docs.forEach(doc => {
-            datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
-                if(datacenterAbbrev){
-                    assets.push({
-                        asset_id: doc.id,
-                        model: doc.data().model,
-                        hostname: doc.data().hostname,
-                        rack: doc.data().rack,
-                        rackU: doc.data().rackU,
-                        owner: doc.data().owner,
-                        comment: doc.data().comment,
-                        datacenter: doc.data().datacenter,
-                        datacenterAbbreviation: datacenterAbbrev
-                    });
-                    count++;
-                    if(count === docSnaps.docs.length){
-                        callback(startAfter, assets);
-                    }
-                } else {
-                    callback(null, null);
-                }
-            })
+            assets.push({
+                asset_id: doc.id,
+                model: doc.data().model,
+                hostname: doc.data().hostname,
+                rack: doc.data().rack,
+                rackU: doc.data().rackU,
+                owner: doc.data().owner,
+                comment: doc.data().comment,
+                datacenter: doc.data().datacenter,
+                datacenterAbbreviation: doc.data().datacenterAbbrev
+            });
+            count++;
+            if (count === docSnaps.docs.length) {
+                callback(startAfter, assets);
+            }
+
         })
     }).catch(function (error) {
         callback(null, null)
@@ -60,7 +54,7 @@ function getAsset(callback, field=null, direction=null) {
 function getAssetAt(start, callback, field = null, direction = null) {
 
     let query;
-    if(field && direction){
+    if (field && direction !== null) {
         query = direction ? assetRef.limit(25).orderBy(field).startAfter(start) : assetRef.limit(25).orderBy(field, "desc").startAfter(start);
     } else {
         query = assetRef.limit(25).startAfter(start);
@@ -71,27 +65,21 @@ function getAssetAt(start, callback, field = null, direction = null) {
     query.get().then(docSnaps => {
         const newStart = docSnaps.docs[docSnaps.docs.length - 1];
         docSnaps.docs.forEach(doc => {
-            datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
-                if(datacenterAbbrev){
-                    assets.push({
-                        asset_id: doc.id,
-                        model: doc.data().model,
-                        hostname: doc.data().hostname,
-                        rack: doc.data().rack,
-                        rackU: doc.data().rackU,
-                        owner: doc.data().owner,
-                        comment: doc.data().comment,
-                        datacenter: doc.data().datacenter,
-                        datacenterAbbreviation: datacenterAbbrev
-                    });
-                    count++;
-                    if(count === docSnaps.docs.length){
-                        callback(newStart, assets);
-                    }
-                } else {
-                    callback(null, null);
-                }
-            })
+            assets.push({
+                asset_id: doc.id,
+                model: doc.data().model,
+                hostname: doc.data().hostname,
+                rack: doc.data().rack,
+                rackU: doc.data().rackU,
+                owner: doc.data().owner,
+                comment: doc.data().comment,
+                datacenter: doc.data().datacenter,
+                datacenterAbbreviation: doc.data().datacenterAbbrev
+            });
+            count++;
+            if (count === docSnaps.docs.length) {
+                callback(newStart, assets);
+            }
         })
 
         /*const assets = docSnaps.docs.map(doc => (
@@ -114,6 +102,7 @@ function getAssetAt(start, callback, field = null, direction = null) {
 function forceAddAssetsToDb(toBeAdded) {
     var rackIDs = {}
     var modelIDs = {}
+
     function addAll() {
         for (var i = 0; i < toBeAdded.length; i++) {
             const asset = toBeAdded[i]
@@ -136,11 +125,12 @@ function forceAddAssetsToDb(toBeAdded) {
                     racksRef.doc(ds.data().rackID).update({
                         assets: firebase.firestore.FieldValue.arrayUnion(ds.id)
                     })
-                    index.saveObject({ ...ds.data(), objectID: ds.id })
+                    index.saveObject({...ds.data(), objectID: ds.id})
                 })
             })
         }
     }
+
     for (var i = 0; i < toBeAdded.length; i++) {
         const asset = toBeAdded[i]
         rackutils.getRackID(String(asset.rack)[0], parseInt(String(asset.rack).substring(1)), id => {
@@ -161,6 +151,7 @@ function forceAddAssetsToDb(toBeAdded) {
 function forceModifyAssetsInDb(toBeModified) {
     var rackIDs = {}
     var modelIDs = {}
+
     function modifyAll() {
         for (var i = 0; i < toBeModified.length; i++) {
             const asset = toBeModified[i]
@@ -179,7 +170,7 @@ function forceModifyAssetsInDb(toBeModified) {
                 rackID: rackIDs[asset.rack],
             }).then(() => {
                 assetRef.doc(asset.assetIdInDb).get().then(ds => {
-                    index.saveObject({ ...ds.data(), objectID: ds.id })
+                    index.saveObject({...ds.data(), objectID: ds.id})
                 })
             })
             racksRef.doc(rackIDs[asset.rack]).update({
@@ -187,6 +178,7 @@ function forceModifyAssetsInDb(toBeModified) {
             })
         }
     }
+
     for (var i = 0; i < toBeModified.length; i++) {
         const asset = toBeModified[i]
         rackutils.getRackID(String(asset.rack)[0], parseInt(String(asset.rack).substring(1)), id => {
@@ -203,6 +195,7 @@ function forceModifyAssetsInDb(toBeModified) {
         })
     }
 }
+
 //Need to add in a parameter here: if the user chooses to input an assetID
 function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, callback) {
 
@@ -212,7 +205,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
     validateAssetForm(null, model, hostname, rack, racku, owner, datacenter).then(
         _ => {
-            datacenterutils.getIDFromName(datacenter, datacenterID => {
+            datacenterutils.getDataFromName(datacenter, (datacenterID, datacenterAbbrev) => {
                 modelutils.getModelByModelname(model, doc => {
                     if (!doc) {
                         var errMessage = "Model does not exist"
@@ -248,7 +241,8 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 rackRow: rackRow,
                                                 rackNum: rackNum,
                                                 datacenter: datacenter,
-                                                datacenterID: datacenterID
+                                                datacenterID: datacenterID,
+                                                datacenterAbbrev: datacenterAbbrev
                                             }).then(function (docRef) {
                                                 racksRef.doc(String(rackID)).update({
                                                     assets: firebase.firestore.FieldValue.arrayUnion(overrideAssetID)//docref.id
@@ -257,7 +251,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                     callback(null);
                                                 })
                                                 docRef.get().then(ds => {
-                                                    index.saveObject({ ...ds.data(), objectID: ds.id })
+                                                    index.saveObject({...ds.data(), objectID: ds.id})
                                                 })
                                             }).catch(function (error) {
                                                 // callback("Error");
@@ -268,8 +262,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                         callback(errMessage)
                                     })
 
-                                }
-                                else {
+                                } else {
                                     assetIDutils.generateAssetID().then(newID =>
 
                                         // assetRef.add({
@@ -289,7 +282,8 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                             rackRow: rackRow,
                                             rackNum: rackNum,
                                             datacenter: datacenter,
-                                            datacenterID: datacenterID
+                                            datacenterID: datacenterID,
+                                            datacenterAbbrev: datacenterAbbrev
                                         }).then(function (docRef) {
                                             racksRef.doc(String(rackID)).update({
                                                 assets: firebase.firestore.FieldValue.arrayUnion(newID)//docref.id
@@ -298,13 +292,12 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 callback(null);
                                             })
                                             docRef.get().then(ds => {
-                                                index.saveObject({ ...ds.data(), objectID: ds.id })
+                                                index.saveObject({...ds.data(), objectID: ds.id})
                                             })
                                         }).catch(function (error) {
                                             // callback("Error");
                                             console.log(error)
                                         })
-
                                     ).catch("Ran out of tries to generate unique ID")
 
                                 }
@@ -318,10 +311,10 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                 })
             })
         }).catch(errMessage => {
-            callback(errMessage)
-            console.log(errMessage)
+        callback(errMessage)
+        console.log(errMessage)
 
-        })
+    })
 }
 
 // rackAsc should be a boolean corresponding to true if rack is ascending
@@ -342,7 +335,7 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback) {
         let count = 0;
         querySnapshot.forEach(doc => {
             datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
-                if(datacenterAbbrev) {
+                if (datacenterAbbrev) {
                     vendorArray.push({
                         asset_id: doc.id,
                         model: doc.data().model,
@@ -353,7 +346,7 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback) {
                         datacenterAbbreviation: datacenterAbbrev
                     });
                     count++;
-                    if(count === querySnapshot.size){
+                    if (count === querySnapshot.size) {
                         callback(vendorArray);
                     }
                 } else {
@@ -385,8 +378,8 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
         }
     })
 
-    datacenterutils.getIDFromName(datacenter, datacenterID => {
-        if(datacenterID){
+    datacenterutils.getDataFromName(datacenter, datacenterID => {
+        if (datacenterID) {
             racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
                 if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number) {
                     let rackHeight = querySnapshot.docs[0].data().height
@@ -416,9 +409,8 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                                                 var errMessage = "Asset of height " + height + " racked at " + rackedAt + "U conflicts with asset(s) " + conflictNew.join(', ').toString();
                                                 if (echo < 0) {
                                                     callback(errMessage);
-                                                }
-                                                else {
-                                                    callback({ error: errMessage, echo: echo })
+                                                } else {
+                                                    callback({error: errMessage, echo: echo})
                                                 }
                                             }
                                         });
@@ -426,20 +418,18 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                                 } else {//status callback is null, no conflits
                                     if (echo < 0) {
                                         callback(null, doc.data().modelNumber, doc.data().vendor, rackID)
-                                    }
-                                    else {
-                                        callback({ error: null, echo: echo })
+                                    } else {
+                                        callback({error: null, echo: echo})
                                     }
 
                                 }
                             }, asset_id) //if you pass in a null to checkInstanceFits
-                        }
-                        else {
+                        } else {
                             var errMessage = "Asset of this model at this RackU will not fit on this rack";
                             if (echo < 0) {
                                 callback(errMessage);
                             } else {
-                                callback({ error: errMessage, echo: echo })
+                                callback({error: errMessage, echo: echo})
                             }
 
                         }
@@ -449,7 +439,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                     if (echo < 0) {
                         callback(errMessage2)
                     } else {
-                        callback({ error: errMessage2, echo: echo })
+                        callback({error: errMessage2, echo: echo})
                     }
                 }
             })
@@ -458,7 +448,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
             if (echo < 0) {
                 callback(errMessage);
             } else {
-                callback({ error: errMessage, echo: echo })
+                callback({error: errMessage, echo: echo})
             }
         }
     })
@@ -528,8 +518,8 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
 
     validateAssetForm(assetID, model, hostname, rack, rackU, owner, datacenter).then(
         _ => {
-            datacenterutils.getIDFromName(datacenter, datacenterID => {
-                if(datacenterID){
+            datacenterutils.getDataFromName(datacenter, (datacenterID, datacenterAbbrev) => {
+                if (datacenterID) {
                     modelutils.getModelByModelname(model, doc => {
                         if (!doc) {
                             var errMessage = "Model does not exist"
@@ -585,13 +575,17 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                 rackRow: rackRow,
                                                                 rackNum: rackNum,
                                                                 datacenter: datacenter,
-                                                                datacenterID: datacenterID
+                                                                datacenterID: datacenterID,
+                                                                datacenterAbbrev: datacenterAbbrev
                                                                 //these are the fields in the document to update
 
                                                             }).then(function () {
                                                                 console.log("Updated model successfully")
                                                                 assetRef.doc(String(assetID)).get().then(docRef => {
-                                                                    index.saveObject({ ...docRef.data(), objectID: docRef.id })
+                                                                    index.saveObject({
+                                                                        ...docRef.data(),
+                                                                        objectID: docRef.id
+                                                                    })
                                                                 })
                                                                 callback(null);
                                                             }).catch(function (error) {
@@ -607,7 +601,6 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                             }, assetID)
 
 
-
                         }
                     })
                 } else {
@@ -616,11 +609,11 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                 }
             })
         }).catch(errMessage => {
-            callback(errMessage)
-            console.log(errMessage)
+        callback(errMessage)
+        console.log(errMessage)
 
 
-        })
+    })
 
 }
 
@@ -628,7 +621,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
 function getAssetFromModel(model, callback) {
     assetRef.where('model', '==', model).get().then(docSnaps => {
         const assets = docSnaps.docs.map(doc => (
-            { id: doc.id, ...doc.data() }
+            {id: doc.id, ...doc.data()}
         ))
         callback(assets)
     })
@@ -642,7 +635,7 @@ function sortByKeyword(keyword, callback) {
     assetRef.orderBy(keyword.toLowerCase()).get().then(
         docSnaps => {
             const assets = docSnaps.docs.map(doc => (
-                { id: doc.id }
+                {id: doc.id}
             ))
             callback(assets)
         })
@@ -688,9 +681,9 @@ function getSuggestedOwners(userInput, callback) {
 function getSuggestedRacks(datacenter, userInput, callback) {
     // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
     var modelArray = []
-    datacentersRef.where('name','==',datacenter).get().then(docSnaps => {
+    datacentersRef.where('name', '==', datacenter).get().then(docSnaps => {
         const datacenterID = docSnaps.docs[0].id
-        racksRef.where('datacenter','==',datacenterID).orderBy('letter').orderBy('number').get().then(querySnapshot => {
+        racksRef.where('datacenter', '==', datacenterID).orderBy('letter').orderBy('number').get().then(querySnapshot => {
             querySnapshot.forEach(doc => {
                 const data = doc.data().letter + doc.data().number.toString()
                 if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
@@ -699,16 +692,16 @@ function getSuggestedRacks(datacenter, userInput, callback) {
             })
             callback(modelArray)
         })
+            .catch(error => {
+                callback(null)
+            })
+    })
         .catch(error => {
             callback(null)
         })
-    })
-    .catch(error => {
-        callback(null)
-    })
 }
 
-function getSuggestedDatacenters(userInput, callback){
+function getSuggestedDatacenters(userInput, callback) {
     // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
     var modelArray = []
     datacentersRef.orderBy('name').orderBy('abbreviation').get().then(querySnapshot => {
@@ -737,21 +730,22 @@ function shouldAddToSuggestedItems(array, data, userInput) {
 function getAssetDetails(assetID, callback) {
 
     assetRef.doc(assetID).get().then((doc) => {
-        let inst = {
-            assetID: assetID.trim(),
-            model: doc.data().model.trim(),
-            hostname: doc.data().hostname.trim(),
-            rack: doc.data().rack.trim(),
-            rackU: doc.data().rackU,
-            owner: doc.data().owner.trim(),
-            comment: doc.data().comment.trim(),
-            modelNum: doc.data().modelNumber.trim(),
-            vendor: doc.data().vendor.trim(),
-            datacenter: doc.data().datacenter.trim()
+            let inst = {
+                assetID: assetID.trim(),
+                model: doc.data().model.trim(),
+                hostname: doc.data().hostname.trim(),
+                rack: doc.data().rack.trim(),
+                rackU: doc.data().rackU,
+                owner: doc.data().owner.trim(),
+                comment: doc.data().comment.trim(),
+                modelNum: doc.data().modelNumber.trim(),
+                vendor: doc.data().vendor.trim(),
+                datacenter: doc.data().datacenter.trim(),
+                datacenterAbbrev: doc.data().datacenterAbbrev.trim()
 
+            }
+            callback(inst)
         }
-        callback(inst)
-    }
     );
 
 }
@@ -775,20 +769,18 @@ function validateAssetForm(assetID, model, hostname, rack, racku, owner, datacen
                     }
                 })
             }
-            if(datacenter !== ""){
-                datacenterutils.getIDFromName(datacenter, datacenterID => {
-                    if(datacenterID){
+            if (datacenter !== "") {
+                datacenterutils.getDataFromName(datacenter, datacenterID => {
+                    if (datacenterID) {
                         //TODO: FIX NESTING?
                         resolve(null);
                     } else {
                         reject("Datacenter does not exist")
                     }
                 })
-            }
-            else if (model.trim() === "" || rack.trim() === "" || racku == null) {
+            } else if (model.trim() === "" || rack.trim() === "" || racku == null) {
                 reject("Required fields cannot be empty")
-            }
-            else {
+            } else {
                 console.log("up in this bitch too")
                 resolve(null)
             }
@@ -823,9 +815,9 @@ function checkHostnameExists(hostname, id, callback) {
 function getAssetByHostname(hostname, callback, echo = null) {
     assetRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
         if (!docSnaps.empty) {
-            callback({ ...docSnaps.docs[0].data(), found: true, echo: echo, id: docSnaps.docs[0].id })
+            callback({...docSnaps.docs[0].data(), found: true, echo: echo, id: docSnaps.docs[0].id})
         } else {
-            callback({ found: false, echo: echo, id: null })
+            callback({found: false, echo: echo, id: null})
         }
     })
 }
@@ -870,7 +862,7 @@ function validateImportedAssets(data, callback) {
             function checkAndCallback() {
                 assetsProcessed++
                 if (assetsProcessed === data.length) {
-                    callback({ errors, toBeAdded, toBeModified, toBeIgnored })
+                    callback({errors, toBeAdded, toBeModified, toBeIgnored})
                 }
             }
 
@@ -960,20 +952,24 @@ function validateImportedAssets(data, callback) {
                                 checkAndCallback()
                             } else {
                                 // MODIFY CASE
-                                assetFitsOnRack(datum.rack, datum.rack_position, datum.vendor + ' ' + datum.model_number, ({ error, echo }) => {
+                                assetFitsOnRack(datum.rack, datum.rack_position, datum.vendor + ' ' + datum.model_number, ({error, echo}) => {
                                     const datum = data[asset.echo]
                                     if (error) {
                                         errors = [...errors, [asset.echo + 1, 'This asset could not be placed at the requested location']]
                                         checkAndCallback()
                                     } else {
-                                        toBeModified = [...toBeModified, { ...datum, row: asset.echo + 1, assetIdInDb: asset.id }]
+                                        toBeModified = [...toBeModified, {
+                                            ...datum,
+                                            row: asset.echo + 1,
+                                            assetIdInDb: asset.id
+                                        }]
                                         checkAndCallback()
                                     }
                                 }, asset.id, asset.echo)
                             }
                         } else {
                             // ADDITION CASE
-                            assetFitsOnRack(datum.rack, datum.rack_position, datum.vendor + ' ' + datum.model_number, ({ error, echo }) => {
+                            assetFitsOnRack(datum.rack, datum.rack_position, datum.vendor + ' ' + datum.model_number, ({error, echo}) => {
                                 const datum = data[asset.echo]
                                 if (error) {
                                     errors = [...errors, [asset.echo + 1, 'This asset could not be placed at the requested location']]
@@ -992,7 +988,6 @@ function validateImportedAssets(data, callback) {
         })
     })
 }
-
 
 
 export {
