@@ -1,6 +1,7 @@
 import * as firebaseutils from "./firebaseutils";
 import * as modelutils from "./modelutils";
 import * as datacenterutils from "./datacenterutils";
+import * as logutils from "./logutils";
 import {fabric} from "fabric";
 
 let rackCount = 1;
@@ -83,6 +84,7 @@ function addSingleRack(row, number, height, datacenter, callback) {
                     }).then(function (docRef) {
                         datacenterutils.addRackToDatacenter(docRef.id, datacenter, result => {
                             if (result) {
+                                logutils.addLog(docRef.id, logutils.RACK(), logutils.CREATE());
                                 callback(docRef.id);
                             } else {
                                 callback(null);
@@ -125,6 +127,7 @@ function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, datacent
                             }).then(function (docRef) {
                                 datacenterutils.addRackToDatacenter(docRef.id, datacenter, result => {
                                     if (result) {
+                                        logutils.addLog(docRef.id, logutils.RACK(), logutils.CREATE());
                                         count++;
                                         if (count === totalRacks) {
                                             console.log(skippedRacks)
@@ -178,10 +181,12 @@ function deleteSingleRack(id, callback) {
             if (doc.data().assets && Object.keys(doc.data().assets).length > 0) {
                 callback(null)
             } else {
+                logutils.addLog(id, logutils.RACK(), logutils.DELETE());
                 firebaseutils.racksRef.doc(id).delete().then(function () {
                     firebaseutils.datacentersRef.doc(datacenterID).update({
                         racks: firebaseutils.firebase.firestore.FieldValue.arrayRemove(id)
                     }).then(function () {
+                        //logutils.addLog(id, logutils.RACK(), logutils.DELETE());
                         callback(true);
                     }).catch(function (error) {
                         callback(null);
@@ -235,6 +240,7 @@ function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, datacenter, c
                                 firebaseutils.racksRef.doc(docID).delete().then(function () {
                                     datacenterutils.removeRackFromDatacenter(docID, datacenter, result => {
                                         if(result){
+                                            logutils.addLog(docID, logutils.RACK(), logutils.DELETE());
                                             count++;
                                             if (count === totalRacks) {
                                                 callback(true, skippedRacks)

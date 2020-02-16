@@ -51,6 +51,7 @@ function packageLog(timestamp, objectId, objectType, objectName, objectData, act
 }
 
 function addLog(objectId, objectType, action) {
+    console.log("idk")
     switch (objectType) {
         case ASSET():
             getAssetName(objectId,asset => finishAddingLog(asset, objectId, objectType, action))
