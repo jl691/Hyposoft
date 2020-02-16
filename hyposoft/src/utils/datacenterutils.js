@@ -1,15 +1,14 @@
 import * as firebaseutils from "./firebaseutils";
 import * as rackutils from "./rackutils";
 import {datacentersRef} from "./firebaseutils";
+import * as logutils from "./logutils";
 
-let datacenterCount = 1;
-
-function getDatacenters(callback, start = null) {
+function getDatacenters(itemCount, callback, start = null) {
     let datacenters = [];
     let query = start ? firebaseutils.datacentersRef.orderBy("name").orderBy("abbreviation").limit(25).startAfter(start) :  firebaseutils.datacentersRef.orderBy("name").orderBy("abbreviation").limit(25);
     query.get().then(docSnaps => {
         if (docSnaps.empty) {
-            callback(null, null, true);
+            callback(null, null, null, true);
         } else {
             const newStart = docSnaps.docs[docSnaps.docs.length - 1];
             console.log(docSnaps.docs)
@@ -17,22 +16,21 @@ function getDatacenters(callback, start = null) {
             docSnaps.forEach(doc => {
                 console.log(doc.data())
                 datacenters.push({
-                    count: start ? datacenterCount : count+1,
+                    count: itemCount++,
                     id: doc.id,
                     name: doc.data().name,
                     abbreviation: doc.data().abbreviation,
                     rackCount: doc.data().racks.length
                 });
                 count++;
-                datacenterCount++;
                 if (count === docSnaps.docs.length) {
                     console.log("")
-                    callback(newStart, datacenters, false);
+                    callback(itemCount, newStart, datacenters, false);
                 }
             });
         }
     }).catch(function (error) {
-        callback(null, null, true);
+        callback(null, null, null, true);
     });
 }
 
@@ -94,7 +92,8 @@ function addDatacenter(name, abbrev, callback) {
                         name: name,
                         abbreviation: abbrev,
                         racks: []
-                    }).then(function () {
+                    }).then(function (docRef) {
+                        logutils.addLog(docRef.id, logutils.DATACENTER(), logutils.CREATE());
                         callback(true);
                     }).catch(function (error) {
                         callback(null);
@@ -118,6 +117,7 @@ function deleteDatacenter(name, callback) {
                 callback(null);
             } else {
                 firebaseutils.datacentersRef.doc(querySnapshot.docs[0].id).delete().then(function () {
+                    logutils.addLog(querySnapshot.docs[0].id, logutils.DATACENTER(), logutils.DELETE());
                     callback(true);
                 }).catch(function (error) {
                     callback(null);
@@ -146,6 +146,7 @@ function updateDatacenter(oldName, oldAbbrev, newName, newAbbrev, callback) {
                                 abbreviation: newAbbrev
                             }, {merge: true}).then(function () {
                                 console.log("77")
+                                logutils.addLog(querySnapshot.docs[0].id, logutils.DATACENTER(), logutils.MODIFY());
                                 callback(true);
                             }).catch(function (error) {
                                 console.log("88")
