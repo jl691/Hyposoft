@@ -26,7 +26,7 @@ class RackElevations extends React.Component {
     componentDidMount() {
         console.log("the datacenter is " + this.props.location.state.datacenter)
         if(this.props.location.state && this.props.location.state.startRow && this.props.location.state.endRow && this.props.location.state.startNumber && this.props.location.state.endNumber && this.props.location.state.datacenter){
-            datacenterutils.getIDFromName(this.props.location.state.datacenter, ID => {
+            datacenterutils.getDataFromName(this.props.location.state.datacenter, ID => {
                 if(ID){
                     datacenterID = ID;
                     count = 0;
