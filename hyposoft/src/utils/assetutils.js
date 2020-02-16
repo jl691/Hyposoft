@@ -144,7 +144,7 @@ function forceModifyAssetsInDb(toBeModified) {
     }
 }
 //Need to add in a parameter here: if the user chooses to input an assetID
-function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, callback) {
+function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, macAddress, callback) {
 
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
@@ -181,6 +181,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                             owner: owner,
                                             comment: comment,
                                             rackID: rackID,
+                                            macAddress: macAddress,
                                             //This is for rack usage reports
                                             modelNumber: modelNum,
                                             vendor: modelVendor,

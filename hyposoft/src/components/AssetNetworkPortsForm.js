@@ -35,7 +35,6 @@ export default class AssetNetworkPortsForm extends Component {
             let networkConnections = [...this.state.networkConnections]
             networkConnections[idx][e.target.name] = e.target.value
             this.setState({ port: e.target.value })
-            console.log(this.state.networkConnections[idx])
 
             //or it's something already 'submitted'
         } else {
@@ -58,8 +57,6 @@ export default class AssetNetworkPortsForm extends Component {
 
     render() {
         let { networkConnections } = this.state
-
-        console.log(this.state.networkConnections)
         return (
             networkConnections.map((val, idx) => {
                 return (

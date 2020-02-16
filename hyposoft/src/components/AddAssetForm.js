@@ -40,13 +40,17 @@ export default class AddAssetForm extends Component {
         });
     }
 
+    //Puts the MAC address into canoncial form: lower case and colon-delimited
     fixMACAddress(mac) {
         if (mac.charAt(2) == "-") {
             return mac.replace("-", ":");
         } else if (mac.charAt(2) == "_") {
             return mac.replace("_", ":");
         } else {
-            return mac.substr(0, 2) + ":" + mac.substr(2, 2) + ":" + mac.substr(4, 2) + ":" + mac.substr(6, 2) + ":" + mac.substr(8, 2) + ":" + mac.substr(10, 2);
+            let canonicalMAC=mac.substr(0, 2).toLowerCase() + ":" + mac.substr(2, 2).toLowerCase() + ":" + mac.substr(4, 2).toLowerCase() + ":" + mac.substr(6, 2).toLowerCase() + ":" + mac.substr(8, 2).toLowerCase() + ":" + mac.substr(10, 2).toLowerCase();
+
+            console.log("Canonical MAC: " + canonicalMAC)
+            return canonicalMAC;
         }
     }
 
@@ -66,16 +70,20 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Rack U must be a number.");
             } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
                 ToastsStore.error("Rack U must be positive.");
-            } else if (this.state.macAddress && !/^([0-9a-f]{2}[:\-_]?){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
-                ToastsStore.error("Invalid MAC address. Ensure it is colon-delimited and all lowercase.");
+
+            //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
+            } else if (this.state.macAddress && !/^([0-9A-Fa-f]{2}[:-\_]?){5}([0-9A-Fa-f]{2})$/.test(this.state.macAddress)) {
+                ToastsStore.error("Invalid MAC address. Ensure it is a six-byte hexadecimal value with any byte separator punctuation.");
             } else {
+                //toLowercase, to colon
                 let fixedMAC;
                 if (this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
                     fixedMAC = this.fixMACAddress(this.state.macAddress);
                 } else if (this.state.macAddress) {
                     fixedMAC = this.state.macAddress;
                 }
-                //TODO: USE FIXEDMAC AS INSERTION
+                console.log("MAC address passed to database: " + fixedMAC)
+          
                 assetutils.addAsset(
                     this.state.asset_id,
                     this.state.model,
@@ -84,6 +92,7 @@ export default class AddAssetForm extends Component {
                     parseInt(this.state.rackU),
                     this.state.owner,
                     this.state.comment,
+                    fixedMAC,
                     errorMessage => {
                         if (errorMessage) {
                             ToastsStore.error(errorMessage, 10000)
@@ -214,12 +223,18 @@ export default class AddAssetForm extends Component {
                                 />
                             </FormField>
 
-                            {/* For these last two, need to think carefully about UI since they are 'multistep' to add */}
+                            {/* For these last two, need to think carefully about UI since they are 'multistep' to add 
+                         <AssetNetworkPortsForm/>
 
-                          <AssetNetworkPortsForm/>
 
+                             <AssetPowerPortsForm />
+                        
+                        
+                        
+                        
+                        */}
 
-                            <AssetPowerPortsForm />
+                          
 
                             <FormField name="asset_id" label="Override Asset ID">
                                 <TextInput name="asset_id" placeholder="If left blank, will auto-generate" onChange={this.handleChange}
