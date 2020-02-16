@@ -166,22 +166,12 @@ function updateDatacenter(oldName, oldAbbrev, newName, newAbbrev, callback) {
     })
 }
 
-function getIDFromName(name, callback){
+function getDataFromName(name, callback){
     firebaseutils.datacentersRef.where("name", "==", name).get().then(querySnapshot => {
         if(querySnapshot.empty){
             callback(null);
         } else {
-            callback(querySnapshot.docs[0].id);
-        }
-    })
-}
-
-function getNameFromID(id, callback){
-    firebaseutils.datacentersRef.doc(id).get().then(docSnap => {
-        if(!docSnap.exists){
-            callback(null);
-        } else {
-            callback(docSnap.data().name);
+            callback(querySnapshot.docs[0].id, querySnapshot.docs[0].data().abbreviation);
         }
     })
 }
@@ -196,18 +186,8 @@ function getAbbreviationFromID(id, callback){
     })
 }
 
-function getAbbreviationFromName(name, callback){
-    firebaseutils.datacentersRef.where("name", "==", name).get().then(querySnapshot => {
-        if(querySnapshot.empty){
-            callback(null);
-        } else {
-            callback(querySnapshot.docs[0].data().abbreviation);
-        }
-    })
-}
-
 function addRackToDatacenter(rackID, datacenterName, callback){
-    getIDFromName(datacenterName, datacenterID => {
+    getDataFromName(datacenterName, datacenterID => {
         if(datacenterID){
             firebaseutils.datacentersRef.doc(datacenterID).update({
                 racks: firebaseutils.firebase.firestore.FieldValue.arrayUnion(rackID)
@@ -223,7 +203,7 @@ function addRackToDatacenter(rackID, datacenterName, callback){
 }
 
 function removeRackFromDatacenter(rackID, datacenterName, callback) {
-    getIDFromName(datacenterName, datacenterID => {
+    getDataFromName(datacenterName, datacenterID => {
         if(datacenterID){
             firebaseutils.datacentersRef.doc(datacenterID).update({
                 racks: firebaseutils.firebase.firestore.FieldValue.arrayRemove(rackID)
@@ -238,4 +218,4 @@ function removeRackFromDatacenter(rackID, datacenterName, callback) {
     })
 }
 
-export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getIDFromName, addRackToDatacenter, removeRackFromDatacenter, getNameFromID, getAbbreviationFromID, getAbbreviationFromName}
+export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getDataFromName, addRackToDatacenter, removeRackFromDatacenter, getAbbreviationFromID}

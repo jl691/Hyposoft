@@ -64,7 +64,7 @@ export default class AssetTable extends Component {
         // },
         {
             property: 'datacenterAbbrev',
-            header: <Text size='small'> Datacenter Abbrev.</Text>,
+            header: <Link onClick={() => {this.setSort("datacenterAbbrev")}}><Text size='small'> Datacenter Abbrev.</Text></Link>,
             render: datum => <Text size='small'>
                 {datum.datacenterAbbreviation}
             </Text>,
@@ -289,7 +289,7 @@ export default class AssetTable extends Component {
                                         <DataTable
                                             step={5}
                                             onMore={() => {
-                                                if (this.startAfter && !this.props.searchResults) {
+                                                if (this.startAfter && !this.props.searchResults && this.state.initialLoaded) {
                                                     if(this.state.sortField){
                                                         assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
                                                             this.startAfter = newStartAfter
