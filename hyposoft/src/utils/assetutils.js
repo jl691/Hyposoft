@@ -626,6 +626,7 @@ function getAssetDetails(assetID, callback) {
 }
 
 //REFACTORED to be a promise. Combined checkHostnameExists into this function
+//
 function validateAssetForm(assetID, model, hostname, rack, racku, owner) {
     return new Promise((resolve, reject) => {
         assetRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
@@ -633,7 +634,10 @@ function validateAssetForm(assetID, model, hostname, rack, racku, owner) {
                 console.log("Made it here")
                 reject("Hostname already exists")
             }
-            if (owner !== "") {
+            else if (model.trim() === "" || hostname.trim() === "" || rack.trim() === "" || racku == null) {
+                reject("Required fields cannot be empty")
+            }
+            else if (owner !== "") {
                 let username = owner;
                 usersRef.where('username', '==', username).get().then(querySnapshot => {
                     if (!querySnapshot.empty) {
@@ -642,11 +646,10 @@ function validateAssetForm(assetID, model, hostname, rack, racku, owner) {
                     } else {
                         reject("This user does not exist in the system")
                     }
+
                 })
             }
-            else if (model.trim() === "" || hostname.trim() === "" || rack.trim() === "" || racku == null) {
-                reject("Required fields cannot be empty")
-            }
+         
             else {
                 console.log("up in this bitch too")
                 resolve(null)

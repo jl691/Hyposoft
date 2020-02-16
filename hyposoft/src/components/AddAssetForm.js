@@ -1,13 +1,14 @@
-import React, {Component} from 'react'
-import {Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer} from 'grommet'
-import {ToastsContainer, ToastsStore} from 'react-toasts';
+import React, { Component } from 'react'
+import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer } from 'grommet'
+import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
-import {Redirect} from "react-router-dom";
+import { Redirect } from "react-router-dom";
 import theme from "../theme";
 
 import AssetPowerPortsForm from './AssetPowerPortsForm'
+import AssetNetworkPortsForm from './AssetNetworkPortsForm';
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -25,6 +26,8 @@ export default class AddAssetForm extends Component {
             owner: "",
             comment: "",
             macAddress: "",
+            datacenterName:"",
+            datacenterAbbrev:""
 
         }
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -37,10 +40,10 @@ export default class AddAssetForm extends Component {
         });
     }
 
-    fixMACAddress(mac){
-        if(mac.charAt(2) == "-"){
+    fixMACAddress(mac) {
+        if (mac.charAt(2) == "-") {
             return mac.replace("-", ":");
-        } else if(mac.charAt(2) == "_") {
+        } else if (mac.charAt(2) == "_") {
             return mac.replace("_", ":");
         } else {
             return mac.substr(0, 2) + ":" + mac.substr(2, 2) + ":" + mac.substr(4, 2) + ":" + mac.substr(6, 2) + ":" + mac.substr(8, 2) + ":" + mac.substr(10, 2);
@@ -67,9 +70,9 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Invalid MAC address. Ensure it is colon-delimited and all lowercase.");
             } else {
                 let fixedMAC;
-                if(this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)){
+                if (this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
                     fixedMAC = this.fixMACAddress(this.state.macAddress);
-                } else if(this.state.macAddress) {
+                } else if (this.state.macAddress) {
                     fixedMAC = this.state.macAddress;
                 }
                 //TODO: USE FIXEDMAC AS INSERTION
@@ -97,7 +100,7 @@ export default class AddAssetForm extends Component {
 
     render() {
         if (!userutils.isUserLoggedIn()) {
-            return <Redirect to='/'/>
+            return <Redirect to='/' />
         }
 
 
@@ -191,13 +194,19 @@ export default class AddAssetForm extends Component {
                             </FormField>
 
                             {/* NEW FIELDS HERE> TODO: change the values/integrate with the backend, move datacenter stuff up the form========= */}
-                        
 
-                        <FormField name="datacenterAbbrev" label="Datacenter Abbreviation">
-                            <TextInput name="datacenterAbbrev" placeholder="eg. RTP1" onChange={this.handleChange}
-                                       //value={this.state.rackU} 
-                                       required="true"/>
-                        </FormField> 
+
+                            <FormField name="datacenterName" label="Datacenter Name">
+                                <TextInput name="datacenterName" placeholder="eg. Research Triangle Park" onChange={this.handleChange}
+                                    value={this.state.datacenterName} 
+                                    required="true" />
+                            </FormField>
+
+                            <FormField name="datacenterAbbrev" label="Datacenter Abbreviation">
+                                <TextInput name="datacenterAbbrev" placeholder="eg. RTP1" onChange={this.handleChange}
+                                    value={this.state.datacenterAbbrev} 
+                                    required="true" />
+                            </FormField>
 
                             <FormField name="macAddress" label="MAC Address">
                                 <TextInput name="macAddress" placeholder="eg. 11-ab-cd-79-aa-c9" onChange={this.handleChange}
@@ -207,14 +216,10 @@ export default class AddAssetForm extends Component {
 
                             {/* For these last two, need to think carefully about UI since they are 'multistep' to add */}
 
-                            <FormField name="networkPortConns" label="Network Port Connections">
-                                <TextInput name="networkPortConns" placeholder="WORK IN PROGRESS" onChange={this.handleChange}
-                                //value={this.state.rackU} 
-                                />
-                            </FormField>
+                          <AssetNetworkPortsForm/>
 
 
-                            <AssetPowerPortsForm/>
+                            <AssetPowerPortsForm />
 
                             <FormField name="asset_id" label="Override Asset ID">
                                 <TextInput name="asset_id" placeholder="If left blank, will auto-generate" onChange={this.handleChange}
@@ -249,7 +254,7 @@ export default class AddAssetForm extends Component {
                 </Box>
 
 
-                <ToastsContainer store={ToastsStore}/>
+                <ToastsContainer store={ToastsStore} />
             </Grommet>
 
 
