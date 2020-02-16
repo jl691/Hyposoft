@@ -123,9 +123,9 @@ class LogScreen extends Component {
                 onClickRow={({datum}) => {
                     logutils.doesObjectStillExist(datum.objectType,datum.objectId,exists => {
                         if (exists) {
-                            if (datum.objectType == logutils.MODEL()) {
+                            if (datum.objectType === logutils.MODEL()) {
                                 this.props.history.push('/models/'+datum.objectData.vendor+'/'+datum.objectData.modelNumber)
-                            } else if (datum.objectType == logutils.ASSET()) {
+                            } else if (datum.objectType === logutils.ASSET()) {
                                 this.props.history.push('/assets/'+datum.objectId)
                             } else {
                                 ToastsStore.error(datum.objectType+' does not have a detailed view', 3000)
