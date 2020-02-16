@@ -6,6 +6,7 @@ import ItemCard from '../components/ItemCard'
 import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import * as userutils from '../utils/userutils'
+import * as powerutils from '../utils/powerutils'
 
 import {
     Box,
@@ -61,6 +62,7 @@ class DashboardScreen extends Component {
     }
 
     render() {
+        powerutils.powerPortOff('hpdu-rtp1-A01L', 4, () => {})
         if (this.state.redirect !== '') {
             return <Redirect to={this.state.redirect} />
         }
