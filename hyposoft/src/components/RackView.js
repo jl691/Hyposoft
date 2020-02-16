@@ -33,6 +33,7 @@ class RackView extends React.Component {
 
     startAfter = null;
     datacenters = [];
+    itemCounts = new Map();
 
     constructor(props) {
         super(props);
@@ -77,23 +78,25 @@ class RackView extends React.Component {
         this.startAfter = null;
         this.setState({initialLoaded: false, racks: [], popupType: "", deleteID: ""});
         if (datacenter === "All") {
-            rackutils.getRackAt((startAfterCallback, rackCallback, empty) => {
+            rackutils.getRackAt(this.itemCounts.get(datacenter), (newItemCount, startAfterCallback, rackCallback, empty) => {
                 if (empty) {
                     console.log("eptyyyy")
                     this.setState({initialLoaded: true});
                 } else if (startAfterCallback && rackCallback) {
                     this.startAfter = startAfterCallback;
                     this.setState({racks: rackCallback, initialLoaded: true});
+                    this.itemCounts.set(datacenter, newItemCount);
                 }
             })
         } else {
-            rackutils.getRackAt((startAfterCallback, rackCallback, empty) => {
+            rackutils.getRackAt(this.itemCounts.get(datacenter), (newItemCount, startAfterCallback, rackCallback, empty) => {
                 if (empty) {
                     console.log("eptyyyy")
                     this.setState({initialLoaded: true});
                 } else if (startAfterCallback && rackCallback) {
                     this.startAfter = startAfterCallback;
                     this.setState({racks: rackCallback, initialLoaded: true});
+                    this.itemCounts.set(datacenter, newItemCount);
                 }
             }, datacenter)
         }
@@ -106,6 +109,7 @@ class RackView extends React.Component {
             if (names.length) {
                 names.forEach(name => {
                     this.datacenters.push(name);
+                    this.itemCounts.set(name, 1)
                     count++;
                     if (count === names.length) {
                         this.datacenters.push(name);
@@ -141,6 +145,7 @@ class RackView extends React.Component {
                         this.setState({
                             datacenter: option.value
                         });
+                        this.itemCounts.set(option.value, 1)
                         this.forceRefresh(option.value)
                     }}
                 />
@@ -383,6 +388,7 @@ class RackView extends React.Component {
                 header: <Text size='small'>View</Text>,
                 render: datum => (<View
                     onClick={() => {
+                        console.log(datum)
                         this.setState({
                             popupType: 'Elevation',
                             elevation: datum.id
@@ -427,17 +433,19 @@ class RackView extends React.Component {
                            onMore={() => {
                                if (this.startAfter) {
                                    if(this.state.datacenter && this.state.datacenter === "All"){
-                                       rackutils.getRackAt((newStartAfter, newRacks, empty) => {
+                                       rackutils.getRackAt(this.itemCounts.get(this.state.datacenter), (newItemCount, newStartAfter, newRacks, empty) => {
                                            if (!empty) {
                                                this.startAfter = newStartAfter
                                                this.setState({racks: this.state.racks.concat(newRacks)})
+                                               this.itemCounts.set(this.state.datacenter, newItemCount);
                                            }
                                        }, null, this.startAfter);
                                    } else if(this.state.datacenter) {
-                                       rackutils.getRackAt((newStartAfter, newRacks, empty) => {
+                                       rackutils.getRackAt(this.itemCounts.get(this.state.datacenter), (newItemCount, newStartAfter, newRacks, empty) => {
                                            if (!empty) {
                                                this.startAfter = newStartAfter
-                                               this.setState({racks: this.state.racks.concat(newRacks)})
+                                               this.setState({racks: this.state.racks.concat(newRacks)});
+                                               this.itemCounts.set(this.state.datacenter, newItemCount)
                                            }
                                        }, this.state.datacenter, this.startAfter);
                                    }

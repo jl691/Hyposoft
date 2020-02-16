@@ -1,7 +1,20 @@
 import React, { Component } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
 
-import { Text, Button, Layer, Form, Grommet, Heading, Box, TextInput, RadioButtonGroup, Stack } from 'grommet'
+import {
+    Text,
+    Button,
+    Layer,
+    Form,
+    Grommet,
+    Heading,
+    Box,
+    TextInput,
+    RadioButtonGroup,
+    Stack,
+    Menu,
+    Select
+} from 'grommet'
 import { Add } from 'grommet-icons'
 import AddAssetForm from '../components/AddAssetForm'
 import DeleteAssetPopup from '../components/DeleteAssetPopup'
@@ -17,6 +30,7 @@ import AssetTable from '../components/AssetTable'
 import * as userutils from "../utils/userutils";
 import * as assetutils from "../utils/assetutils";
 import { ToastsContainer, ToastsStore } from "react-toasts";
+import * as datacenterutils from "../utils/datacenterutils";
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
@@ -28,6 +42,7 @@ class AssetScreen extends Component {
     rangeEnd;
     rackSort;
     rackUSort;
+    datacenters = [];
 
     constructor(props) {
         super(props);
@@ -46,12 +61,14 @@ class AssetScreen extends Component {
             updateRackU: "",
             updateOwner: "",
             updateComment: "",
+            updateDatacenter: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
             rackSortChoice: "asc",//by default, will be ascending
             rackUSortChoice: "asc",
-            searchQuery: ""
-
+            searchQuery: "",
+            datacenter: "",
+            datacentersLoaded: false
         }
 
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
@@ -81,8 +98,8 @@ class AssetScreen extends Component {
             console.log("end")
             this.rangeEnd = event.target.value;
         }
-        if (/[A-Z]\d+/.test(this.rangeStart) && /[A-Z]\d+/.test(this.rangeEnd)) {
-            this.assetTable.current.handleFilter(this.rangeStart, this.rangeEnd);
+        if (/[A-Z]\d+/.test(this.rangeStart) && /[A-Z]\d+/.test(this.rangeEnd) && this.state.datacenter) {
+            this.assetTable.current.handleFilter(this.rangeStart, this.rangeEnd, this.state.datacenter);
         } else {
             this.assetTable.current.restoreDefault();
         }
@@ -145,7 +162,7 @@ class AssetScreen extends Component {
             deleteHostname: datum.hostname
         });
     }
-    handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment) => {
+    handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter) => {
         this.setState({
             popupType: 'Update',
             updateID: datumID,
@@ -155,7 +172,7 @@ class AssetScreen extends Component {
             updateRackU: datumRackU,
             updateOwner: datumOwner,
             updateComment: datumComment,
-
+            updateDatacenter: datumDatacenter
 
         });
 
@@ -181,6 +198,7 @@ class AssetScreen extends Component {
             ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
             localStorage.setItem('tipShown', 'yes')
         }
+        this.fetchDatacenters();
     }
 
     handleSearch () {
@@ -205,6 +223,57 @@ class AssetScreen extends Component {
                 searchResults: undefined
             }))
         }
+    }
+
+    generateDatacenters() {
+        if (!this.state.datacentersLoaded) {
+            return (<Menu
+                label="Please wait..."
+            />)
+        } else {
+            console.log(this.datacenters)
+            return (
+                <Select
+                    placeholder="Select a datacenter..."
+                    options={this.datacenters}
+                    value={this.state.datacenter}
+                    onChange={(option) => {
+                        this.setState({
+                            datacenter: option.value
+                        });
+                        if (/[A-Z]\d+/.test(this.rangeStart) && /[A-Z]\d+/.test(this.rangeEnd)) {
+                            this.assetTable.current.handleFilter(this.rangeStart, this.rangeEnd, option.value);
+                        }
+                    }}
+                />
+            )
+        }
+    }
+    fetchDatacenters() {
+        let count = 0;
+        let items = [];
+        datacenterutils.getAllDatacenterNames(names => {
+            if (names.length) {
+                names.forEach(name => {
+                    this.datacenters.push(name);
+                    count++;
+                    if (count === names.length) {
+                        this.datacenters.push(name);
+                        this.datacenters.push("All datacenters")
+                        console.log(items)
+                        this.setState({
+                            datacentersLoaded: true
+                        });
+                    }
+                })
+            } else {
+                console.log("no datacenters")
+                this.datacenters.push("No datacenters exist.")
+                this.setState({
+                    datacentersLoaded: true
+                });
+            }
+        })
     }
 
     render() {
@@ -266,6 +335,7 @@ class AssetScreen extends Component {
                         updateRackUFromParent={this.state.updateRackU}
                         updateOwnerFromParent={this.state.updateOwner}
                         updateCommentFromParent={this.state.updateComment}
+                        updateDatacenterFromParent={this.state.updateDatacenter}
                     />
                 </Layer>
             )
@@ -373,6 +443,7 @@ class AssetScreen extends Component {
                                                     pad='small' >
                                                     <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
                                                         <Text size='small'><b>Filter By Rack Range</b></Text>
+                                                        {this.generateDatacenters()}
                                                         <Stack margin={{ top: 'small' }}>
                                                             <Box gap='small' direction="column" margin='none' align='center'>
 

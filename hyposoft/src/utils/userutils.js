@@ -1,12 +1,16 @@
 import * as firebaseutils from './firebaseutils'
 
+const USER_ROLE = 'USER_ROLE'
+const ADMIN_ROLE = 'ADMIN_ROLE'
+
 function isUserLoggedIn() {
     var loginCheck = localStorage.getItem('userLoginCheck')
     var displayName = localStorage.getItem('displayName')
     var username = localStorage.getItem('username')
     var email = localStorage.getItem('email')
+    var role = localStorage.getItem('role')
 
-    return firebaseutils.hashAndSalt(displayName+username+email) === loginCheck
+    return firebaseutils.hashAndSalt(displayName+username+email+role) === loginCheck
 }
 
 function validEmail(email) {
@@ -16,7 +20,11 @@ function validEmail(email) {
 
 //probably need to switch this over to a role-based check at some point for multiple admins
 function isLoggedInUserAdmin() {
-    return isUserLoggedIn() && (localStorage.getItem('username') === 'admin')
+    return isUserLoggedIn() && ((localStorage.getItem('username') === 'admin') || (localStorage.getItem('role') === ADMIN_ROLE))
+}
+
+function isLoggedInUserNetID() {
+    return (localStorage.getItem('isNetIDAccount') === 'yes')
 }
 
 function packageUser(displayName, username, email, password) {
@@ -24,7 +32,8 @@ function packageUser(displayName, username, email, password) {
         displayName: displayName.trim(),
         username: username.trim(),
         email: email.trim(),
-        password: firebaseutils.hashAndSalt(password)
+        password: (password !== null ? firebaseutils.hashAndSalt(password) : ''),
+        role: USER_ROLE
     }
 
     return user
@@ -36,7 +45,7 @@ function packageUser(displayName, username, email, password) {
 */
 function createUser(displayName, username, email, password, callback) {
     firebaseutils.usersRef.doc(email).set(packageUser(displayName, username, email, password))
-    callback(packageUser(displayName, username, email, password))
+    callback({...packageUser(displayName, username, email, password), docId: email})
 }
 
 /**
@@ -52,6 +61,16 @@ function updateUsername(oldUsername, newUsername, callback) {
         if (!qs.empty) {
             qs.docs[0].ref.update({
                 username: newUsername
+            }).then(() => callback())
+        }
+    })
+}
+
+function updateUserRole(username, newRole, callback) {
+    firebaseutils.usersRef.where('username', '==', username).get().then(qs => {
+        if (!qs.empty) {
+            qs.docs[0].ref.update({
+                role: newRole
             }).then(() => callback())
         }
     })
@@ -80,15 +99,22 @@ function isLoginValid(username, password, callback) {
 }
 
 function logUserIn(userObject) {
-    localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(userObject.displayName+userObject.username+userObject.email))
+    localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(
+        userObject.displayName+userObject.username+userObject.email+userObject.role))
     localStorage.setItem('displayName', userObject.displayName)
     localStorage.setItem('username', userObject.username)
     localStorage.setItem('email', userObject.email)
     localStorage.setItem('userDocId', userObject.docId)
+    localStorage.setItem('isNetIDAccount', userObject.password.trim() === '' ? 'yes' : 'no')
+    localStorage.setItem('role', userObject.role)
 }
 
 function getLoggedInUser() {
     return localStorage.getItem('userDocId')
+}
+
+function getLoggedInUserUsername() {
+    return localStorage.getItem('username')
 }
 
 function logout() {
@@ -96,7 +122,7 @@ function logout() {
 }
 
 function getUser(email, callback) {
-    firebaseutils.usersRef.doc(email).get().then(doc => callback(doc.exists ? doc.data() : null))
+    firebaseutils.usersRef.doc(email).get().then(doc => callback(doc.exists ? {...doc.data(), docId: doc.id} : null))
 }
 
 function usernameTaken(username, callback) {
@@ -218,4 +244,5 @@ function getAllUsers (callback) {
 export { isUserLoggedIn, createUser, modifyUser, deleteUser, isLoggedInUserAdmin,
 isLoginValid, logUserIn, logout, getUser, changePassword, loadUsers, addClaim,
 fetchClaim, usernameTaken, validEmail, removeClaim, updateUsername, sendRecoveryEmail,
-fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers, getLoggedInUser }
+fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers, getLoggedInUser,
+USER_ROLE, ADMIN_ROLE, isLoggedInUserNetID, updateUserRole, getLoggedInUserUsername }

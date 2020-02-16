@@ -18,6 +18,7 @@ import EditDatacenterForm from "../components/EditDatacenterForm";
 class DatacenterScreen extends React.Component {
 
     startAfter = null;
+    itemCount = 1;
 
     constructor(props) {
         super(props);
@@ -47,17 +48,21 @@ class DatacenterScreen extends React.Component {
             deleteName: "",
             deleteAbbrev: ""
         });
-        datacenterutils.getDatacenters((newStart, datacenters, empty) => {
+        datacenterutils.getDatacenters(this.itemCount, (newItemCount, newStart, datacenters, empty) => {
             console.log("got a callback!")
+            console.log("yeeters 1", newStart)
+            console.log("yeeters 2", datacenters)
             if (empty) {
                 console.log("empty")
                 this.setState({initialLoaded: true});
             } else if (newStart && datacenters) {
+                console.log("made it yeeeet")
                 this.startAfter = newStart;
                 this.setState({
                     datacenters: datacenters,
                     initialLoaded: true
                 })
+                this.itemCount = newItemCount;
             }
         })
     }
@@ -107,10 +112,11 @@ class DatacenterScreen extends React.Component {
                 <DataTable step={25}
                            onMore={() => {
                                if (this.startAfter) {
-                                   datacenterutils.getDatacenters((newStartAfter, newDatacenters, empty) => {
+                                   datacenterutils.getDatacenters(this.itemCount, (newItemCount, newStartAfter, newDatacenters, empty) => {
                                        if (!empty) {
                                            this.startAfter = newStartAfter
                                            this.setState({datacenters: this.state.datacenters.concat(newDatacenters)})
+                                           this.itemCount = newItemCount;
                                        }
                                    }, this.startAfter);
                                }

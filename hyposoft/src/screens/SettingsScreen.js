@@ -129,41 +129,48 @@ class SettingsScreen extends React.Component {
                                 <Box margin={{left: 'small', right: 'small'}} direction='column'
                                     justify='start' alignSelf='stretch' flex>
                                     <Heading level='4' margin='none'>Password</Heading>
-                                    <TextInput
-                                        placeholder="Current password"
-                                        type='password'
-                                        style={{...styles.TIStyle2, marginTop: 10}}
-                                        onChange={e => {
-                                            const value = e.target.value
-                                            this.setState(oldState => ({...oldState, currPass: value}))
-                                        }}
-                                        value={this.state.currPass}
-                                        />
-                                    <TextInput
-                                        placeholder="New password"
-                                        type='password'
-                                        style={{...styles.TIStyle2, marginTop: 10}}
-                                        onChange={e => {
-                                            const value = e.target.value
-                                            this.setState(oldState => ({...oldState, newPass: value}))
-                                        }}
-                                        value={this.state.newPass}
-                                        />
-                                    <TextInput
-                                        style={{...styles.TIStyle2, marginTop: 10}}
-                                        placeholder="Confirm new password"
-                                        type='password'
-                                        onChange={e => {
-                                            const value = e.target.value
-                                            this.setState(oldState => ({...oldState, newPassConf: value}))
-                                        }}
-                                        value={this.state.newPassConf}
-                                        />
-                                    <Box direction='column' flex alignSelf='stretch' margin={{top: 'medium', bottom: 'small'}}>
-                                        <Box direction='row' flex justify='start'>
-                                            <Anchor onClick={() => {this.changePassword()}}>Change password</Anchor>
-                                        </Box>
-                                    </Box>
+                                    {!userutils.isLoggedInUserNetID() ? (
+                                        <React.Fragment>
+                                            <TextInput
+                                                placeholder="Current password"
+                                                type='password'
+                                                style={{...styles.TIStyle2, marginTop: 10}}
+                                                onChange={e => {
+                                                    const value = e.target.value
+                                                    this.setState(oldState => ({...oldState, currPass: value}))
+                                                }}
+                                                value={this.state.currPass}
+                                                />
+                                            <TextInput
+                                                placeholder="New password"
+                                                type='password'
+                                                style={{...styles.TIStyle2, marginTop: 10}}
+                                                onChange={e => {
+                                                    const value = e.target.value
+                                                    this.setState(oldState => ({...oldState, newPass: value}))
+                                                }}
+                                                value={this.state.newPass}
+                                                />
+                                            <TextInput
+                                                style={{...styles.TIStyle2, marginTop: 10}}
+                                                placeholder="Confirm new password"
+                                                type='password'
+                                                onChange={e => {
+                                                    const value = e.target.value
+                                                    this.setState(oldState => ({...oldState, newPassConf: value}))
+                                                }}
+                                                value={this.state.newPassConf}
+                                                />
+                                            <Box direction='column' flex alignSelf='stretch' margin={{top: 'medium', bottom: 'small'}}>
+                                                <Box direction='row' flex justify='start'>
+                                                    <Anchor onClick={() => {this.changePassword()}}>Change password</Anchor>
+                                                </Box>
+                                            </Box>
+                                        </React.Fragment>
+                                    ) : (
+                                        <p>This is only for local users. Please go to Duke's password management system to change your password.</p>
+                                    )}
+
                                 </Box>
                             </Box>
                             <Box direction='row' margin={{top: 'medium'}} gap='small'>

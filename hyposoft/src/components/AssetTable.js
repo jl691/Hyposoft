@@ -15,44 +15,42 @@ export default class AssetTable extends Component {
     columns = [
         {
             property: 'assetID',
-            header: <Text size='small'> Asset ID</Text>,
+            header: <Link onClick={() => {this.setSort("asset_id")}}><Text size='small'> Asset ID</Text></Link>,
             primary: true,
             render: datum => <Text size='small'>
                 {datum.asset_id}
-            </Text>,
+            </Text>
 
         },
         {
             property: 'model',
-            header: <Text size='small'>Model</Text>,
+            header: <Link onClick={() => {this.setSort("model")}}><Text size='small'>Model</Text></Link>,
            // align:"start",
             render: datum => <Text size='small'>{datum.model}</Text>,
 
         },
         {
             property: 'hostname',
-            header: <Text size='small'>Hostname</Text>,
+            header: <Link onClick={() => {this.setSort("hostname")}}><Text size='small'>Hostname</Text></Link>,
            // align:"start",
             render: datum => <Text size='small'>{datum.hostname}</Text>,
-            //TODO: Take out primary here
-            primary: true
         },
         {
             property: 'rack',
-            header: <Text size='small'>Rack</Text>,
+            header: <Link onClick={() => {this.setSort("rack")}}><Text size='small'>Rack</Text></Link>,
             //align:"end",
             render: datum => <Text size='small'>{datum.rack}</Text>,
 
         },
         {
             property: 'rackU',
-            header: <Text size='small'>Rack U</Text>,
+            header: <Link onClick={() => {this.setSort("rackU")}}><Text size='small'>Rack U</Text></Link>,
             render: datum => <Text size='small'>{datum.rackU}</Text>,
 
         },
         {
             property: 'owner',
-            header: <Text size='small'> Owner</Text>,
+            header: <Link onClick={() => {this.setSort("owner")}}><Text size='small'>Owner</Text></Link>,
             render: datum => <Text size='small'>{datum.owner}</Text>,
 
         },
@@ -66,9 +64,9 @@ export default class AssetTable extends Component {
         // },
         {
             property: 'datacenterAbbrev',
-            header: <Text size='small'> Datacenter Abbrev.</Text>,
+            header: <Link onClick={() => {this.setSort("datacenterAbbrev")}}><Text size='small'> Datacenter Abbrev.</Text></Link>,
             render: datum => <Text size='small'>
-                {/* {datum.owner} */}
+                {datum.datacenterAbbreviation}
             </Text>,
 
         },
@@ -87,12 +85,43 @@ export default class AssetTable extends Component {
         this.state = {
             assets: [],
             initialLoaded: false,
-
+            sortField: "",
+            sortAscending: ""
         }
 
         this.handleFilter = this.handleFilter.bind(this);
         this.restoreDefault = this.restoreDefault.bind(this);
         this.handleRackRackUSort = this.handleRackRackUSort.bind(this);
+    }
+
+    setSort(field){
+        let newSort;
+        if(this.state.sortField && this.state.sortField === field){
+            //reverse direction
+            this.setState({
+                sortAscending: !this.state.sortAscending
+            });
+            newSort = !this.state.sortAscending;
+        } else {
+            //start with ascending
+            this.setState({
+                sortField: field,
+                sortAscending: true
+            });
+            newSort = true;
+        }
+
+        this.startAfter = null;
+        this.setState({
+            assets: [],
+            initialLoaded: false
+        });
+        assetutils.getAsset((newStartAfter, assetdb) => {
+            if (newStartAfter && assetdb) {
+                this.startAfter = newStartAfter;
+                this.setState({ assets: assetdb, initialLoaded: true })
+            }
+        }, field, newSort)
     }
 
     componentDidMount() {
@@ -148,6 +177,7 @@ export default class AssetTable extends Component {
                                 data.rackU,
                                 data.owner,
                                 data.comment,
+                                data.datacenter,
                             )
                             console.log(data)
 
@@ -175,7 +205,7 @@ export default class AssetTable extends Component {
         this.setState({ assets: this.defaultAssets });
     }
 
-    handleFilter(start, end) {
+    handleFilter(start, end, datacenter) {
         console.log("triggered with " + start + " and " + end)
         let splitRackArrayStart = start.split(/(\d+)/);
         let rackRowStart = splitRackArrayStart[0];
@@ -198,15 +228,17 @@ export default class AssetTable extends Component {
                 console.log("found a match!")
                 newInstances.push(asset);
             }*/
-            if ((rackRowTemp === rackRowStart && rackNumTemp >= rackNumStart) || (rackRowTemp === rackRowEnd && rackNumTemp <= rackNumEnd) || (rackRowTemp.charCodeAt(0) > rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) < rackRowEnd.charCodeAt(0))) {
-                if (rackRowStart === rackRowEnd && rackRowEnd === rackRowTemp) {
-                    if (rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd) {
+            if(datacenter === "All datacenters" || asset.datacenter === datacenter){
+                if ((rackRowTemp === rackRowStart && rackNumTemp >= rackNumStart) || (rackRowTemp === rackRowEnd && rackNumTemp <= rackNumEnd) || (rackRowTemp.charCodeAt(0) > rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) < rackRowEnd.charCodeAt(0))) {
+                    if (rackRowStart === rackRowEnd && rackRowEnd === rackRowTemp) {
+                        if (rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd) {
+                            console.log("found a match!")
+                            newAssets.push(asset);
+                        }
+                    } else {
                         console.log("found a match!")
                         newAssets.push(asset);
                     }
-                } else {
-                    console.log("found a match!")
-                    newAssets.push(asset);
                 }
             }
         })
@@ -259,11 +291,18 @@ export default class AssetTable extends Component {
                                         <DataTable
                                             step={5}
                                             onMore={() => {
-                                                if (this.startAfter && !this.props.searchResults) {
-                                                    assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
-                                                        this.startAfter = newStartAfter
-                                                        this.setState({ assets: this.state.assets.concat(newAssets) })
-                                                    });
+                                                if (this.startAfter && !this.props.searchResults && this.state.initialLoaded) {
+                                                    if(this.state.sortField){
+                                                        assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
+                                                            this.startAfter = newStartAfter
+                                                            this.setState({ assets: this.state.assets.concat(newAssets) })
+                                                        }, this.state.sortField, this.state.sortAscending);
+                                                    } else {
+                                                        assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
+                                                            this.startAfter = newStartAfter
+                                                            this.setState({ assets: this.state.assets.concat(newAssets) })
+                                                        });
+                                                    }
                                                 }
                                             }}
                                             
@@ -276,7 +315,6 @@ export default class AssetTable extends Component {
                                             }}
 
                                             data={this.props.searchResults||this.state.assets}
-                                            sortable
                                          
 
                                         />

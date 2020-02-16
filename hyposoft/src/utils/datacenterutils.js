@@ -1,35 +1,36 @@
 import * as firebaseutils from "./firebaseutils";
 import * as rackutils from "./rackutils";
 import {datacentersRef} from "./firebaseutils";
+import * as logutils from "./logutils";
 
-let datacenterCount = 1;
-
-function getDatacenters(callback, start = null) {
+function getDatacenters(itemCount, callback, start = null) {
     let datacenters = [];
     let query = start ? firebaseutils.datacentersRef.orderBy("name").orderBy("abbreviation").limit(25).startAfter(start) :  firebaseutils.datacentersRef.orderBy("name").orderBy("abbreviation").limit(25);
     query.get().then(docSnaps => {
         if (docSnaps.empty) {
-            callback(null, null, true);
+            callback(null, null, null, true);
         } else {
             const newStart = docSnaps.docs[docSnaps.docs.length - 1];
             console.log(docSnaps.docs)
+            let count = 0;
             docSnaps.forEach(doc => {
                 console.log(doc.data())
                 datacenters.push({
-                    count: datacenterCount,
+                    count: itemCount++,
                     id: doc.id,
                     name: doc.data().name,
                     abbreviation: doc.data().abbreviation,
                     rackCount: doc.data().racks.length
                 });
-                datacenterCount++;
-                if (datacenterCount === docSnaps.docs.length + 1) {
-                    callback(newStart, datacenters, false);
+                count++;
+                if (count === docSnaps.docs.length) {
+                    console.log("")
+                    callback(itemCount, newStart, datacenters, false);
                 }
             });
         }
     }).catch(function (error) {
-        callback(null, null, true);
+        callback(null, null, null, true);
     });
 }
 
@@ -91,7 +92,8 @@ function addDatacenter(name, abbrev, callback) {
                         name: name,
                         abbreviation: abbrev,
                         racks: []
-                    }).then(function () {
+                    }).then(function (docRef) {
+                        logutils.addLog(docRef.id, logutils.DATACENTER(), logutils.CREATE());
                         callback(true);
                     }).catch(function (error) {
                         callback(null);
@@ -115,6 +117,7 @@ function deleteDatacenter(name, callback) {
                 callback(null);
             } else {
                 firebaseutils.datacentersRef.doc(querySnapshot.docs[0].id).delete().then(function () {
+                    logutils.addLog(querySnapshot.docs[0].id, logutils.DATACENTER(), logutils.DELETE());
                     callback(true);
                 }).catch(function (error) {
                     callback(null);
@@ -143,6 +146,7 @@ function updateDatacenter(oldName, oldAbbrev, newName, newAbbrev, callback) {
                                 abbreviation: newAbbrev
                             }, {merge: true}).then(function () {
                                 console.log("77")
+                                logutils.addLog(querySnapshot.docs[0].id, logutils.DATACENTER(), logutils.MODIFY());
                                 callback(true);
                             }).catch(function (error) {
                                 console.log("88")
@@ -163,18 +167,28 @@ function updateDatacenter(oldName, oldAbbrev, newName, newAbbrev, callback) {
     })
 }
 
-function getIDFromName(name, callback){
+function getDataFromName(name, callback){
     firebaseutils.datacentersRef.where("name", "==", name).get().then(querySnapshot => {
         if(querySnapshot.empty){
             callback(null);
         } else {
-            callback(querySnapshot.docs[0].id);
+            callback(querySnapshot.docs[0].id, querySnapshot.docs[0].data().abbreviation);
+        }
+    })
+}
+
+function getAbbreviationFromID(id, callback){
+    firebaseutils.datacentersRef.doc(id).get().then(docSnap => {
+        if(!docSnap.exists){
+            callback(null);
+        } else {
+            callback(docSnap.data().abbreviation);
         }
     })
 }
 
 function addRackToDatacenter(rackID, datacenterName, callback){
-    getIDFromName(datacenterName, datacenterID => {
+    getDataFromName(datacenterName, datacenterID => {
         if(datacenterID){
             firebaseutils.datacentersRef.doc(datacenterID).update({
                 racks: firebaseutils.firebase.firestore.FieldValue.arrayUnion(rackID)
@@ -190,7 +204,7 @@ function addRackToDatacenter(rackID, datacenterName, callback){
 }
 
 function removeRackFromDatacenter(rackID, datacenterName, callback) {
-    getIDFromName(datacenterName, datacenterID => {
+    getDataFromName(datacenterName, datacenterID => {
         if(datacenterID){
             firebaseutils.datacentersRef.doc(datacenterID).update({
                 racks: firebaseutils.firebase.firestore.FieldValue.arrayRemove(rackID)
@@ -205,4 +219,4 @@ function removeRackFromDatacenter(rackID, datacenterName, callback) {
     })
 }
 
-export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getIDFromName, addRackToDatacenter, removeRackFromDatacenter}
+export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getDataFromName, addRackToDatacenter, removeRackFromDatacenter, getAbbreviationFromID}
