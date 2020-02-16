@@ -205,7 +205,7 @@ export default class AssetTable extends Component {
         this.setState({ assets: this.defaultAssets });
     }
 
-    handleFilter(start, end) {
+    handleFilter(start, end, datacenter) {
         console.log("triggered with " + start + " and " + end)
         let splitRackArrayStart = start.split(/(\d+)/);
         let rackRowStart = splitRackArrayStart[0];
@@ -228,15 +228,17 @@ export default class AssetTable extends Component {
                 console.log("found a match!")
                 newInstances.push(asset);
             }*/
-            if ((rackRowTemp === rackRowStart && rackNumTemp >= rackNumStart) || (rackRowTemp === rackRowEnd && rackNumTemp <= rackNumEnd) || (rackRowTemp.charCodeAt(0) > rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) < rackRowEnd.charCodeAt(0))) {
-                if (rackRowStart === rackRowEnd && rackRowEnd === rackRowTemp) {
-                    if (rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd) {
+            if(asset.datacenter === datacenter){
+                if ((rackRowTemp === rackRowStart && rackNumTemp >= rackNumStart) || (rackRowTemp === rackRowEnd && rackNumTemp <= rackNumEnd) || (rackRowTemp.charCodeAt(0) > rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) < rackRowEnd.charCodeAt(0))) {
+                    if (rackRowStart === rackRowEnd && rackRowEnd === rackRowTemp) {
+                        if (rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd) {
+                            console.log("found a match!")
+                            newAssets.push(asset);
+                        }
+                    } else {
                         console.log("found a match!")
                         newAssets.push(asset);
                     }
-                } else {
-                    console.log("found a match!")
-                    newAssets.push(asset);
                 }
             }
         })
