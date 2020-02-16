@@ -86,8 +86,8 @@ function finishAddingLog(object, objectId, objectType, action) {
 }
 
 function getLogs(itemNo,startAfter,callback) {
-    var query = startAfter ? firebaseutils.logsRef.orderBy('timestamp','desc').limit(25).startAfter(startAfter)
-                           : firebaseutils.logsRef.orderBy('timestamp','desc').limit(25)
+    var query = startAfter ? firebaseutils.logsRef.orderBy('timestamp','desc').startAfter(startAfter)
+                           : firebaseutils.logsRef.orderBy('timestamp','desc')
     query.get().then(docSnaps => {
         var newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
 
@@ -112,15 +112,12 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
         const searchName = search.trim().toLowerCase()
         var loop = 0
         docSnaps.docs.forEach(doc => {
-            if (loop < 25 || search) {
-                const user = doc.data().userName.toLowerCase()
-                const object = doc.data().objectName.toLowerCase()
-                const includesAsset = doc.data().objectType == ASSET() && object.includes(searchName)
-                const includesUser = user.includes(searchName) || (doc.data().objectType == USER() && object.includes(searchName))
-                if (!search || includesAsset || includesUser) {
-                    logs = [...logs,{...doc.data(), log: buildLog(doc.data()), date: getDate(doc.data().timestamp), itemNo: itemNo++}]
-                }
-                ++loop
+            const user = doc.data().userName.toLowerCase()
+            const object = doc.data().objectName.toLowerCase()
+            const includesAsset = doc.data().objectType === ASSET() && object.includes(searchName)
+            const includesUser = user.includes(searchName) || (doc.data().objectType === USER() && object.includes(searchName))
+            if (!search || includesAsset || includesUser) {
+                logs = [...logs,{...doc.data(), log: buildLog(doc.data()), date: getDate(doc.data().timestamp), itemNo: itemNo++}]
             }
         })
         callback(logs,newStartAfter,itemNo)
