@@ -20,6 +20,7 @@ class LoginCard extends React.Component {
         this.handleStateChange = this.handleStateChange.bind(this)
         this.handleLoginClick = this.handleLoginClick.bind(this)
         this.handleForgotPassword = this.handleForgotPassword.bind(this)
+        this.handleNetIDLogin = this.handleNetIDLogin.bind(this)
     }
 
     handleLoginClick() {
@@ -36,6 +37,16 @@ class LoginCard extends React.Component {
                 ToastsStore.info('Invalid login', 3000, 'info')
             }
         })
+    }
+
+    handleNetIDLogin () {
+        var redirect_uri = ''
+        if (window.location.hostname === 'localhost') {
+            redirect_uri = 'http://localhost:3000/postoauth'
+        } else {
+            redirect_uri = 'https://hyposoft.us/postoauth'
+        }
+        window.location.href = 'https://oauth.oit.duke.edu/oauth/authorize.php?client_id=condescending-wescoff&client_secret=$tfMkoREKrRE2MSFYqLY!C5qNFM2$5WtE5mivufP*eRFe=ccKa&redirect_uri='+redirect_uri+'&response_type=token&state=1129&scope=basic'
     }
 
     handleForgotPassword() {
@@ -98,6 +109,7 @@ class LoginCard extends React.Component {
                             onKeyDown={e => e.key === 'Enter' && this.handleLoginClick()}
                              />
                         <Button primary label='Log in' onClick={() => this.handleLoginClick()} />
+                        <Button margin={{top: 'small'}} label='Duke NetID Login' onClick={() => this.handleNetIDLogin()} />
                         <Anchor margin={{top: 'medium'}} onClick={() => this.handleForgotPassword()}>I forgot my password</Anchor>
                     </Box>
                 </Box>

@@ -3,120 +3,68 @@ import * as modelutils from "./modelutils";
 import * as datacenterutils from "./datacenterutils";
 import {fabric} from "fabric";
 
+let rackCount = 1;
+
 function getRackAt(callback, datacenter = null, start = null) {
-    var rackCount = 1;
-    console.log("calling getrackat with start ")
     let racks = [];
-    if (start) {
-        if (datacenter) {
-            datacenterutils.getIDFromName(datacenter, result => {
-                if (result) {
-                    firebaseutils.racksRef.where("datacenter", "==", result).orderBy("letter").orderBy("number").limit(25).startAfter(start).get().then(docSnaps => {
-                        if (docSnaps.empty) {
-                            callback(null, null, true);
-                        } else {
-                            const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-                            docSnaps.forEach(doc => {
-                                racks.push({
-                                    count: rackCount,
-                                    id: doc.id,
-                                    letter: doc.data().letter,
-                                    number: doc.data().number,
-                                    height: doc.data().height,
-                                    assets: (doc.data().assets ? Object.keys(doc.data().assets).length : 0)
-                                });
-                                rackCount++;
+    let query;
+    let count = 1;
+    console.log("startafter ", start);
+    if(datacenter){
+        datacenterutils.getIDFromName(datacenter, datacenterID => {
+            if(datacenterID){
+                query = start ? firebaseutils.racksRef.where("datacenter", "==", datacenterID).orderBy("letter").orderBy("number").limit(25).startAfter(start) :
+                    firebaseutils.racksRef.where("datacenter", "==", datacenterID).orderBy("letter").orderBy("number").limit(25);
+                query.get().then(docSnaps => {
+                    if (docSnaps.empty) {
+                        callback(null, null, true);
+                    } else {
+                        const newStart = docSnaps.docs[docSnaps.docs.length - 1];
+                        docSnaps.forEach(doc => {
+                            racks.push({
+                                count: start ? rackCount : count,
+                                id: doc.id,
+                                letter: doc.data().letter,
+                                number: doc.data().number,
+                                height: doc.data().height,
+                                assets: (doc.data().assets ? Object.keys(doc.data().assets).length : 0)
                             });
-                            callback(newStart, racks, false);
-                        }
-                    }).catch(function (error) {
-                        callback(null, null, null);
-                    })
-                } else {
-                    console.log("couldb't get an id from the name" + datacenter)
-                    callback(null, null, null);
-                }
-            })
-        } else {
-            firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).startAfter(start).get().then(docSnaps => {
-                if (docSnaps.empty) {
-                    callback(null, null, true);
-                } else {
-                    const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-                    docSnaps.forEach(doc => {
-                        racks.push({
-                            count: rackCount,
-                            id: doc.id,
-                            letter: doc.data().letter,
-                            number: doc.data().number,
-                            height: doc.data().height,
-                            assets: (doc.data().assets ? Object.keys(doc.data().assets).length : 0)
+                            rackCount++;
+                            count++;
                         });
-                        rackCount++;
-                    });
-                    callback(newStart, racks, false);
-                }
-            }).catch(function (error) {
+                        callback(newStart, racks, false);
+                    }
+                }).catch(function (error) {
+                    callback(null, null, null);
+                });
+            } else {
                 callback(null, null, null);
-            })
-        }
+            }
+        })
     } else {
-        if (datacenter) {
-            console.log(datacenter);
-            datacenterutils.getIDFromName(datacenter, result => {
-                console.log(result)
-                if (result) {
-                    console.log("yeet")
-                    firebaseutils.racksRef.where("datacenter", "==", result).orderBy("letter").orderBy("number").limit(25).get().then(docSnaps => {
-                        console.log("Yeet 2", docSnaps.docs)
-                        if (docSnaps.empty) {
-                            callback(null, null, true);
-                        } else {
-                            const startAfter = docSnaps.docs[docSnaps.docs.length - 1]
-                            docSnaps.forEach(doc => {
-                                racks.push({
-                                    count: rackCount,
-                                    id: doc.id,
-                                    letter: doc.data().letter,
-                                    number: doc.data().number,
-                                    height: doc.data().height,
-                                    assets: (doc.data().assets ? Object.keys(doc.data().assets).length : 0)
-                                });
-                                rackCount++;
-                            });
-                            callback(startAfter, racks, false);
-                        }
-                    }).catch(function (error) {
-                        console.log(error)
-                        callback(null, null, null);
-                    })
-                } else {
-                    callback(null, null, null);
-                }
-            })
-        } else {
-            firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).get().then(docSnaps => {
-                if (docSnaps.empty) {
-                    callback(null, null, true);
-                } else {
-                    const startAfter = docSnaps.docs[docSnaps.docs.length - 1]
-                    docSnaps.forEach(doc => {
-                        racks.push({
-                            count: rackCount,
-                            id: doc.id,
-                            letter: doc.data().letter,
-                            number: doc.data().number,
-                            height: doc.data().height,
-                            assets: (doc.data().assets ? Object.keys(doc.data().assets).length : 0)
-                        });
-                        rackCount++;
+        query = start ? firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25).startAfter(start) : firebaseutils.racksRef.orderBy("letter").orderBy("number").limit(25);
+        query.get().then(docSnaps => {
+            if (docSnaps.empty) {
+                callback(null, null, true);
+            } else {
+                const newStart = docSnaps.docs[docSnaps.docs.length - 1];
+                docSnaps.forEach(doc => {
+                    racks.push({
+                        count: start ? rackCount : count,
+                        id: doc.id,
+                        letter: doc.data().letter,
+                        number: doc.data().number,
+                        height: doc.data().height,
+                        assets: (doc.data().assets ? Object.keys(doc.data().assets).length : 0)
                     });
-                    callback(startAfter, racks, false);
-                }
-            }).catch(function (error) {
-                callback(null, null, null);
-            })
-        }
+                    rackCount++;
+                    count++;
+                });
+                callback(newStart, racks, false);
+            }
+        }).catch(function (error) {
+            callback(null, null, null);
+        });
     }
 }
 

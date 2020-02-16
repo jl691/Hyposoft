@@ -2,65 +2,38 @@ import * as firebaseutils from "./firebaseutils";
 import * as rackutils from "./rackutils";
 import {datacentersRef} from "./firebaseutils";
 
+let datacenterCount = 1;
+
 function getDatacenters(callback, start = null) {
-    let datacenterCount = 1;
-    console.log("yeeeeeeet")
     let datacenters = [];
-    if (start) {
-        firebaseutils.datacentersRef.orderBy("name").orderBy("abbreviation").limit(25).startAfter(start).get().then(docSnaps => {
-            if (docSnaps.empty) {
-                console.log("4")
-                callback(null, null, true);
-            } else {
-                const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-                docSnaps.forEach(doc => {
-                    console.log(doc.data())
-                    datacenters.push({
-                        count: datacenterCount,
-                        id: doc.id,
-                        name: doc.data().name,
-                        abbreviation: doc.data().abbreviation,
-                        rackCount: doc.data().racks.length
-                    });
-                    datacenterCount++;
-                });
-                console.log("3")
-                callback(newStart, datacenters, false);
-            }
-        }).catch(function (error) {
-            console.log("5")
+    let query = start ? firebaseutils.datacentersRef.orderBy("name").orderBy("abbreviation").limit(25).startAfter(start) :  firebaseutils.datacentersRef.orderBy("name").orderBy("abbreviation").limit(25);
+    query.get().then(docSnaps => {
+        if (docSnaps.empty) {
             callback(null, null, true);
-        });
-    } else {
-        firebaseutils.datacentersRef.orderBy("name").orderBy("abbreviation").limit(25).get().then(docSnaps => {
-            console.log("yeet")
-            if (docSnaps.empty) {
-                console.log("2")
-                callback(null, null, true);
-            } else {
-                const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-                console.log(docSnaps.docs)
-                docSnaps.forEach(doc => {
-                    console.log(doc.data())
-                    datacenters.push({
-                        count: datacenterCount,
-                        id: doc.id,
-                        name: doc.data().name,
-                        abbreviation: doc.data().abbreviation,
-                        rackCount: doc.data().racks.length
-                    });
-                    datacenterCount++;
-                    if (datacenterCount === docSnaps.docs.length + 1) {
-                        console.log("1")
-                        callback(newStart, datacenters, false);
-                    }
+        } else {
+            const newStart = docSnaps.docs[docSnaps.docs.length - 1];
+            console.log(docSnaps.docs)
+            let count = 0;
+            docSnaps.forEach(doc => {
+                console.log(doc.data())
+                datacenters.push({
+                    count: start ? datacenterCount : count+1,
+                    id: doc.id,
+                    name: doc.data().name,
+                    abbreviation: doc.data().abbreviation,
+                    rackCount: doc.data().racks.length
                 });
-            }
-        }).catch(function (error) {
-            console.log("6 ", error)
-            callback(null, null, true);
-        })
-    }
+                count++;
+                datacenterCount++;
+                if (count === docSnaps.docs.length) {
+                    console.log("")
+                    callback(newStart, datacenters, false);
+                }
+            });
+        }
+    }).catch(function (error) {
+        callback(null, null, true);
+    });
 }
 
 function getAllDatacenterNames (callback) {
@@ -203,6 +176,36 @@ function getIDFromName(name, callback){
     })
 }
 
+function getNameFromID(id, callback){
+    firebaseutils.datacentersRef.doc(id).get().then(docSnap => {
+        if(!docSnap.exists){
+            callback(null);
+        } else {
+            callback(docSnap.data().name);
+        }
+    })
+}
+
+function getAbbreviationFromID(id, callback){
+    firebaseutils.datacentersRef.doc(id).get().then(docSnap => {
+        if(!docSnap.exists){
+            callback(null);
+        } else {
+            callback(docSnap.data().abbreviation);
+        }
+    })
+}
+
+function getAbbreviationFromName(name, callback){
+    firebaseutils.datacentersRef.where("name", "==", name).get().then(querySnapshot => {
+        if(querySnapshot.empty){
+            callback(null);
+        } else {
+            callback(querySnapshot.docs[0].data().abbreviation);
+        }
+    })
+}
+
 function addRackToDatacenter(rackID, datacenterName, callback){
     getIDFromName(datacenterName, datacenterID => {
         if(datacenterID){
@@ -235,4 +238,4 @@ function removeRackFromDatacenter(rackID, datacenterName, callback) {
     })
 }
 
-export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getIDFromName, addRackToDatacenter, removeRackFromDatacenter}
+export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getIDFromName, addRackToDatacenter, removeRackFromDatacenter, getNameFromID, getAbbreviationFromID, getAbbreviationFromName}

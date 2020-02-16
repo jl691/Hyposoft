@@ -383,6 +383,7 @@ class RackView extends React.Component {
                 header: <Text size='small'>View</Text>,
                 render: datum => (<View
                     onClick={() => {
+                        console.log(datum)
                         this.setState({
                             popupType: 'Elevation',
                             elevation: datum.id

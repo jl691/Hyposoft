@@ -22,10 +22,10 @@ Best,
 The HypoSoft Team""",
 			html="""Hello!
 <br><br>
-Your HypoSoft administrator has just added you to the system. Please <a href="http://localhost:3000/signup/%s">click here</a> to set up your account. If this was unexpected, you may safely disregard this email, or <a href="http://localhost:3000/badsignup/%s">click here</a> to let us know that something's wrong.
+Your HypoSoft administrator has just added you to the system. Please <a href="https://hyposoft.us/signup/%s">click here</a> to set up your account. If this was unexpected, you may safely disregard this email, or <a href="https://hyposoft.us/badsignup/%s">click here</a> to let us know that something's wrong.
 <br><br>
 Best,<br>
-The HypoSoft Team""" % (claimCode))
+The HypoSoft Team""" % (claimCode,claimCode))
 		self.response.write('Sent.')
 
 class ForgotPasswordHandler(webapp2.RequestHandler):
@@ -44,7 +44,7 @@ Best,
 The HypoSoft Team""",
 			html="""Hello!
 <br><br>
-You've requested a password reset for your HypoSoft account. Please <a href="http://localhost:3000/resetpassword/%s">click here</a> to reset your password. If you did not request a password reset, you can safely ignore this email.
+You've requested a password reset for your HypoSoft account. Please <a href="https://hyposoft.us/resetpassword/%s">click here</a> to reset your password. If you did not request a password reset, you can safely ignore this email.
 <br><br>
 Best,<br>
 The HypoSoft Team""" % (secret))

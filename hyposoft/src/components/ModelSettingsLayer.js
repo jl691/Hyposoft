@@ -27,7 +27,7 @@ class ModelSettingsLayer extends React.Component {
         modelNumber: '',
         height: '',
         displayColor: 'BD10E0', // default colour that looks good enough
-        ethernetPorts: '',
+        networkPorts: '',
         powerPorts: '',
         cpu: '',
         memory: '',
@@ -49,7 +49,7 @@ class ModelSettingsLayer extends React.Component {
             this.setState({
                 ...this.props.model,
                 height: ''+this.props.model.height,
-                ethernetPorts: (this.props.model.ethernetPorts ? ''+this.props.model.ethernetPorts : ''),
+                networkPorts: (this.props.model.networkPorts ? ''+this.props.model.networkPorts : ''),
                 powerPorts: (this.props.model.powerPorts ? ''+this.props.model.powerPorts : ''),
                 memory: (this.props.model.memory ? ''+this.props.model.memory : '')
             })
@@ -84,14 +84,14 @@ class ModelSettingsLayer extends React.Component {
         }
 
 
-        var ethernetPorts = null
-        if (this.state.ethernetPorts.trim() !== '' &&
-         (isNaN(this.state.ethernetPorts.trim()) || !Number.isInteger(parseFloat(this.state.ethernetPorts.trim())) || parseInt(this.state.ethernetPorts.trim()) < 0)) {
-             ToastsStore.info('Ethernet ports should be a non-negative integer', 3000, 'burntToast')
-             this.setState(oldState => ({...oldState, ethernetPorts: ''}))
+        var networkPorts = null
+        if (this.state.networkPorts.trim() !== '' &&
+         (isNaN(this.state.networkPorts.trim()) || !Number.isInteger(parseFloat(this.state.networkPorts.trim())) || parseInt(this.state.networkPorts.trim()) < 0)) {
+             ToastsStore.info('Network ports should be a non-negative integer', 3000, 'burntToast')
+             this.setState(oldState => ({...oldState, networkPorts: ''}))
              return
-         } else if (this.state.ethernetPorts.trim() !== '') {
-            ethernetPorts=parseInt(this.state.ethernetPorts)
+         } else if (this.state.networkPorts.trim() !== '') {
+            networkPorts=parseInt(this.state.networkPorts)
         }
 
         var powerPorts = null
@@ -122,7 +122,7 @@ class ModelSettingsLayer extends React.Component {
             } else {
                 this.dbFunction(this.state.id, this.state.vendor,
                     this.state.modelNumber, parseInt(this.state.height),
-                    this.state.displayColor, ethernetPorts,
+                    this.state.displayColor, networkPorts,
                     powerPorts, this.state.cpu,
                     memory, this.state.storage,
                     this.state.comment, (model, id) => {
@@ -198,13 +198,13 @@ class ModelSettingsLayer extends React.Component {
                                         borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                         width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                     }}
-                                    placeholder="Ethernet ports (Optional)"
+                                    placeholder="Network ports (Optional)"
                                     onChange={e => {
                                         const value = e.target.value
-                                        this.setState(oldState => ({...oldState, ethernetPorts: value}))
+                                        this.setState(oldState => ({...oldState, networkPorts: value}))
                                     }}
-                                    value={this.state.ethernetPorts}
-                                    title='Ethernet ports'
+                                    value={this.state.networkPorts}
+                                    title='Network ports'
                                     />
                                 <TextInput style={{
                                         borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
