@@ -69,7 +69,6 @@ class AssetScreen extends Component {
             searchQuery: "",
             datacenter: "",
             datacentersLoaded: false
-
         }
 
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
@@ -242,6 +241,9 @@ class AssetScreen extends Component {
                         this.setState({
                             datacenter: option.value
                         });
+                        if (/[A-Z]\d+/.test(this.rangeStart) && /[A-Z]\d+/.test(this.rangeEnd)) {
+                            this.assetTable.current.handleFilter(this.rangeStart, this.rangeEnd, option.value);
+                        }
                     }}
                 />
             )
@@ -257,6 +259,7 @@ class AssetScreen extends Component {
                     count++;
                     if (count === names.length) {
                         this.datacenters.push(name);
+                        this.datacenters.push("All datacenters")
                         console.log(items)
                         this.setState({
                             datacentersLoaded: true

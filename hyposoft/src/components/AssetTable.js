@@ -228,7 +228,7 @@ export default class AssetTable extends Component {
                 console.log("found a match!")
                 newInstances.push(asset);
             }*/
-            if(asset.datacenter === datacenter){
+            if(datacenter === "All datacenters" || asset.datacenter === datacenter){
                 if ((rackRowTemp === rackRowStart && rackNumTemp >= rackNumStart) || (rackRowTemp === rackRowEnd && rackNumTemp <= rackNumEnd) || (rackRowTemp.charCodeAt(0) > rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) < rackRowEnd.charCodeAt(0))) {
                     if (rackRowStart === rackRowEnd && rackRowEnd === rackRowTemp) {
                         if (rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd) {
