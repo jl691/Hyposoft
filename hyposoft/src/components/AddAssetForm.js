@@ -234,12 +234,6 @@ export default class AddAssetForm extends Component {
 
                         {/* NEW FIELDS HERE> TODO: change the values/integrate with the backend, move datacenter stuff up the form========= */}
 
-                        <FormField name="datacenterAbbrev" label="Datacenter Abbreviation">
-                            <TextInput name="datacenterAbbrev" placeholder="eg. RTP1" onChange={this.handleChange}
-                                       //value={this.state.rackU} 
-                                       required="true"/>
-                        </FormField> 
-
                             <FormField name="macAddress" label="MAC Address">
                                 <TextInput name="macAddress" placeholder="eg. 11-ab-cd-79-aa-c9" onChange={this.handleChange}
                                     value={this.state.macAddress}

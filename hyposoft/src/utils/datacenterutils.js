@@ -196,6 +196,16 @@ function getAbbreviationFromID(id, callback){
     })
 }
 
+function getAbbreviationFromName(name, callback){
+    firebaseutils.datacentersRef.where("name", "==", name).get().then(querySnapshot => {
+        if(querySnapshot.empty){
+            callback(null);
+        } else {
+            callback(querySnapshot.docs[0].data().abbreviation);
+        }
+    })
+}
+
 function addRackToDatacenter(rackID, datacenterName, callback){
     getIDFromName(datacenterName, datacenterID => {
         if(datacenterID){
@@ -228,4 +238,4 @@ function removeRackFromDatacenter(rackID, datacenterName, callback) {
     })
 }
 
-export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getIDFromName, addRackToDatacenter, removeRackFromDatacenter, getNameFromID, getAbbreviationFromID}
+export {getDatacenters, addDatacenter, deleteDatacenter, updateDatacenter, getAllDatacenterNames, getIDFromName, addRackToDatacenter, removeRackFromDatacenter, getNameFromID, getAbbreviationFromID, getAbbreviationFromName}

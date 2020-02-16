@@ -10,13 +10,23 @@ const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
 const index = client.initIndex('assets')
 
-function getAsset(callback) {
+function getAsset(callback, field=null, direction=null) {
+    console.log(field, direction)
+    let query;
+    if(field && direction){
+        query = direction ? assetRef.limit(25).orderBy(field) : assetRef.limit(25).orderBy(field);
+    } else if (field && !direction){
+        query = direction ? assetRef.limit(25).orderBy(field) : assetRef.limit(25).orderBy(field, "desc");
+    } else {
+        query = assetRef.limit(25);
+    }
+
     //TODO: need to rigorously test combined sort
     //TODO: deecide to make rackU unsortable???
     let assets = [];
     let count = 0;
 
-    assetRef.limit(25).get().then(docSnaps => {
+    query.get().then(docSnaps => {
         const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
         docSnaps.docs.forEach(doc => {
             datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
@@ -41,30 +51,24 @@ function getAsset(callback) {
                 }
             })
         })
-
-/*        const assets = docSnaps.docs.map(doc => (
-            {
-                asset_id: doc.id,
-                model: doc.data().model,
-                hostname: doc.data().hostname,
-                rack: doc.data().rack,
-                rackU: doc.data().rackU,
-                owner: doc.data().owner,
-                comment: doc.data().comment,
-                datacenter: doc.data().datacenter
-            }
-        ))
-        callback(startAfter, assets);*/
     }).catch(function (error) {
         callback(null, null)
     })
 }
 
 
-function getAssetAt(start, callback) {
+function getAssetAt(start, callback, field = null, direction = null) {
+
+    let query;
+    if(field && direction){
+        query = direction ? assetRef.limit(25).orderBy(field).startAfter(start) : assetRef.limit(25).orderBy(field, "desc").startAfter(start);
+    } else {
+        query = assetRef.limit(25).startAfter(start);
+    }
+
     let assets = [];
     let count = 0;
-    assetRef.startAfter(start).limit(25).get().then(docSnaps => {
+    query.get().then(docSnaps => {
         const newStart = docSnaps.docs[docSnaps.docs.length - 1];
         docSnaps.docs.forEach(doc => {
             datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
@@ -106,6 +110,7 @@ function getAssetAt(start, callback) {
         callback(null, null);
     })
 }
+
 function forceAddAssetsToDb(toBeAdded) {
     var rackIDs = {}
     var modelIDs = {}
@@ -334,10 +339,28 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback) {
         query = assetRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU")
     }
     query.get().then(querySnapshot => {
+        let count = 0;
         querySnapshot.forEach(doc => {
-            vendorArray.push(doc.data())
+            datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
+                if(datacenterAbbrev) {
+                    vendorArray.push({
+                        asset_id: doc.id,
+                        model: doc.data().model,
+                        hostname: doc.data().hostname,
+                        rack: doc.data().rack,
+                        rackU: doc.data().rackU,
+                        owner: doc.data().owner,
+                        datacenterAbbreviation: datacenterAbbrev
+                    });
+                    count++;
+                    if(count === querySnapshot.size){
+                        callback(vendorArray);
+                    }
+                } else {
+                    callback(null);
+                }
+            })
         })
-        callback(vendorArray)
     }).catch(error => {
         console.log("Error getting documents: ", error)
         callback(null)
