@@ -113,6 +113,10 @@ function getLoggedInUser() {
     return localStorage.getItem('userDocId')
 }
 
+function getLoggedInUserUsername() {
+    return localStorage.getItem('username')
+}
+
 function logout() {
     localStorage.clear()
 }
@@ -241,4 +245,4 @@ export { isUserLoggedIn, createUser, modifyUser, deleteUser, isLoggedInUserAdmin
 isLoginValid, logUserIn, logout, getUser, changePassword, loadUsers, addClaim,
 fetchClaim, usernameTaken, validEmail, removeClaim, updateUsername, sendRecoveryEmail,
 fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers, getLoggedInUser,
-USER_ROLE, ADMIN_ROLE, isLoggedInUserNetID, updateUserRole }
+USER_ROLE, ADMIN_ROLE, isLoggedInUserNetID, updateUserRole, getLoggedInUserUsername }

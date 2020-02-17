@@ -1,13 +1,14 @@
-import React, {Component} from 'react'
-import {Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer} from 'grommet'
-import {ToastsContainer, ToastsStore} from 'react-toasts';
+import React, { Component } from 'react'
+import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer } from 'grommet'
+import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
-import {Redirect} from "react-router-dom";
+import { Redirect } from "react-router-dom";
 import theme from "../theme";
 
 import AssetPowerPortsForm from './AssetPowerPortsForm'
+import AssetNetworkPortsForm from './AssetNetworkPortsForm';
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -25,7 +26,9 @@ export default class AddAssetForm extends Component {
             owner: "",
             comment: "",
             macAddress: "",
-            datacenter: ""
+            datacenterName:"",
+            datacenterAbbrev:""
+
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
@@ -37,13 +40,17 @@ export default class AddAssetForm extends Component {
         });
     }
 
-    fixMACAddress(mac){
-        if(mac.charAt(2) == "-"){
+    //Puts the MAC address into canoncial form: lower case and colon-delimited
+    fixMACAddress(mac) {
+        if (mac.charAt(2) == "-") {
             return mac.replace("-", ":");
-        } else if(mac.charAt(2) == "_") {
+        } else if (mac.charAt(2) == "_") {
             return mac.replace("_", ":");
         } else {
-            return mac.substr(0, 2) + ":" + mac.substr(2, 2) + ":" + mac.substr(4, 2) + ":" + mac.substr(6, 2) + ":" + mac.substr(8, 2) + ":" + mac.substr(10, 2);
+            let canonicalMAC=mac.substr(0, 2).toLowerCase() + ":" + mac.substr(2, 2).toLowerCase() + ":" + mac.substr(4, 2).toLowerCase() + ":" + mac.substr(6, 2).toLowerCase() + ":" + mac.substr(8, 2).toLowerCase() + ":" + mac.substr(10, 2).toLowerCase();
+
+            console.log("Canonical MAC: " + canonicalMAC)
+            return canonicalMAC;
         }
     }
 
@@ -63,16 +70,20 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Rack U must be a number.");
             } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
                 ToastsStore.error("Rack U must be positive.");
-            } else if (this.state.macAddress && !/^([0-9a-f]{2}[:\-_]?){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
-                ToastsStore.error("Invalid MAC address. Ensure it is colon-delimited and all lowercase.");
+
+            //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
+            } else if (this.state.macAddress && !/^([0-9A-Fa-f]{2}[:-\_]?){5}([0-9A-Fa-f]{2})$/.test(this.state.macAddress)) {
+                ToastsStore.error("Invalid MAC address. Ensure it is a six-byte hexadecimal value with any byte separator punctuation.");
             } else {
+                //toLowercase, to colon
                 let fixedMAC;
-                if(this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)){
+                if (this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
                     fixedMAC = this.fixMACAddress(this.state.macAddress);
-                } else if(this.state.macAddress) {
+                } else if (this.state.macAddress) {
                     fixedMAC = this.state.macAddress;
                 }
-                //TODO: USE FIXEDMAC AS INSERTION
+                console.log("MAC address passed to database: " + fixedMAC)
+          
                 assetutils.addAsset(
                     this.state.asset_id,
                     this.state.model,
@@ -82,6 +93,8 @@ export default class AddAssetForm extends Component {
                     this.state.owner,
                     this.state.comment,
                     this.state.datacenter,
+                    fixedMAC,
+
                     errorMessage => {
                         if (errorMessage) {
                             ToastsStore.error(errorMessage, 10000)
@@ -98,7 +111,7 @@ export default class AddAssetForm extends Component {
 
     render() {
         if (!userutils.isUserLoggedIn()) {
-            return <Redirect to='/'/>
+            return <Redirect to='/' />
         }
 
 
@@ -240,16 +253,18 @@ export default class AddAssetForm extends Component {
                                 />
                             </FormField>
 
-                            {/* For these last two, need to think carefully about UI since they are 'multistep' to add */}
-
-                            <FormField name="networkPortConns" label="Network Port Connections">
-                                <TextInput name="networkPortConns" placeholder="WORK IN PROGRESS" onChange={this.handleChange}
-                                //value={this.state.rackU}
-                                />
-                            </FormField>
+                            {/* For these last two, need to think carefully about UI since they are 'multistep' to add 
+                         <AssetNetworkPortsForm/>
 
 
-                            <AssetPowerPortsForm/>
+                             <AssetPowerPortsForm />
+                        
+                        
+                        
+                        
+                        */}
+
+                          
 
                             <FormField name="asset_id" label="Override Asset ID">
                                 <TextInput name="asset_id" placeholder="If left blank, will auto-generate" onChange={this.handleChange}
@@ -284,7 +299,7 @@ export default class AddAssetForm extends Component {
                 </Box>
 
 
-                <ToastsContainer store={ToastsStore}/>
+                <ToastsContainer store={ToastsStore} />
             </Grommet>
 
 
