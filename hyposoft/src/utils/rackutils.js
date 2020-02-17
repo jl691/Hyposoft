@@ -174,15 +174,15 @@ function deleteSingleRack(id, callback) {
     firebaseutils.racksRef.doc(id).get().then(function (doc) {
         if (doc.exists) {
             let datacenterID = doc.data().datacenter;
+            let docData = doc.data();
             if (doc.data().assets && Object.keys(doc.data().assets).length > 0) {
                 callback(null)
             } else {
-                logutils.addLog(id, logutils.RACK(), logutils.DELETE());
                 firebaseutils.racksRef.doc(id).delete().then(function () {
                     firebaseutils.datacentersRef.doc(datacenterID).update({
                         racks: firebaseutils.firebase.firestore.FieldValue.arrayRemove(id)
                     }).then(function () {
-                        //logutils.addLog(id, logutils.RACK(), logutils.DELETE());
+                        logutils.addLog(id, logutils.RACK(), logutils.DELETE(), docData);
                         callback(true);
                     }).catch(function (error) {
                         callback(null);
@@ -232,11 +232,12 @@ function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, datacenter, c
                         if (!querySnapshot.empty) {
                             let docID;
                             docID = querySnapshot.docs[0].id;
+                            let docData = querySnapshot.docs[0].data();
                             if (!(querySnapshot.docs[0].data().assets && Object.keys(querySnapshot.docs[0].data().assets).length > 0)) {
                                 firebaseutils.racksRef.doc(docID).delete().then(function () {
                                     datacenterutils.removeRackFromDatacenter(docID, datacenter, result => {
                                         if(result){
-                                            logutils.addLog(docID, logutils.RACK(), logutils.DELETE());
+                                            logutils.addLog(docID, logutils.RACK(), logutils.DELETE(), docData);
                                             count++;
                                             if (count === totalRacks) {
                                                 callback(true, skippedRacks)

@@ -187,9 +187,12 @@ function getModelName(id,data,callback) {
 }
 
 function getRackName(id,data,callback) {
+    console.log("fucking kill me")
     if (data) {
+        console.log("i hate 458")
         callback({name: data.letter+data.number, data: data})
     } else {
+        console.log("bletsch is satan")
         firebaseutils.racksRef.doc(id).get().then(doc => callback({name: doc.data().letter+doc.data().number, data: doc.data()}))
         .catch( error => {
           console.log("Error getting documents: ", error)

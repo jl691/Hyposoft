@@ -27,6 +27,7 @@ import DatacenterScreen from "./screens/DatacenterScreen";
 import LogScreen from "./screens/LogScreen"
 
 import PostOAuthHandler from './handlers/PostOAuthHandler'
+import NetworkNeighborhood from "./components/NetworkNeighborhood";
 
 ReactDOM.render((
             <BrowserRouter>
@@ -39,6 +40,7 @@ ReactDOM.render((
                     <Route exact path='/dashboard' component={DashboardScreen} />
                     <Route exact path='/settings' component={SettingsScreen} />
                     <Route exact path='/users' component={UsersScreen} />
+                    <Route exact path='/networkneighborhood' component={NetworkNeighborhood} />
                     <Route path='/signup/:secret' component={ClaimScreen} />
                     <Route path='/badsignup/:secret' component={UnclaimScreen} />
                     <Route path='/resetpassword/:secret' component={ResetPasswordScreen} />
