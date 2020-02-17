@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Button, Grommet,Box,Accordion, AccordionPanel } from 'grommet'
+import { Button, Grommet,Box } from 'grommet'
 import theme from "../theme";
 import NetworkPortInput from './NetworkPortInput'
 
@@ -50,20 +50,19 @@ export default class AssetNetworkPortsForm extends Component {
 
     addNetworkConnection(event) {
         this.setState((prevState) => ({
-            networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort:"" }],
+            networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort:"" }]
         }));
 
     }
 
     render() {
         let { networkConnections } = this.state
+        console.log(networkConnections)
         return (
             networkConnections.map((val, idx) => {
                 return (
                     <Grommet key={idx} theme={theme}>
-                        <Accordion>
-                            <AccordionPanel label="Network Connections">
-
+                
                                 <Box direction="column" gap="small" overflow="auto" background="light-2">
 
                                     <NetworkPortInput 
@@ -71,20 +70,12 @@ export default class AssetNetworkPortsForm extends Component {
                                     handleTextCallback={this.handleChange}
                                     />
 
-                                    <Button onClick={this.addNetworkConnection}
-                                        margin={{ horizontal: 'medium', vertical: 'small' }}
-
-                                        label="Add a network connection" />
-
-
                                     {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
                                     {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
                                     <Button onClick={this.handleConnect}
                                         margin={{ horizontal: 'medium', vertical: 'small' }}
                                         label="Validate Connections" />
                                 </Box>
-                            </AccordionPanel>
-                        </Accordion>
 
                     </Grommet >
 

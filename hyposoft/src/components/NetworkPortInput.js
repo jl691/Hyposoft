@@ -21,7 +21,7 @@ export default class PowerPortInput extends Component {
                             size="small" name="otherAsset" label="Connect to other asset">
                             <TextInput name="otherAsset"
                                 //value={this.props.networkConnections.port}
-                                required="true"
+                             
                                 size="small"
 
                                 //passing state up to AssetNetworkPortsForm
@@ -36,7 +36,7 @@ export default class PowerPortInput extends Component {
                             size="small" name="otherPort" label="Other Asset Port">
                             <TextInput name="otherPort"
                                 //value={this.props.networkConnections.port}
-                                required="true"
+                        
                                 size="small"
 
                                 //passing state up to AssetNetworkPortsForm
@@ -54,7 +54,7 @@ export default class PowerPortInput extends Component {
                             size="small" name="thisPort" label="This Asset Port">
                             <TextInput name="thisPort"
                                // value={this.props.networkConnections.port}
-                                required="true"
+                             
                                 size="small"
 
                                 //passing state up to AssetNetworkPortsForm

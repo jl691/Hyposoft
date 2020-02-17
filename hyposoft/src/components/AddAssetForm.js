@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer } from 'grommet'
+import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer, Accordion, AccordionPanel } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
@@ -27,7 +27,8 @@ export default class AddAssetForm extends Component {
             comment: "",
             macAddress: "",
             datacenterName: "",
-            datacenterAbbrev: ""
+            datacenterAbbrev: "",
+            networkConnections: []
 
         }
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -45,12 +46,12 @@ export default class AddAssetForm extends Component {
         let noSepMac;
         if (mac.charAt(2) == "-") {
             noSepMac = mac.split("-").join("");
-           
+
         } else if (mac.charAt(2) == "_") {
             noSepMac = mac.split("_").join("");
         }
-        else{//if the admin put in a mac address with no separators
-            noSepMac=mac;
+        else {//if the admin put in a mac address with no separators
+            noSepMac = mac;
         }
 
         let canonicalMAC = noSepMac.substr(0, 2).toLowerCase() + ":" + noSepMac.substr(2, 2).toLowerCase() + ":" + noSepMac.substr(4, 2).toLowerCase() + ":" + noSepMac.substr(6, 2).toLowerCase() + ":" + noSepMac.substr(8, 2).toLowerCase() + ":" + noSepMac.substr(10, 2).toLowerCase();
@@ -116,7 +117,21 @@ export default class AddAssetForm extends Component {
         }
     }
 
+    addNetworkConnection(event) {
+        this.setState((prevState) => ({
+            networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort:"" }]
+        }));
+
+    }
+
+    useNetworkConnections(connections) {
+        this.setState({networkConnections: connections})
+
+
+    }
+
     render() {
+
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
         }
@@ -261,15 +276,24 @@ export default class AddAssetForm extends Component {
                             </FormField>
 
                             {/* For these last two, need to think carefully about UI since they are 'multistep' to add 
-                         <AssetNetworkPortsForm/>
-
+                         
 
                              <AssetPowerPortsForm />
-                        
-                        
-                        
+                            
                         
                         */}
+                            <Accordion>
+                                <AccordionPanel label="Network Connections">
+                                    <AssetNetworkPortsForm
+                                        getNetworkConnectionsCallback={this.useNetworkConnections}
+                                    />
+
+                                    <Button onClick={this.addNetworkConnection}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+
+                                        label="Add a network connection" />
+                                </AccordionPanel>
+                            </Accordion>
 
 
 
