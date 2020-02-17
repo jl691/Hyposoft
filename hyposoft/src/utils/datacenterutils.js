@@ -116,8 +116,9 @@ function deleteDatacenter(name, callback) {
             if (querySnapshot.docs[0].data().racks.length) {
                 callback(null);
             } else {
+                let docData = querySnapshot.docs[0].data();
                 firebaseutils.datacentersRef.doc(querySnapshot.docs[0].id).delete().then(function () {
-                    logutils.addLog(querySnapshot.docs[0].id, logutils.DATACENTER(), logutils.DELETE());
+                    logutils.addLog(querySnapshot.docs[0].id, logutils.DATACENTER(), logutils.DELETE(), docData);
                     callback(true);
                 }).catch(function (error) {
                     callback(null);
