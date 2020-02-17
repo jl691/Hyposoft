@@ -16,6 +16,7 @@ function validatePowerConnections(powerConnections, PDUs, model, callback) {
 //If all the fields are empty, then 'No connection' (see superscript 7 in requirements). use callback or promise apprpriately
 //call checkConflicts
 
+//Need to check that the
 
 }
 

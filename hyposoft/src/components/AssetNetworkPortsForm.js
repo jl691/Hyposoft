@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
-import { Button, Grommet,Box } from 'grommet'
+import { Button, Grommet, Box, Text, FormField, TextInput} from 'grommet'
 import theme from "../theme";
-import NetworkPortInput from './NetworkPortInput'
 
 //Instead of validate connections, upon all fields for one set of inputs, have a toast that pops up with error message
 //If the connection is not valid
@@ -12,19 +11,8 @@ export default class AssetNetworkPortsForm extends Component {
     constructor(props) {
 
         super(props);
-        this.state = {
-            networkConnections: [{
-                //portLimit:"",//TODO: pass in model to know number of times admin can press add new connection
-                otherAssetID: "",
-                otherPort: "",
-                thisPort:""
-            }],
-
-        };
-
         this.handleChange = this.handleChange.bind(this);
-        this.handleValidateConnections = this.handleValidateConnections.bind(this);
-        this.addNetworkConnection = this.addNetworkConnection.bind(this);
+     
     }
     //Form validation/error catching: ???
 
@@ -32,7 +20,7 @@ export default class AssetNetworkPortsForm extends Component {
         //You are either typing into an output
         if (e.target.name === "otherAssetID" || e.target.name === "otherPort" || e.target.name === "thisPort") {
             console.log("two")
-            let networkConnections = [...this.state.networkConnections]
+            let networkConnections = [...this.props.networkConnections]
             networkConnections[idx][e.target.name] = e.target.value
             this.setState({ port: e.target.value })
 
@@ -48,34 +36,68 @@ export default class AssetNetworkPortsForm extends Component {
 
     }
 
-    addNetworkConnection(event) {
-        this.setState((prevState) => ({
-            networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort:"" }]
-        }));
-
-    }
-
     render() {
-        let { networkConnections } = this.state
+        let { networkConnections } = this.props
         console.log(networkConnections)
         return (
             networkConnections.map((val, idx) => {
                 return (
                     <Grommet key={idx} theme={theme}>
-                
-                                <Box direction="column" gap="small" overflow="auto" background="light-2">
 
-                                    <NetworkPortInput 
-                                    networkConnections={networkConnections}
-                                    handleTextCallback={this.handleChange}
-                                    />
+                        <Box direction="column" gap="small" overflow="auto" background="light-2">
 
-                                    {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
-                                    {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
-                                    <Button onClick={this.handleConnect}
-                                        margin={{ horizontal: 'medium', vertical: 'small' }}
-                                        label="Validate Connections" />
-                                </Box>
+                            <Text>{idx + 1}</Text>
+
+                            {/* TODO: AUTOCOMPLETE/PICKLIST */}
+                            <FormField
+                                margin={{ horizontal: 'medium', vertical: 'xsmall' }}
+                                size="small" name="otherAssetID" label="Connect to other asset">
+                                <TextInput name="otherAssetID"
+                                    //value={this.props.networkConnections.port}
+
+                                    size="small"
+
+                                    onChange={e => {
+                                        this.handleChange(e, idx)
+                                    }}
+                                />
+                            </FormField>
+
+                            <FormField
+                                margin={{ horizontal: 'medium', vertical: 'xsmall' }}
+                                size="small" name="otherPort" label="Other Asset Port">
+                                <TextInput name="otherPort"
+                                    //value={this.props.networkConnections.port}
+
+                                    size="small"
+
+                                    onChange={e => {
+                                        this.handleChange(e, idx)
+                                    }}
+                                />
+
+                            </FormField>
+
+                            <Text alignSelf="center"> connect to </Text>
+
+                            <FormField
+                                margin={{ horizontal: 'medium', vertical: 'xsmall' }}
+                                size="small" name="thisPort" label="This Asset Port">
+                                <TextInput name="thisPort"
+                                    // value={this.props.networkConnections.port}
+
+                                    size="small"
+
+                                    //passing state up to AssetNetworkPortsForm
+                                    onChange={e => {
+                                        this.handleChange(e, idx)
+                                    }}
+
+                                />
+
+                            </FormField>
+                        
+                        </Box>
 
                     </Grommet >
 

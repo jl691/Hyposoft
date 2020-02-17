@@ -37,7 +37,9 @@ function getAsset(callback, field = null, direction = null) {
                 owner: doc.data().owner,
                 comment: doc.data().comment,
                 datacenter: doc.data().datacenter,
-                datacenterAbbreviation: doc.data().datacenterAbbrev
+                datacenterAbbreviation: doc.data().datacenterAbbrev,
+                macAddress: doc.data().macAddress,
+            
             });
             count++;
             if (count === docSnaps.docs.length) {
@@ -199,6 +201,8 @@ function forceModifyAssetsInDb(toBeModified) {
 //Need to add in a parameter here: if the user chooses to input an assetID
 function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, fixedMac, callback) {
 
+    console.log(fixedMac)
+    console.log(owner)
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])

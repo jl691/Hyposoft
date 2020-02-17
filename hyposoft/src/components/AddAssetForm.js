@@ -28,11 +28,17 @@ export default class AddAssetForm extends Component {
             macAddress: "",
             datacenterName: "",
             datacenterAbbrev: "",
-            networkConnections: []
+            networkConnections: [{
+                //portLimit:"",//TODO: pass in model to know number of times admin can press add new connection
+                otherAssetID: "",
+                otherPort: "",
+                thisPort: ""
+            }],
 
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
+        this.addNetworkConnection = this.addNetworkConnection.bind(this);
     }
 
     handleChange(event) {
@@ -60,6 +66,12 @@ export default class AddAssetForm extends Component {
         return canonicalMAC;
 
 
+    }
+
+    addNetworkConnection(event) {
+        this.setState(prevState => ({
+            networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort: "" }]
+        }));
     }
 
     handleSubmit(event) {
@@ -90,6 +102,7 @@ export default class AddAssetForm extends Component {
                 } else if (this.state.macAddress) {
                     fixedMAC = this.state.macAddress;
                 }
+                this.setState({ macAddress: fixedMAC })
                 console.log("MAC address passed to database: " + fixedMAC)
 
                 assetutils.addAsset(
@@ -101,7 +114,7 @@ export default class AddAssetForm extends Component {
                     this.state.owner,
                     this.state.comment,
                     this.state.datacenter,
-                    fixedMAC,
+                    this.state.macAddress,
 
                     errorMessage => {
                         if (errorMessage) {
@@ -115,19 +128,6 @@ export default class AddAssetForm extends Component {
             }
 
         }
-    }
-
-    addNetworkConnection(event) {
-        this.setState((prevState) => ({
-            networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort:"" }]
-        }));
-
-    }
-
-    useNetworkConnections(connections) {
-        this.setState({networkConnections: connections})
-
-
     }
 
     render() {
@@ -285,13 +285,21 @@ export default class AddAssetForm extends Component {
                             <Accordion>
                                 <AccordionPanel label="Network Connections">
                                     <AssetNetworkPortsForm
-                                        getNetworkConnectionsCallback={this.useNetworkConnections}
+                                        networkConnections={this.state.networkConnections}
                                     />
 
-                                    <Button onClick={this.addNetworkConnection}
+                                    <Button
+                                        onClick={this.addNetworkConnection}
                                         margin={{ horizontal: 'medium', vertical: 'small' }}
 
                                         label="Add a network connection" />
+
+                                    {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
+                                    {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
+                                    <Button onClick={this.handleConnect}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+                                        label="Validate Connections" />
+
                                 </AccordionPanel>
                             </Accordion>
 
