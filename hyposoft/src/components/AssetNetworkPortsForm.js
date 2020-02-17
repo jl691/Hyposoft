@@ -63,6 +63,7 @@ export default class AssetNetworkPortsForm extends Component {
                                 />
                             </FormField>
 
+                                    {/* TODO: AUTOCOMPLETE/PICKLIST */}
                             <FormField
                                 margin={{ horizontal: 'medium', vertical: 'xsmall' }}
                                 size="small" name="otherPort" label="Other Asset Port">
@@ -80,6 +81,7 @@ export default class AssetNetworkPortsForm extends Component {
 
                             <Text alignSelf="center"> connect to </Text>
 
+                                    {/* TODO: AUTOCOMPLETE/PICKLIST */}
                             <FormField
                                 margin={{ horizontal: 'medium', vertical: 'xsmall' }}
                                 size="small" name="thisPort" label="This Asset Port">

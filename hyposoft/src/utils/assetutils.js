@@ -4,6 +4,7 @@ import * as modelutils from './modelutils'
 import * as userutils from './userutils'
 import * as assetIDutils from './assetidutils'
 import * as datacenterutils from './datacenterutils'
+import * as assetnetworkportutils from './assetnetworkportutils'
 
 //TODO: admin vs. user privileges
 const algoliasearch = require('algoliasearch')
@@ -199,7 +200,7 @@ function forceModifyAssetsInDb(toBeModified) {
 }
 
 //Need to add in a parameter here: if the user chooses to input an assetID
-function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, fixedMac, callback) {
+function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, fixedMac, networkConnections, callback) {
 
     console.log(fixedMac)
     console.log(owner)
@@ -223,8 +224,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                             }
                             //The rack doesn't exist, or it doesn't fit on the rack at rackU
                             else {
-                                //if field has been left empty, then call generate
-                                //otherwise, use ovverride method and throw correct errors
+                                let ncMap = assetnetworkportutils.createNetworkConnectionsDatabaseMap(networkConnections)
+                                //if field assetID has been left empty, then call generate
+                                //otherwise, use override method and throw correct errors
 
                                 if (overrideAssetID.trim() != "") {
                                     assetIDutils.overrideAssetID(overrideAssetID).then(
@@ -239,6 +241,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 comment: comment,
                                                 rackID: rackID,
                                                 macAddress: fixedMac,
+                                                networkConnections: ncMap,
                                                 //This is for rack usage reports
                                                 modelNumber: modelNum,
                                                 vendor: modelVendor,
