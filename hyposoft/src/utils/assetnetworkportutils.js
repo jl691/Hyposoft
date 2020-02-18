@@ -15,7 +15,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections) {
 
     //Need to validate otherAssetID exists
 
-    
+
     let numConnectionsMade = networkPortConnections.length
     let mostPossibleConnections = 0;
 
@@ -68,21 +68,21 @@ function validateNetworkConnections(thisModelName, networkPortConnections) {
                                     //Made an appropriate number of connections between the specified hardware
                                     //Now need to check that the ports exist
                                     checkThisModelPortsExist(otherAssetID, nonThisExist => {
-                                        if(nonThisExist){//means there's an error message
+                                        if (nonThisExist) {//means there's an error message
                                             reject(nonThisExist)
                                         }
-                                        else{
-                                            checkOtherAssetPortsExist(networkPortConnections, nonOtherExist =>{
+                                        else {
+                                            checkOtherAssetPortsExist(networkPortConnections, nonOtherExist => {
 
-                                                if(nonOtherExist){
+                                                if (nonOtherExist) {
                                                     reject(nonOtherExist)
                                                 }
-                                                else{
-                                                    checkNetworkPortConflicts(networkPortConnections, status =>{
-                                                        if(status){
+                                                else {
+                                                    checkNetworkPortConflicts(networkPortConnections, status => {
+                                                        if (status) {
                                                             reject("can't connect host1 port e1 to switch1 port 22 that port is already connected to host5 port e1")
                                                         }
-                                                        else{
+                                                        else {
                                                             console.log("Congrats, you made it here. Here is a heart container for your efforts <3")
                                                             resolve(networkPortConnections)
 
@@ -125,7 +125,7 @@ function checkNetworkPortConflicts(networkPortConnections, callback) {
 }
 //Assuming models will have a field called networkPorts and will be an array
 function checkThisModelPortsExist(thisModelName, networkConnections, callback) {
-    let nonexistentPort=false;
+    let nonexistentPort = false;
     modelsRef.doc().where("modelName", "===", thisModelName).get().then(function (thisModelDoc) {
         for (let i = 0; i < networkConnections.length; i++) {
             //does the model contain this port name?
@@ -135,32 +135,32 @@ function checkThisModelPortsExist(thisModelName, networkConnections, callback) {
 
         }
 
-        if(!nonexistentPort){
+        if (!nonexistentPort) {
             callback(null)
         }
 
-    }).catch("This model you are trying to add does not exist: "+ thisModelName)
+    }).catch("This model you are trying to add does not exist: " + thisModelName)
 
 
 }
 
 function checkOtherAssetPortsExist(networkConnections, callback) {
 
-    let nonexistentPort=false;
+    let nonexistentPort = false;
     for (let i = 0; i < networkConnections.length; i++) {
         assetRef.doc(parseInt(networkConnections[i].otherAssetID)).get().then(function (otherInstanceDoc) {
             let otherModel = otherInstanceDoc.model;
             console.log(otherModel)
             modelsRef.doc().where("modelName", "===", otherModel).get().then(function (otherModelDoc) {
                 if (!otherModelDoc.networkPorts.includes(networkConnections[i].otherPort)) {
-                    nonexistentPort=true;
+                    nonexistentPort = true;
                     callback("Trying to connect a nonexistent port on this instance: " + networkConnections[i].otherAssetID)
                 }
             })
 
         }).catch("This other asset you are trying to connect to does not exist")
     }
-    if(!nonexistentPort){
+    if (!nonexistentPort) {
         callback(null)
     }
 
@@ -172,16 +172,19 @@ function createNetworkConnectionsDatabaseMap(networkPortConnections) {
     //This is what's responsible for making the map from the networkConnections Array to finally pass into the database
     //Call validation function here, then depending on results, go into this for loop
     let ncMap = new Map();
-    for(let i = 0; i< networkPortConnections.length; i++){
+    for (let i = 0; i < networkPortConnections.length; i++) {
         let key = networkPortConnections[i].thisPort
-        let value= networkPortConnections[i].otherAssetID + " "+ networkPortConnections[i].otherPort 
+        let value = networkPortConnections[i].otherAssetID + " " + networkPortConnections[i].otherPort
 
         ncMap.set(key, value)
 
     }
+    console.log(ncMap)
     return ncMap;
 
 }
+
+
 
 export {
     validateNetworkConnections,

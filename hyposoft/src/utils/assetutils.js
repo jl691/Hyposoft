@@ -284,6 +284,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                             comment: comment,
                                             rackID: rackID,
                                             macAddress: fixedMac,
+                                            networkConnections: ncMap,
                                             //This is for rack usage reports
                                             modelNumber: modelNum,
                                             vendor: modelVendor,

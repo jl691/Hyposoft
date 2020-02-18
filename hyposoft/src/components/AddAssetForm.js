@@ -104,6 +104,7 @@ export default class AddAssetForm extends Component {
                 }
                 this.setState({ macAddress: fixedMAC })
                 console.log("MAC address passed to database: " + fixedMAC)
+                console.log(this.state.networkConnections)
 
                 assetutils.addAsset(
                     this.state.asset_id,
@@ -115,6 +116,7 @@ export default class AddAssetForm extends Component {
                     this.state.comment,
                     this.state.datacenter,
                     this.state.macAddress,
+                    this.state.networkConnections,
 
                     errorMessage => {
                         if (errorMessage) {
