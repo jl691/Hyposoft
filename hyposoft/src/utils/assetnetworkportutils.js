@@ -7,6 +7,9 @@ import * as assetIDutils from './assetidutils'
 //TODO: ethernetPorts --> networkPorts 
 //hardcode a set of networkPorts
 
+//If the network connections field in the assets collections is to be a map, then it needs to be a custom collection, according to firestore documentation: https://firebase.google.com/docs/firestore/manage-data/add-data
+
+
 
 //these fields come from the form being filled out
 function validateNetworkConnections(thisModelName, networkPortConnections) {
@@ -166,21 +169,23 @@ function checkOtherAssetPortsExist(networkConnections, callback) {
 
 }
 
+//need to create a new networkConnections instance 
+
 //Call this addAsset. Need to pass in these two things though
 function createNetworkConnectionsDatabaseMap(networkPortConnections) {
     //Make sure connections are symmetric. Meaning the other asset should have their network port connectiosn updated too
     //This is what's responsible for making the map from the networkConnections Array to finally pass into the database
     //Call validation function here, then depending on results, go into this for loop
-    let ncMap = new Map();
+  
     for (let i = 0; i < networkPortConnections.length; i++) {
         let key = networkPortConnections[i].thisPort
         let value = networkPortConnections[i].otherAssetID + " " + networkPortConnections[i].otherPort
-
-        ncMap.set(key, value)
+        // let networkConnectionsDB = new networkConnections(networkPortConnections[i].thisPort,networkPortConnections[i].otherAssetID,networkPortConnections[i].otherPort )
+       // ncMap.set(key, value)
 
     }
-    console.log(ncMap)
-    return ncMap;
+    //console.log(ncMap)
+    //return ncMap ;
 
 }
 
@@ -191,6 +196,7 @@ export {
     checkNetworkPortConflicts,
     createNetworkConnectionsDatabaseMap,
     checkOtherAssetPortsExist,
-    checkThisModelPortsExist
+    checkThisModelPortsExist,
+
 
 }

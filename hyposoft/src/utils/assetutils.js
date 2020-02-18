@@ -1,10 +1,12 @@
-import {assetRef, racksRef, modelsRef, usersRef, firebase, datacentersRef} from './firebaseutils'
+import { assetRef, racksRef, modelsRef, usersRef, firebase, datacentersRef } from './firebaseutils'
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
 import * as userutils from './userutils'
 import * as assetIDutils from './assetidutils'
 import * as datacenterutils from './datacenterutils'
 import * as assetnetworkportutils from './assetnetworkportutils'
+
+import * as networkConnections from '../customClasses/networkConnections'
 
 //TODO: admin vs. user privileges
 const algoliasearch = require('algoliasearch')
@@ -40,7 +42,7 @@ function getAsset(callback, field = null, direction = null) {
                 datacenter: doc.data().datacenter,
                 datacenterAbbreviation: doc.data().datacenterAbbrev,
                 macAddress: doc.data().macAddress,
-            
+
             });
             count++;
             if (count === docSnaps.docs.length) {
@@ -128,7 +130,7 @@ function forceAddAssetsToDb(toBeAdded) {
                     racksRef.doc(ds.data().rackID).update({
                         assets: firebase.firestore.FieldValue.arrayUnion(ds.id)
                     })
-                    index.saveObject({...ds.data(), objectID: ds.id})
+                    index.saveObject({ ...ds.data(), objectID: ds.id })
                 })
             })
         }
@@ -173,7 +175,7 @@ function forceModifyAssetsInDb(toBeModified) {
                 rackID: rackIDs[asset.rack],
             }).then(() => {
                 assetRef.doc(asset.assetIdInDb).get().then(ds => {
-                    index.saveObject({...ds.data(), objectID: ds.id})
+                    index.saveObject({ ...ds.data(), objectID: ds.id })
                 })
             })
             racksRef.doc(rackIDs[asset.rack]).update({
@@ -199,7 +201,34 @@ function forceModifyAssetsInDb(toBeModified) {
     }
 }
 
-//Need to add in a parameter here: if the user chooses to input an assetID
+
+class networkConnectionsObject {
+    constructor(thisPort, otherAssetID, otherPort) {
+        this.thisPort = thisPort;
+        this.otherAssetID = otherAssetID;
+        this.otherPort = otherPort;
+
+        console.log("in constrcutor")
+    }
+    toString() {
+        return this.thisPort + ':' + this.otherAssetID + ':' + this.otherPort;
+    }
+}
+// Firestore data converter
+const networkConnectionsConverter = {
+    toFirestore: function (networkConnectionsObject) {
+        return {
+            thisPort: networkConnectionsObject.thisPort,
+            otherAssetID: networkConnectionsObject.otherAssetID,
+            otherPort: networkConnectionsObject.otherPort
+        }
+    },
+    fromFirestore: function (snapshot, options) {
+        const data = snapshot.data(options);
+        return new networkConnectionsObject(data.thisPort, data.otherAssetID, data.otherPort)
+    }
+}
+
 function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, fixedMac, networkConnections, callback) {
 
     console.log(fixedMac)
@@ -224,7 +253,6 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                             }
                             //The rack doesn't exist, or it doesn't fit on the rack at rackU
                             else {
-                                let ncMap = assetnetworkportutils.createNetworkConnectionsDatabaseMap(networkConnections)
                                 //if field assetID has been left empty, then call generate
                                 //otherwise, use override method and throw correct errors
 
@@ -241,7 +269,6 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 comment: comment,
                                                 rackID: rackID,
                                                 macAddress: fixedMac,
-                                                networkConnections: ncMap,
                                                 //This is for rack usage reports
                                                 modelNumber: modelNum,
                                                 vendor: modelVendor,
@@ -259,7 +286,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                     callback(null);
                                                 })
                                                 docRef.get().then(ds => {
-                                                    index.saveObject({...ds.data(), objectID: ds.id})
+                                                    index.saveObject({ ...ds.data(), objectID: ds.id })
                                                 })
                                             }).catch(function (error) {
                                                 // callback("Error");
@@ -267,47 +294,56 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                             })
 
                                         }).catch(errMessage => {
-                                        callback(errMessage)
-                                    })
+                                            callback(errMessage)
+                                        })
 
                                 } else {
+                                    //change converter metod to handle array and store as map
+
+                                    let networkConnectionsDB = new networkConnectionsObject("thisPortTest", "otherAssetIDTest", "otherPorttest");
+                                    console.log(networkConnectionsDB.thisPort)
                                     assetIDutils.generateAssetID().then(newID =>
 
-                                        // assetRef.add({
-                                        assetRef.doc(newID).set({
-                                            modelId: doc.id,
-                                            model: model,
-                                            hostname: hostname,
-                                            rack: rack,
-                                            rackU: racku,
-                                            owner: owner,
-                                            comment: comment,
-                                            rackID: rackID,
-                                            macAddress: fixedMac,
-                                            networkConnections: ncMap,
-                                            //This is for rack usage reports
-                                            modelNumber: modelNum,
-                                            vendor: modelVendor,
-                                            //This is for sorting
-                                            rackRow: rackRow,
-                                            rackNum: rackNum,
-                                            datacenter: datacenter,
-                                            datacenterID: datacenterID,
-                                            datacenterAbbrev: datacenterAbbrev
-                                        }).then(function (docRef) {
-                                            racksRef.doc(String(rackID)).update({
-                                                assets: firebase.firestore.FieldValue.arrayUnion(newID)//docref.id
-                                            }).then(function () {
-                                                console.log("Document successfully updated in racks!");
-                                                callback(null);
+                                        assetRef.doc(newID)//.withConverter(networkConnectionsConverter)
+                                            .set({
+
+                                                modelId: doc.id,
+                                                model: model,
+                                                hostname: hostname,
+                                                rack: rack,
+                                                rackU: racku,
+                                                owner: owner,
+                                                comment: comment,
+                                                rackID: rackID,
+                                                macAddress: fixedMac,
+                                                // This is for rack usage reports
+                                                modelNumber: modelNum,
+                                                vendor: modelVendor,
+                                                //This is for sorting
+                                                rackRow: rackRow,
+                                                rackNum: rackNum,
+                                                datacenter: datacenter,
+                                                datacenterID: datacenterID,
+                                                datacenterAbbrev: datacenterAbbrev
+
+                                            }).then(function (newDoc) {
+                                                assetRef.doc(newID).withConverter(networkConnectionsConverter)
+                                                    .set(networkConnectionsDB, { merge: true })
                                             })
-                                            docRef.get().then(ds => {
-                                                index.saveObject({...ds.data(), objectID: ds.id})
+                                            .then(function (docRef) {
+                                                racksRef.doc(String(rackID)).update({
+                                                    assets: firebase.firestore.FieldValue.arrayUnion(newID)//docref.id
+                                                }).then(function () {
+                                                    console.log("Document successfully updated in racks!");
+                                                    callback(null);
+                                                })
+                                                docRef.get().then(ds => {
+                                                    index.saveObject({ ...ds.data(), objectID: ds.id })
+                                                })
+                                            }).catch(function (error) {
+                                                // callback("Error");
+                                                console.log(error)
                                             })
-                                        }).catch(function (error) {
-                                            // callback("Error");
-                                            console.log(error)
-                                        })
                                     ).catch("Ran out of tries to generate unique ID")
 
                                 }
@@ -321,10 +357,10 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                 })
             })
         }).catch(errMessage => {
-        callback(errMessage)
-        console.log(errMessage)
+            callback(errMessage)
+            console.log(errMessage)
 
-    })
+        })
 }
 
 // rackAsc should be a boolean corresponding to true if rack is ascending
@@ -420,7 +456,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                                                 if (echo < 0) {
                                                     callback(errMessage);
                                                 } else {
-                                                    callback({error: errMessage, echo: echo})
+                                                    callback({ error: errMessage, echo: echo })
                                                 }
                                             }
                                         });
@@ -429,7 +465,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                                     if (echo < 0) {
                                         callback(null, doc.data().modelNumber, doc.data().vendor, rackID)
                                     } else {
-                                        callback({error: null, echo: echo})
+                                        callback({ error: null, echo: echo })
                                     }
 
                                 }
@@ -439,7 +475,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                             if (echo < 0) {
                                 callback(errMessage);
                             } else {
-                                callback({error: errMessage, echo: echo})
+                                callback({ error: errMessage, echo: echo })
                             }
 
                         }
@@ -449,7 +485,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                     if (echo < 0) {
                         callback(errMessage2)
                     } else {
-                        callback({error: errMessage2, echo: echo})
+                        callback({ error: errMessage2, echo: echo })
                     }
                 }
             })
@@ -458,7 +494,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
             if (echo < 0) {
                 callback(errMessage);
             } else {
-                callback({error: errMessage, echo: echo})
+                callback({ error: errMessage, echo: echo })
             }
         }
     })
@@ -619,11 +655,11 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                 }
             })
         }).catch(errMessage => {
-        callback(errMessage)
-        console.log(errMessage)
+            callback(errMessage)
+            console.log(errMessage)
 
 
-    })
+        })
 
 }
 
@@ -631,7 +667,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
 function getAssetFromModel(model, callback) {
     assetRef.where('model', '==', model).get().then(docSnaps => {
         const assets = docSnaps.docs.map(doc => (
-            {id: doc.id, ...doc.data()}
+            { id: doc.id, ...doc.data() }
         ))
         callback(assets)
     })
@@ -645,7 +681,7 @@ function sortByKeyword(keyword, callback) {
     assetRef.orderBy(keyword.toLowerCase()).get().then(
         docSnaps => {
             const assets = docSnaps.docs.map(doc => (
-                {id: doc.id}
+                { id: doc.id }
             ))
             callback(assets)
         })
@@ -740,22 +776,22 @@ function shouldAddToSuggestedItems(array, data, userInput) {
 function getAssetDetails(assetID, callback) {
 
     assetRef.doc(assetID).get().then((doc) => {
-            let inst = {
-                assetID: assetID.trim(),
-                model: doc.data().model.trim(),
-                hostname: doc.data().hostname.trim(),
-                rack: doc.data().rack.trim(),
-                rackU: doc.data().rackU,
-                owner: doc.data().owner.trim(),
-                comment: doc.data().comment.trim(),
-                modelNum: doc.data().modelNumber.trim(),
-                vendor: doc.data().vendor.trim(),
-                datacenter: doc.data().datacenter.trim(),
-                datacenterAbbrev: doc.data().datacenterAbbrev.trim()
+        let inst = {
+            assetID: assetID.trim(),
+            model: doc.data().model.trim(),
+            hostname: doc.data().hostname.trim(),
+            rack: doc.data().rack.trim(),
+            rackU: doc.data().rackU,
+            owner: doc.data().owner.trim(),
+            comment: doc.data().comment.trim(),
+            modelNum: doc.data().modelNumber.trim(),
+            vendor: doc.data().vendor.trim(),
+            datacenter: doc.data().datacenter.trim(),
+            datacenterAbbrev: doc.data().datacenterAbbrev.trim()
 
-            }
-            callback(inst)
         }
+        callback(inst)
+    }
     );
 
 }
@@ -825,9 +861,9 @@ function checkHostnameExists(hostname, id, callback) {
 function getAssetByHostname(hostname, callback, echo = null) {
     assetRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
         if (!docSnaps.empty) {
-            callback({...docSnaps.docs[0].data(), found: true, echo: echo, id: docSnaps.docs[0].id})
+            callback({ ...docSnaps.docs[0].data(), found: true, echo: echo, id: docSnaps.docs[0].id })
         } else {
-            callback({found: false, echo: echo, id: null})
+            callback({ found: false, echo: echo, id: null })
         }
     })
 }
@@ -872,7 +908,7 @@ function validateImportedAssets(data, callback) {
             function checkAndCallback() {
                 assetsProcessed++
                 if (assetsProcessed === data.length) {
-                    callback({errors, toBeAdded, toBeModified, toBeIgnored})
+                    callback({ errors, toBeAdded, toBeModified, toBeIgnored })
                 }
             }
 
@@ -962,7 +998,7 @@ function validateImportedAssets(data, callback) {
                                 checkAndCallback()
                             } else {
                                 // MODIFY CASE
-                                assetFitsOnRack(datum.rack, datum.rack_position, datum.vendor + ' ' + datum.model_number, ({error, echo}) => {
+                                assetFitsOnRack(datum.rack, datum.rack_position, datum.vendor + ' ' + datum.model_number, ({ error, echo }) => {
                                     const datum = data[asset.echo]
                                     if (error) {
                                         errors = [...errors, [asset.echo + 1, 'This asset could not be placed at the requested location']]
@@ -979,7 +1015,7 @@ function validateImportedAssets(data, callback) {
                             }
                         } else {
                             // ADDITION CASE
-                            assetFitsOnRack(datum.rack, datum.rack_position, datum.vendor + ' ' + datum.model_number, ({error, echo}) => {
+                            assetFitsOnRack(datum.rack, datum.rack_position, datum.vendor + ' ' + datum.model_number, ({ error, echo }) => {
                                 const datum = data[asset.echo]
                                 if (error) {
                                     errors = [...errors, [asset.echo + 1, 'This asset could not be placed at the requested location']]
