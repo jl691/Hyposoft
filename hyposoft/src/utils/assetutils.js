@@ -727,13 +727,14 @@ function getSuggestedDatacenters(userInput, callback) {
         callback(modelArray)
     })
         .catch(error => {
+            console.log("fuck my fucking life", error)
             callback(null)
         })
 }
 
 function shouldAddToSuggestedItems(array, data, userInput) {
     const name = data.toLowerCase()
-    const lowerUserInput = userInput.toLowerCase()
+    const lowerUserInput = userInput ? userInput.toLowerCase() : userInput
     return !array.includes(data) && (!userInput
         || (name >= lowerUserInput
             && name < lowerUserInput.slice(0, lowerUserInput.length - 1)

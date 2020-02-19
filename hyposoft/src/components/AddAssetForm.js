@@ -221,10 +221,16 @@ export default class AddAssetForm extends Component {
                                     }}
                                     value={this.state.datacenter}
                                     suggestions={this.state.datacenterSuggestions}
-                                    onClick={() => assetutils.getSuggestedDatacenters(this.state.datacenter, results => this.setState(oldState => ({
-                                        ...oldState,
-                                        datacenterSuggestions: results
-                                    })))}
+                                    onClick={() => {
+                                        console.log("blah");
+                                        assetutils.getSuggestedDatacenters(this.state.datacenter, results => {
+                                            console.log(results);
+                                            this.setState(oldState => ({
+                                                ...oldState,
+                                                datacenterSuggestions: results
+                                            }))
+                                        })
+                                    }}
                                     title='Datacenter'
                                     required="true"
                                 />
@@ -248,10 +254,14 @@ export default class AddAssetForm extends Component {
                                     }}
                                     value={this.state.rack}
                                     suggestions={this.state.rackSuggestions}
-                                    onClick={() => assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
-                                        ...oldState,
-                                        rackSuggestions: results
-                                    })))}
+                                    onClick={() => {
+                                        if(this.state.datacenter){
+                                            assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
+                                                ...oldState,
+                                                rackSuggestions: results
+                                        })))}
+                                    }
+                                    }
                                     title='Rack'
                                     required="true"
                                 />
