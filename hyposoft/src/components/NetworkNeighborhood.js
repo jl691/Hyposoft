@@ -1,14 +1,17 @@
 import React from "react";
 import theme from "../theme";
-import {Box, Grommet, Text} from "grommet";
+import {Box, Grommet, Heading, Text} from "grommet";
 import cytoscape from "cytoscape";
 import * as assetnetworkportutils from '../utils/assetnetworkportutils'
+import BackButton from "./BackButton";
+import UserMenu from "./UserMenu";
+import AppBar from "./AppBar";
 
 class NetworkNeighborhood extends React.Component {
 
     componentDidMount() {
         let data;
-        assetnetworkportutils.getNetworkPortConnections("149821", result => {
+        assetnetworkportutils.getNetworkPortConnections(this.props.match.params.assetID, result => {
             if(result){
                 console.log(result);
                 data = result;
@@ -21,24 +24,27 @@ class NetworkNeighborhood extends React.Component {
                             selector: '.origin',
                             style: {
                                 'background-color': '#4BBD51',
-                                'label': 'data(id)',
-                                "font-size": "8px"
+                                'label': 'data(display)',
+                                "font-size": "8px",
+                                "text-wrap": "wrap"
                             }
                         },
                         {
                             selector: '.second',
                             style: {
                                 'background-color': '#395E66',
-                                'label': 'data(id)',
-                                "font-size": "8px"
+                                'label': 'data(display)',
+                                "font-size": "8px",
+                                "text-wrap": "wrap"
                             }
                         },
                         {
                             selector: '.third',
                             style: {
                                 'background-color': '#B8C4BB',
-                                'label': 'data(id)',
-                                "font-size": "8px"
+                                'label': 'data(display)',
+                                "font-size": "8px",
+                                "text-wrap": "wrap"
                             }
                         },
                         {
@@ -64,9 +70,9 @@ class NetworkNeighborhood extends React.Component {
                 });
                 cy.on('tap', 'node', function(){
                     try { // your browser may block popups
-                        window.open( "/assets/" + this.data('assetID') );
+                        window.open( "/assets/" + this.data('id') );
                     } catch(e){ // fall back on url change
-                        window.location.href = "/assets/" + this.data('assetID');
+                        window.location.href = "/assets/" + this.data('id');
                     }
                 });
             }
@@ -76,15 +82,26 @@ class NetworkNeighborhood extends React.Component {
     render() {
         let divStyle = {
             width: '100%',
-            height: '100%',
+            height: '94%',
             position: 'absolute',
-            top: '0px',
+            top: '6%',
             left: '0px'
         };
 
         return (
             <Grommet theme={theme}>
-                <div id="network" style={divStyle}></div>
+                <Box fill background='light-2'>
+                    <AppBar>
+                        <BackButton alignSelf='start' this={this} />
+                        <Heading alignSelf='center' level='4' margin={{
+                            top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
+                        }} >Network Neighborhood for {this.props.match.params.assetID}</Heading>
+                        <UserMenu alignSelf='end' this={this} />
+                    </AppBar>
+                    <Box>
+                        <div id="network" style={divStyle}></div>
+                    </Box>
+                </Box>
             </Grommet>
         )
     }
