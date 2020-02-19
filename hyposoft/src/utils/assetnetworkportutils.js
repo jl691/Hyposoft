@@ -202,6 +202,7 @@ function getNetworkPortConnections(assetID, callback) {
         if(nodes && nodes.length){
             assets = assets.concat(nodes);
             let count = 0;
+            console.log("secondlevel is ", secondLevel)
             secondLevel.forEach(secondLevelID => {
                 addPortsByAsset(secondLevelID, 2, (secondLevelNodes, thirdLevel) => {
                     console.log("here and count is " + count + " out of " + secondLevel.length)
@@ -240,14 +241,17 @@ function addPortsByAsset(assetID, level, callback){
         let assetModel = docSnap.data().model;
         let nodeClass = (level === 1) ? "origin" : "second";
         let nodeLevel = (level === 1) ? 1 : 2;
-        assets.push({
-            data: {
-                id: assetModel + ", " + assetID,
-                level: nodeLevel,
-                assetID: assetID
-            },
-            classes: nodeClass,
-        });
+        let hostname = docSnap.data().hostname ? docSnap.data().hostname : "No hostname";
+        if(level === 1){
+            assets.push({
+                data: {
+                    id: assetID,
+                    level: nodeLevel,
+                    display: assetID + "\n" + hostname
+                },
+                classes: nodeClass,
+            });
+        }
         let count = 0;
         console.log(docSnap.data())
         if(docSnap.data().networkConnections) {
@@ -257,18 +261,19 @@ function addPortsByAsset(assetID, level, callback){
                     let otherAssetModel = otherDocSnap.data().model;
                     let innerNodeClass = (level === 1) ? "second" : "third";
                     let innerNodeLevel = (level === 1) ? 2 : 3;
+                    let otherHostname = otherDocSnap.data().hostname ? otherDocSnap.data().hostname : "No hostname";
                     assets.push({
                         data: {
-                            id: otherAssetModel + ", " + docSnap.data().networkConnections[connection].otherAssetID,
+                            id: docSnap.data().networkConnections[connection].otherAssetID,
                             level: innerNodeLevel,
-                            assetID: docSnap.data().networkConnections[connection].otherAssetID
+                            display: docSnap.data().networkConnections[connection].otherAssetID + "\n" + otherHostname
                         },
                         classes: innerNodeClass,
                     });
                     assets.push({
                         data: {
-                            source: assetModel + ", " + assetID,
-                            target: otherAssetModel + ", " + docSnap.data().networkConnections[connection].otherAssetID
+                            source: assetID,
+                            target: docSnap.data().networkConnections[connection].otherAssetID
                         }
                     });
                     count++;
