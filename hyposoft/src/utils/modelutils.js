@@ -87,8 +87,6 @@ function matchesFilters(data, filters) {
         data.height <= filters.heightEnd &&
         data.memory >= filters.memoryStart &&
         data.memory <= filters.memoryEnd &&
-        data.networkPorts >= filters.networkPortsStart &&
-        data.networkPorts <= filters.networkPortsEnd &&
         data.powerPorts >= filters.powerPortsStart &&
         data.powerPorts <= filters.powerPortsEnd
     )

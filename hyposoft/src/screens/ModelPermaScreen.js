@@ -33,7 +33,7 @@ class ModelPermaScreen extends Component {
         modelNumber: '',
         height: '',
         displayColor: '#BD10E0',
-        networkPorts: '',
+        networkPorts: [],
         powerPorts: '',
         cpu: '',
         memory: '',
@@ -326,10 +326,10 @@ class ModelPermaScreen extends Component {
                                                         />
                                                     </td>
                                                 </tr>
-                                                <tr>
-                                                    <td><b>Network Ports</b></td>
-                                                    <td style={{textAlign: 'right'}}>{this.state.networkPorts || 'N/A'} Ports</td>
-                                                </tr>
+                                                // <tr>
+                                                //     <td><b>Network Ports</b></td>
+                                                //     <td style={{textAlign: 'right'}}>{this.state.networkPorts || 'N/A'} Ports</td>
+                                                // </tr>
                                                 <tr>
                                                     <td><b>Power Ports</b></td>
                                                     <td style={{textAlign: 'right'}}>{this.state.powerPorts || 'N/A'} Ports</td>

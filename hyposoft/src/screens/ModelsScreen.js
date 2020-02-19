@@ -32,33 +32,26 @@ const index = client.initIndex('models')
 
 class ModelsScreen extends React.Component {
     defaultFilters = {
-        networkPortsFilterEnd: 25,
-        networkPortsFilterStart: 0,
         heightFilterEnd: 42,
         heightFilterStart: 0,
         powerFilterEnd: 10,
         powerFilterStart: 0,
-        networkPortsFilterMax: 30,
         powerFilterMax: 12,
         memoryFilterMax: 1200,
         memoryFilterStart: 0,
         memoryFilterEnd: 1000,
         filters: {
             heightStart: 0, heightEnd: 42,
-            networkPortsStart: 0, networkPortsEnd: 25,
             memoryStart: 0, memoryEnd: 1000,
             powerPortsStart: 0, powerPortsEnd: 10
         }
     }
     state = {
         searchQuery: '',
-        networkPortsFilterEnd: 25,
-        networkPortsFilterStart: 0,
         heightFilterEnd: 42,
         heightFilterStart: 0,
         powerFilterEnd: 10,
         powerFilterStart: 0,
-        networkPortsFilterMax: 30,
         powerFilterMax: 12,
         memoryFilterMax: 1200,
         memoryFilterStart: 0,
@@ -66,7 +59,6 @@ class ModelsScreen extends React.Component {
         heightFilterMax: 42,
         filters: {
             heightStart: 0, heightEnd: 42,
-            networkPortsStart: 0, networkPortsEnd: 25,
             memoryStart: 0, memoryEnd: 1000,
             powerPortsStart: 0, powerPortsEnd: 10
         }
@@ -347,12 +339,12 @@ class ModelsScreen extends React.Component {
                                                                     render: datum => <Text size='small'>{datum.height}</Text>,
                                                                     sortable: true,
                                                                 },
-                                                                {
-                                                                    property: 'networkPorts',
-                                                                    header: <Text size='small'>Network ports #</Text>,
-                                                                    render: datum => <Text size='small'>{datum.networkPorts}</Text>,
-                                                                    sortable: true,
-                                                                },
+                                                                // {
+                                                                //     property: 'networkPorts',
+                                                                //     header: <Text size='small'>Network ports #</Text>,
+                                                                //     render: datum => <Text size='small'>{datum.networkPorts}</Text>,
+                                                                //     sortable: true,
+                                                                // },
                                                                 {
                                                                     property: 'portPorts',
                                                                     header: <Text size='small'>Power ports #</Text>,
@@ -428,47 +420,6 @@ class ModelsScreen extends React.Component {
                                                 </Box>
                                             </Box>
                                         </Box>
-                                        <Box style={{
-                                                 borderRadius: 10,
-                                                 borderColor: '#EDEDED'
-                                             }}
-                                             direction='row'
-                                             alignSelf='stretch'
-                                             background='#FFFFFF'
-                                             width={'medium'}
-                                             margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                                             pad='small' >
-                                             <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}} direction='column' justify='start'>
-                                                 <Text size='small'><b>Network ports range</b></Text>
-                                                 <Stack margin={{top: 'small'}}>
-                                                    <Box background="light-4" height="10px" direction="row" round="large" />
-                                                    <RangeSelector
-                                                      direction="horizontal"
-                                                      min={0}
-                                                      max={this.state.networkPortsFilterMax}
-                                                      step={1}
-                                                      round="large"
-                                                      values={[this.state.networkPortsFilterStart,this.state.networkPortsFilterEnd]}
-                                                      onChange={nextRange => {
-                                                          var newMax = this.state.networkPortsFilterMax
-                                                          if (nextRange[1] === this.state.networkPortsFilterMax) {
-                                                              newMax = parseInt(newMax*1.1)
-                                                          }
-
-                                                          this.setState(oldState => ({
-                                                              ...oldState, networkPortsFilterStart: nextRange[0],
-                                                              networkPortsFilterEnd: nextRange[1],
-                                                              networkPortsFilterMax: newMax,
-                                                              filters: {...oldState.filters, networkPortsStart: nextRange[0], networkPortsEnd: nextRange[1]}
-                                                          }))
-                                                      }}
-                                                    />
-                                                </Stack>
-                                                <Box align="center">
-                                                    <Text size="xsmall" margin={{top: 'xsmall'}}>{this.state.networkPortsFilterStart} - {this.state.networkPortsFilterEnd} ports</Text>
-                                                </Box>
-                                             </Box>
-                                         </Box>
                                          <Box style={{
                                                   borderRadius: 10,
                                                   borderColor: '#EDEDED'
