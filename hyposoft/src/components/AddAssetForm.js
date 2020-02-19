@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer } from 'grommet'
+import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer, Accordion, AccordionPanel } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
@@ -26,12 +26,19 @@ export default class AddAssetForm extends Component {
             owner: "",
             comment: "",
             macAddress: "",
-            datacenterName:"",
-            datacenterAbbrev:""
+            datacenterName: "",
+            datacenterAbbrev: "",
+            networkConnections: [{
+                //portLimit:"",//TODO: pass in model to know number of times admin can press add new connection
+                otherAssetID: "",
+                otherPort: "",
+                thisPort: ""
+            }],
 
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
+        this.addNetworkConnection = this.addNetworkConnection.bind(this);
     }
 
     handleChange(event) {
@@ -40,18 +47,50 @@ export default class AddAssetForm extends Component {
         });
     }
 
-    //Puts the MAC address into canoncial form: lower case and colon-delimited
+    //Puts the MAC address into canonical form: lower case and colon-delimited
     fixMACAddress(mac) {
+        let noSepMac;
         if (mac.charAt(2) == "-") {
-            return mac.replace("-", ":");
-        } else if (mac.charAt(2) == "_") {
-            return mac.replace("_", ":");
-        } else {
-            let canonicalMAC=mac.substr(0, 2).toLowerCase() + ":" + mac.substr(2, 2).toLowerCase() + ":" + mac.substr(4, 2).toLowerCase() + ":" + mac.substr(6, 2).toLowerCase() + ":" + mac.substr(8, 2).toLowerCase() + ":" + mac.substr(10, 2).toLowerCase();
+            noSepMac = mac.split("-").join("");
 
-            console.log("Canonical MAC: " + canonicalMAC)
-            return canonicalMAC;
+        } else if (mac.charAt(2) == "_") {
+            noSepMac = mac.split("_").join("");
         }
+        else {//if the admin put in a mac address with no separators
+            noSepMac = mac;
+        }
+
+        let canonicalMAC = noSepMac.substr(0, 2).toLowerCase() + ":" + noSepMac.substr(2, 2).toLowerCase() + ":" + noSepMac.substr(4, 2).toLowerCase() + ":" + noSepMac.substr(6, 2).toLowerCase() + ":" + noSepMac.substr(8, 2).toLowerCase() + ":" + noSepMac.substr(10, 2).toLowerCase();
+
+        console.log("Canonical MAC: " + canonicalMAC)
+        return canonicalMAC;
+
+
+    }
+
+    addNetworkConnection(event) {
+        this.setState(prevState => ({
+            networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort: "" }]
+        }));
+    }
+
+    //toLowercase, to colon
+    handleMacAddressFixAndSet(event){
+       
+            let fixedMAC="";
+            if (this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
+                fixedMAC = this.fixMACAddress(this.state.macAddress);
+              
+            } else if (this.state.macAddress) {
+                fixedMAC = this.state.macAddress;
+            }
+            //RACE CONDITION: i think it's not setting the state before calling this.state.macAddress in addAsset()
+            this.setState({ macAddress: fixedMAC }) 
+
+            console.log("MAC address passed to database: " + fixedMAC)
+            console.log(this.state.networkConnections)
+
+
     }
 
     handleSubmit(event) {
@@ -71,19 +110,24 @@ export default class AddAssetForm extends Component {
             } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
                 ToastsStore.error("Rack U must be positive.");
 
-            //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
-            } else if (this.state.macAddress && !/^([0-9A-Fa-f]{2}[:-\_]?){5}([0-9A-Fa-f]{2})$/.test(this.state.macAddress)) {
+                //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
+            } else if (this.state.macAddress && !/^([0-9A-Fa-f]{2}[-:\_]?){5}([0-9A-Fa-f]{2})$/.test(this.state.macAddress)) {
                 ToastsStore.error("Invalid MAC address. Ensure it is a six-byte hexadecimal value with any byte separator punctuation.");
             } else {
                 //toLowercase, to colon
-                let fixedMAC;
-                if (this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
-                    fixedMAC = this.fixMACAddress(this.state.macAddress);
-                } else if (this.state.macAddress) {
-                    fixedMAC = this.state.macAddress;
-                }
-                console.log("MAC address passed to database: " + fixedMAC)
-          
+                // let fixedMAC;
+                // if (this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
+                //     fixedMAC = this.fixMACAddress(this.state.macAddress);
+                // } else if (this.state.macAddress) {
+                //     fixedMAC = this.state.macAddress;
+                // }
+                // //RACE CONDITION: i think it's not setting the state before calling this.state.macAddress in addAsset()
+                // this.setState({ macAddress: fixedMAC }) 
+                // console.log("MAC address passed to database: " + fixedMAC)
+                // console.log(this.state.networkConnections)
+
+                this.handleMacAddressFixAndSet();
+
                 assetutils.addAsset(
                     this.state.asset_id,
                     this.state.model,
@@ -93,7 +137,8 @@ export default class AddAssetForm extends Component {
                     this.state.owner,
                     this.state.comment,
                     this.state.datacenter,
-                    fixedMAC,
+                    this.state.macAddress,
+                    this.state.networkConnections,
 
                     errorMessage => {
                         if (errorMessage) {
@@ -110,6 +155,7 @@ export default class AddAssetForm extends Component {
     }
 
     render() {
+
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
         }
@@ -124,128 +170,128 @@ export default class AddAssetForm extends Component {
                         level="4"
                     >Add Asset</Heading>
                     <Form onSubmit={this.handleSubmit} name="addInst">
-                    <Box direction="column" pad='xsmall' gap="small" flex overflow={{ vertical: 'scroll' }}>
-                        <FormField name="model" label="Model">
+                        <Box direction="column" pad='xsmall' gap="small" flex overflow={{ vertical: 'scroll' }}>
+                            <FormField name="model" label="Model">
 
 
-                            <TextInput name="model" required="true"
-                                       placeholder="eg. Dell R710"
-                                       onChange={e => {
-                                           const value = e.target.value
-                                           this.setState(oldState => ({...oldState, model: value}))
-                                           assetutils.getSuggestedModels(value, results => this.setState(oldState => ({
-                                               ...oldState,
-                                               modelSuggestions: results
-                                           })))
-                                       }}
-                                       onSelect={e => {
-                                           this.setState(oldState => ({...oldState, model: e.suggestion}))
-                                       }}
-                                       value={this.state.model}
-                                       suggestions={this.state.modelSuggestions}
-                                       onClick={() => assetutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({
-                                           ...oldState,
-                                           modelSuggestions: results
-                                       })))}
-                                       title='Model'
-                            />
-                        </FormField>
+                                <TextInput name="model" required="true"
+                                    placeholder="eg. Dell R710"
+                                    onChange={e => {
+                                        const value = e.target.value
+                                        this.setState(oldState => ({ ...oldState, model: value }))
+                                        assetutils.getSuggestedModels(value, results => this.setState(oldState => ({
+                                            ...oldState,
+                                            modelSuggestions: results
+                                        })))
+                                    }}
+                                    onSelect={e => {
+                                        this.setState(oldState => ({ ...oldState, model: e.suggestion }))
+                                    }}
+                                    value={this.state.model}
+                                    suggestions={this.state.modelSuggestions}
+                                    onClick={() => assetutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({
+                                        ...oldState,
+                                        modelSuggestions: results
+                                    })))}
+                                    title='Model'
+                                />
+                            </FormField>
 
-                        <FormField name="hostname" label="Hostname">
-
-
-                            <TextInput padding="medium" name="hostname" placeholder="eg. server9"
-                                       onChange={this.handleChange}
-                                       value={this.state.hostname}/>
-                        </FormField>
-
-                        <FormField name="datacenter" label="Datacenter">
-                            <TextInput name="datacenter"
-                                       placeholder="eg. Research Triangle Park #1"
-                                       onChange={e => {
-                                           const value = e.target.value
-                                           this.setState(oldState => ({...oldState, datacenter: value}))
-                                           assetutils.getSuggestedDatacenters(value, results => this.setState(oldState => ({
-                                               ...oldState,
-                                               datacenterSuggestions: results
-                                           })))
-                                       }}
-                                       onSelect={e => {
-                                           this.setState(oldState => ({...oldState, datacenter: e.suggestion}))
-                                       }}
-                                       value={this.state.datacenter}
-                                       suggestions={this.state.datacenterSuggestions}
-                                       onClick={() => assetutils.getSuggestedDatacenters(this.state.datacenter, results => this.setState(oldState => ({
-                                           ...oldState,
-                                           datacenterSuggestions: results
-                                       })))}
-                                       title='Datacenter'
-                                       required="true"
-                            />
-                        </FormField>
-
-                        <FormField name="rack" label="Rack">
+                            <FormField name="hostname" label="Hostname">
 
 
-                            <TextInput name="rack"
-                                       placeholder="eg. B12"
-                                       onChange={e => {
-                                           const value = e.target.value
-                                           this.setState(oldState => ({...oldState, rack: value}))
-                                           assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({
-                                               ...oldState,
-                                               rackSuggestions: results
-                                           })))
-                                       }}
-                                       onSelect={e => {
-                                           this.setState(oldState => ({...oldState, rack: e.suggestion}))
-                                       }}
-                                       value={this.state.rack}
-                                       suggestions={this.state.rackSuggestions}
-                                       onClick={() => assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
-                                           ...oldState,
-                                           rackSuggestions: results
-                                       })))}
-                                       title='Rack'
-                                       required="true"
-                            />
-                        </FormField>
+                                <TextInput padding="medium" name="hostname" placeholder="eg. server9"
+                                    onChange={this.handleChange}
+                                    value={this.state.hostname} />
+                            </FormField>
+
+                            <FormField name="datacenter" label="Datacenter">
+                                <TextInput name="datacenter"
+                                    placeholder="eg. Research Triangle Park #1"
+                                    onChange={e => {
+                                        const value = e.target.value
+                                        this.setState(oldState => ({ ...oldState, datacenter: value }))
+                                        assetutils.getSuggestedDatacenters(value, results => this.setState(oldState => ({
+                                            ...oldState,
+                                            datacenterSuggestions: results
+                                        })))
+                                    }}
+                                    onSelect={e => {
+                                        this.setState(oldState => ({ ...oldState, datacenter: e.suggestion }))
+                                    }}
+                                    value={this.state.datacenter}
+                                    suggestions={this.state.datacenterSuggestions}
+                                    onClick={() => assetutils.getSuggestedDatacenters(this.state.datacenter, results => this.setState(oldState => ({
+                                        ...oldState,
+                                        datacenterSuggestions: results
+                                    })))}
+                                    title='Datacenter'
+                                    required="true"
+                                />
+                            </FormField>
+
+                            <FormField name="rack" label="Rack">
 
 
-                        <FormField name="rackU" label="RackU">
+                                <TextInput name="rack"
+                                    placeholder="eg. B12"
+                                    onChange={e => {
+                                        const value = e.target.value
+                                        this.setState(oldState => ({ ...oldState, rack: value }))
+                                        assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({
+                                            ...oldState,
+                                            rackSuggestions: results
+                                        })))
+                                    }}
+                                    onSelect={e => {
+                                        this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
+                                    }}
+                                    value={this.state.rack}
+                                    suggestions={this.state.rackSuggestions}
+                                    onClick={() => assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
+                                        ...oldState,
+                                        rackSuggestions: results
+                                    })))}
+                                    title='Rack'
+                                    required="true"
+                                />
+                            </FormField>
 
 
-                            <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
-                                       value={this.state.rackU} required="true"/>
-                        </FormField>
+                            <FormField name="rackU" label="RackU">
 
 
-                        <FormField name="owner" label="Owner">
+                                <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
+                                    value={this.state.rackU} required="true" />
+                            </FormField>
 
-                            <TextInput name="owner"
-                                       placeholder="Optional"
-                                       onChange={e => {
-                                           const value = e.target.value
-                                           this.setState(oldState => ({...oldState, owner: value}))
-                                           assetutils.getSuggestedOwners(value, results => this.setState(oldState => ({
-                                               ...oldState,
-                                               ownerSuggestions: results
-                                           })))
-                                       }}
-                                       onSelect={e => {
-                                           this.setState(oldState => ({...oldState, owner: e.suggestion}))
-                                       }}
-                                       value={this.state.owner}
-                                       suggestions={this.state.ownerSuggestions}
-                                       onClick={() => assetutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({
-                                           ...oldState,
-                                           ownerSuggestions: results
-                                       })))}
-                                       title='Owner'
-                            />
-                        </FormField>
 
-                        {/* NEW FIELDS HERE> TODO: change the values/integrate with the backend, move datacenter stuff up the form========= */}
+                            <FormField name="owner" label="Owner">
+
+                                <TextInput name="owner"
+                                    placeholder="Optional"
+                                    onChange={e => {
+                                        const value = e.target.value
+                                        this.setState(oldState => ({ ...oldState, owner: value }))
+                                        assetutils.getSuggestedOwners(value, results => this.setState(oldState => ({
+                                            ...oldState,
+                                            ownerSuggestions: results
+                                        })))
+                                    }}
+                                    onSelect={e => {
+                                        this.setState(oldState => ({ ...oldState, owner: e.suggestion }))
+                                    }}
+                                    value={this.state.owner}
+                                    suggestions={this.state.ownerSuggestions}
+                                    onClick={() => assetutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({
+                                        ...oldState,
+                                        ownerSuggestions: results
+                                    })))}
+                                    title='Owner'
+                                />
+                            </FormField>
+
+                            {/* NEW FIELDS HERE> TODO: change the values/integrate with the backend, move datacenter stuff up the form========= */}
 
                             <FormField name="macAddress" label="MAC Address">
                                 <TextInput name="macAddress" placeholder="eg. 11-ab-cd-79-aa-c9" onChange={this.handleChange}
@@ -254,17 +300,34 @@ export default class AddAssetForm extends Component {
                             </FormField>
 
                             {/* For these last two, need to think carefully about UI since they are 'multistep' to add 
-                         <AssetNetworkPortsForm/>
-
+                         
 
                              <AssetPowerPortsForm />
-                        
-                        
-                        
+                            
                         
                         */}
+                            <Accordion>
+                                <AccordionPanel label="Network Connections">
+                                    <AssetNetworkPortsForm
+                                        networkConnections={this.state.networkConnections}
+                                    />
 
-                          
+                                    <Button
+                                        onClick={this.addNetworkConnection}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+
+                                        label="Add a network connection" />
+
+                                    {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
+                                    {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
+                                    <Button onClick={this.handleConnect}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+                                        label="Validate Connections" />
+
+                                </AccordionPanel>
+                            </Accordion>
+
+
 
                             <FormField name="asset_id" label="Override Asset ID">
                                 <TextInput name="asset_id" placeholder="If left blank, will auto-generate" onChange={this.handleChange}
