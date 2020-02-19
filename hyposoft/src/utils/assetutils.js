@@ -6,25 +6,17 @@ import * as assetIDutils from './assetidutils'
 import * as datacenterutils from './datacenterutils'
 import * as assetnetworkportutils from './assetnetworkportutils'
 
-import * as networkConnections from '../customClasses/networkConnections'
-
-//TODO: admin vs. user privileges
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
 const index = client.initIndex('assets')
 
 function getAsset(callback, field = null, direction = null) {
-    console.log(field, direction)
     let query;
     if (field && direction !== null) {
         query = direction ? assetRef.limit(25).orderBy(field) : assetRef.limit(25).orderBy(field, "desc");
     } else {
         query = assetRef.limit(25);
     }
-    console.log(query.toString())
-
-    //TODO: need to rigorously test combined sort
-    //TODO: deecide to make rackU unsortable???
     let assets = [];
     let count = 0;
 
@@ -87,18 +79,6 @@ function getAssetAt(start, callback, field = null, direction = null) {
             }
         })
 
-        /*const assets = docSnaps.docs.map(doc => (
-            {
-                asset_id: doc.id,
-                model: doc.data().model,
-                hostname: doc.data().hostname,
-                rack: doc.data().rack,
-                rackU: doc.data().rackU,
-                owner: doc.data().owner,
-                comment: doc.data().comment,
-                datacenter: doc.data().datacenter
-            }))
-        callback(newStart, assets)*/
     }).catch(function (error) {
         callback(null, null);
     })
@@ -201,38 +181,20 @@ function forceModifyAssetsInDb(toBeModified) {
     }
 }
 
-
-class networkConnectionsObject {
+class connection {
     constructor(thisPort, otherAssetID, otherPort) {
         this.thisPort = thisPort;
         this.otherAssetID = otherAssetID;
-        this.otherPort = otherPort;
-
-        console.log("in constrcutor")
-    }
-    toString() {
-        return this.thisPort + ':' + this.otherAssetID + ':' + this.otherPort;
-    }
-}
-// Firestore data converter
-const networkConnectionsConverter = {
-    toFirestore: function (networkConnectionsObject) {
-        return {
-            thisPort: networkConnectionsObject.thisPort,
-            otherAssetID: networkConnectionsObject.otherAssetID,
-            otherPort: networkConnectionsObject.otherPort
-        }
-    },
-    fromFirestore: function (snapshot, options) {
-        const data = snapshot.data(options);
-        return new networkConnectionsObject(data.thisPort, data.otherAssetID, data.otherPort)
+        this.otherPort = otherPort
     }
 }
 
-function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, fixedMac, networkConnections, callback) {
 
-    console.log(fixedMac)
-    console.log(owner)
+
+
+
+function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, fixedMac, networkConnectionsArray, callback) {
+
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
@@ -256,6 +218,12 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                 //if field assetID has been left empty, then call generate
                                 //otherwise, use override method and throw correct errors
 
+                                //TODO: refactor this. Seems inefficient/error prone to have the .set duplicated
+                                // let assetID = overrideAssetID.trim()==="" ? generateAssetID() : overrideAssetID()
+
+                                //let ncMap = networkConnectionsToMap(networkConnections);
+                                //console.log(ncMap)
+                    
                                 if (overrideAssetID.trim() != "") {
                                     assetIDutils.overrideAssetID(overrideAssetID).then(
                                         _ => {
@@ -269,6 +237,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 comment: comment,
                                                 rackID: rackID,
                                                 macAddress: fixedMac,
+                                            
                                                 //This is for rack usage reports
                                                 modelNumber: modelNum,
                                                 vendor: modelVendor,
@@ -278,6 +247,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 datacenter: datacenter,
                                                 datacenterID: datacenterID,
                                                 datacenterAbbrev: datacenterAbbrev
+                                    
                                             }).then(function (docRef) {
                                                 racksRef.doc(String(rackID)).update({
                                                     assets: firebase.firestore.FieldValue.arrayUnion(overrideAssetID)//docref.id
@@ -298,13 +268,13 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                         })
 
                                 } else {
-                                    //change converter metod to handle array and store as map
-
-                                    let networkConnectionsDB = new networkConnectionsObject("thisPortTest", "otherAssetIDTest", "otherPorttest");
-                                    console.log(networkConnectionsDB.thisPort)
+                                   // let ncMap = networkConnectionsToMap(networkConnections);
+                                   // console.log(ncMap)
+                                  
+                                   let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
                                     assetIDutils.generateAssetID().then(newID =>
 
-                                        assetRef.doc(newID)//.withConverter(networkConnectionsConverter)
+                                        assetRef.doc(newID)
                                             .set({
 
                                                 modelId: doc.id,
@@ -316,6 +286,8 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 comment: comment,
                                                 rackID: rackID,
                                                 macAddress: fixedMac,
+                                                networkConnections,
+                                               
                                                 // This is for rack usage reports
                                                 modelNumber: modelNum,
                                                 vendor: modelVendor,
@@ -325,12 +297,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 datacenter: datacenter,
                                                 datacenterID: datacenterID,
                                                 datacenterAbbrev: datacenterAbbrev
-
-                                            }).then(function (newDoc) {
-                                                assetRef.doc(newID).withConverter(networkConnectionsConverter)
-                                                    .set(networkConnectionsDB, { merge: true })
-                                            })
-                                            .then(function (docRef) {
+                                            }).then(function (docRef) {
                                                 racksRef.doc(String(rackID)).update({
                                                     assets: firebase.firestore.FieldValue.arrayUnion(newID)//docref.id
                                                 }).then(function () {

@@ -16,9 +16,6 @@ function validateNetworkConnections(thisModelName, networkPortConnections) {
 
     //The port needs to exist (so on this and other asset). Autcomplete picklist should help with this, but still need to throw correct error
 
-    //Need to validate otherAssetID exists
-
-
     let numConnectionsMade = networkPortConnections.length
     let mostPossibleConnections = 0;
 
@@ -116,6 +113,8 @@ function validateNetworkConnections(thisModelName, networkPortConnections) {
 
 }
 
+//Everything else below are helper functions called in the above validate function
+
 function checkNetworkPortConflicts(networkPortConnections, callback) {
     //No doubly connected ports on this (see networkPortConns) and other asset. Must check every singe=le asst
     //The error message ^ must be specific: “can’t connect host1 port e1 to switch1 port 22; that port is already connected to host5 port e1”).
@@ -171,32 +170,39 @@ function checkOtherAssetPortsExist(networkConnections, callback) {
 
 //need to create a new networkConnections instance 
 
-//Call this addAsset. Need to pass in these two things though
-function createNetworkConnectionsDatabaseMap(networkPortConnections) {
-    //Make sure connections are symmetric. Meaning the other asset should have their network port connectiosn updated too
+
+function symmetricNetworkConnections(networkConnections){
+      //Make sure connections are symmetric. Meaning the other asset should have their network port connectiosn updated too
     //This is what's responsible for making the map from the networkConnections Array to finally pass into the database
     //Call validation function here, then depending on results, go into this for loop
-  
-    for (let i = 0; i < networkPortConnections.length; i++) {
-        let key = networkPortConnections[i].thisPort
-        let value = networkPortConnections[i].otherAssetID + " " + networkPortConnections[i].otherPort
-        // let networkConnectionsDB = new networkConnections(networkPortConnections[i].thisPort,networkPortConnections[i].otherAssetID,networkPortConnections[i].otherPort )
-       // ncMap.set(key, value)
-
-    }
-    //console.log(ncMap)
-    //return ncMap ;
 
 }
+function networkConnectionsToMap(networkConnectionsArray){
 
+    var JSONConnections={}
+    var JSONValues={}
+    for(let i = 0; i < networkConnectionsArray.length; i++){
+
+        let key = networkConnectionsArray[i].thisPort;
+        let value1 = networkConnectionsArray[i].otherAssetID;
+        let value2 = networkConnectionsArray[i].otherPort;
+        JSONValues["otherAssetID"]=value1
+        JSONValues["otherPort"]=value2
+        JSONConnections[key] = JSONValues;
+        
+    }
+
+    return JSONConnections;
+}
 
 
 export {
     validateNetworkConnections,
     checkNetworkPortConflicts,
-    createNetworkConnectionsDatabaseMap,
     checkOtherAssetPortsExist,
     checkThisModelPortsExist,
+    symmetricNetworkConnections,
+    networkConnectionsToMap,
 
 
 }

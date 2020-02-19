@@ -38,7 +38,7 @@ export default class AssetNetworkPortsForm extends Component {
 
     render() {
         let { networkConnections } = this.props
-        console.log(networkConnections)
+        // console.log(networkConnections)
         return (
             networkConnections.map((val, idx) => {
                 return (

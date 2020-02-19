@@ -231,7 +231,7 @@ class AssetScreen extends Component {
                 label="Please wait..."
             />)
         } else {
-            console.log(this.datacenters)
+            //console.log(this.datacenters)
             return (
                 <Select
                     placeholder="Select a datacenter..."
@@ -260,7 +260,7 @@ class AssetScreen extends Component {
                     if (count === names.length) {
                         this.datacenters.push(name);
                         this.datacenters.push("All datacenters")
-                        console.log(items)
+                        //console.log(items)
                         this.setState({
                             datacentersLoaded: true
                         });
