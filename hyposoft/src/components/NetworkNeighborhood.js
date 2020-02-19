@@ -2,121 +2,73 @@ import React from "react";
 import theme from "../theme";
 import {Box, Grommet, Text} from "grommet";
 import cytoscape from "cytoscape";
+import * as assetnetworkportutils from '../utils/assetnetworkportutils'
 
 class NetworkNeighborhood extends React.Component {
 
     componentDidMount() {
-        let cy = cytoscape({
-            container: document.getElementById("network"),
-            elements: [ // list of graph elements to start with
-                {
-                    data: { id: 'rtp-dfm-sv1' }
-                },
-                {
-                    data: { id: 'rtp-dfm-sw1' }
-                },
-                {
-                    data: { id: 'rtp-dfm-sw2' }
-                },
-                {
-                    data: { id: 'rtp-dfm-m1' }
-                },
-                {
-                    data: { id: 'rtp-dfm-m2' }
-                },
-                {
-                    data: { id: 'rtp-dfm-sv2' }
-                },
-                {
-                    data: { id: 'rtp-dfm-sv3' }
-                },
-                {
-                    data: { id: 'rtp-dfm-sv4' }
-                },
-                {
-                    data: { id: 'rtp-dfm-sv5' }
-                },
-                {
-                    data: { id: 'rtp-dfm-sv6' }
-                },
-                {
-                    data: { id: 'rtp-dfm-sv7' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sv1', target: 'rtp-dfm-sw1' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sv1', target: 'rtp-dfm-sw2' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw1', target: 'rtp-dfm-sw2' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw1', target: 'rtp-dfm-m1' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw1', target: 'rtp-dfm-m2' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw1', target: 'rtp-dfm-sv2' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw1', target: 'rtp-dfm-sv3' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw1', target: 'rtp-dfm-sv4' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw1', target: 'rtp-dfm-sv5' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw1', target: 'rtp-dfm-sv6' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw1', target: 'rtp-dfm-sv7' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw2', target: 'rtp-dfm-sv2' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw2', target: 'rtp-dfm-sv3' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw2', target: 'rtp-dfm-sv4' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw2', target: 'rtp-dfm-sv5' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw2', target: 'rtp-dfm-sv6' }
-                },
-                {
-                    data: { source: 'rtp-dfm-sw2', target: 'rtp-dfm-sv7' }
-                },
-            ],
+        let data;
+        assetnetworkportutils.getNetworkPortConnections("149821", result => {
+            if(result){
+                console.log(result);
+                data = result;
+                let cy = cytoscape({
+                    container: document.getElementById("network"),
+                    elements: data,
 
-            style: [ // the stylesheet for the graph
-                {
-                    selector: 'node',
-                    style: {
-                        'background-color': '#666',
-                        'label': 'data(id)'
+                    style: [ // the stylesheet for the graph
+                        {
+                            selector: '.origin',
+                            style: {
+                                'background-color': '#4BBD51',
+                                'label': 'data(id)',
+                                "font-size": "8px"
+                            }
+                        },
+                        {
+                            selector: '.second',
+                            style: {
+                                'background-color': '#395E66',
+                                'label': 'data(id)',
+                                "font-size": "8px"
+                            }
+                        },
+                        {
+                            selector: '.third',
+                            style: {
+                                'background-color': '#B8C4BB',
+                                'label': 'data(id)',
+                                "font-size": "8px"
+                            }
+                        },
+                        {
+                            selector: 'edge',
+                            style: {
+                                'width': 3,
+                                'line-color': '#ccc',
+                                'target-arrow-color': '#ccc',
+                                'target-arrow-shape': 'triangle'
+                            }
+                        }
+                    ],
+
+                    layout: {
+                        name: 'concentric',
+                        concentric: function( node ){
+                            console.log(node.data().level)
+                            return (3-node.data().level);
+                        },
+                        fit: true,
+                        minNodeSpacing: 30
                     }
-                },
-
-                {
-                    selector: 'edge',
-                    style: {
-                        'width': 3,
-                        'line-color': '#ccc',
-                        'target-arrow-color': '#ccc',
-                        'target-arrow-shape': 'triangle'
+                });
+                cy.on('tap', 'node', function(){
+                    try { // your browser may block popups
+                        window.open( "/assets/" + this.data('assetID') );
+                    } catch(e){ // fall back on url change
+                        window.location.href = "/assets/" + this.data('assetID');
                     }
-                }
-            ],
-
-            layout: {
-                name: 'circle'
+                });
             }
         });
     }

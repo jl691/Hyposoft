@@ -90,9 +90,102 @@ function addNetworkPortConnections(networkPortConnections, otherAsset) {
 
 }
 
+function getNetworkPortConnections(assetID, callback) {
+    let assets = [];
+    addPortsByAsset(assetID, 1, (nodes, secondLevel) => {
+        if(nodes && nodes.length){
+            assets = assets.concat(nodes);
+            let count = 0;
+            secondLevel.forEach(secondLevelID => {
+                addPortsByAsset(secondLevelID, 2, (secondLevelNodes, thirdLevel) => {
+                    console.log("here and count is " + count + " out of " + secondLevel.length)
+                    if(secondLevelNodes && secondLevelNodes.length){
+                        assets = assets.concat(secondLevelNodes);
+                        count++;
+                        if(count === secondLevel.length){
+                            console.log("yeeeet")
+                            console.log(assets)
+                            callback(assets);
+                        }
+                    } else if(secondLevelNodes) {
+                        count++;
+                        if(count === secondLevel.length){
+                            console.log("yeeeet")
+                            console.log(assets)
+                            callback(assets);
+                        }
+                    }
+                    else {
+                        console.log("fail")
+                        callback(null);
+                    }
+                });
+            })
+        } else {
+            callback(null);
+        }
+    })
+}
+
+function addPortsByAsset(assetID, level, callback){
+    let assets = [];
+    let assetSecondLevel = [];
+    assetRef.doc(assetID).get().then(docSnap => {
+        let assetModel = docSnap.data().model;
+        let nodeClass = (level === 1) ? "origin" : "second";
+        let nodeLevel = (level === 1) ? 1 : 2;
+        assets.push({
+            data: {
+                id: assetModel + ", " + assetID,
+                level: nodeLevel,
+                assetID: assetID
+            },
+            classes: nodeClass,
+        });
+        let count = 0;
+        console.log(docSnap.data())
+        if(docSnap.data().networkConnections) {
+            Object.keys(docSnap.data().networkConnections).forEach(function (connection) {
+                assetRef.doc(docSnap.data().networkConnections[connection].otherAssetID.toString()).get().then(otherDocSnap => {
+                    assetSecondLevel.push(docSnap.data().networkConnections[connection].otherAssetID.toString());
+                    let otherAssetModel = otherDocSnap.data().model;
+                    let innerNodeClass = (level === 1) ? "second" : "third";
+                    let innerNodeLevel = (level === 1) ? 2 : 3;
+                    assets.push({
+                        data: {
+                            id: otherAssetModel + ", " + docSnap.data().networkConnections[connection].otherAssetID,
+                            level: innerNodeLevel,
+                            assetID: docSnap.data().networkConnections[connection].otherAssetID
+                        },
+                        classes: innerNodeClass,
+                    });
+                    assets.push({
+                        data: {
+                            source: assetModel + ", " + assetID,
+                            target: otherAssetModel + ", " + docSnap.data().networkConnections[connection].otherAssetID
+                        }
+                    });
+                    count++;
+                    if(count === Object.keys(docSnap.data().networkConnections).length){
+                        callback(assets, assetSecondLevel);
+                    }
+                }).catch(function (error) {
+                    console.log(error);
+                    callback(null, null)
+                })
+            })
+        } else {
+            callback([], []);
+        }
+    }).catch(function (error) {
+        console.log(error);
+        callback(null, null);
+    })
+}
+
 export {
     validateNetworkConnections,
     checkNetworkPortConflicts,
     addNetworkPortConnections,
-
+    getNetworkPortConnections
 }
