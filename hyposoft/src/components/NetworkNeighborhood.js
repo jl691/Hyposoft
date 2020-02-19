@@ -12,6 +12,7 @@ class NetworkNeighborhood extends React.Component {
     componentDidMount() {
         let data;
         assetnetworkportutils.getNetworkPortConnections(this.props.match.params.assetID, result => {
+            console.log(result)
             if(result){
                 console.log(result);
                 data = result;
@@ -75,6 +76,8 @@ class NetworkNeighborhood extends React.Component {
                         window.location.href = "/assets/" + this.data('id');
                     }
                 });
+            } else {
+                document.getElementById("network").innerHTML = "No network connections."
             }
         });
     }

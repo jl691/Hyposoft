@@ -202,6 +202,7 @@ function getNetworkPortConnections(assetID, callback) {
         if(nodes && nodes.length){
             assets = assets.concat(nodes);
             let count = 0;
+            console.log("secondlevel is ", secondLevel)
             secondLevel.forEach(secondLevelID => {
                 addPortsByAsset(secondLevelID, 2, (secondLevelNodes, thirdLevel) => {
                     console.log("here and count is " + count + " out of " + secondLevel.length)
