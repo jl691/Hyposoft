@@ -5,6 +5,7 @@ import * as userutils from './userutils'
 import * as assetIDutils from './assetidutils'
 import * as datacenterutils from './datacenterutils'
 import * as assetnetworkportutils from './assetnetworkportutils'
+import * as logutils from './logutils'
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
@@ -223,7 +224,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
                                 //let ncMap = networkConnectionsToMap(networkConnections);
                                 //console.log(ncMap)
-                    
+
                                 if (overrideAssetID.trim() != "") {
                                     assetIDutils.overrideAssetID(overrideAssetID).then(
                                         _ => {
@@ -237,7 +238,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 comment: comment,
                                                 rackID: rackID,
                                                 macAddress: fixedMac,
-                                            
+
                                                 //This is for rack usage reports
                                                 modelNumber: modelNum,
                                                 vendor: modelVendor,
@@ -247,12 +248,13 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 datacenter: datacenter,
                                                 datacenterID: datacenterID,
                                                 datacenterAbbrev: datacenterAbbrev
-                                    
+
                                             }).then(function (docRef) {
                                                 racksRef.doc(String(rackID)).update({
                                                     assets: firebase.firestore.FieldValue.arrayUnion(overrideAssetID)//docref.id
                                                 }).then(function () {
                                                     console.log("Document successfully updated in racks!");
+                                                    logutils.addLog(overrideAssetID,logutils.ASSET(),logutils.CREATE())
                                                     callback(null);
                                                 })
                                                 docRef.get().then(ds => {
@@ -270,7 +272,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                 } else {
                                    // let ncMap = networkConnectionsToMap(networkConnections);
                                    // console.log(ncMap)
-                                  
+
                                    let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
                                     assetIDutils.generateAssetID().then(newID =>
 
@@ -287,7 +289,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 rackID: rackID,
                                                 macAddress: fixedMac,
                                                 networkConnections,
-                                               
+
                                                 // This is for rack usage reports
                                                 modelNumber: modelNum,
                                                 vendor: modelVendor,
@@ -302,6 +304,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                     assets: firebase.firestore.FieldValue.arrayUnion(newID)//docref.id
                                                 }).then(function () {
                                                     console.log("Document successfully updated in racks!");
+                                                    logutils.addLog(newID,logutils.ASSET(),logutils.CREATE())
                                                     callback(null);
                                                 })
                                                 docRef.get().then(ds => {
@@ -487,36 +490,30 @@ function deleteAsset(assetID, callback) {
                     rackID = id
                     console.log(rackID)
 
+                    let docData = doc.data()
                     assetRef.doc(assetID).delete().then(function () {
                         racksRef.doc(String(rackID)).update({
                             assets: firebase.firestore.FieldValue.arrayRemove(assetID)
                         })
-                            .then(function () {
-                                console.log("Document successfully deleted!");
-                                assetRef.doc(assetID).delete().then(function () {
-                                    racksRef.doc(String(rackID)).update({
-
-                                        assets: firebase.firestore.FieldValue.arrayRemove(assetID)
-                                    }).then(function () {
-                                        index.deleteObject(assetID)
-                                        callback(assetID);
-                                    }).catch(function (error) {
-                                        console.log(error);
-                                        callback(null)
-                                    })
+                        .then(function () {
+                            console.log("Document successfully deleted!");
+                            logutils.addLog(assetID,logutils.ASSET(),logutils.DELETE(),docData)
+                            index.deleteObject(assetID)
+                            callback(assetID);
+                            }).catch(function (error) {
+                                console.log(error);
+                                callback(null)
+                            })
                                     //callback(assetID);
                                 }).catch(function (error) {
                                     callback(null);
                                 })
-                            })
-                    }).catch(function (error) {
-                        callback(null);
-                    })
-
                 } else {
                     console.log("no rack for this letter and number")
                     callback(null)
                 }
+            }).catch(function (error) {
+                callback(null);
             })
         } else {
             callback(null);
@@ -600,6 +597,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                         objectID: docRef.id
                                                                     })
                                                                 })
+                                                                logutils.addLog(String(assetID),logutils.ASSET(),logutils.MODIFY())
                                                                 callback(null);
                                                             }).catch(function (error) {
                                                                 callback(error);
