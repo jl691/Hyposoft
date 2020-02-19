@@ -55,7 +55,7 @@ export default class DetailedAssetScreen extends Component {
                                 <BackButton alignSelf='start' this={this} />
                                 <Heading alignSelf='center' level='4' margin={{
                                     top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
-                                }} ></Heading>
+                                }} >{this.props.match.params.assetID}</Heading>
                                 <UserMenu alignSelf='end' this={this} />
                             </AppBar>
                             <Box
@@ -91,6 +91,7 @@ export default class DetailedAssetScreen extends Component {
                                          </span>
                                          <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}} gap='small'>
                                              <Button label="View Model Details" onClick={() => {this.props.history.push('/models/'+this.state.asset.vendor+'/'+this.state.asset.modelNum)}} />
+                                             <Button label="Network Neighborhood" onClick={() => {this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)}} />
                                          </Box>
                                      </Box>
                                  </Box>
