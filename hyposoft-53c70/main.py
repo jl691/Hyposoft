@@ -1,5 +1,6 @@
 import webapp2
 from google.appengine.api import mail
+import urllib
 
 class MainHandler(webapp2.RequestHandler):
 	def get(self):
@@ -26,6 +27,7 @@ Your HypoSoft administrator has just added you to the system. Please <a href="ht
 <br><br>
 Best,<br>
 The HypoSoft Team""" % (claimCode,claimCode))
+		self.response.headers['Access-Control-Allow-Origin'] = '*'
 		self.response.write('Sent.')
 
 class ForgotPasswordHandler(webapp2.RequestHandler):
@@ -48,10 +50,31 @@ You've requested a password reset for your HypoSoft account. Please <a href="htt
 <br><br>
 Best,<br>
 The HypoSoft Team""" % (secret))
+		self.response.headers['Access-Control-Allow-Origin'] = '*'
 		self.response.write('Sent.')
+
+class PowerOnHandler(webapp2.RequestHandler):
+	def get(self):
+		urllib.urlopen('http://vcm-13238.vm.duke.edu:3011/poweron/'+self.request.get('pdu')+'/'+self.request.get('port')).read()
+		self.response.headers['Access-Control-Allow-Origin'] = '*'
+		self.response.write('Done.')
+
+class PowerOffHandler(webapp2.RequestHandler):
+	def get(self):
+		urllib.urlopen('http://vcm-13238.vm.duke.edu:3011/poweroff/'+self.request.get('pdu')+'/'+self.request.get('port')).read()
+		self.response.headers['Access-Control-Allow-Origin'] = '*'
+		self.response.write('Done.')
+
+class GetPduStatusesHandler(webapp2.RequestHandler):
+	def get(self):
+		self.response.headers['Access-Control-Allow-Origin'] = '*'
+		self.response.write(urllib.urlopen('http://vcm-13238.vm.duke.edu:3011/get/'+self.request.get('pdu')).read())
 
 app = webapp2.WSGIApplication([
 	('/', MainHandler),
 	('/addUser', AddUserHandler),
-	('/forgotPassword', ForgotPasswordHandler)
+	('/forgotPassword', ForgotPasswordHandler),
+	('/poweron', PowerOnHandler),
+	('/poweroff', PowerOffHandler),
+	('/getPduStatuses', GetPduStatusesHandler)
 ], debug=True)

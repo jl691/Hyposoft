@@ -40,7 +40,7 @@ ReactDOM.render((
                     <Route exact path='/dashboard' component={DashboardScreen} />
                     <Route exact path='/settings' component={SettingsScreen} />
                     <Route exact path='/users' component={UsersScreen} />
-                    <Route exact path='/networkneighborhood' component={NetworkNeighborhood} />
+                    <Route exact path='/networkneighborhood/:assetID' component={NetworkNeighborhood} />
                     <Route path='/signup/:secret' component={ClaimScreen} />
                     <Route path='/badsignup/:secret' component={UnclaimScreen} />
                     <Route path='/resetpassword/:secret' component={ResetPasswordScreen} />
