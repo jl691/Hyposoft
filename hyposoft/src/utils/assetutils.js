@@ -509,9 +509,10 @@ function deleteAsset(assetID, callback) {
                     console.log("no rack for this letter and number")
                     callback(null)
                 }
-            }).catch(function (error) {
-                callback(null);
             })
+            // .catch(function (error) {
+            //     callback(null);
+            // })
         } else {
             callback(null);
         }

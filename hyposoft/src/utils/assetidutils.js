@@ -7,10 +7,11 @@ function generateAssetID() {
         var triesLeft = 5;
         var result = '';
         var characters = '0123456789';
-        var firstDigit= '124567839'
+        var firstDigit= '1123456789'
         var charactersLength = characters.length;
 
         result += firstDigit.charAt(Math.floor(Math.random() * charactersLength));
+        console.log("The first digit of asset ID: " + result)
 
         for (var i = 0; i < 5; i++) {
             result += characters.charAt(Math.floor(Math.random() * charactersLength));

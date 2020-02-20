@@ -73,7 +73,7 @@ function getModelByModelname(modelName, callback) {
     firebaseutils.modelsRef.where('modelName', '==', modelName)
     .get().then(qs => {
         if (!qs.empty) {
-            console.log(qs.docs[0]);
+            //console.log(qs.docs[0]);
             callback(qs.docs[0])
         } else {
             callback(null)
