@@ -7,8 +7,12 @@ function generateAssetID() {
         var triesLeft = 5;
         var result = '';
         var characters = '0123456789';
+        var firstDigit= '124567839'
         var charactersLength = characters.length;
-        for (var i = 0; i < 6; i++) {
+
+        result += firstDigit.charAt(Math.floor(Math.random() * charactersLength));
+
+        for (var i = 0; i < 5; i++) {
             result += characters.charAt(Math.floor(Math.random() * charactersLength));
     
         }
@@ -59,6 +63,7 @@ function overrideAssetID(inputID) {
     return new Promise((resolve, reject) => {
         //needs to be within range
         //needs to be unique
+        //DOUBLE CHECK WITH REGEX. 
         if(parseInt(inputID) <=999999 && parseInt(inputID) >= 100000){
             isUniqueAssetID(inputID, result => {
                 if(result){
