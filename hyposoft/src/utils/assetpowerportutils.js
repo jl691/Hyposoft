@@ -7,16 +7,41 @@ import * as assetIDutils from './assetidutils'
 
 
 function validatePowerConnections(powerConnections, PDUs, model, callback) {
-    //Both L/R and port number are filled out (no empty fields)
-//Port number is 1-24
 //Assuming all or nothing. If an asset has 2 power ports, can't just plug one in
-//That the number of power ports connected does not exceed the number on the model 
-// ^^ Do something on frontend to limit num times you can add connection
+//Validate that the PDU is free at the location: call checkConflicts in this method
 
-//If all the fields are empty, then 'No connection' (see superscript 7 in requirements). use callback or promise apprpriately
-//call checkConflicts
+    for(let i =0; i < powerConnections.length; i++){
+        let pduSide=powerConnections[i];
+        let port=powerConnections[i];
 
-//Need to check that the
+        if(pduSide.trim()==="" && port.trim()===""){
+            callback(null)
+        }
+        else if(pduSide.trim() !== "" && port.trim() !==""){
+
+            modelsRef.where("modelName", "==", model).get().then(function (querySnapshot){
+                let numPowerPorts=querySnapshot.docs[0].data().powerPorts;
+                if(parseInt(port)<1 && parseInt(port)>24){
+                    callback("Please enter a valid port number. Valid port numbers range from 1 to 24.")
+                }
+                if(powerConnections.length > numPowerPorts){
+                    callback("Cannot make more power connections than the model " + model+ " allows. Can only make up to "+ numPowerPorts +" connections.")
+                }
+
+
+
+
+
+            }).catch(console.log("Could not find the model"))
+            
+
+        }
+        else{
+            callback("To make a power connection, must fill out all fields.")
+        }
+
+
+    }
 
 }
 
@@ -37,6 +62,12 @@ function checkConflicts(powerConnections, PDUs){
 //Need to add a powerConnections field to addAsset(0)
 function addConnections(powerConnections){
     //validatePowerConnections
+    //if there are 2 power ports (extend to more than 2), need to make symmetric connections
+    //If it's right, plae it there (single port)
+      //if left and port specficied, place there(single port)
+    //If there are 2 power ports, find the first available spot on PDU on left and match on right. Keep moving down PDU if needed
+  
+
 
 
 }

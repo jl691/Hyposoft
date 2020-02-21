@@ -115,16 +115,7 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Invalid MAC address. Ensure it is a six-byte hexadecimal value with any byte separator punctuation.");
             } else {
                 //toLowercase, to colon
-                // let fixedMAC;
-                // if (this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
-                //     fixedMAC = this.fixMACAddress(this.state.macAddress);
-                // } else if (this.state.macAddress) {
-                //     fixedMAC = this.state.macAddress;
-                // }
-                // //RACE CONDITION: i think it's not setting the state before calling this.state.macAddress in addAsset()
-                // this.setState({ macAddress: fixedMAC }) 
-                // console.log("MAC address passed to database: " + fixedMAC)
-                // console.log(this.state.networkConnections)
+      
 
                 this.handleMacAddressFixAndSet();
 
@@ -139,6 +130,7 @@ export default class AddAssetForm extends Component {
                     this.state.datacenter,
                     this.state.macAddress,
                     this.state.networkConnections,
+                    this.state.powerConnections,
 
                     errorMessage => {
                         if (errorMessage) {

@@ -19,14 +19,13 @@ export default class AssetNetworkPortsForm extends Component {
     handleChange(e, idx) {
         //You are either typing into an output
         if (e.target.name === "otherAssetID" || e.target.name === "otherPort" || e.target.name === "thisPort") {
-            console.log("two")
+           
             let networkConnections = [...this.props.networkConnections]
             networkConnections[idx][e.target.name] = e.target.value
             this.setState({ port: e.target.value })
 
             //or it's something already 'submitted'
         } else {
-            console.log("three")
             this.setState({ [e.target.name]: e.target.value })
         }
     }

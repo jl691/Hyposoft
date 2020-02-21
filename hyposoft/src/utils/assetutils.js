@@ -182,7 +182,7 @@ function forceModifyAssetsInDb(toBeModified) {
     }
 }
 
-function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, fixedMac, networkConnectionsArray, callback) {
+function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, fixedMac, networkConnectionsArray, powerConnections, callback) {
 
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
@@ -231,6 +231,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                         rackID: rackID,
                                                         macAddress: fixedMac,
                                                         networkConnections,
+                                                        powerConnections,
 
                                                         //This is for rack usage reports
                                                         modelNumber: modelNum,
@@ -265,6 +266,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                         else {
 
                                             let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
+                                            
                                             assetIDutils.generateAssetID().then(newID =>
 
                                                 assetRef.doc(newID)
@@ -280,6 +282,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                         rackID: rackID,
                                                         macAddress: fixedMac,
                                                         networkConnections,
+                                                        powerConnections,
 
                                                         // This is for rack usage reports
                                                         modelNumber: modelNum,
@@ -301,6 +304,8 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                         docRef.get().then(ds => {
                                                             index.saveObject({ ...ds.data(), objectID: ds.id })
                                                         })
+                                                    }).then(function (docRef){
+                                                        assetnetworkportutils.symmetricNetworkConnections(networkConnectionsArray, newID)
                                                     }).catch(function (error) {
                                                         // callback("Error");
                                                         console.log(error)
