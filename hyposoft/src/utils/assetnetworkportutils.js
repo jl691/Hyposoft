@@ -76,22 +76,19 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                                                 callback(otherNonexist)
                                             }
                                             else {
-                                                // checkNetworkPortConflicts(networkPortConnections, status => {
-                                                //     if (status) {
-                                                //         reject("can't connect host1 port e1 to switch1 port 22 that port is already connected to host5 port e1")
-                                                //     }
-                                                //     else {
+                                                checkNetworkPortConflicts(networkPortConnections, status => {
+                                                    if (status) {
+                                                        callback(status)
+                                                    }
+                                                    else {
+                                                        success++;
+                                                        if (success == networkPortConnections.length) {
+                                                            callback(null)
+                                                        }
+                                                        console.log("Congrats, you made it here.")
 
-                                                // callback(null)
-                                                success++;
-                                                if (success == networkPortConnections.length) {
-                                                    callback(null)
-                                                }
-                                                console.log("Congrats, you made it here.")
-
-
-                                                //  }
-                                                // })
+                                                    }
+                                                })
 
 
                                             }
@@ -124,13 +121,13 @@ function checkThisModelPortsExist(thisModelName, thisPort, callback) {
     modelsRef.where("modelName", "==", thisModelName).get().then(function (querySnapshot) {
 
         //does the model contain this port name?
-        
+
         let hardCodedNetworkPorts = ["1", "2", "e3"]
         if (!hardCodedNetworkPorts.includes(thisPort)) {
             //if (!querySnapshot.docs[0].data().networkPorts.includes(thisPort)) {
             errPort = thisPort
             errModel = thisModelName;
-      
+
             //TODO: multiple ports could not exist if user adds multiple wrong connections. Need to change erro msg
             callback("Trying to connect a nonexistent network port " + errPort + " on this model: " + errModel)
 
@@ -149,12 +146,13 @@ function checkOtherAssetPortsExist(otherAssetID, otherPort, callback) {
     let errModel = "";
     let errHostname = "";
     let errMessage1 = "";
-    let errMessage2="";
-    let errMessageFinal="";
+    let errMessage2 = "";
+    let errMessageFinal = "";
 
     assetRef.doc(otherAssetID).get().then(function (querySnapshot) {
         let otherModel = querySnapshot.data().model;
         console.log(otherModel)
+        errHostname = querySnapshot.data().hostname;
         modelsRef.where("modelName", "==", otherModel).get().then(function (querySnapshot) {
 
             console.log(otherPort)
@@ -165,7 +163,7 @@ function checkOtherAssetPortsExist(otherAssetID, otherPort, callback) {
                 errPort = otherPort;
                 errInstance = otherAssetID;
                 errModel = otherModel;
-                errHostname=querySnapshot.data().hostname;
+                
 
                 errMessage1 = "Trying to connect a nonexistent network port " + errPort + " on this instance " + errInstance + " which is of model " + errModel
 
@@ -173,7 +171,7 @@ function checkOtherAssetPortsExist(otherAssetID, otherPort, callback) {
 
                 //TODO: multiple ports could not exist if user adds multiple wrong connections. Need to change erro msg
                 //Maybe pass in index to say 'at ith connection, this is wrong'
-                errMessageFinal= errHostname.trim() === "" ? errMessage1 : errMessage2;
+                errMessageFinal = errHostname.trim() === "" ? errMessage1 : errMessage2;
 
                 callback(errMessageFinal)
             }
@@ -191,14 +189,48 @@ function checkOtherAssetPortsExist(otherAssetID, otherPort, callback) {
 function checkNetworkPortConflicts(networkPortConnections, callback) {
     //No doubly connected ports on this (see networkPortConns) and other asset. Must check every singe=le asst
     //The error message ^ must be specific: “can’t connect host1 port e1 to switch1 port 22; that port is already connected to host5 port e1”).
-    let success=0;
+    let success = 0;
+    let connection, thisPort, otherAssetID, otherPort;
+    let errHost, errMessage1, errMessage2, errMessageFinal;
+    let alreadyConnectedThisPort=[]
 
-    for(let i = 0; i < networkPortConnections.length; i++){
+    for (let i = 0; i < networkPortConnections.length; i++) {
 
+        connection = networkPortConnections[i]
+        thisPort = connection.thisPort;
+        otherAssetID = connection.otherAssetID;
+        otherPort = connection.otherPort;
+       
         //Case 1: The user is making a connection to another asset's port that's already been previously used
+        assetRef.doc(otherAssetID).get().then(function (querySnapshot) {
+            let otherAssetConnectionsMap = querySnapshot.data().networkConnections
+
+            //the other asset has a network connection where its port already had the 'otherPort' field of the asset
+            //you are currently trying to connect
+            // if(otherAssetConnectionsMap.otherPort){
+            //     let otherHost=querySnapshot.data().hostname;
+            //     let othersOtherConnectedAsset=otherAssetConnectionsMap.otherPort.otherAssetID;
+            //     console.log(othersOtherConnectedAsset);
+            //     assetRef.doc(othersOtherConnectedAsset).get().then( function (otherOtherDoc) {
+            //         let errAlreadyHostname = otherOtherDoc.data().hostname;
+            //         let errConnectionsMap = otherOtherDoc.networkConnections
+            //         let errAlreadyPort = errConnectionsMap.otherPort.otherPort
+            //         console.log(errAlreadyHostname, errAlreadyPort)
+
+            //         callback("Cannot make a network connection from this asset at port " + thisPort + " to " + otherHost + otherPort + "; that port is already connected to " + errAlreadyHostname + errAlreadyPort )
+
+            //     })
+
+                
+            // }
+            //case 2: the user is trying to make a connection more than once on the same thisPort
+            // else if (networkPortConnetcions.includes(thisPort)){
+
+
         
+            // }
 
-
+        })
 
     }
 
