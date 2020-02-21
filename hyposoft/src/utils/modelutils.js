@@ -1,4 +1,5 @@
 import * as firebaseutils from './firebaseutils'
+import * as logutils from './logutils'
 
 function packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment) {
     const model = {
@@ -25,6 +26,7 @@ function createModel(id, vendor, modelNumber, height, displayColor, networkPorts
     // Ignore the first param
     var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment)
     firebaseutils.modelsRef.add(model).then(docRef => {
+        logutils.addLog(docRef.id,logutils.MODEL(),logutils.CREATE())
         callback(model, docRef.id)
     })
 }
@@ -32,6 +34,7 @@ function createModel(id, vendor, modelNumber, height, displayColor, networkPorts
 function modifyModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, callback) {
     var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment)
     firebaseutils.modelsRef.doc(id).update(model).then(() => {
+        logutils.addLog(id,logutils.MODEL(),logutils.MODIFY())
         callback(model, id)
     })
 
@@ -54,7 +57,14 @@ function modifyModel(id, vendor, modelNumber, height, displayColor, networkPorts
 }
 
 function deleteModel(modelId, callback) {
-    firebaseutils.modelsRef.doc(modelId).delete().then(() => callback())
+    firebaseutils.modelsRef.doc(modelId).get().then(docRef => {
+        firebaseutils.modelsRef.doc(modelId).delete().then(() => {
+          logutils.addLog(modelId,logutils.MODEL(),logutils.DELETE(),docRef.data())
+          callback()
+        })
+    }).catch( error => {
+      console.log("Error getting documents: ", error)
+    })
 }
 
 function getModel(vendor, modelNumber, callback, extra_data=null) {

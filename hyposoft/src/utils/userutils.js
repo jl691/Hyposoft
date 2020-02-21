@@ -1,4 +1,5 @@
 import * as firebaseutils from './firebaseutils'
+import * as logutils from './logutils'
 
 const USER_ROLE = 'USER_ROLE'
 const ADMIN_ROLE = 'ADMIN_ROLE'
@@ -45,6 +46,7 @@ function packageUser(displayName, username, email, password) {
 */
 function createUser(displayName, username, email, password, callback) {
     firebaseutils.usersRef.doc(email).set(packageUser(displayName, username, email, password))
+    logutils.addLog(email,logutils.USER(),logutils.CREATE())
     callback({...packageUser(displayName, username, email, password), docId: email})
 }
 
@@ -54,6 +56,7 @@ function createUser(displayName, username, email, password, callback) {
 */
 function modifyUser(displayName, username, email) {
     firebaseutils.usersRef.doc(email).update(packageUser(displayName, username, email))
+    logutils.addLog(email,logutils.USER(),logutils.MODIFY())
 }
 
 function updateUsername(oldUsername, newUsername, callback) {
@@ -61,7 +64,10 @@ function updateUsername(oldUsername, newUsername, callback) {
         if (!qs.empty) {
             qs.docs[0].ref.update({
                 username: newUsername
-            }).then(() => callback())
+            }).then(() => {
+              logutils.addLog(qs.docs[0].id,logutils.USER(),logutils.MODIFY())
+              callback()
+            })
         }
     })
 }
@@ -71,7 +77,10 @@ function updateUserRole(username, newRole, callback) {
         if (!qs.empty) {
             qs.docs[0].ref.update({
                 role: newRole
-            }).then(() => callback())
+            }).then(() => {
+              logutils.addLog(qs.docs[0].id,logutils.USER(),logutils.MODIFY())
+              callback()
+            })
         }
     })
 }
@@ -79,7 +88,10 @@ function updateUserRole(username, newRole, callback) {
 function deleteUser(username, callback) {
     firebaseutils.usersRef.where('username', '==', username).get().then(qs => {
         if (!qs.empty) {
+            const docId = qs.docs[0].id
+            const docData = qs.docs[0].data()
             qs.docs[0].ref.delete().then(() => {
+                logutils.addLog(docId,logutils.USER(),logutils.DELETE(),docData)
                 callback()
             })
         }

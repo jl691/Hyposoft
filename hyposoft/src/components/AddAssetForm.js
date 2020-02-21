@@ -29,16 +29,22 @@ export default class AddAssetForm extends Component {
             datacenterName: "",
             datacenterAbbrev: "",
             networkConnections: [{
-                //portLimit:"",//TODO: pass in model to know number of times admin can press add new connection
                 otherAssetID: "",
                 otherPort: "",
                 thisPort: ""
             }],
+            powerConnections: [{
+                pduSide: "",
+                port: ""
+            }],
+
+
 
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.addNetworkConnection = this.addNetworkConnection.bind(this);
+        this.addPowerConnection = this.addPowerConnection.bind(this);
     }
 
     handleChange(event) {
@@ -74,21 +80,31 @@ export default class AddAssetForm extends Component {
         }));
     }
 
-    //toLowercase, to colon
-    handleMacAddressFixAndSet(event){
-       
-            let fixedMAC="";
-            if (this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
-                fixedMAC = this.fixMACAddress(this.state.macAddress);
-              
-            } else if (this.state.macAddress) {
-                fixedMAC = this.state.macAddress;
-            }
-            //RACE CONDITION: i think it's not setting the state before calling this.state.macAddress in addAsset()
-            this.setState({ macAddress: fixedMAC }) 
+    addPowerConnection(event) {
+        //Bletsch said to expect no more than 8 power ports on an asset
+      
+            this.setState((prevState) => ({
+                powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
+            }));
 
-            console.log("MAC address passed to database: " + fixedMAC)
-            console.log(this.state.networkConnections)
+          
+    }
+
+    //toLowercase, to colon
+    handleMacAddressFixAndSet(event) {
+
+        let fixedMAC = "";
+        if (this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
+            fixedMAC = this.fixMACAddress(this.state.macAddress);
+
+        } else if (this.state.macAddress) {
+            fixedMAC = this.state.macAddress;
+        }
+        //RACE CONDITION: i think it's not setting the state before calling this.state.macAddress in addAsset()
+        this.setState({ macAddress: fixedMAC })
+
+        console.log("MAC address passed to database: " + fixedMAC)
+        console.log(this.state.networkConnections)
 
 
     }
@@ -114,8 +130,6 @@ export default class AddAssetForm extends Component {
             } else if (this.state.macAddress && !/^([0-9A-Fa-f]{2}[-:\_]?){5}([0-9A-Fa-f]{2})$/.test(this.state.macAddress)) {
                 ToastsStore.error("Invalid MAC address. Ensure it is a six-byte hexadecimal value with any byte separator punctuation.");
             } else {
-                //toLowercase, to colon
-      
 
                 this.handleMacAddressFixAndSet();
 
@@ -247,11 +261,12 @@ export default class AddAssetForm extends Component {
                                     value={this.state.rack}
                                     suggestions={this.state.rackSuggestions}
                                     onClick={() => {
-                                        if(this.state.datacenter){
+                                        if (this.state.datacenter) {
                                             assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
                                                 ...oldState,
                                                 rackSuggestions: results
-                                        })))}
+                                            })))
+                                        }
                                     }
                                     }
                                     title='Rack'
@@ -301,16 +316,32 @@ export default class AddAssetForm extends Component {
                                 />
                             </FormField>
 
-                            {/* For these last two, need to think carefully about UI since they are 'multistep' to add 
-                         
+                        <Accordion>
+                                <AccordionPanel label="Power Port Connections">
+                                    <AssetPowerPortsForm
+                                        powerConnections={this.state.powerConnections}
+                                    />
 
-                             <AssetPowerPortsForm />
-                            
-                        
-                        */}
+                                    <Button
+                                        onClick={this.addPowerConnection}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+
+                                        label="Add a power connection" />
+
+                                    {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
+                                    {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
+                                    {/* <Button onClick={this.handleConnect}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+                                        label="Validate Connections" /> */}
+
+                                </AccordionPanel>
+
+                            </Accordion>
+
                             <Accordion>
-                                <AccordionPanel label="Network Connections">
+                                <AccordionPanel label="Network Port Connections">
                                     <AssetNetworkPortsForm
+
                                         networkConnections={this.state.networkConnections}
                                     />
 
@@ -322,11 +353,12 @@ export default class AddAssetForm extends Component {
 
                                     {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
                                     {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
-                                    <Button onClick={this.handleConnect}
+                                    {/* <Button onClick={this.handleConnect}
                                         margin={{ horizontal: 'medium', vertical: 'small' }}
-                                        label="Validate Connections" />
+                                        label="Validate Connections" /> */}
 
                                 </AccordionPanel>
+
                             </Accordion>
 
 
