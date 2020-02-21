@@ -156,7 +156,7 @@ function checkOtherAssetPortsExist(otherAssetID, otherPort, callback) {
         modelsRef.where("modelName", "==", otherModel).get().then(function (querySnapshot) {
 
             console.log(otherPort)
-            let hardCodedNetworkPorts = ["a", "b", "c"]
+            let hardCodedNetworkPorts = ["a", "b", "c", "1"]
             if (!hardCodedNetworkPorts.includes(otherPort)) {
                 //if (!querySnapshot.data().networkPorts.includes(networkConnections[i].otherPort)) {
 
@@ -202,8 +202,20 @@ function checkNetworkPortConflicts(networkPortConnections, callback) {
         otherPort = connection.otherPort;
        
         //Case 1: The user is making a connection to another asset's port that's already been previously used
+        //So need to check otherPort: is it already used on otherAssetID?
         assetRef.doc(otherAssetID).get().then(function (querySnapshot) {
-            let otherAssetConnectionsMap = querySnapshot.data().networkConnections
+            let otherAssetConnectionsArray = querySnapshot.data().networkConnections
+            let otherAssetConnectionsMap = networkConnectionsToMap(otherAssetConnectionsArray)
+            console.log(otherAssetConnectionsArray)
+            console.log(otherAssetConnectionsMap)
+          
+            //callback("test")
+            callback(null)
+
+
+            // if(otherAssetConnectionsMap.otherPort){
+                
+            // }
 
             //the other asset has a network connection where its port already had the 'otherPort' field of the asset
             //you are currently trying to connect
@@ -248,6 +260,9 @@ function networkConnectionsToMap(networkConnectionsArray) {
 
     var JSONConnections = {}
     var JSONValues = {}
+    if(networkConnectionsArray == null){
+        return JSONConnections
+    }
     for (let i = 0; i < networkConnectionsArray.length; i++) {
 
         let key = networkConnectionsArray[i].thisPort;
