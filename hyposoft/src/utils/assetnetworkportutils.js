@@ -1,5 +1,10 @@
 import { assetRef, modelsRef } from './firebaseutils'
 
+//These variable are used in the checkConflicts method
+let otherAssetsMap = {};
+let seenThisPorts = [];
+let seenOtherPorts = new Map(); //Map of otherAssetID --> array of all otherPorts assoc with it
+
 //these fields come from the form being filled out
 function validateNetworkConnections(thisModelName, networkPortConnections, callback) {
 
@@ -38,7 +43,6 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                     }
                     else {
                         let otherModel = otherAssetModelDoc.data().model
-                        console.log(otherModel)
 
                         modelsRef.where("modelName", "==", otherModel).get().then(function (querySnapshot) {
 
@@ -51,7 +55,6 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
 
                             if (numConnectionsMade > mostPossibleConnections) {
                                 if (mostPossibleConnections) {
-                                    console.log("case one")
                                     callback("Making too many network connections. The most connections you can make between existing hardware is " + mostPossibleConnections)
 
                                 }
@@ -68,7 +71,6 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                                         callback(nonThisExist)
                                     }
                                     else {
-                                        console.log("In this check")
                                         checkOtherAssetPortsExist(otherAssetID, otherPort, otherNonexist => {
 
                                             if (otherNonexist) {
@@ -76,7 +78,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                                                 callback(otherNonexist)
                                             }
                                             else {
-                                                checkNetworkPortConflicts(networkPortConnections, status => {
+                                                checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, status => {
                                                     if (status) {
                                                         callback(status)
                                                     }
@@ -151,11 +153,9 @@ function checkOtherAssetPortsExist(otherAssetID, otherPort, callback) {
 
     assetRef.doc(otherAssetID).get().then(function (querySnapshot) {
         let otherModel = querySnapshot.data().model;
-        console.log(otherModel)
         errHostname = querySnapshot.data().hostname;
         modelsRef.where("modelName", "==", otherModel).get().then(function (querySnapshot) {
 
-            console.log(otherPort)
             let hardCodedNetworkPorts = ["a", "b", "c", "1"]
             if (!hardCodedNetworkPorts.includes(otherPort)) {
                 //if (!querySnapshot.data().networkPorts.includes(networkConnections[i].otherPort)) {
@@ -163,7 +163,7 @@ function checkOtherAssetPortsExist(otherAssetID, otherPort, callback) {
                 errPort = otherPort;
                 errInstance = otherAssetID;
                 errModel = otherModel;
-                
+
 
                 errMessage1 = "Trying to connect a nonexistent network port " + errPort + " on this instance " + errInstance + " which is of model " + errModel
 
@@ -178,76 +178,95 @@ function checkOtherAssetPortsExist(otherAssetID, otherPort, callback) {
             else {
                 callback(null)
             }
-        }).catch("Could not get other model from db")
+        }).catch("Error: could not get other model from database")
 
     }).catch("This other asset you are trying to connect to does not exist")
 
 
 
 }
+function checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, callback) {
 
-function checkNetworkPortConflicts(networkPortConnections, callback) {
-    //No doubly connected ports on this (see networkPortConns) and other asset. Must check every singe=le asst
-    //The error message ^ must be specific: “can’t connect host1 port e1 to switch1 port 22; that port is already connected to host5 port e1”).
-    let success = 0;
-    let connection, thisPort, otherAssetID, otherPort;
-    let errHost, errMessage1, errMessage2, errMessageFinal;
-    let alreadyConnectedThisPort=[]
+    let errHost = "";
 
-    for (let i = 0; i < networkPortConnections.length; i++) {
+    console.log(seenOtherPorts)
+    console.log(seenThisPorts)
 
-        connection = networkPortConnections[i]
-        thisPort = connection.thisPort;
-        otherAssetID = connection.otherAssetID;
-        otherPort = connection.otherPort;
-       
-        //Case 1: The user is making a connection to another asset's port that's already been previously used
-        //So need to check otherPort: is it already used on otherAssetID?
-        assetRef.doc(otherAssetID).get().then(function (querySnapshot) {
-            let otherAssetConnectionsArray = querySnapshot.data().networkConnections
-            let otherAssetConnectionsMap = networkConnectionsToMap(otherAssetConnectionsArray)
-            console.log(otherAssetConnectionsArray)
-            console.log(otherAssetConnectionsMap)
-          
-            //callback("test")
+    assetRef.doc(otherAssetID).get().then(function (querySnapshot) {
+        errHost = querySnapshot.data().hostname
+        otherAssetsMap = querySnapshot.data().networkConnections
+        console.log(otherAssetsMap)
+
+
+        if (seenThisPorts.includes(thisPort)) {
+            callback("can’t connect thisHost thisPort. It's already being used in a previous network connection you are trying to add.")
+        }
+
+        else if (seenOtherPorts.has(otherAssetID) && seenOtherPorts.get(otherAssetID).includes(otherPort)) {
+
+            callback("Already trying to connect otherAssetHost otherAssetID otherPort in a previous network connection you are tryin to add")
+
+
+        }
+        else if (otherAssetsMap.otherPort) {//otherPort is already a key in otherAssetID's Map
+            console.log("up in this bitch")
+
+        }
+
+        else {
+            //the last else should be a callback(null). For the current connection, it has run through the gauntlet of validation checks
+            console.log(seenThisPorts)
+            seenThisPorts.push(thisPort)
+            seenOtherPorts.set(otherAssetID, otherPort)
             callback(null)
 
-
-            // if(otherAssetConnectionsMap.otherPort){
-                
-            // }
-
-            //the other asset has a network connection where its port already had the 'otherPort' field of the asset
-            //you are currently trying to connect
-            // if(otherAssetConnectionsMap.otherPort){
-            //     let otherHost=querySnapshot.data().hostname;
-            //     let othersOtherConnectedAsset=otherAssetConnectionsMap.otherPort.otherAssetID;
-            //     console.log(othersOtherConnectedAsset);
-            //     assetRef.doc(othersOtherConnectedAsset).get().then( function (otherOtherDoc) {
-            //         let errAlreadyHostname = otherOtherDoc.data().hostname;
-            //         let errConnectionsMap = otherOtherDoc.networkConnections
-            //         let errAlreadyPort = errConnectionsMap.otherPort.otherPort
-            //         console.log(errAlreadyHostname, errAlreadyPort)
-
-            //         callback("Cannot make a network connection from this asset at port " + thisPort + " to " + otherHost + otherPort + "; that port is already connected to " + errAlreadyHostname + errAlreadyPort )
-
-            //     })
-
-                
-            // }
-            //case 2: the user is trying to make a connection more than once on the same thisPort
-            // else if (networkPortConnetcions.includes(thisPort)){
-
-
-        
-            // }
-
-        })
-
-    }
-
-
+        }
+    }).catch("Error: could not get other model from database")
 }
+// function checkNetworkPortConflicts(networkPortConnections, callback) {
+//     //No doubly connected ports on this (see networkPortConns) and other asset. Must check every singe=le asst
+//     //The error message ^ must be specific: “can’t connect host1 port e1 to switch1 port 22; that port is already connected to host5 port e1”).
+//     let success = 0;
+//     let connection, thisPort, otherAssetID, otherPort;
+//     let errHost, errMessage1, errMessage2, errMessageFinal;
+//     let alreadyConnectedThisPort=[]
+
+//     for (let i = 0; i < networkPortConnections.length; i++) {
+
+//         connection = networkPortConnections[i]
+//         thisPort = connection.thisPort;
+//         otherAssetID = connection.otherAssetID;
+//         otherPort = connection.otherPort;
+
+//         //Case 1: The user is making a connection to another asset's port that's already been previously used
+//         //So need to check otherPort: is it already used on otherAssetID?
+//         assetRef.doc(otherAssetID).get().then(function (querySnapshot) {
+//             let otherAssetConnectionsArray = querySnapshot.data().networkConnections
+//             let otherAssetConnectionsMap = networkConnectionsToMap(otherAssetConnectionsArray)
+//             console.log(otherAssetConnectionsArray)
+//             console.log(otherAssetConnectionsMap)
+
+//             //callback("test")
+//             callback(null)
+
+
+//             // if(otherAssetConnectionsMap.otherPort){
+
+//             // }
+
+//             //the other asset has a network connection where its port already had the 'otherPort' field of the asset
+//             //you are currently trying to connect
+//             // if(otherAssetConnectionsMap.otherPort){
+//             //     let otherHost=querySnapshot.data().hostname;
+//             //     let othersOtherConnectedAsset=otherAssetConnectionsMap.otherPort.otherAssetID;
+//             //     console.log(othersOtherConnectedAsset);
+//             //     assetRef.doc(othersOtherConnectedAsset).get().then( function (otherOtherDoc) {
+//             //         let errAlreadyHostname = otherOtherDoc.data().hostname;
+//             //         let errConnectionsMap = otherOtherDoc.networkConnections
+//             //         let errAlreadyPort = errConnectionsMap.otherPort.otherPort
+//             //         console.log(errAlreadyHostname, errAlreadyPort)
+
+//             //         callback("Cannot make a network connection from this asset at port " + thisPort + " to " + otherHost + otherPort + "; that port is already connected to " + errAlreadyHostname + errAlreadyPort )
 
 
 function symmetricNetworkConnections(networkConnections) {
@@ -260,7 +279,7 @@ function networkConnectionsToMap(networkConnectionsArray) {
 
     var JSONConnections = {}
     var JSONValues = {}
-    if(networkConnectionsArray == null){
+    if (networkConnectionsArray == null) {
         return JSONConnections
     }
     for (let i = 0; i < networkConnectionsArray.length; i++) {
