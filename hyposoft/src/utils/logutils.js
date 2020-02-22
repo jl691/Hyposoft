@@ -36,13 +36,14 @@ function DELETE() {
 }
 
 // only optional is objectId and objectType
-function packageLog(timestamp, objectId, objectType, objectName, objectData, action, userId, userName) {
+function packageLog(timestamp, objectId, objectType, objectName, currentData, previousData, action, userId, userName) {
     const log = {
         timestamp: timestamp,
         objectId: objectId.trim(),
         objectType: objectType.trim(),
         objectName: objectName.trim(),
-        objectData: objectData,
+        currentData: currentData,
+        previousData: previousData,
         action: action.trim(),
         userId: userId.trim(),
         userName: userName.trim()
@@ -53,19 +54,19 @@ function packageLog(timestamp, objectId, objectType, objectName, objectData, act
 function addLog(objectId, objectType, action, data = null) {
     switch (objectType) {
         case ASSET():
-            getAssetName(objectId,data,asset => finishAddingLog(asset, objectId, objectType, action))
+            getAssetName(objectId,data,action,asset => finishAddingLog(asset, objectId, objectType, action))
             break
         case MODEL():
-            getModelName(objectId,data,model => finishAddingLog(model, objectId, objectType, action))
+            getModelName(objectId,data,action,model => finishAddingLog(model, objectId, objectType, action))
             break
         case RACK():
-            getRackName(objectId,data,rack => finishAddingLog(rack, objectId, objectType, action))
+            getRackName(objectId,data,action,rack => finishAddingLog(rack, objectId, objectType, action))
             break
         case USER():
-            getUserName(objectId,data,user => finishAddingLog(user, objectId, objectType, action))
+            getUserName(objectId,data,action,user => finishAddingLog(user, objectId, objectType, action))
             break
         case DATACENTER():
-            getDatacenterName(objectId,data,datacenter => finishAddingLog(datacenter, objectId, objectType, action))
+            getDatacenterName(objectId,data,action,datacenter => finishAddingLog(datacenter, objectId, objectType, action))
             break
         default:
             console.log("Could not create log due to unknown type: " + objectType)
@@ -76,12 +77,55 @@ function finishAddingLog(object, objectId, objectType, action) {
     if (object) {
         const timestamp = Date.now()
         const userId = userutils.getLoggedInUser()
-        getUserName(userId, null, user => {
+        getUserName(userId, null, action, user => {
             if (user) {
-                var log = packageLog(timestamp, objectId, objectType, object.name, object.data, action, userId, user.name)
+                var log = packageLog(timestamp, objectId, objectType, object.name, object.data, object.previousData, action, userId, user.name)
                 firebaseutils.logsRef.add(log)
               }
         })
+    }
+}
+
+function getObjectData(objectId, objectType, callback) {
+    switch (objectType) {
+        case ASSET():
+            firebaseutils.assetRef.doc(objectId).get().then(doc => callback(doc.data()))
+            .catch( error => {
+                console.log("Error getting documents: ", error)
+                callback(null)
+            })
+            break
+        case MODEL():
+            firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.data()))
+            .catch( error => {
+                console.log("Error getting documents: ", error)
+                callback(null)
+            })
+            break
+        case RACK():
+            firebaseutils.racksRef.doc(objectId).get().then(doc => callback(doc.data()))
+            .catch( error => {
+                console.log("Error getting documents: ", error)
+                callback(null)
+            })
+            break
+        case USER():
+            firebaseutils.usersRef.doc(objectId).get().then(doc => callback(doc.data()))
+            .catch( error => {
+                console.log("Error getting documents: ", error)
+                callback(null)
+            })
+            break
+        case DATACENTER():
+            firebaseutils.datacentersRef.doc(objectId).get().then(doc => callback(doc.data()))
+            .catch( error => {
+                console.log("Error getting documents: ", error)
+                callback(null)
+            })
+            break
+        default:
+            console.log("Could not get object data due to unknown type: " + objectType)
+            callback(null)
     }
 }
 
@@ -150,11 +194,11 @@ function getDate(timestamp) {
     return dateArray.join(' ')
 }
 
-function getUserName(id,data,callback) {
-    if (data) {
-        callback({name: data.username, data: data})
+function getUserName(id,data,action,callback) {
+    if (data && action == DELETE()) {
+        callback({name: data.username, data: data, previousData: null})
     } else {
-        firebaseutils.usersRef.doc(id).get().then(doc => callback({name: doc.data().username, data: doc.data()}))
+        firebaseutils.usersRef.doc(id).get().then(doc => callback({name: doc.data().username, data: doc.data(), previousData: data}))
         .catch( error => {
           console.log("Error getting documents: ", error)
           callback(null)
@@ -162,11 +206,11 @@ function getUserName(id,data,callback) {
     }
 }
 
-function getAssetName(id,data,callback) {
-    if (data) {
-        callback({name: data.model+' '+data.hostname, data: data})
+function getAssetName(id,data,action,callback) {
+    if (data && action == DELETE()) {
+        callback({name: data.model+' '+data.hostname, data: data, previousData: null})
     } else {
-        firebaseutils.assetRef.doc(id).get().then(doc => callback({name: doc.data().model+' '+doc.data().hostname, data: doc.data()}))
+        firebaseutils.assetRef.doc(id).get().then(doc => callback({name: doc.data().model+' '+doc.data().hostname, data: doc.data(), previousData: data}))
         .catch( error => {
           console.log("Error getting documents: ", error)
           callback(null)
@@ -174,11 +218,11 @@ function getAssetName(id,data,callback) {
     }
 }
 
-function getModelName(id,data,callback) {
-    if (data) {
-        callback({name: data.modelName, data: data})
+function getModelName(id,data,action,callback) {
+    if (data && action == DELETE()) {
+        callback({name: data.modelName, data: data, previousData: null})
     } else {
-        firebaseutils.modelsRef.doc(id).get().then(doc => callback({name: doc.data().modelName, data: doc.data()}))
+        firebaseutils.modelsRef.doc(id).get().then(doc => callback({name: doc.data().modelName, data: doc.data(), previousData: data}))
         .catch( error => {
           console.log("Error getting documents: ", error)
           callback(null)
@@ -186,14 +230,14 @@ function getModelName(id,data,callback) {
     }
 }
 
-function getRackName(id,data,callback) {
+function getRackName(id,data,action,callback) {
     console.log("fucking kill me")
-    if (data) {
+    if (data && action == DELETE()) {
         console.log("i hate 458")
-        callback({name: data.letter+data.number, data: data})
+        callback({name: data.letter+data.number, data: data, previousData: null})
     } else {
         console.log("bletsch is satan")
-        firebaseutils.racksRef.doc(id).get().then(doc => callback({name: doc.data().letter+doc.data().number, data: doc.data()}))
+        firebaseutils.racksRef.doc(id).get().then(doc => callback({name: doc.data().letter+doc.data().number, data: doc.data(), previousData: data}))
         .catch( error => {
           console.log("Error getting documents: ", error)
           callback(null)
@@ -201,11 +245,11 @@ function getRackName(id,data,callback) {
     }
 }
 
-function getDatacenterName(id,data,callback) {
-    if (data) {
-        callback({name: data.name, data: data})
+function getDatacenterName(id,data,action,callback) {
+    if (data && action == DELETE()) {
+        callback({name: data.name, data: data, previousData: null})
     } else {
-        firebaseutils.datacentersRef.doc(id).get().then(doc => callback({name: doc.data().name, data: doc.data()}))
+        firebaseutils.datacentersRef.doc(id).get().then(doc => callback({name: doc.data().name, data: doc.data(), previousData: data}))
         .catch( error => {
           console.log("Error getting documents: ", error)
           callback(null)
@@ -213,4 +257,4 @@ function getDatacenterName(id,data,callback) {
     }
 }
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CREATE, MODIFY, DELETE,addLog, getLogs, doesObjectStillExist, filterLogsFromName }
+export { ASSET, MODEL, RACK, USER, DATACENTER, CREATE, MODIFY, DELETE,addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName }
