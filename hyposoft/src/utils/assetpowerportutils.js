@@ -2,13 +2,17 @@ import { assetRef, racksRef, modelsRef, usersRef, firebase } from './firebaseuti
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
 import * as assetIDutils from './assetidutils'
+import * as datacenterutils from './datacenterutils'
 
 //Toast message at the front end level
 
 
-function validatePowerConnections(powerConnections, PDUs, model, callback) {
+function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerConnections, model, callback) {
 //Assuming all or nothing. If an asset has 2 power ports, can't just plug one in
 //Validate that the PDU is free at the location: call checkConflicts in this method
+//the PDU is made up of hpdu-dataceneterAbbrev-rackandracku+l/r
+
+//How to handle when the rack does not have a network managed port?? How does this affect the detailed view? Getting the status?
 
     for(let i =0; i < powerConnections.length; i++){
         let pduSide=powerConnections[i];
@@ -28,6 +32,7 @@ function validatePowerConnections(powerConnections, PDUs, model, callback) {
                 if(powerConnections.length > numPowerPorts){
                     callback("Cannot make more power connections than the model " + model+ " allows. Can only make up to "+ numPowerPorts +" connections.")
                 }
+                
 
 
 
@@ -54,8 +59,37 @@ function autofillPowerConnections(modelNumPorts, callback) {
 
 }
 
-function checkConflicts(powerConnections, PDUs){
+function checkConflicts(inputDatacenter, inputRack, inputRackU, inputModel, pduSide, port){
     //No 'double connections': no PDU has more than one power port associated with it: conflicts/availability
+    //the PDU:is made up of hpdu-dataceneterAbbrev-rackandracku+l/r, where if rackU is single digit, needs a 0 in front of it
+    //Checking for conflicts is different if there's 1 or 2 power ports
+    //In addition, someone might jsut fill out "Left"
+
+    let numPorts=0;
+    let PDU="hpdu"
+    if(parseInt(inputRackU)< 10){
+        inputRackU = "0" + inputRackU
+    }
+    datacenterutils.getDataFromName(inputDatacenter, (id, abbrev)=>{
+        //only rtp1 has network control over PDUs
+        PDU=PDU+"-"+abbrev+"-"+inputRack+"-"+inputRackU+pduSide.charAt(0)
+        console.log(PDU)
+        modelsRef.where("modelName", "==", inputModel).get().then(function(modelDoc) {
+            numPorts=modelDoc.powerPorts;
+    
+            if(numPorts == 1){
+    
+    
+            }
+            else{
+                //need to check symmetric connections
+            }
+    
+        }).catch()
+
+    })
+    
+
 
 }
 
