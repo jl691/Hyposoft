@@ -185,8 +185,41 @@ function doesObjectStillExist(objectType,objectId,callback) {
 }
 
 function buildLog(data) {
-    var log = data.userName + ' ' + data.action + ' ' + data.objectType + ' ' + data.objectName + '.'
+    var log = data.userName + ' ' + data.action + (data.action == MODIFY() && data.previousData ? buildDiff(data) : ' ') + data.objectType + ' ' + data.objectName + '.'
     return log
+}
+
+function buildDiff(data) {
+    var diff = ''
+    var num = 0
+    var field;
+    for (field in data.previousData) {
+      if (data.previousData[field] !== data.currentData[field]) {
+         let returnedDiff = buildSpecificDiff(data,field)
+         if (returnedDiff) {
+           diff = diff + (num > 0 ? ',' : '') + ' ' + returnedDiff
+           num++
+         }
+      }
+    }
+    return diff + ' of '
+}
+
+function buildSpecificDiff(data,field) {
+    switch (data.objectType) {
+      case ASSET():
+          return assetDiff(data,field)
+      case MODEL():
+          return modelDiff(data,field)
+      case RACK():
+          return rackDiff(data,field)
+      case USER():
+          return userDiff(data,field)
+      case DATACENTER():
+          return datacenterDiff(data,field)
+      default:
+          return ''
+    }
 }
 
 function getDate(timestamp) {
@@ -254,6 +287,55 @@ function getDatacenterName(id,data,action,callback) {
           console.log("Error getting documents: ", error)
           callback(null)
         })
+    }
+}
+
+function assetDiff(data,field) {
+    switch (field) {
+      case 'networkConnections':
+        return ''
+      case 'powerConnections':
+        return ''
+      default:
+        return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
+    }
+}
+
+function modelDiff(data,field) {
+    switch (field) {
+      case 'networkPorts':
+        return ''
+      case 'powerPorts':
+        return ''
+      default:
+        return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
+    }
+}
+
+function rackDiff(data,field) {
+    switch (field) {
+      case 'assets':
+        return ''
+      default:
+        return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
+    }
+}
+
+function userDiff(data,field) {
+    switch (field) {
+      case 'password':
+        return field
+      default:
+        return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
+    }
+}
+
+function datacenterDiff(data,field) {
+    switch (field) {
+      case 'racks':
+        return ''
+      default:
+        return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
     }
 }
 
