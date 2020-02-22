@@ -8,6 +8,7 @@ import { saveAs } from 'file-saver'
 import * as userutils from '../utils/userutils'
 import * as modelutils from '../utils/modelutils'
 import * as assetutils from '../utils/assetutils'
+import * as bulkutils from '../utils/bulkutils'
 import CSVReader from 'react-csv-reader'
 
 import {
@@ -59,6 +60,12 @@ class PortScreen extends Component {
     }
 
     importModels (data, fileName) {
+        const file = document.querySelector('#csvreadermodels').files[0]
+        bulkutils.parseCSVFile(file, data => {
+            console.log(data)
+        })
+        return
+
         this.setState(oldState => ({...oldState, showLoadingDialog: true}))
         if (data.length === 0) {
             ToastsStore.info('No records found in imported file', 3000, 'burntToast')
