@@ -118,6 +118,7 @@ export default class AssetTable extends Component {
         });
         assetutils.getAsset((newStartAfter, assetdb) => {
             if (newStartAfter && assetdb) {
+                console.log("new sorted ", assetdb)
                 this.startAfter = newStartAfter;
                 this.setState({ assets: assetdb, initialLoaded: true })
             }
@@ -305,7 +306,7 @@ export default class AssetTable extends Component {
                                                     }
                                                 }
                                             }}
-                                            
+
                                             columns={this.columns}
                                             size="large"
                                             //pad={{ horizontal: "medium", vertical: "xsmall" }}
