@@ -242,7 +242,8 @@ function symmetricNetworkConnectionsAdd(networkConnectionsArray, newID) {
     let otherPort="";
     console.log("In symmetric network connections")
 
-    if(networkConnectionsArray[0].otherAssetID===""){//didn't fill out any fields?? But what if first one was left blank
+    if(networkConnectionsArray[0].otherAssetID===""){
+        //TODO:didn't fill out any fields?? But what if first one was left blank
         return;
     }
 
@@ -266,8 +267,35 @@ function symmetricNetworkConnectionsAdd(networkConnectionsArray, newID) {
     }
 
 }
-
+//TODO: asset utils and add this method
 function symmetricNetworkConnectionsDelete(deleteID){
+    //deleteID refers to asset you are deleting
+    let otherConnectedAsset=""
+
+    assetRef.doc(deleteID).get().then(function(docRef){
+        let networkConnections=docRef.data().networkConnections;
+
+        //Go through each connection made, go to each connected asset, and delete yourself
+        networkConnections.forEach(function (connection){
+            otherConnectedAsset=connection.otherAssetID;
+            assetRef.doc(otherConnectedAsset).get().then( function (otherAssetDoc){
+                //delete yourself
+                let conns = otherAssetDoc.networkConnections;
+                conns.forEach(function (conn){
+                    if(conn.otherAssetID=deleteID){
+                        //then call firld delete frecase code
+                    }
+                    
+
+                })
+
+            })
+
+
+
+        })
+
+    })
 
 
 }
@@ -280,7 +308,8 @@ function networkConnectionsToMap(networkConnectionsArray) {
     //     return JSONConnections
     // }
    
-    if(networkConnectionsArray[0].otherAssetID===""){ //didn't fill out anything. But what if first is empty but second is not?
+    if(networkConnectionsArray[0].otherAssetID===""){ 
+        //TODO:didn't fill out anything. But what if first is empty but second is not?
         return null;
     }else{
         for (let i = 0; i < networkConnectionsArray.length; i++) {

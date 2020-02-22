@@ -36,6 +36,7 @@ export default class AddAssetForm extends Component {
             }
         ],
             powerConnections: [{
+                
                 pduSide: "",
                 port: ""
             }],
