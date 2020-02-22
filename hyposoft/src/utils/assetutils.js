@@ -197,7 +197,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                         callback(errMessage)
                     } else {
 
-                        assetFitsOnRack(rack, racku, model, datacenter, function (errorMessage, modelNum, modelVendor, rackID) {//see line 171
+                        assetFitsOnRack(rack, racku, model, datacenter, function (errorMessage, modelNum, modelVendor, rackID) {
 
                             if (errorMessage) {
                                 callback(errorMessage)
@@ -217,6 +217,8 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                     else {
                                         if (overrideAssetID.trim() != "") {
                                             let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
+                                            console.log(owner)
+                                            console.log(networkConnections)
                                             assetIDutils.overrideAssetID(overrideAssetID).then(
                                                 _ => {
                                                     assetRef.doc(overrideAssetID).set({
@@ -231,7 +233,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                         rackID: rackID,
                                                         macAddress: fixedMac,
                                                         networkConnections,
-                                                        powerConnections,
+                                                        //powerConnections,
 
                                                         //This is for rack usage reports
                                                         modelNumber: modelNum,
@@ -266,6 +268,8 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                         else {
 
                                             let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
+                                            console.log(owner)
+                                            console.log(networkConnections)
                                             
                                             assetIDutils.generateAssetID().then(newID =>
 
@@ -282,7 +286,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                         rackID: rackID,
                                                         macAddress: fixedMac,
                                                         networkConnections,
-                                                        powerConnections,
+                                                        //powerConnections,
 
                                                         // This is for rack usage reports
                                                         modelNumber: modelNum,
@@ -293,7 +297,10 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                         datacenter: datacenter,
                                                         datacenterID: datacenterID,
                                                         datacenterAbbrev: datacenterAbbrev
-                                                    }).then(function (docRef) {
+                                                    }).then(function (docRef){
+                                                        assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, newID)
+                                                    })
+                                                    .then(function (docRef) {
                                                         racksRef.doc(String(rackID)).update({
                                                             assets: firebase.firestore.FieldValue.arrayUnion(newID)//docref.id
                                                         }).then(function () {
@@ -304,8 +311,6 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                         docRef.get().then(ds => {
                                                             index.saveObject({ ...ds.data(), objectID: ds.id })
                                                         })
-                                                    }).then(function (docRef){
-                                                        assetnetworkportutils.symmetricNetworkConnections(networkConnectionsArray, newID)
                                                     }).catch(function (error) {
                                                         // callback("Error");
                                                         console.log(error)

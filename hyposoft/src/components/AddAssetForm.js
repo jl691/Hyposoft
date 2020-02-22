@@ -28,11 +28,13 @@ export default class AddAssetForm extends Component {
             macAddress: "",
             datacenterName: "",
             datacenterAbbrev: "",
-            networkConnections: [{
+            networkConnections: [
+                {
                 otherAssetID: "",
                 otherPort: "",
                 thisPort: ""
-            }],
+            }
+        ],
             powerConnections: [{
                 pduSide: "",
                 port: ""

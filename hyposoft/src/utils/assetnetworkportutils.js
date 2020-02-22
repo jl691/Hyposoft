@@ -20,8 +20,9 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
         console.log(thisPort)
 
         //Left entirely empty is OK
-        if (otherAssetID == null && otherPort.trim() === "" && thisPort.trim() === "") {
+        if (otherAssetID.toString() === "" && otherPort.trim() == "" && thisPort.trim() == "") {
             success++;
+            console.log("In empty")
             if (success == networkPortConnections.length) {
                 callback(null)
             }
@@ -204,7 +205,7 @@ function checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, callback) 
 
 
         if (seenThisPorts.includes(thisPort)) {
-            callback("Can’t connect a port" +  thisPort + " on this instance. It's already being used in a previous network connection you are trying to add.")
+            callback("Can’t connect a port " +  thisPort + " on this instance. It's already being used in a previous network connection you are trying to add.")
         }
 
         else if (seenOtherPorts.has(otherAssetID) && seenOtherPorts.get(otherAssetID).includes(otherPort)) {
@@ -233,12 +234,17 @@ function checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, callback) 
     }).catch("Error: could not get other model from database")
 }
 
-function symmetricNetworkConnections(networkConnectionsArray, newID) {
+function symmetricNetworkConnectionsAdd(networkConnectionsArray, newID) {
     //Make sure connections are symmetric. Meaning the other asset should have their network port connectiosn updated too
     //So when someone adds an asset and makes network connections, the networkconnections field for otherAssetID otherPort will be updated 
     let thisPort="";
     let otherAssetID=""
     let otherPort="";
+    console.log("In symmetric network connections")
+
+    if(networkConnectionsArray[0].otherAssetID===""){//didn't fill out any fields?? But what if first one was left blank
+        return;
+    }
 
     //Only add once everything has been validated. Go up into assetutils and call this method there
     for(let i =0; i < networkConnectionsArray.length; i++){
@@ -248,19 +254,20 @@ function symmetricNetworkConnections(networkConnectionsArray, newID) {
         //add a connection where otherPort : {otherAssetID: newID; otherPort: thisPort}
 
         //go into the other assetID, do update
-        assetRef.doc(otherAssetID).update({
-            networkConnections:{
-                //Need help: 
-                otherPort: {otherAssetID:newID, otherPort:thisPort}
-            }
+        console.log(otherAssetID)
+        assetRef.doc(otherAssetID).set({
+            networkConnections:{[otherPort]: {otherAssetID:newID, otherPort:thisPort}}
+                
 
-        }).then(function(){
+        },{merge:true}).then(function(){
             console.log("Successfully made a symmetric network connection")
         }).catch(error => console.log(error))
         
     }
 
+}
 
+function symmetricNetworkConnectionsDelete(deleteID){
 
 
 }
@@ -268,22 +275,30 @@ function networkConnectionsToMap(networkConnectionsArray) {
 
     var JSONConnections = {}
     var JSONValues = {}
-    if (networkConnectionsArray == null) {
-        return JSONConnections
+  
+    // if (networkConnectionsArray == null) {
+    //     return JSONConnections
+    // }
+   
+    if(networkConnectionsArray[0].otherAssetID===""){ //didn't fill out anything. But what if first is empty but second is not?
+        return null;
+    }else{
+        for (let i = 0; i < networkConnectionsArray.length; i++) {
+
+            //var propertyName = 'thisPort';
+            let key = networkConnectionsArray[i].thisPort;
+            let value1 = networkConnectionsArray[i].otherAssetID;
+            let value2 = networkConnectionsArray[i].otherPort;
+            JSONValues["otherAssetID"] = value1
+            JSONValues["otherPort"] = value2
+            JSONConnections[key] = JSONValues;
+    
+        }
+    
+        return JSONConnections;
+
     }
-    for (let i = 0; i < networkConnectionsArray.length; i++) {
-
-        //var propertyName = 'thisPort';
-        let key = networkConnectionsArray[i].thisPort;
-        let value1 = networkConnectionsArray[i].otherAssetID;
-        let value2 = networkConnectionsArray[i].otherPort;
-        JSONValues["otherAssetID"] = value1
-        JSONValues["otherPort"] = value2
-        JSONConnections[key] = JSONValues;
-
-    }
-
-    return JSONConnections;
+    
 }
 
 
@@ -391,6 +406,7 @@ export {
     getNetworkPortConnections,
     checkOtherAssetPortsExist,
     checkThisModelPortsExist,
-    symmetricNetworkConnections,
+    symmetricNetworkConnectionsAdd,
     networkConnectionsToMap,
+    symmetricNetworkConnectionsDelete,
 }

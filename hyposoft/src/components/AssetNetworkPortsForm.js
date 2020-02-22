@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Grommet, Box, Text, FormField, TextInput} from 'grommet'
+import { Grommet, Box, Text, FormField, TextInput } from 'grommet'
 import theme from "../theme";
 
 //Instead of validate connections, upon all fields for one set of inputs, have a toast that pops up with error message
@@ -12,14 +12,14 @@ export default class AssetNetworkPortsForm extends Component {
 
         super(props);
         this.handleChange = this.handleChange.bind(this);
-     
+
     }
     //Form validation/error catching: ???
 
     handleChange(e, idx) {
         //You are either typing into an output
         if (e.target.name === "otherAssetID" || e.target.name === "otherPort" || e.target.name === "thisPort") {
-           
+
             let networkConnections = [...this.props.networkConnections]
             networkConnections[idx][e.target.name] = e.target.value
             this.setState({ port: e.target.value })
@@ -44,39 +44,7 @@ export default class AssetNetworkPortsForm extends Component {
                             <Text>{idx + 1}</Text>
 
                             {/* TODO: AUTOCOMPLETE/PICKLIST */}
-                            <FormField
-                                margin={{ horizontal: 'medium', vertical: 'xsmall' }}
-                                size="small" name="otherAssetID" label="Connect to other asset">
-                                <TextInput name="otherAssetID"
-                                    //value={this.props.networkConnections.port}
 
-                                    size="small"
-
-                                    onChange={e => {
-                                        this.handleChange(e, idx)
-                                    }}
-                                />
-                            </FormField>
-
-                                    {/* TODO: AUTOCOMPLETE/PICKLIST */}
-                            <FormField
-                                margin={{ horizontal: 'medium', vertical: 'xsmall' }}
-                                size="small" name="otherPort" label="Other Asset Port">
-                                <TextInput name="otherPort"
-                                    //value={this.props.networkConnections.port}
-
-                                    size="small"
-
-                                    onChange={e => {
-                                        this.handleChange(e, idx)
-                                    }}
-                                />
-
-                            </FormField>
-
-                            <Text alignSelf="center"> connect to </Text>
-
-                                    {/* TODO: AUTOCOMPLETE/PICKLIST */}
                             <FormField
                                 margin={{ horizontal: 'medium', vertical: 'xsmall' }}
                                 size="small" name="thisPort" label="This Asset Port">
@@ -93,7 +61,43 @@ export default class AssetNetworkPortsForm extends Component {
                                 />
 
                             </FormField>
-                        
+
+                            <Text weight="bold" margin="small" > Connect to </Text>
+
+                            {/* TODO: AUTOCOMPLETE/PICKLIST */}
+                            <FormField
+                                margin={{ horizontal: 'medium', vertical: 'xsmall' }}
+                                size="small" name="otherAssetID" label="Other Asset">
+                                <TextInput name="otherAssetID"
+                                    //value={this.props.networkConnections.port}
+
+                                    size="small"
+
+                                    onChange={e => {
+                                        this.handleChange(e, idx)
+                                    }}
+                                />
+                            </FormField>
+
+                            {/* TODO: AUTOCOMPLETE/PICKLIST */}
+                            <FormField
+                                margin={{ horizontal: 'medium', vertical: 'xsmall' }}
+                                size="small" name="otherPort" label="Other Asset Port">
+                                <TextInput name="otherPort"
+                                    //value={this.props.networkConnections.port}
+
+                                    size="small"
+
+                                    onChange={e => {
+                                        this.handleChange(e, idx)
+                                    }}
+                                />
+
+                            </FormField>
+
+
+
+
                         </Box>
 
                     </Grommet >

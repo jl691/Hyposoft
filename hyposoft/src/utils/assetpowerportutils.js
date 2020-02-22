@@ -16,6 +16,7 @@ function validatePowerConnections(powerConnections, PDUs, model, callback) {
 
         if(pduSide.trim()==="" && port.trim()===""){
             callback(null)
+            //TODO: need to signify to store a null in the DB. That way, can do a .length check to know to dispplay "no connection" in the asset detail view
         }
         else if(pduSide.trim() !== "" && port.trim() !==""){
 
