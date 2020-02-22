@@ -1,6 +1,5 @@
-import webapp2
+import webapp2, urllib, csv, json, io
 from google.appengine.api import mail
-import urllib
 
 class MainHandler(webapp2.RequestHandler):
 	def get(self):
@@ -70,11 +69,28 @@ class GetPduStatusesHandler(webapp2.RequestHandler):
 		self.response.headers['Access-Control-Allow-Origin'] = '*'
 		self.response.write(urllib.urlopen('http://vcm-13238.vm.duke.edu:3011/get/'+self.request.get('pdu')).read())
 
+class ParseCSVHandler(webapp2.RequestHandler):
+	def post(self):
+		fileContents = unicode(self.request.POST.get('file').file.read())
+		self.response.headers['Access-Control-Allow-Origin'] = '*'
+		self.response.headers['Access-Control-Allow-Methods'] = '*'
+		self.response.headers['Access-Control-Allow-Headers'] = '*'
+
+		reader = csv.DictReader(io.StringIO(fileContents))
+		response = []
+		for row in reader:
+			response.append(row)
+		self.response.write(json.dumps(response))
+		
+
 app = webapp2.WSGIApplication([
 	('/', MainHandler),
 	('/addUser', AddUserHandler),
 	('/forgotPassword', ForgotPasswordHandler),
 	('/poweron', PowerOnHandler),
 	('/poweroff', PowerOffHandler),
-	('/getPduStatuses', GetPduStatusesHandler)
+	('/getPduStatuses', GetPduStatusesHandler),
+	('/parseCSV', ParseCSVHandler)
 ], debug=True)
+
+# SDK LOCATION: /Applications/Google App Engine.app/Contents/Resources/GoogleAppEngine-default.bundle/Contents/Resources/google_appengine
