@@ -569,36 +569,38 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                         //get new rack document
                                                         //get instance id
                                                         replaceAssetRack(oldResult, result, assetID, result => {
-                                                            assetRef.doc(String(assetID)).update({
-                                                                model: model,
-                                                                modelId: modelId,
-                                                                vendor: modelStuff[0],
-                                                                modelNumber: modelStuff[1],
-                                                                hostname: hostname,
-                                                                rack: rack,
-                                                                rackU: rackU,
-                                                                rackID: rackId,
-                                                                owner: owner,
-                                                                comment: comment,
-                                                                rackRow: rackRow,
-                                                                rackNum: rackNum,
-                                                                datacenter: datacenter,
-                                                                datacenterID: datacenterID,
-                                                                datacenterAbbrev: datacenterAbbrev
-                                                                //these are the fields in the document to update
+                                                            logutils.getObjectData(String(assetID),logutils.ASSET(),assetData => {
+                                                              assetRef.doc(String(assetID)).update({
+                                                                  model: model,
+                                                                  modelId: modelId,
+                                                                  vendor: modelStuff[0],
+                                                                  modelNumber: modelStuff[1],
+                                                                  hostname: hostname,
+                                                                  rack: rack,
+                                                                  rackU: rackU,
+                                                                  rackID: rackId,
+                                                                  owner: owner,
+                                                                  comment: comment,
+                                                                  rackRow: rackRow,
+                                                                  rackNum: rackNum,
+                                                                  datacenter: datacenter,
+                                                                  datacenterID: datacenterID,
+                                                                  datacenterAbbrev: datacenterAbbrev
+                                                                  //these are the fields in the document to update
 
-                                                            }).then(function () {
-                                                                console.log("Updated model successfully")
-                                                                assetRef.doc(String(assetID)).get().then(docRef => {
-                                                                    index.saveObject({
-                                                                        ...docRef.data(),
-                                                                        objectID: docRef.id
-                                                                    })
-                                                                })
-                                                                logutils.addLog(String(assetID),logutils.ASSET(),logutils.MODIFY())
-                                                                callback(null);
-                                                            }).catch(function (error) {
-                                                                callback(error);
+                                                              }).then(function () {
+                                                                  console.log("Updated model successfully")
+                                                                  assetRef.doc(String(assetID)).get().then(docRef => {
+                                                                      index.saveObject({
+                                                                          ...docRef.data(),
+                                                                          objectID: docRef.id
+                                                                      })
+                                                                  })
+                                                                  logutils.addLog(String(assetID),logutils.ASSET(),logutils.MODIFY(),assetData)
+                                                                  callback(null);
+                                                              }).catch(function (error) {
+                                                                  callback(error);
+                                                              })
                                                             })
                                                         })
                                                     }

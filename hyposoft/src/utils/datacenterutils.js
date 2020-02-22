@@ -142,16 +142,18 @@ function updateDatacenter(oldName, oldAbbrev, newName, newAbbrev, callback) {
                 if (result) {
                     checkAbbreviationUnique(newAbbrev, abbrevResult => {
                         if (abbrevResult) {
-                            datacentersRef.doc(querySnapshot.docs[0].id).set({
-                                name: newName,
-                                abbreviation: newAbbrev
-                            }, {merge: true}).then(function () {
-                                console.log("77")
-                                logutils.addLog(querySnapshot.docs[0].id, logutils.DATACENTER(), logutils.MODIFY());
-                                callback(true);
-                            }).catch(function (error) {
-                                console.log("88")
-                                callback(null);
+                            logutils.getObjectData(querySnapshot.docs[0].id,logutils.DATACENTER(),dcData => {
+                              datacentersRef.doc(querySnapshot.docs[0].id).set({
+                                  name: newName,
+                                  abbreviation: newAbbrev
+                              }, {merge: true}).then(function () {
+                                  console.log("77")
+                                  logutils.addLog(querySnapshot.docs[0].id, logutils.DATACENTER(), logutils.MODIFY(),dcData);
+                                  callback(true);
+                              }).catch(function (error) {
+                                  console.log("88")
+                                  callback(null);
+                              })
                             })
 
                         } else {
