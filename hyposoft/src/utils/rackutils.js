@@ -386,11 +386,11 @@ function checkAssetFits(position, height, rack, callback, id = null) { //rackU, 
                 firebaseutils.assetRef.doc(assetID).get().then(function (docRefAsset) {
                     if (assetID != id) {
 
-                        console.log(docRefAsset)
+                        console.log(docRefAsset.data().model)
                         modelutils.getModelByModelname(docRefAsset.data().model, result => {
                             if (result) {
                                 console.log("found a model!")
-                                console.log(result)
+                                //console.log(result)
                                 getModelHeightColor((docRefAsset.data().model), (height, color) => {
                                     if (height) {
                                         console.log("found the model height! " + height);

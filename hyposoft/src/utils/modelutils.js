@@ -1,4 +1,5 @@
 import * as firebaseutils from './firebaseutils'
+import * as logutils from './logutils'
 
 function packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment) {
     const model = {
@@ -7,6 +8,7 @@ function packageModel(vendor, modelNumber, height, displayColor, networkPorts, p
         height: height,
         displayColor: displayColor.trim(),
         networkPorts: networkPorts,
+        networkPortsCount: networkPorts.length,
         powerPorts: powerPorts,
         cpu: cpu.trim(),
         memory: memory,
@@ -25,6 +27,7 @@ function createModel(id, vendor, modelNumber, height, displayColor, networkPorts
     // Ignore the first param
     var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment)
     firebaseutils.modelsRef.add(model).then(docRef => {
+        logutils.addLog(docRef.id,logutils.MODEL(),logutils.CREATE())
         callback(model, docRef.id)
     })
 }
@@ -32,6 +35,7 @@ function createModel(id, vendor, modelNumber, height, displayColor, networkPorts
 function modifyModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, callback) {
     var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment)
     firebaseutils.modelsRef.doc(id).update(model).then(() => {
+        logutils.addLog(id,logutils.MODEL(),logutils.MODIFY())
         callback(model, id)
     })
 
@@ -54,7 +58,14 @@ function modifyModel(id, vendor, modelNumber, height, displayColor, networkPorts
 }
 
 function deleteModel(modelId, callback) {
-    firebaseutils.modelsRef.doc(modelId).delete().then(() => callback())
+    firebaseutils.modelsRef.doc(modelId).get().then(docRef => {
+        firebaseutils.modelsRef.doc(modelId).delete().then(() => {
+          logutils.addLog(modelId,logutils.MODEL(),logutils.DELETE(),docRef.data())
+          callback()
+        })
+    }).catch( error => {
+      console.log("Error getting documents: ", error)
+    })
 }
 
 function getModel(vendor, modelNumber, callback, extra_data=null) {
@@ -73,7 +84,7 @@ function getModelByModelname(modelName, callback) {
     firebaseutils.modelsRef.where('modelName', '==', modelName)
     .get().then(qs => {
         if (!qs.empty) {
-            console.log(qs.docs[0]);
+            //console.log(qs.docs[0]);
             callback(qs.docs[0])
         } else {
             callback(null)
@@ -87,8 +98,8 @@ function matchesFilters(data, filters) {
         data.height <= filters.heightEnd &&
         data.memory >= filters.memoryStart &&
         data.memory <= filters.memoryEnd &&
-        data.networkPorts >= filters.networkPortsStart &&
-        data.networkPorts <= filters.networkPortsEnd &&
+        data.networkPortsCount >= filters.networkPortsStart &&
+        data.networkPortsCount <= filters.networkPortsEnd &&
         data.powerPorts >= filters.powerPortsStart &&
         data.powerPorts <= filters.powerPortsEnd
     )

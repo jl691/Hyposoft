@@ -27,7 +27,9 @@ class ModelSettingsLayer extends React.Component {
         modelNumber: '',
         height: '',
         displayColor: 'BD10E0', // default colour that looks good enough
+        networkPortsCount: '',
         networkPorts: '',
+        networkPortsDisabled: true,
         powerPorts: '',
         cpu: '',
         memory: '',
@@ -45,13 +47,14 @@ class ModelSettingsLayer extends React.Component {
             this.hideFunction = this.props.parent.hideEditDialog
             this.layerTitle = 'Edit Model'
             this.dbFunction = modelutils.modifyModel
-
             this.setState({
                 ...this.props.model,
                 height: ''+this.props.model.height,
                 networkPorts: (this.props.model.networkPorts ? ''+this.props.model.networkPorts : ''),
+                networkPortsDisabled: this.props.model.networkPortsCount === 0,
                 powerPorts: (this.props.model.powerPorts ? ''+this.props.model.powerPorts : ''),
-                memory: (this.props.model.memory ? ''+this.props.model.memory : '')
+                memory: (this.props.model.memory ? ''+this.props.model.memory : ''),
+                networkPortsCount: (this.props.model.networkPortsCount === 0 ? '' : ''+this.props.model.networkPortsCount)
             })
         }
     }
@@ -85,13 +88,12 @@ class ModelSettingsLayer extends React.Component {
 
 
         var networkPorts = null
-        if (this.state.networkPorts.trim() !== '' &&
-         (isNaN(this.state.networkPorts.trim()) || !Number.isInteger(parseFloat(this.state.networkPorts.trim())) || parseInt(this.state.networkPorts.trim()) < 0)) {
-             ToastsStore.info('Network ports should be a non-negative integer', 3000, 'burntToast')
-             this.setState(oldState => ({...oldState, networkPorts: ''}))
-             return
-         } else if (this.state.networkPorts.trim() !== '') {
-            networkPorts=parseInt(this.state.networkPorts)
+        if (this.state.networkPorts.trim().split(',').length > 1 || (
+            this.state.networkPorts.trim().split(',').length === 1 && this.state.networkPorts.trim().split(',')[0] !== ''
+        )) {
+             networkPorts=this.state.networkPorts.trim().split(',')
+        } else {
+            networkPorts=[]
         }
 
         var powerPorts = null
@@ -134,6 +136,33 @@ class ModelSettingsLayer extends React.Component {
             }
         })
 
+    }
+
+    adjustNetworkPortsList() {
+        if (this.state.networkPortsCount.trim() !== '' &&
+         (isNaN(this.state.networkPortsCount.trim()) || !Number.isInteger(parseFloat(this.state.networkPortsCount.trim())) || parseInt(this.state.networkPortsCount.trim()) < 0)) {
+             this.setState(oldState => ({...oldState, networkPorts: '', networkPortsDisabled: true, networkPortsCount: ''}))
+             return
+         } else if (this.state.networkPortsCount.trim() !== '' && parseInt(this.state.networkPortsCount.trim()) > 0) {
+             if (this.state.networkPorts.trim().split(',').length !== parseInt(this.state.networkPortsCount.trim()) ||
+                    (this.state.networkPorts.trim().split(',').length === 1 && this.state.networkPorts.trim().split(',')[0] === '' && parseInt(this.state.networkPortsCount.trim()) === 1)) {
+                 var defaultPorts = []
+                 for (var i = 1; i <=parseInt(this.state.networkPortsCount.trim()); i++) {
+                     defaultPorts.push(''+i)
+                 }
+                 this.setState(oldState => ({...oldState, networkPorts: defaultPorts.join(', '), networkPortsDisabled: false}))
+             }
+         } else {
+             this.setState(oldState => ({...oldState, networkPorts: '', networkPortsDisabled: true}))
+         }
+    }
+
+    adjustNetworkPortsCount (){
+        if (this.state.networkPorts.trim().split(',').length === 0) {
+            this.setState(oldState => ({...oldState, networkPorts: '', networkPortsDisabled: true, networkPortsCount: ''}))
+        } else {
+            this.setState(oldState => ({...oldState, networkPortsDisabled: false, networkPortsCount: ''+this.state.networkPorts.trim().split(',').length }))
+        }
     }
 
     render() {
@@ -198,11 +227,26 @@ class ModelSettingsLayer extends React.Component {
                                         borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                         width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                     }}
-                                    placeholder="Network ports (Optional)"
+                                    placeholder="Network ports count (Optional)"
+                                    onChange={e => {
+                                        const value = e.target.value
+                                        this.setState(oldState => ({...oldState, networkPortsCount: value}))
+                                    }}
+                                    onBlur={e => this.adjustNetworkPortsList()}
+                                    value={this.state.networkPortsCount}
+                                    title='Network ports'
+                                    />
+                                <TextInput style={{
+                                        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
+                                        width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
+                                    }}
+                                    disabled={this.state.networkPortsDisabled}
+                                    placeholder="Network ports names (Optional)"
                                     onChange={e => {
                                         const value = e.target.value
                                         this.setState(oldState => ({...oldState, networkPorts: value}))
                                     }}
+                                    onBlur={e => this.adjustNetworkPortsCount()}
                                     value={this.state.networkPorts}
                                     title='Network ports'
                                     />

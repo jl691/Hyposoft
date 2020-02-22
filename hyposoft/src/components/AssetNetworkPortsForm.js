@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Box, Text, FormField, TextInput} from 'grommet'
+import { Grommet, Box, Text, FormField, TextInput} from 'grommet'
 import theme from "../theme";
 
 //Instead of validate connections, upon all fields for one set of inputs, have a toast that pops up with error message
@@ -31,10 +31,6 @@ export default class AssetNetworkPortsForm extends Component {
         }
     }
 
-    handleValidateConnections(event) {
-
-
-    }
 
     render() {
         let { networkConnections } = this.props

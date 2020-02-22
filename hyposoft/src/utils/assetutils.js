@@ -184,18 +184,6 @@ function forceModifyAssetsInDb(toBeModified) {
     }
 }
 
-class connection {
-    constructor(thisPort, otherAssetID, otherPort) {
-        this.thisPort = thisPort;
-        this.otherAssetID = otherAssetID;
-        this.otherPort = otherPort
-    }
-}
-
-
-
-
-
 function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, fixedMac, networkConnectionsArray, callback) {
 
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
@@ -216,7 +204,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                             if (errorMessage) {
                                 callback(errorMessage)
                             }
-                            //The rack doesn't exist, or it doesn't fit on the rack at rackU
+                            //Go one level deeper of validation
                             else {
                                 //if field assetID has been left empty, then call generate
                                 //otherwise, use override method and throw correct errors
@@ -224,101 +212,110 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                 //TODO: refactor this. Seems inefficient/error prone to have the .set duplicated
                                 // let assetID = overrideAssetID.trim()==="" ? generateAssetID() : overrideAssetID()
 
-                                //let ncMap = networkConnectionsToMap(networkConnections);
-                                //console.log(ncMap)
+                                assetnetworkportutils.validateNetworkConnections(model, networkConnectionsArray, ncStatus => {
+                                    if (ncStatus) {
+                                        callback(ncStatus)
+                                    }
+                                    else {
+                                        if (overrideAssetID.trim() != "") {
+                                            let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
+                                            assetIDutils.overrideAssetID(overrideAssetID).then(
+                                                _ => {
+                                                    assetRef.doc(overrideAssetID).set({
+                                                        assetId: overrideAssetID,
+                                                        modelId: doc.id,
+                                                        model: model,
+                                                        hostname: hostname,
+                                                        rack: rack,
+                                                        rackU: racku,
+                                                        owner: owner,
+                                                        comment: comment,
+                                                        rackID: rackID,
+                                                        macAddress: fixedMac,
+                                                        networkConnections,
 
-                                if (overrideAssetID.trim() != "") {
-                                    assetIDutils.overrideAssetID(overrideAssetID).then(
-                                        _ => {
-                                            assetRef.doc(overrideAssetID).set({
-                                                modelId: doc.id,
-                                                model: model,
-                                                hostname: hostname,
-                                                rack: rack,
-                                                rackU: racku,
-                                                owner: owner,
-                                                comment: comment,
-                                                rackID: rackID,
-                                                macAddress: fixedMac,
+                                                        //This is for rack usage reports
+                                                        modelNumber: modelNum,
+                                                        vendor: modelVendor,
+                                                        //This is for sorting
+                                                        rackRow: rackRow,
+                                                        rackNum: rackNum,
+                                                        datacenter: datacenter,
+                                                        datacenterID: datacenterID,
+                                                        datacenterAbbrev: datacenterAbbrev
 
-                                                //This is for rack usage reports
-                                                modelNumber: modelNum,
-                                                vendor: modelVendor,
-                                                //This is for sorting
-                                                rackRow: rackRow,
-                                                rackNum: rackNum,
-                                                datacenter: datacenter,
-                                                datacenterID: datacenterID,
-                                                datacenterAbbrev: datacenterAbbrev
+                                                    }).then(function (docRef) {
+                                                        racksRef.doc(String(rackID)).update({
+                                                            assets: firebase.firestore.FieldValue.arrayUnion(overrideAssetID)//docref.id
+                                                        }).then(function () {
+                                                            console.log("Document successfully updated in racks!");
+                                                            callback(null);
+                                                        })
+                                                        docRef.get().then(ds => {
+                                                            index.saveObject({ ...ds.data(), objectID: ds.id })
+                                                        })
+                                                    }).catch(function (error) {
+                                                        // callback("Error");
+                                                        console.log(error)
+                                                    })
 
-                                            }).then(function (docRef) {
-                                                racksRef.doc(String(rackID)).update({
-                                                    assets: firebase.firestore.FieldValue.arrayUnion(overrideAssetID)//docref.id
-                                                }).then(function () {
-                                                    console.log("Document successfully updated in racks!");
-                                                    logutils.addLog(overrideAssetID,logutils.ASSET(),logutils.CREATE())
-                                                    callback(null);
+                                                }).catch(errMessage => {
+                                                    callback(errMessage)
                                                 })
-                                                docRef.get().then(ds => {
-                                                    index.saveObject({ ...ds.data(), objectID: ds.id })
-                                                })
-                                            }).catch(function (error) {
-                                                // callback("Error");
-                                                console.log(error)
-                                            })
 
-                                        }).catch(errMessage => {
-                                            callback(errMessage)
-                                        })
+                                        }
+                                        else {
 
-                                } else {
-                                   // let ncMap = networkConnectionsToMap(networkConnections);
-                                   // console.log(ncMap)
+                                            let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
+                                            assetIDutils.generateAssetID().then(newID =>
 
-                                   let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
-                                    assetIDutils.generateAssetID().then(newID =>
+                                                assetRef.doc(newID)
+                                                    .set({
+                                                        assetId: newID,
+                                                        modelId: doc.id,
+                                                        model: model,
+                                                        hostname: hostname,
+                                                        rack: rack,
+                                                        rackU: racku,
+                                                        owner: owner,
+                                                        comment: comment,
+                                                        rackID: rackID,
+                                                        macAddress: fixedMac,
+                                                        networkConnections,
 
-                                        assetRef.doc(newID)
-                                            .set({
+                                                        // This is for rack usage reports
+                                                        modelNumber: modelNum,
+                                                        vendor: modelVendor,
+                                                        //This is for sorting
+                                                        rackRow: rackRow,
+                                                        rackNum: rackNum,
+                                                        datacenter: datacenter,
+                                                        datacenterID: datacenterID,
+                                                        datacenterAbbrev: datacenterAbbrev
+                                                    }).then(function (docRef) {
+                                                        racksRef.doc(String(rackID)).update({
+                                                            assets: firebase.firestore.FieldValue.arrayUnion(newID)//docref.id
+                                                        }).then(function () {
+                                                            console.log("Document successfully updated in racks!");
+                                                            logutils.addLog(newID,logutils.ASSET(),logutils.CREATE())
+                                                            callback(null);
+                                                        })
+                                                        docRef.get().then(ds => {
+                                                            index.saveObject({ ...ds.data(), objectID: ds.id })
+                                                        })
+                                                    }).catch(function (error) {
+                                                        // callback("Error");
+                                                        console.log(error)
+                                                    })
+                                            ).catch("Ran out of tries to generate unique ID")
 
-                                                modelId: doc.id,
-                                                model: model,
-                                                hostname: hostname,
-                                                rack: rack,
-                                                rackU: racku,
-                                                owner: owner,
-                                                comment: comment,
-                                                rackID: rackID,
-                                                macAddress: fixedMac,
-                                                networkConnections,
+                                        }
 
-                                                // This is for rack usage reports
-                                                modelNumber: modelNum,
-                                                vendor: modelVendor,
-                                                //This is for sorting
-                                                rackRow: rackRow,
-                                                rackNum: rackNum,
-                                                datacenter: datacenter,
-                                                datacenterID: datacenterID,
-                                                datacenterAbbrev: datacenterAbbrev
-                                            }).then(function (docRef) {
-                                                racksRef.doc(String(rackID)).update({
-                                                    assets: firebase.firestore.FieldValue.arrayUnion(newID)//docref.id
-                                                }).then(function () {
-                                                    console.log("Document successfully updated in racks!");
-                                                    logutils.addLog(newID,logutils.ASSET(),logutils.CREATE())
-                                                    callback(null);
-                                                })
-                                                docRef.get().then(ds => {
-                                                    index.saveObject({ ...ds.data(), objectID: ds.id })
-                                                })
-                                            }).catch(function (error) {
-                                                // callback("Error");
-                                                console.log(error)
-                                            })
-                                    ).catch("Ran out of tries to generate unique ID")
 
-                                }
+                                    }
+
+                                })
+
                             }
                         })
 
@@ -514,9 +511,10 @@ function deleteAsset(assetID, callback) {
                     console.log("no rack for this letter and number")
                     callback(null)
                 }
-            }).catch(function (error) {
-                callback(null);
             })
+            // .catch(function (error) {
+            //     callback(null);
+            // })
         } else {
             callback(null);
         }
