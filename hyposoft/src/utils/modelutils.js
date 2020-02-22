@@ -8,6 +8,7 @@ function packageModel(vendor, modelNumber, height, displayColor, networkPorts, p
         height: height,
         displayColor: displayColor.trim(),
         networkPorts: networkPorts,
+        networkPortsCount: networkPorts.length,
         powerPorts: powerPorts,
         cpu: cpu.trim(),
         memory: memory,
@@ -97,8 +98,8 @@ function matchesFilters(data, filters) {
         data.height <= filters.heightEnd &&
         data.memory >= filters.memoryStart &&
         data.memory <= filters.memoryEnd &&
-        data.networkPorts >= filters.networkPortsStart &&
-        data.networkPorts <= filters.networkPortsEnd &&
+        data.networkPortsCount >= filters.networkPortsStart &&
+        data.networkPortsCount <= filters.networkPortsEnd &&
         data.powerPorts >= filters.powerPortsStart &&
         data.powerPorts <= filters.powerPortsEnd
     )
