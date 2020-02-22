@@ -36,7 +36,7 @@ function DELETE() {
 }
 
 // only optional is objectId and objectType
-function packageLog(timestamp, objectId, objectType, objectName, currentData, previousData, action, userId, userName) {
+function packageLog(timestamp, objectId, objectType, objectName, currentData, previousData, datacenter, action, userId, userName) {
     const log = {
         timestamp: timestamp,
         objectId: objectId.trim(),
@@ -44,6 +44,7 @@ function packageLog(timestamp, objectId, objectType, objectName, currentData, pr
         objectName: objectName.trim(),
         currentData: currentData,
         previousData: previousData,
+        datacenter: datacenter,
         action: action.trim(),
         userId: userId.trim(),
         userName: userName.trim()
@@ -79,7 +80,7 @@ function finishAddingLog(object, objectId, objectType, action) {
         const userId = userutils.getLoggedInUser()
         getUserName(userId, null, action, user => {
             if (user) {
-                var log = packageLog(timestamp, objectId, objectType, object.name, object.data, object.previousData, action, userId, user.name)
+                var log = packageLog(timestamp, objectId, objectType, object.name, object.data, object.previousData, object.datacenter, action, userId, user.name)
                 firebaseutils.logsRef.add(log)
               }
         })
@@ -185,7 +186,10 @@ function doesObjectStillExist(objectType,objectId,callback) {
 }
 
 function buildLog(data) {
-    var log = data.userName + ' ' + data.action + (data.action == MODIFY() && data.previousData ? buildDiff(data) : ' ') + data.objectType + ' ' + data.objectName + '.'
+    var log = data.userName + ' '
+              + data.action + (data.action == MODIFY() && data.previousData ? buildDiff(data) : ' ')
+              + data.objectType + ' ' + data.objectName
+              + (data.objectType == RACK() || data.objectType == ASSET() ? (' in datacenter ' + data.datacenter + '.') : '.')
     return log
 }
 
@@ -229,9 +233,9 @@ function getDate(timestamp) {
 
 function getUserName(id,data,action,callback) {
     if (data && action == DELETE()) {
-        callback({name: data.username, data: data, previousData: null})
+        callback({name: data.username, data: data, previousData: null, datacenter: null})
     } else {
-        firebaseutils.usersRef.doc(id).get().then(doc => callback({name: doc.data().username, data: doc.data(), previousData: data}))
+        firebaseutils.usersRef.doc(id).get().then(doc => callback({name: doc.data().username, data: doc.data(), previousData: data, datacenter: null}))
         .catch( error => {
           console.log("Error getting documents: ", error)
           callback(null)
@@ -241,9 +245,9 @@ function getUserName(id,data,action,callback) {
 
 function getAssetName(id,data,action,callback) {
     if (data && action == DELETE()) {
-        callback({name: data.model+' '+data.hostname, data: data, previousData: null})
+        callback({name: data.model+' '+data.hostname, data: data, previousData: null, datacenter: data.datacenter})
     } else {
-        firebaseutils.assetRef.doc(id).get().then(doc => callback({name: doc.data().model+' '+doc.data().hostname, data: doc.data(), previousData: data}))
+        firebaseutils.assetRef.doc(id).get().then(doc => callback({name: doc.data().model+' '+doc.data().hostname, data: doc.data(), previousData: data, datacenter: doc.data().datacenter}))
         .catch( error => {
           console.log("Error getting documents: ", error)
           callback(null)
@@ -253,9 +257,9 @@ function getAssetName(id,data,action,callback) {
 
 function getModelName(id,data,action,callback) {
     if (data && action == DELETE()) {
-        callback({name: data.modelName, data: data, previousData: null})
+        callback({name: data.modelName, data: data, previousData: null, datacenter: null})
     } else {
-        firebaseutils.modelsRef.doc(id).get().then(doc => callback({name: doc.data().modelName, data: doc.data(), previousData: data}))
+        firebaseutils.modelsRef.doc(id).get().then(doc => callback({name: doc.data().modelName, data: doc.data(), previousData: data, datacenter: null}))
         .catch( error => {
           console.log("Error getting documents: ", error)
           callback(null)
@@ -264,13 +268,21 @@ function getModelName(id,data,action,callback) {
 }
 
 function getRackName(id,data,action,callback) {
-    console.log("fucking kill me")
     if (data && action == DELETE()) {
-        console.log("i hate 458")
-        callback({name: data.letter+data.number, data: data, previousData: null})
+        firebaseutils.datacentersRef.doc(data.datacenter).get()
+        .then(doc => {
+          callback({name: data.letter+data.number, data: data, previousData: null, datacenter: doc.data().name})
+        })
+        .catch( error => {
+          console.log("Error getting documents: ", error)
+          callback(null)
+        })
     } else {
-        console.log("bletsch is satan")
-        firebaseutils.racksRef.doc(id).get().then(doc => callback({name: doc.data().letter+doc.data().number, data: doc.data(), previousData: data}))
+        firebaseutils.racksRef.doc(id).get().then(doc => {
+          firebaseutils.datacentersRef.doc(doc.data().datacenter).get().then(docRef => {
+            callback({name: doc.data().letter+doc.data().number, data: doc.data(), previousData: data, datacenter: docRef.data().name})
+          })
+        })
         .catch( error => {
           console.log("Error getting documents: ", error)
           callback(null)
@@ -280,9 +292,9 @@ function getRackName(id,data,action,callback) {
 
 function getDatacenterName(id,data,action,callback) {
     if (data && action == DELETE()) {
-        callback({name: data.name, data: data, previousData: null})
+        callback({name: data.name, data: data, previousData: null, datacenter: null})
     } else {
-        firebaseutils.datacentersRef.doc(id).get().then(doc => callback({name: doc.data().name, data: doc.data(), previousData: data}))
+        firebaseutils.datacentersRef.doc(id).get().then(doc => callback({name: doc.data().name, data: doc.data(), previousData: data, datacenter: null}))
         .catch( error => {
           console.log("Error getting documents: ", error)
           callback(null)
