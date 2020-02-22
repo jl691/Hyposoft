@@ -15,7 +15,7 @@ function isUserLoggedIn() {
 }
 
 function validEmail(email) {
-    var re = /^([a-zA-Z0-9._-]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    var re = /^([a-zA-Z0-9.+_-]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     return re.test(String(email).toLowerCase());
 }
 
@@ -55,18 +55,22 @@ function createUser(displayName, username, email, password, callback) {
 * It also assumes that we've already validated that the logged in user is the user
 */
 function modifyUser(displayName, username, email) {
-    firebaseutils.usersRef.doc(email).update(packageUser(displayName, username, email))
-    logutils.addLog(email,logutils.USER(),logutils.MODIFY())
+    logutils.getObjectData(email,logutils.USER(),data => {
+      firebaseutils.usersRef.doc(email).update(packageUser(displayName, username, email))
+      logutils.addLog(email,logutils.USER(),logutils.MODIFY(),data)
+    })
 }
 
 function updateUsername(oldUsername, newUsername, callback) {
     firebaseutils.usersRef.where('username', '==', oldUsername).get().then(qs => {
         if (!qs.empty) {
-            qs.docs[0].ref.update({
-                username: newUsername
-            }).then(() => {
-              logutils.addLog(qs.docs[0].id,logutils.USER(),logutils.MODIFY())
-              callback()
+            logutils.getObjectData(qs.docs[0].id,logutils.USER(),data => {
+              qs.docs[0].ref.update({
+                  username: newUsername
+              }).then(() => {
+                logutils.addLog(qs.docs[0].id,logutils.USER(),logutils.MODIFY(),data)
+                callback()
+              })
             })
         }
     })
@@ -75,11 +79,13 @@ function updateUsername(oldUsername, newUsername, callback) {
 function updateUserRole(username, newRole, callback) {
     firebaseutils.usersRef.where('username', '==', username).get().then(qs => {
         if (!qs.empty) {
-            qs.docs[0].ref.update({
-                role: newRole
-            }).then(() => {
-              logutils.addLog(qs.docs[0].id,logutils.USER(),logutils.MODIFY())
-              callback()
+            logutils.getObjectData(qs.docs[0].id,logutils.USER(),data => {
+              qs.docs[0].ref.update({
+                  role: newRole
+              }).then(() => {
+                logutils.addLog(qs.docs[0].id,logutils.USER(),logutils.MODIFY(),data)
+                callback()
+              })
             })
         }
     })

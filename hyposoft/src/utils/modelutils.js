@@ -8,6 +8,7 @@ function packageModel(vendor, modelNumber, height, displayColor, networkPorts, p
         height: height,
         displayColor: displayColor.trim(),
         networkPorts: networkPorts,
+        networkPortsCount: networkPorts.length,
         powerPorts: powerPorts,
         cpu: cpu.trim(),
         memory: memory,
@@ -33,9 +34,11 @@ function createModel(id, vendor, modelNumber, height, displayColor, networkPorts
 
 function modifyModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, callback) {
     var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment)
-    firebaseutils.modelsRef.doc(id).update(model).then(() => {
-        logutils.addLog(id,logutils.MODEL(),logutils.MODIFY())
-        callback(model, id)
+    logutils.getObjectData(id,logutils.MODEL(),data => {
+      firebaseutils.modelsRef.doc(id).update(model).then(() => {
+          logutils.addLog(id,logutils.MODEL(),logutils.MODIFY(),data)
+          callback(model, id)
+      })
     })
 
     // Now update all instances of this model just in case the modelNumber or vendor changed
@@ -97,8 +100,8 @@ function matchesFilters(data, filters) {
         data.height <= filters.heightEnd &&
         data.memory >= filters.memoryStart &&
         data.memory <= filters.memoryEnd &&
-        data.networkPorts >= filters.networkPortsStart &&
-        data.networkPorts <= filters.networkPortsEnd &&
+        data.networkPortsCount >= filters.networkPortsStart &&
+        data.networkPortsCount <= filters.networkPortsEnd &&
         data.powerPorts >= filters.powerPortsStart &&
         data.powerPorts <= filters.powerPortsEnd
     )

@@ -11,6 +11,7 @@ import * as firebaseutils from '../utils/firebaseutils'
 import * as datacenterutils from '../utils/datacenterutils'
 
 import {
+    Anchor,
     Box,
     Button,
     DataTable,
@@ -50,6 +51,8 @@ class ModelPermaScreen extends Component {
         this.hideEditDialog = this.hideEditDialog.bind(this)
         this.showDeleteDialog = this.showDeleteDialog.bind(this)
         this.hideDeleteDialog = this.hideDeleteDialog.bind(this)
+        this.hideNetworkPortsDialog = this.hideNetworkPortsDialog.bind(this)
+        this.showNetworkPortsDialog = this.showNetworkPortsDialog.bind(this)
     }
 
     showEditDialog(itemNo) {
@@ -135,7 +138,6 @@ class ModelPermaScreen extends Component {
                     });
                     count++;
                     if (count === docSnaps.docs.length) {
-                        console.log("fuck this shit")
                         this.setState({
                             assets: assets,
                             initialLoaded: true
@@ -143,33 +145,48 @@ class ModelPermaScreen extends Component {
                     }
                 });
             })
+            if(docSnaps.docs.length === 0) {
+                this.setState({
+                    assets: undefined,
+                    initialLoaded: true
+                })
+            }
 
-/*                        this.setState({
-                            assets: docSnaps.docs.map(doc => (
-                                {...doc.data(), id: doc.id, itemNo: i++}
-                            )),
-                            initialLoaded: true
-                        })*/
         })
+    }
+    showNetworkPortsDialog () {
+        this.setState(oldState => ({
+            ...oldState,
+            showNetworkPortsDialog: true
+        }))
+    }
+
+    hideNetworkPortsDialog () {
+        this.setState(oldState => ({
+            ...oldState,
+            showNetworkPortsDialog: false
+        }))
     }
 
     getTable() {
         if (!this.state.initialLoaded) {
             return (<Text>Please wait...</Text>)
+        } else if (!this.state.assets) {
+            return (<span>No assets deployed for this model</span>)
         } else {
             console.log(this.state.assets)
             return (<DataTable
                 step={25}
-/*                onMore={() => {
-                    /!*                    if (this.startAfter) {
-                                            userutils.loadUsers(this.startAfter, (users, newStartAfter) => {
-                                                this.startAfter = newStartAfter
-                                                this.setState(oldState => (
-                                                    {...oldState, users: [...oldState.users, ...users]}
-                                                ))
-                                            })
-                                        }*!/
-                }}*/
+                onMore={() => {
+                    if (this.startAfter) {
+                        userutils.loadUsers(this.startAfter, (users, newStartAfter) => {
+                            this.startAfter = newStartAfter
+                            this.setState(oldState => (
+                                {...oldState, users: [...oldState.users, ...users]}
+                            ))
+                        })
+                    }
+                }}
                 onClickRow={({datum}) => {
                     this.props.history.push('/assets/' + datum.id)
                 }}
@@ -328,7 +345,7 @@ class ModelPermaScreen extends Component {
                                                 </tr>
                                                 <tr>
                                                     <td><b>Network Ports</b></td>
-                                                    <td style={{textAlign: 'right'}}>{this.state.networkPorts || 'N/A'} Ports</td>
+                                                    <td style={{textAlign: 'right'}}><Anchor onClick={() => this.showNetworkPortsDialog()}>{this.state.networkPortsCount || 'N/A'} Ports</Anchor></td>
                                                 </tr>
                                                 <tr>
                                                     <td><b>Power Ports</b></td>
@@ -389,6 +406,17 @@ class ModelPermaScreen extends Component {
                                     onClick={this.hideDeleteDialog}
                                 />
                             </Box>
+                        </Box>
+                    </Layer>
+                )}
+
+                {this.state.showNetworkPortsDialog && (
+                    <Layer position="center" modal onClickOutside={this.hideNetworkPortsDialog} onEsc={this.hideNetworkPortsDialog}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Network ports for this model
+                            </Heading>
+                            <p>{this.state.networkPorts.join(',')}</p>
                         </Box>
                     </Layer>
                 )}

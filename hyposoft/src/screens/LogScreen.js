@@ -101,7 +101,7 @@ class LogScreen extends Component {
                             header: <Text size='small'>Date and Time (EST)</Text>,
                             render: datum => <Text size='small'>{'['+datum.itemNo+'] '+datum.date}</Text>,
                             primary: true,
-                            sortable: true,
+                            sortable: false,
                         },
                         {
                             property: 'log',
@@ -118,7 +118,7 @@ class LogScreen extends Component {
                     logutils.doesObjectStillExist(datum.objectType,datum.objectId,exists => {
                         if (exists) {
                             if (datum.objectType === logutils.MODEL()) {
-                                this.props.history.push('/models/'+datum.objectData.vendor+'/'+datum.objectData.modelNumber)
+                                this.props.history.push('/models/'+datum.currentData.vendor+'/'+datum.currentData.modelNumber)
                             } else if (datum.objectType === logutils.ASSET()) {
                                 this.props.history.push('/assets/'+datum.objectId)
                             } else {

@@ -122,6 +122,8 @@ class ModelsScreen extends React.Component {
                         }))
                         return
                     }
+                } else {
+                    console.log(docSnaps.docs[i].data())
                 }
             }
 
@@ -350,7 +352,7 @@ class ModelsScreen extends React.Component {
                                                                 {
                                                                     property: 'networkPorts',
                                                                     header: <Text size='small'>Network ports #</Text>,
-                                                                    render: datum => <Text size='small'>{datum.networkPorts}</Text>,
+                                                                    render: datum => <Text size='small'>{datum.networkPortsCount}</Text>,
                                                                     sortable: true,
                                                                 },
                                                                 {
