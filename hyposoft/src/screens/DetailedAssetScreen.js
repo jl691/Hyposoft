@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route } from 'react-router-dom'
 import { Link } from 'react-router-dom'
 import { Button, Grommet, Heading, Box, List } from 'grommet'
 import * as assetutils from '../utils/assetutils'
+import * as powerutils from '../utils/powerutils'
 import theme from '../theme'
 import ModelPermaScreen from '../screens/ModelPermaScreen'
 import BackButton from '../components/BackButton'
@@ -10,6 +11,9 @@ import AppBar from '../components/AppBar'
 import UserMenu from '../components/UserMenu'
 
 export default class DetailedAssetScreen extends Component {
+
+    powerMap;
+
     constructor(props) {
         super(props);
         this.state = {
@@ -17,11 +21,16 @@ export default class DetailedAssetScreen extends Component {
 
 
         }
+
+        this.generatePDUStatus = this.generatePDUStatus.bind(this);
     }
     static contextTypes = {
         router: () => true, // replace with PropTypes.object if you use them
     }
     componentDidMount() {
+        powerutils.getPortStatus('hpdu-rtp1-A01L', 4, (result) => {
+            console.log(result)
+        })
         console.log("DetailedAssetScreen")
         this.setState({
             asset: ""
@@ -33,9 +42,31 @@ export default class DetailedAssetScreen extends Component {
                     asset: assetsdb
 
                 })
-
+                this.generatePDUStatus()
             })
 
+    }
+
+    generatePDUStatus() {
+        this.powerMap = new Map();
+        console.log("kmskmskms1", this.state.asset.powerConnections)
+        if(this.state.asset.datacenterAbbrev.toUpperCase() === "RTP1" && this.state.asset.powerConnections && this.state.asset.powerConnections.length){
+            console.log("kmskmskms2", this.state.asset)
+            Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
+                let formattedNum;
+                if(this.state.asset.rackNum.toString().length === 1){
+                    formattedNum = "0" + this.state.asset.rackNum;
+                } else {
+                    formattedNum = this.state.asset.rackNum;
+                }
+                console.log("kmskmskms")
+                powerutils.getPortStatus("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0), this.state.asset.powerConnections[pduConnections].port, (result) => {
+                    console.log("idk")
+                    this.powerMap.set("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0), result);
+                })
+                console.log(this.powerMap)
+            })
+        }
     }
 
     render() {
@@ -83,6 +114,11 @@ export default class DetailedAssetScreen extends Component {
                                              <tr><td><b>Rack</b></td><td style={{textAlign: 'right'}}>{this.state.asset.rack}</td></tr>
                                              <tr><td><b>Rack U</b></td><td style={{textAlign: 'right'}}>{this.state.asset.rackU}</td></tr>
                                              <tr><td><b>Owner</b></td><td style={{textAlign: 'right'}}>@{this.state.asset.owner || 'N/A'}</td></tr>
+                                             {
+                                                 this.powerMap && this.powerMap.forEach((v, k) => {
+                                                     return <tr><td><b>k</b></td><td style={{textAlign: 'right'}}>v</td></tr>
+                                                 })
+                                             }
                                          </table>
                                          <span style={{maxHeight: 100, overflow: 'scroll'}}>
                                          {this.state.asset.comment && this.state.asset.comment.split('\n').map((i,key) => {

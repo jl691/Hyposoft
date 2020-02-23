@@ -747,14 +747,15 @@ function getAssetDetails(assetID, callback) {
             model: doc.data().model.trim(),
             hostname: doc.data().hostname.trim(),
             rack: doc.data().rack.trim(),
+            rackNum: doc.data().rackNum,
             rackU: doc.data().rackU,
             owner: doc.data().owner.trim(),
             comment: doc.data().comment.trim(),
             modelNum: doc.data().modelNumber.trim(),
             vendor: doc.data().vendor.trim(),
             datacenter: doc.data().datacenter.trim(),
-            datacenterAbbrev: doc.data().datacenterAbbrev.trim()
-
+            datacenterAbbrev: doc.data().datacenterAbbrev.trim(),
+            powerConnections: doc.data().powerConnections
         }
         callback(inst)
     }
