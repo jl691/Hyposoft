@@ -104,23 +104,23 @@ export default class AssetNetworkPortsForm extends Component {
 
                                     size="small"
 
-                                    // onChange={e => {
-                                    //     this.handleChange(e, idx)
-                                    //     assetutils.getNetworkPorts(this.props.model, results => this.setState(oldState => ({
-                                    //         ...oldState,
-                                    //         networkPortSuggestions: results
-                                    //     })))
-                                    // }}
-                                    // onSelect={e => {
-                                    //     this.handleSuggestion(e, idx)
-                                    // }}
-                                    // value={this.props.networkConnections[idx]['otherAssetID']}
-                                    // suggestions={this.state.networkPortSuggestions}
-                                    // onClick={() => {
-                                    //   assetutils.getNetworkPorts(this.props.model, results => this.setState(oldState => ({
-                                    //     ...oldState,
-                                    //     networkPortSuggestions: results
-                                    // })))}}
+                                    onChange={e => {
+                                        this.handleChange(e, idx)
+                                        assetutils.getSuggestedAssetIds(e.target.value, results => this.setState(oldState => ({
+                                            ...oldState,
+                                            assetIdSuggestions: results
+                                        })))
+                                    }}
+                                    onSelect={e => {
+                                        this.handleSuggestion(e, idx)
+                                    }}
+                                    value={this.props.networkConnections[idx]['otherAssetID']}
+                                    suggestions={this.state.assetIdSuggestions}
+                                    onClick={() => {
+                                      assetutils.getSuggestedAssetIds(this.props.networkConnections[idx]['otherAssetID'], results => this.setState(oldState => ({
+                                        ...oldState,
+                                        assetIdSuggestions: results
+                                    })))}}
                                 />
                             </FormField>
 
