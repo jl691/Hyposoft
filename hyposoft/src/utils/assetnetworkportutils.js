@@ -22,7 +22,6 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
         //Left entirely empty is OK
         if (otherAssetID.toString() === "" && otherPort.trim() == "" && thisPort.trim() == "") {
             success++;
-            console.log("In empty")
             if (success == networkPortConnections.length) {
                 callback(null)
             }

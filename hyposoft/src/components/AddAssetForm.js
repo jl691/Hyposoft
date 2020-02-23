@@ -2,6 +2,8 @@ import React, { Component } from 'react'
 import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer, Accordion, AccordionPanel } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
+import * as assetpowerportutils from '../utils/assetpowerportutils'
+import * as modelutils from '../utils/modelutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
 import { Redirect } from "react-router-dom";
@@ -30,13 +32,12 @@ export default class AddAssetForm extends Component {
             datacenterAbbrev: "",
             networkConnections: [
                 {
-                otherAssetID: "",
-                otherPort: "",
-                thisPort: ""
-            }
-        ],
+                    otherAssetID: "",
+                    otherPort: "",
+                    thisPort: ""
+                }
+            ],
             powerConnections: [{
-                
                 pduSide: "",
                 port: ""
             }],
@@ -48,12 +49,58 @@ export default class AddAssetForm extends Component {
         this.handleChange = this.handleChange.bind(this);
         this.addNetworkConnection = this.addNetworkConnection.bind(this);
         this.addPowerConnection = this.addPowerConnection.bind(this);
+        this.defaultPDUFields = this.defaultPDUFields.bind(this)
+    }
+
+
+    defaultPDUFields(model, rack, datacenter) {
+        //if the model has 2 or more ports, need to do these default fields
+        //find the first available spot
+        let numPorts = 0;
+        //instead of going into modelsRef, use a backend method
+        modelutils.getModelByModelname(model, status => {
+
+            if (status) {
+                console.log(status.powerPorts)
+                //TODO: change this back, was using 3 for testing
+                //numPorts = status.powerPorts.length
+                numPorts = 3;
+                if (numPorts >= 2) {
+                    //call assetpowerportutils to find first available spot on the rack on both left and right sides
+                    //set the state
+                    let portField = assetpowerportutils.getFirstFreePort(rack, datacenter);
+                    if (portField) {
+                        this.setState(oldState => ({
+                            ...oldState,
+                            powerConnections: [{
+                                pduSide: "Left",
+                                port: [portField]
+                            },
+                            {
+                                pduSide: "Right",
+                                port: [portField]
+                            },
+
+                            ]
+                        }))
+                    }
+                }
+            }
+        })
+
     }
 
     handleChange(event) {
         this.setState({
             [event.target.name]: event.target.value
         });
+
+        if (event.target.name == "rackU") {
+            console.log(this.state)
+            console.log(this.state.datacenter)
+            this.defaultPDUFields(this.state.model, this.state.rack, this.state.datacenter)
+        }
+
     }
 
     //Puts the MAC address into canonical form: lower case and colon-delimited
@@ -85,12 +132,12 @@ export default class AddAssetForm extends Component {
 
     addPowerConnection(event) {
         //Bletsch said to expect no more than 8 power ports on an asset
-      
-            this.setState((prevState) => ({
-                powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
-            }));
 
-          
+        this.setState((prevState) => ({
+            powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
+        }));
+
+
     }
 
     //toLowercase, to colon
@@ -195,6 +242,7 @@ export default class AddAssetForm extends Component {
                                     }}
                                     onSelect={e => {
                                         this.setState(oldState => ({ ...oldState, model: e.suggestion }))
+                                        //this.defaultPDUFields(e.suggestion, this.state.rack, this.state.datacenter)
                                     }}
                                     value={this.state.model}
                                     suggestions={this.state.modelSuggestions}
@@ -227,6 +275,7 @@ export default class AddAssetForm extends Component {
                                     }}
                                     onSelect={e => {
                                         this.setState(oldState => ({ ...oldState, datacenter: e.suggestion }))
+                                        //this.defaultPDUFields(this.state.model, this.state.rack, e.suggestion)
                                     }}
                                     value={this.state.datacenter}
                                     suggestions={this.state.datacenterSuggestions}
@@ -260,6 +309,9 @@ export default class AddAssetForm extends Component {
                                     }}
                                     onSelect={e => {
                                         this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
+
+                                        // console.log(this.state)
+                                        // this.defaultPDUFields(this.state.model, e.suggestion, this.state.datacenter)
                                     }}
                                     value={this.state.rack}
                                     suggestions={this.state.rackSuggestions}
@@ -269,6 +321,7 @@ export default class AddAssetForm extends Component {
                                                 ...oldState,
                                                 rackSuggestions: results
                                             })))
+
                                         }
                                     }
                                     }
@@ -319,10 +372,12 @@ export default class AddAssetForm extends Component {
                                 />
                             </FormField>
 
-                        <Accordion>
+                            <Accordion>
                                 <AccordionPanel label="Power Port Connections">
                                     <AssetPowerPortsForm
+
                                         powerConnections={this.state.powerConnections}
+
                                     />
 
                                     <Button
@@ -331,11 +386,6 @@ export default class AddAssetForm extends Component {
 
                                         label="Add a power connection" />
 
-                                    {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
-                                    {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
-                                    {/* <Button onClick={this.handleConnect}
-                                        margin={{ horizontal: 'medium', vertical: 'small' }}
-                                        label="Validate Connections" /> */}
 
                                 </AccordionPanel>
 
