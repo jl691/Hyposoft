@@ -305,9 +305,9 @@ function getDatacenterName(id,data,action,callback) {
 function assetDiff(data,field) {
     switch (field) {
       case 'networkConnections':
-        return isEqual(data.previousData[field],data.currentData[field]) ? '' : field
+        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       case 'powerConnections':
-        return isEqual(data.previousData[field],data.currentData[field]) ? '' : field
+        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       default:
         return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
     }
@@ -316,10 +316,12 @@ function assetDiff(data,field) {
 function modelDiff(data,field) {
     switch (field) {
       case 'networkPorts':
-        return isEqual(data.previousData[field],data.currentData[field]) ? '' : field
+        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       case 'powerPorts':
-        return isEqual(data.previousData[field],data.currentData[field]) ? '' : field
+        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       case 'modelName':
+        return ''
+      case 'networkPortsCount':
         return ''
       default:
         return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
@@ -329,7 +331,7 @@ function modelDiff(data,field) {
 function rackDiff(data,field) {
     switch (field) {
       case 'assets':
-        return isEqual(data.previousData[field],data.currentData[field]) ? '' : field
+        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       default:
         return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
     }
@@ -347,10 +349,17 @@ function userDiff(data,field) {
 function datacenterDiff(data,field) {
     switch (field) {
       case 'racks':
-        return isEqual(data.previousData[field],data.currentData[field]) ? '' : field
+        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       default:
         return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
     }
+}
+
+var complexDiffString = ''
+
+function complexObjectDiff(value, other) {
+    complexDiffString = ''
+    return isEqual(value,other)
 }
 
 // from https://gomakethings.com/check-if-two-arrays-or-objects-are-equal-with-javascript/
@@ -368,7 +377,10 @@ var isEqual = function (value, other) {
 	// Compare the length of the length of the two items
 	var valueLen = type === '[object Array]' ? value.length : Object.keys(value).length;
 	var otherLen = type === '[object Array]' ? other.length : Object.keys(other).length;
-	if (valueLen !== otherLen) return false;
+	if (valueLen !== otherLen) {
+    complexDiffString = complexDiffString + ' by changing size from ' + valueLen + ' to ' + otherLen
+    return false;
+  }
 
 	// Compare two items
 	var compare = function (item1, item2) {
@@ -392,7 +404,14 @@ var isEqual = function (value, other) {
 			if (itemType === '[object Function]') {
 				if (item1.toString() !== item2.toString()) return false;
 			} else {
-				if (item1 !== item2) return false;
+				if (item1 !== item2) {
+          if (complexDiffString) {
+            complexDiffString = complexDiffString + ', from ' + item1 + ' to ' + item2
+          } else {
+            complexDiffString = complexDiffString + ' from ' + item1 + ' to ' + item2
+          }
+          return false;
+        }
 			}
 
 		}
