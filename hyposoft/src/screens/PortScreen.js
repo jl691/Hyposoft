@@ -59,49 +59,58 @@ class PortScreen extends Component {
         })
     }
 
-    importModels (data, fileName) {
+    importModels (uselessdata, fileName) {
         const file = document.querySelector('#csvreadermodels').files[0]
         bulkutils.parseCSVFile(file, data => {
-            console.log(data)
-        })
-        return
+            if (data.length === 0) {
+                ToastsStore.info('No records found in imported file', 3000, 'burntToast')
+                return
+            }
 
-        this.setState(oldState => ({...oldState, showLoadingDialog: true}))
-        if (data.length === 0) {
-            ToastsStore.info('No records found in imported file', 3000, 'burntToast')
-            return
-        }
-
-        if (!('vendor' in data[0] && 'model_number' in data[0] && 'height' in data[0]
-           && 'display_color' in data[0] && 'network_ports' in data[0] && 'power_ports' in data[0]
-           && 'cpu' in data[0] && 'memory' in data[0] && 'storage' in data[0] && 'comment' in data[0])) {
-           ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
-           return
-       }
-
-        modelutils.validateImportedModels(data, errors => {
-            if (errors.length > 0) {
-                this.setState(oldState => ({
-                    ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
-                }))
-            } else {
-                this.setState(oldState => ({...oldState, showLoadingDialog: false, errors: undefined}))
-                modelutils.addModelsFromImport(data, false, ({modelsPending, modelsPendingInfo, ignoredModels, createdModels, modifiedModels}) => {
-                    if (modelsPending.length > 0) {
-                        // Show confirmation
+            if (!('vendor' in data[0] && 'model_number' in data[0] && 'height' in data[0]
+                && 'display_color' in data[0] && 'network_ports' in data[0] && 'power_ports' in data[0]
+                && 'cpu' in data[0] && 'memory' in data[0] && 'storage' in data[0] && 'comment' in data[0]
+                && 'network_port_name_1' in data[0] && 'network_port_name_2' in data[0] && 'network_port_name_3' in data[0]
+                && 'network_port_name_4' in data[0])) {
+                ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
+                return
+            }
+            this.setState(oldState => ({...oldState, showLoadingDialog: true}))
+            modelutils.validateImportedModels(data, ({ errors, toBeIgnored, toBeModified, toBeAdded }) => {
+                if (errors.length > 0) {
+                    this.setState(oldState => ({
+                        ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
+                    }))
+                } else {
+                    this.setState(oldState => ({...oldState, showLoadingDialog: false, errors: undefined}))
+                    if (toBeModified.length === 0) {
+                        if (toBeAdded.length > 0) {
+                            modelutils.bulkAddModels(toBeAdded, () => {
+                                this.setState(oldState => ({...oldState, modificationsInfo: undefined, showStatsForModels: true, ignoredModels: toBeIgnored, modifiedModels: [], createdModels: toBeAdded}))
+                            })
+                            console.log('just add')
+                        } else {
+                            console.log('just ignore')
+                            this.setState(oldState => ({...oldState, modificationsInfo: undefined, showStatsForModels: true, ignoredModels: toBeIgnored, modifiedModels: [], createdModels: []}))
+                        }
+                    } else {
+                        // Ask if they want to modify, then add.
                         this.setState(oldState => ({
                             ...oldState, showLoadingDialog: false,
-                            ignoredModels: ignoredModels, modifiedModels: modifiedModels, createdModels: createdModels,
+                            ignoredModels: toBeIgnored, modifiedModels: toBeModified, createdModels: toBeAdded,
                             showStatsForModels: false,
-                            modifications: modelsPending, modificationsInfo: modelsPendingInfo.map(m => <div><b>Row {m[0]}:</b> {m[1]}</div>)
+                            modificationsInfo: toBeModified.map(m => <div><b>Row {m.rowNumber}:</b> {m.vendor+' '+m.model_number}</div>)
                         }))
-                    } else {
-                        this.setState(oldState => ({...oldState, showLoadingDialog: false,
-                        ignoredModels: ignoredModels, modifiedModels: modifiedModels, createdModels: createdModels,
-                        showStatsForModels: true, modifications: undefined, modificationsInfo: undefined}))
+
+                        if (toBeAdded.length > 0) {
+                            modelutils.bulkAddModels(toBeAdded, () => {})
+                            console.log('add and confirm modify')
+                        } else {
+                            console.log('ignore and confirm modify')
+                        }
                     }
-                })
-            }
+                }
+            })
         })
     }
 
@@ -272,7 +281,7 @@ class PortScreen extends Component {
                         </Box>
                     </Layer>
                 )}
-                {this.state.modificationsInfo && (
+                {this.state.modifiedModels && (
                     <Layer position="center" modal onClickOutside={()=>{}} onEsc={()=>{}}>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
@@ -295,13 +304,13 @@ class PortScreen extends Component {
                                 direction="row"
                                 align="center"
                                 justify="end" >
-                                <Button label="Ignore" primary onClick={() => this.setState(oldState => ({...oldState, modifications: undefined, modificationsInfo: undefined,
-                                showStatsForModels: true, ignoredModels: oldState.ignoredModels+oldState.modifiedModels, modifiedModels: 0}))} />
+                                <Button label="Ignore" primary onClick={() => this.setState(oldState => ({...oldState, modificationsInfo: undefined,
+                                showStatsForModels: true, ignoredModels: [...oldState.ignoredModels, ...oldState.modifiedModels], modifiedModels: []}))} />
                                 <Button
                                     label="Update"
                                     onClick={() => {
-                                        modelutils.addModelsFromImport(this.state.modifications, true, () => {
-                                            this.setState(oldState => ({...oldState, modifications: undefined, modificationsInfo: undefined, showStatsForModels: true}))
+                                        modelutils.bulkModifyModels(this.state.modifiedModels, () => {
+                                            this.setState(oldState => ({...oldState, modificationsInfo: undefined, showStatsForModels: true}))
                                         })
                                     }}
                                     />
@@ -383,7 +392,7 @@ class PortScreen extends Component {
                     }))}} onEsc={()=>{this.setState(oldState=>({
                         ...oldState, showStatsForModels: false, ignoredModels: undefined, createdModels: undefined,
                         modifiedModels: undefined
-                    }))}}>
+                    }))}} margin={{top: 'medium', bottom: 'medium'}}>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
                                 Import Successful
@@ -395,10 +404,17 @@ class PortScreen extends Component {
                                 gap="small"
                                 direction="column"
                                 align="start"
+                                overflow='auto'
                                 justify="start" >
-                                <div><b>Models created:</b> {this.state.createdModels}</div>
-                                <div><b>Models modified:</b> {this.state.modifiedModels}</div>
-                                <div><b>Records ignored:</b> {this.state.ignoredModels}</div>
+                                <div><b>Models created ({this.state.createdModels.length}):</b></div>
+                                {this.state.createdModels.map(m => <div><b>Row {m.rowNumber}:</b> {m.vendor+' '+m.model_number}</div>)}
+                                <div></div>
+                                <div><b>Models modified ({this.state.modifiedModels.length}):</b></div>
+                                {this.state.modifiedModels.map(m => <div><b>Row {m.rowNumber}:</b> {m.vendor+' '+m.model_number}</div>)}
+                                <div></div>
+                                <div><b>Models ignored ({this.state.ignoredModels.length}):</b></div>
+                                {this.state.ignoredModels.map(m => <div><b>Row {m.rowNumber}:</b> {m.vendor+' '+m.model_number}</div>)}
+                                <div></div>
                             </Box>
                         </Box>
                     </Layer>
