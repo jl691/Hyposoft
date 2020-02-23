@@ -2,11 +2,15 @@ import * as firebaseutils from './firebaseutils'
 import * as logutils from './logutils'
 
 function packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment) {
+    displayColor = displayColor.trim()
+    if (!displayColor.startsWith('#')) {
+        displayColor = '#'+displayColor
+    }
     const model = {
         vendor: vendor.trim(),
         modelNumber: modelNumber.trim(),
         height: height,
-        displayColor: displayColor.trim(),
+        displayColor: displayColor,
         networkPorts: networkPorts,
         networkPortsCount: networkPorts.length,
         powerPorts: powerPorts,
@@ -218,22 +222,55 @@ function escapeStringForCSV(string) {
 function getModelsForExport(callback) {
     firebaseutils.modelsRef.orderBy('vendor').get().then(qs => {
         var rows = [
-            ["vendor", "model_number", "height", "display_color", "network_ports", "power_ports", "cpu", "memory", "storage", "comment"]
+            ["vendor", "model_number", "height", "display_color", "network_ports",
+            "power_ports", "cpu", "memory", "storage", "comment", "network_port_name_1",
+            "network_port_name_2", "network_port_name_3", "network_port_name_4"]
         ]
 
         for (var i = 0; i < qs.size; i++) {
+            var network_port_name_1 = ''
+            var network_port_name_2 = ''
+            var network_port_name_3 = ''
+            var network_port_name_4 = ''
+
+            if (qs.docs[i].data().networkPortsCount >=1 ){
+                network_port_name_1 = qs.docs[i].data().networkPorts[0]
+            }
+
+            if (qs.docs[i].data().networkPortsCount >=2 ){
+                network_port_name_2 = qs.docs[i].data().networkPorts[1]
+            }
+
+            if (qs.docs[i].data().networkPortsCount >=3 ){
+                network_port_name_3 = qs.docs[i].data().networkPorts[2]
+            }
+
+            if (qs.docs[i].data().networkPortsCount >=4 ){
+                network_port_name_4 = qs.docs[i].data().networkPorts[3]
+            }
+
+            var displayColor = qs.docs[i].data().displayColor.trim()
+            if (!displayColor.startsWith('#')) {
+                displayColor = '#'+displayColor
+            }
+
             rows = [...rows, [
                 escapeStringForCSV(qs.docs[i].data().vendor),
                 escapeStringForCSV(qs.docs[i].data().modelNumber),
                 ''+qs.docs[i].data().height,
-                ''+qs.docs[i].data().displayColor,
-                ''+(qs.docs[i].data().networkPorts || ''),
+                displayColor.toUpperCase(),
+                ''+(qs.docs[i].data().networkPortsCount || ''),
                 ''+(qs.docs[i].data().powerPorts || ''),
                 escapeStringForCSV(qs.docs[i].data().cpu),
                 ''+(qs.docs[i].data().memory || ''),
                 escapeStringForCSV(qs.docs[i].data().storage),
-                escapeStringForCSV(qs.docs[i].data().comment)
+                escapeStringForCSV(qs.docs[i].data().comment),
+                network_port_name_1,
+                network_port_name_2,
+                network_port_name_3,
+                network_port_name_4,
             ]]
+
             if (rows.length === qs.size+1) {
                 callback(rows)
             }
