@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { Grommet, Box, Text, FormField, TextInput } from 'grommet'
 import theme from "../theme";
+import * as assetutils from '../utils/assetutils'
 
 //Instead of validate connections, upon all fields for one set of inputs, have a toast that pops up with error message
 //If the connection is not valid
@@ -11,7 +12,9 @@ export default class AssetNetworkPortsForm extends Component {
     constructor(props) {
 
         super(props);
+        this.state = {}
         this.handleChange = this.handleChange.bind(this);
+        this.handleSuggestion = this.handleSuggestion.bind(this);
 
     }
     //Form validation/error catching: ???
@@ -27,6 +30,20 @@ export default class AssetNetworkPortsForm extends Component {
             //or it's something already 'submitted'
         } else {
             this.setState({ [e.target.name]: e.target.value })
+        }
+    }
+
+    handleSuggestion(e, idx) {
+        //You are either typing into an output
+        if (e.target.name === "otherAssetID" || e.target.name === "otherPort" || e.target.name === "thisPort") {
+
+            let networkConnections = [...this.props.networkConnections]
+            networkConnections[idx][e.target.name] = e.suggestion
+            this.setState({ port: e.suggestion })
+
+            //or it's something already 'submitted'
+        } else {
+            this.setState({ [e.target.name]: e.suggestion })
         }
     }
 
@@ -56,7 +73,21 @@ export default class AssetNetworkPortsForm extends Component {
                                     //passing state up to AssetNetworkPortsForm
                                     onChange={e => {
                                         this.handleChange(e, idx)
+                                        assetutils.getNetworkPorts(this.props.model, e.target.value, results => this.setState(oldState => ({
+                                            ...oldState,
+                                            networkPortSuggestions: results
+                                        })))
                                     }}
+                                    onSelect={e => {
+                                        this.handleSuggestion(e, idx)
+                                    }}
+                                    value={this.props.networkConnections[idx]['thisPort']}
+                                    suggestions={this.state.networkPortSuggestions}
+                                    onClick={() => {
+                                      assetutils.getNetworkPorts(this.props.model, this.props.networkConnections[idx]['thisPort'], results => this.setState(oldState => ({
+                                        ...oldState,
+                                        networkPortSuggestions: results
+                                    })))}}
 
                                 />
 
@@ -73,9 +104,23 @@ export default class AssetNetworkPortsForm extends Component {
 
                                     size="small"
 
-                                    onChange={e => {
-                                        this.handleChange(e, idx)
-                                    }}
+                                    // onChange={e => {
+                                    //     this.handleChange(e, idx)
+                                    //     assetutils.getNetworkPorts(this.props.model, results => this.setState(oldState => ({
+                                    //         ...oldState,
+                                    //         networkPortSuggestions: results
+                                    //     })))
+                                    // }}
+                                    // onSelect={e => {
+                                    //     this.handleSuggestion(e, idx)
+                                    // }}
+                                    // value={this.props.networkConnections[idx]['otherAssetID']}
+                                    // suggestions={this.state.networkPortSuggestions}
+                                    // onClick={() => {
+                                    //   assetutils.getNetworkPorts(this.props.model, results => this.setState(oldState => ({
+                                    //     ...oldState,
+                                    //     networkPortSuggestions: results
+                                    // })))}}
                                 />
                             </FormField>
 

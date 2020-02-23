@@ -270,7 +270,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                             let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
                                             console.log(owner)
                                             console.log(networkConnections)
-                                            
+
                                             assetIDutils.generateAssetID().then(newID =>
 
                                                 assetRef.doc(newID)
@@ -722,6 +722,24 @@ function getSuggestedRacks(datacenter, userInput, callback) {
         })
 }
 
+function getNetworkPorts(model, userInput, callback) {
+    var modelArray = []
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    modelsRef.where('modelName', '==', model ? model : '').get().then(docSnaps => {
+        var port;
+        const data = docSnaps.docs[0].data().networkPorts
+        for (port in data) {
+          if (shouldAddToSuggestedItems(modelArray, data[port].trim(), userInput)) {
+              modelArray.push(data[port])
+          }
+        }
+        callback(modelArray)
+    })
+    .catch(error => {
+        callback([])
+    })
+}
+
 function getSuggestedDatacenters(userInput, callback) {
     // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
     var modelArray = []
@@ -1024,6 +1042,7 @@ export {
     getAssetFromModel,
     getSuggestedOwners,
     getSuggestedRacks,
+    getNetworkPorts,
     getAssetAt,
     validateAssetForm,
     getAssetsForExport,
