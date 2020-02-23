@@ -22,7 +22,7 @@ export default class AssetPowerPortsForm extends Component {
 
     handleChange(e, idx) {
         //You are either typing into an output
-        if (e.target.name === "port") {
+        if (e.target.name === "port" ) {
             console.log("two")
             let powerConnections = [...this.props.powerConnections]
             powerConnections[idx][e.target.name] = e.target.value
@@ -57,7 +57,8 @@ export default class AssetPowerPortsForm extends Component {
                     <Grommet key={idx} theme={theme}>
 
                         <Box direction="column" gap="small" overflow="auto" background="light-2">
-                            <Text>{idx + 1}</Text>
+                            <Text margin ="small">Power Port { idx + 1} Connection</Text>
+
 
                             <Select
                                 margin={{ horizontal: 'medium', vertical: 'xsmall' }}
