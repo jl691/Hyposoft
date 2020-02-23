@@ -331,7 +331,7 @@ function modelDiff(data,field) {
 function rackDiff(data,field) {
     switch (field) {
       case 'assets':
-        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+        return complexObjectDiff(data.previousData[field],data.currentData[field],'asset') ? '' : (field + complexDiffString)
       default:
         return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
     }
@@ -349,7 +349,7 @@ function userDiff(data,field) {
 function datacenterDiff(data,field) {
     switch (field) {
       case 'racks':
-        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+        return complexObjectDiff(data.previousData[field],data.currentData[field],'rack') ? '' : (field + complexDiffString)
       default:
         return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
     }
@@ -357,13 +357,13 @@ function datacenterDiff(data,field) {
 
 var complexDiffString = ''
 
-function complexObjectDiff(value, other) {
+function complexObjectDiff(value, other, name = 'port') {
     complexDiffString = ''
-    return isEqual(value,other)
+    return isEqual(value,other,name)
 }
 
 // from https://gomakethings.com/check-if-two-arrays-or-objects-are-equal-with-javascript/
-var isEqual = function (value, other) {
+var isEqual = function (value, other, name) {
 
 	// Get the value type
 	var type = Object.prototype.toString.call(value);
@@ -390,7 +390,7 @@ var isEqual = function (value, other) {
 
 		// If an object or array, compare recursively
 		if (['[object Array]', '[object Object]'].indexOf(itemType) >= 0) {
-			if (!isEqual(item1, item2)) return false;
+			if (!isEqual(item1, item2, name)) return false;
 		}
 
 		// Otherwise, do a simple comparison
@@ -420,12 +420,18 @@ var isEqual = function (value, other) {
 	// Compare properties
 	if (type === '[object Array]') {
 		for (var i = 0; i < valueLen; i++) {
-			if (compare(value[i], other[i]) === false) return false;
+			if (compare(value[i], other[i]) === false) {
+        complexDiffString = ' by changing ' + name + ' ' + i + complexDiffString
+        return false;
+      }
 		}
 	} else {
 		for (var key in value) {
 			if (value.hasOwnProperty(key)) {
-				if (compare(value[key], other[key]) === false) return false;
+				if (compare(value[key], other[key]) === false) {
+          complexDiffString = ' by changing ' + key + complexDiffString
+          return false;
+        }
 			}
 		}
 	}
