@@ -34,9 +34,11 @@ function createModel(id, vendor, modelNumber, height, displayColor, networkPorts
 
 function modifyModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, callback) {
     var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment)
-    firebaseutils.modelsRef.doc(id).update(model).then(() => {
-        logutils.addLog(id,logutils.MODEL(),logutils.MODIFY())
-        callback(model, id)
+    logutils.getObjectData(id,logutils.MODEL(),data => {
+      firebaseutils.modelsRef.doc(id).update(model).then(() => {
+          logutils.addLog(id,logutils.MODEL(),logutils.MODIFY(),data)
+          callback(model, id)
+      })
     })
 
     // Now update all instances of this model just in case the modelNumber or vendor changed

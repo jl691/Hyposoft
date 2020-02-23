@@ -184,7 +184,7 @@ function forceModifyAssetsInDb(toBeModified) {
     }
 }
 
-function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, fixedMac, networkConnectionsArray, callback) {
+function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, fixedMac, networkConnectionsArray, powerConnections, callback) {
 
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
@@ -199,7 +199,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                         callback(errMessage)
                     } else {
 
-                        assetFitsOnRack(rack, racku, model, datacenter, function (errorMessage, modelNum, modelVendor, rackID) {//see line 171
+                        assetFitsOnRack(rack, racku, model, datacenter, function (errorMessage, modelNum, modelVendor, rackID) {
 
                             if (errorMessage) {
                                 callback(errorMessage)
@@ -219,6 +219,8 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                     else {
                                         if (overrideAssetID.trim() != "") {
                                             let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
+                                            console.log(owner)
+                                            console.log(networkConnections)
                                             assetIDutils.overrideAssetID(overrideAssetID).then(
                                                 _ => {
                                                     assetRef.doc(overrideAssetID).set({
@@ -233,6 +235,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                         rackID: rackID,
                                                         macAddress: fixedMac,
                                                         networkConnections,
+                                                        //powerConnections,
 
                                                         //This is for rack usage reports
                                                         modelNumber: modelNum,
@@ -267,6 +270,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                         else {
 
                                             let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
+                                            console.log(owner)
+                                            console.log(networkConnections)
+                                            
                                             assetIDutils.generateAssetID().then(newID =>
 
                                                 assetRef.doc(newID)
@@ -282,6 +288,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                         rackID: rackID,
                                                         macAddress: fixedMac,
                                                         networkConnections,
+                                                        //powerConnections,
 
                                                         // This is for rack usage reports
                                                         modelNumber: modelNum,
@@ -292,7 +299,10 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                         datacenter: datacenter,
                                                         datacenterID: datacenterID,
                                                         datacenterAbbrev: datacenterAbbrev
-                                                    }).then(function (docRef) {
+                                                    }).then(function (docRef){
+                                                        assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, newID)
+                                                    })
+                                                    .then(function (docRef) {
                                                         racksRef.doc(String(rackID)).update({
                                                             assets: firebase.firestore.FieldValue.arrayUnion(newID)//docref.id
                                                         }).then(function () {
@@ -571,36 +581,38 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                         //get new rack document
                                                         //get instance id
                                                         replaceAssetRack(oldResult, result, assetID, result => {
-                                                            assetRef.doc(String(assetID)).update({
-                                                                model: model,
-                                                                modelId: modelId,
-                                                                vendor: modelStuff[0],
-                                                                modelNumber: modelStuff[1],
-                                                                hostname: hostname,
-                                                                rack: rack,
-                                                                rackU: rackU,
-                                                                rackID: rackId,
-                                                                owner: owner,
-                                                                comment: comment,
-                                                                rackRow: rackRow,
-                                                                rackNum: rackNum,
-                                                                datacenter: datacenter,
-                                                                datacenterID: datacenterID,
-                                                                datacenterAbbrev: datacenterAbbrev
-                                                                //these are the fields in the document to update
+                                                            logutils.getObjectData(String(assetID),logutils.ASSET(),assetData => {
+                                                              assetRef.doc(String(assetID)).update({
+                                                                  model: model,
+                                                                  modelId: modelId,
+                                                                  vendor: modelStuff[0],
+                                                                  modelNumber: modelStuff[1],
+                                                                  hostname: hostname,
+                                                                  rack: rack,
+                                                                  rackU: rackU,
+                                                                  rackID: rackId,
+                                                                  owner: owner,
+                                                                  comment: comment,
+                                                                  rackRow: rackRow,
+                                                                  rackNum: rackNum,
+                                                                  datacenter: datacenter,
+                                                                  datacenterID: datacenterID,
+                                                                  datacenterAbbrev: datacenterAbbrev
+                                                                  //these are the fields in the document to update
 
-                                                            }).then(function () {
-                                                                console.log("Updated model successfully")
-                                                                assetRef.doc(String(assetID)).get().then(docRef => {
-                                                                    index.saveObject({
-                                                                        ...docRef.data(),
-                                                                        objectID: docRef.id
-                                                                    })
-                                                                })
-                                                                logutils.addLog(String(assetID),logutils.ASSET(),logutils.MODIFY())
-                                                                callback(null);
-                                                            }).catch(function (error) {
-                                                                callback(error);
+                                                              }).then(function () {
+                                                                  console.log("Updated model successfully")
+                                                                  assetRef.doc(String(assetID)).get().then(docRef => {
+                                                                      index.saveObject({
+                                                                          ...docRef.data(),
+                                                                          objectID: docRef.id
+                                                                      })
+                                                                  })
+                                                                  logutils.addLog(String(assetID),logutils.ASSET(),logutils.MODIFY(),assetData)
+                                                                  callback(null);
+                                                              }).catch(function (error) {
+                                                                  callback(error);
+                                                              })
                                                             })
                                                         })
                                                     }
