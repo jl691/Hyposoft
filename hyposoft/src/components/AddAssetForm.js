@@ -11,6 +11,7 @@ import theme from "../theme";
 
 import AssetPowerPortsForm from './AssetPowerPortsForm'
 import AssetNetworkPortsForm from './AssetNetworkPortsForm';
+import AssetMACForm from './AssetMACForm';
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -27,9 +28,14 @@ export default class AddAssetForm extends Component {
             rackU: "",
             owner: "",
             comment: "",
-            macAddress: "",
             datacenterName: "",
             datacenterAbbrev: "",
+            macAddresses: [
+                {
+                    networkPort: "",
+                    macAddress: ""
+                }
+            ],
             networkConnections: [
                 {
                     otherAssetID: "",
@@ -41,9 +47,6 @@ export default class AddAssetForm extends Component {
                 pduSide: "",
                 port: ""
             }],
-
-
-
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
@@ -87,42 +90,20 @@ export default class AddAssetForm extends Component {
                 }
             }
         })
-
     }
 
     handleChange(event) {
         this.setState({
             [event.target.name]: event.target.value
         });
-
         if (event.target.name == "rackU") {
             console.log(this.state)
             console.log(this.state.datacenter)
             this.defaultPDUFields(this.state.model, this.state.rack, this.state.datacenter)
         }
-
     }
 
-    //Puts the MAC address into canonical form: lower case and colon-delimited
-    fixMACAddress(mac) {
-        let noSepMac;
-        if (mac.charAt(2) == "-") {
-            noSepMac = mac.split("-").join("");
 
-        } else if (mac.charAt(2) == "_") {
-            noSepMac = mac.split("_").join("");
-        }
-        else {//if the admin put in a mac address with no separators
-            noSepMac = mac;
-        }
-
-        let canonicalMAC = noSepMac.substr(0, 2).toLowerCase() + ":" + noSepMac.substr(2, 2).toLowerCase() + ":" + noSepMac.substr(4, 2).toLowerCase() + ":" + noSepMac.substr(6, 2).toLowerCase() + ":" + noSepMac.substr(8, 2).toLowerCase() + ":" + noSepMac.substr(10, 2).toLowerCase();
-
-        console.log("Canonical MAC: " + canonicalMAC)
-        return canonicalMAC;
-
-
-    }
 
     addNetworkConnection(event) {
         this.setState(prevState => ({
@@ -136,25 +117,6 @@ export default class AddAssetForm extends Component {
         this.setState((prevState) => ({
             powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
         }));
-
-
-    }
-
-    //toLowercase, to colon
-    handleMacAddressFixAndSet(event) {
-
-        let fixedMAC = "";
-        if (this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
-            fixedMAC = this.fixMACAddress(this.state.macAddress);
-
-        } else if (this.state.macAddress) {
-            fixedMAC = this.state.macAddress;
-        }
-        //RACE CONDITION: i think it's not setting the state before calling this.state.macAddress in addAsset()
-        this.setState({ macAddress: fixedMAC })
-
-        console.log("MAC address passed to database: " + fixedMAC)
-        console.log(this.state.networkConnections)
 
 
     }
@@ -181,7 +143,8 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Invalid MAC address. Ensure it is a six-byte hexadecimal value with any byte separator punctuation.");
             } else {
 
-                this.handleMacAddressFixAndSet();
+                //TODO: fix this in assetmacutils
+                //assetmacutils.handleMacAddressFixAndSet();
 
                 assetutils.addAsset(
                     this.state.asset_id,
@@ -255,7 +218,6 @@ export default class AddAssetForm extends Component {
                             </FormField>
 
                             <FormField name="hostname" label="Hostname">
-
 
                                 <TextInput padding="medium" name="hostname" placeholder="eg. server9"
                                     onChange={this.handleChange}
@@ -364,13 +326,24 @@ export default class AddAssetForm extends Component {
                                 />
                             </FormField>
 
-                            {/* NEW FIELDS HERE> TODO: change the values/integrate with the backend, move datacenter stuff up the form========= */}
-
                             <FormField name="macAddress" label="MAC Address">
                                 <TextInput name="macAddress" placeholder="eg. 11-ab-cd-79-aa-c9" onChange={this.handleChange}
                                     value={this.state.macAddress}
                                 />
                             </FormField>
+
+                            <Accordion>
+                                <AccordionPanel label="MAC Addresses">
+                                    <AssetMACForm
+
+                                        macAddresses={this.state.macAddresses}
+                                        model={this.state.model}
+
+                                    />
+
+                                </AccordionPanel>
+
+                            </Accordion>
 
                             <Accordion>
                                 <AccordionPanel label="Power Port Connections">
@@ -396,6 +369,7 @@ export default class AddAssetForm extends Component {
                                     <AssetNetworkPortsForm
 
                                         networkConnections={this.state.networkConnections}
+
                                     />
 
                                     <Button
