@@ -151,8 +151,7 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
     var query = startAfter ? firebaseutils.logsRef.orderBy('timestamp','desc').startAfter(startAfter)
                            : firebaseutils.logsRef.orderBy('timestamp','desc')
     query.get().then(docSnaps => {
-        var newStartAfter = docSnaps.docs.length >= 25 ? docSnaps.docs[24] : docSnaps.docs[docSnaps.docs.length-1]
-
+        var newStartAfter;
         var logs = []
         const searchName = search.trim().toLowerCase()
         docSnaps.docs.forEach(doc => {
@@ -162,6 +161,7 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
             const includesUser = user.includes(searchName) || (doc.data().objectType === USER() && object.includes(searchName))
             if (!search || includesAsset || includesUser) {
                 logs = [...logs,{...doc.data(), log: buildLog(doc.data()), date: getDate(doc.data().timestamp), itemNo: itemNo++}]
+                newStartAfter = doc
             }
         })
         callback(logs,newStartAfter,itemNo)
