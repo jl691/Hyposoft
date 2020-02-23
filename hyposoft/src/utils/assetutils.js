@@ -758,6 +758,29 @@ function getSuggestedAssetIds(userInput, callback) {
     })
 }
 
+function getSuggestedOtherAssetPorts(assetId, userInput, callback) {
+    var modelArray = []
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    assetRef.where('assetId', '==', assetId ? assetId : '').get().then(docSnaps => {
+        modelsRef.doc(docSnaps.docs[0].data().modelId).get().then(doc => {
+          var port;
+          const data = doc.data().networkPorts
+          for (port in data) {
+            if (shouldAddToSuggestedItems(modelArray, data[port].trim(), userInput)) {
+                modelArray.push(data[port])
+            }
+          }
+          callback(modelArray)
+        })
+        .catch(error => {
+            callback([])
+        })
+    })
+    .catch(error => {
+        callback([])
+    })
+}
+
 function getSuggestedDatacenters(userInput, callback) {
     // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
     var modelArray = []
@@ -1061,6 +1084,7 @@ export {
     getSuggestedOwners,
     getSuggestedRacks,
     getSuggestedAssetIds,
+    getSuggestedOtherAssetPorts,
     getNetworkPorts,
     getAssetAt,
     validateAssetForm,

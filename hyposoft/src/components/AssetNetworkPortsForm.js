@@ -135,7 +135,21 @@ export default class AssetNetworkPortsForm extends Component {
 
                                     onChange={e => {
                                         this.handleChange(e, idx)
+                                        assetutils.getSuggestedOtherAssetPorts(this.props.networkConnections[idx]['otherAssetID'],e.target.value, results => this.setState(oldState => ({
+                                            ...oldState,
+                                            otherAssetPortSuggestions: results
+                                        })))
                                     }}
+                                    onSelect={e => {
+                                        this.handleSuggestion(e, idx)
+                                    }}
+                                    value={this.props.networkConnections[idx]['otherPort']}
+                                    suggestions={this.state.otherAssetPortSuggestions}
+                                    onClick={() => {
+                                      assetutils.getSuggestedOtherAssetPorts(this.props.networkConnections[idx]['otherAssetID'],this.props.networkConnections[idx]['otherPort'], results => this.setState(oldState => ({
+                                        ...oldState,
+                                        otherAssetPortSuggestions: results
+                                    })))}}
                                 />
 
                             </FormField>
