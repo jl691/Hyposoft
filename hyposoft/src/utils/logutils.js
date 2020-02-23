@@ -319,6 +319,8 @@ function modelDiff(data,field) {
         return isEqual(data.previousData[field],data.currentData[field]) ? '' : field
       case 'powerPorts':
         return isEqual(data.previousData[field],data.currentData[field]) ? '' : field
+      case 'modelName':
+        return ''
       default:
         return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
     }
