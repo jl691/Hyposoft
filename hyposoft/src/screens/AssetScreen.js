@@ -38,8 +38,6 @@ const index = client.initIndex('assets')
 
 class AssetScreen extends Component {
 
-    rangeStart;
-    rangeEnd;
     rackSort;
     rackUSort;
     datacenters = [];
@@ -68,7 +66,9 @@ class AssetScreen extends Component {
             rackUSortChoice: "asc",
             searchQuery: "",
             datacenter: "",
-            datacentersLoaded: false
+            datacentersLoaded: false,
+            rangeStart: "",
+            rangeEnd: ""
         }
 
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
@@ -94,13 +94,25 @@ class AssetScreen extends Component {
     handleChangeRange(event) {
         if (event.target.name === "rangeNumberStart") {
             console.log("start")
-            this.rangeStart = event.target.value;
+            this.setState({
+                rangeStart: event.target.value
+            }, function () {
+                this.checkFilterDone();
+            });
         } else if (event.target.name === "rangeNumberEnd") {
             console.log("end")
-            this.rangeEnd = event.target.value;
+            this.setState({
+                rangeEnd: event.target.value
+            }, function () {
+                this.checkFilterDone();
+            });
         }
-        if (/[A-Z]\d+/.test(this.rangeStart) && /[A-Z]\d+/.test(this.rangeEnd) && this.state.datacenter) {
-            this.assetTable.current.handleFilter(this.rangeStart, this.rangeEnd, this.state.datacenter);
+    }
+
+    checkFilterDone(){
+        if (/[A-Z]\d+/.test(this.state.rangeStart) && /[A-Z]\d+/.test(this.state.rangeEnd) && this.state.datacenter) {
+            console.log("passed")
+            this.assetTable.current.handleFilter(this.state.rangeStart, this.state.rangeEnd, this.state.datacenter);
         } else {
             this.assetTable.current.restoreDefault();
         }
@@ -122,6 +134,16 @@ class AssetScreen extends Component {
     handleCombinedSort(event) {
         let rackBool = this.state.rackSortChoice === "asc" ? true : false;
         let rackUBool = this.state.rackUSortChoice === "asc" ? true : false;
+
+        if(this.state.rangeStart && this.state.rangeEnd && this.state.datacenter){
+            ToastsStore.info("To sort by rack and rack U as well as filter by rack range, please sort by rack and rack U first before filtering by range.", 10000)
+        }
+
+        this.setState({
+            datacenter: "",
+            rangeStart: "",
+            rangeEnd: ""
+        });
 
         assetutils.sortAssetsByRackAndRackU(rackBool, rackUBool, sortedInst => {
             console.log("Will be sorting racks: " + this.state.rackSortChoice)
@@ -241,10 +263,9 @@ class AssetScreen extends Component {
                     onChange={(option) => {
                         this.setState({
                             datacenter: option.value
+                        }, function () {
+                            this.checkFilterDone();
                         });
-                        if (/[A-Z]\d+/.test(this.rangeStart) && /[A-Z]\d+/.test(this.rangeEnd)) {
-                            this.assetTable.current.handleFilter(this.rangeStart, this.rangeEnd, option.value);
-                        }
                     }}
                 />
             )
@@ -380,9 +401,9 @@ class AssetScreen extends Component {
                                 <Stack margin={{ top: 'small' }}>
                                     <Box gap='small' direction="column" margin='none' align='center'>
 
-                                        <TextInput style={styles.TIStyle2} name="rangeNumberStart" placeholder="eg. B1" size="xsmall" onChange={this.handleChangeRange} />
+                                        <TextInput style={styles.TIStyle2} name="rangeNumberStart" value={this.state.rangeStart} placeholder="eg. B1" size="xsmall" onChange={this.handleChangeRange} />
                                         <span>to</span>
-                                        <TextInput style={styles.TIStyle2} name="rangeNumberEnd" placeholder="eg. C21" size="xsmall" onChange={this.handleChangeRange} />
+                                        <TextInput style={styles.TIStyle2} name="rangeNumberEnd" value={this.state.rangeEnd} placeholder="eg. C21" size="xsmall" onChange={this.handleChangeRange} />
                                     </Box>
 
                                 </Stack>
