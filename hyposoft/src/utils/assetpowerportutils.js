@@ -104,18 +104,17 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
                 console.log(rackRow, rackNum, id)
 
                 racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", id).get().then(function (querySnapshot) {
-                    console.log(querySnapshot)
                     //NEED TO ADD THIS POWERPORTS ARRAY TO THE DB
                     rackPowerConns = querySnapshot.docs[0].data().powerPorts
-                    console.log(rackPowerConns)
 
                     for (let i = 0; i < rackPowerConns.length; i++) {
 
                         if (rackPowerConns[i].pduSide === "Left") {
-                            occupiedLeft.push(rackPowerConns[i].port)
+                            occupiedLeft.push(parseInt(rackPowerConns[i].port))
+                            console.log(occupiedLeft)
                         }
                         else {
-                            occupiedRight.push(rackPowerConns[i].port)
+                            occupiedRight.push(parseInt(rackPowerConns[i].port))
                         }
                     }
 
@@ -139,21 +138,22 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
 
                         //Test this function some more by changing db values
                         //Add a 'no connection' button
-                        if (firstFreeRight === firstFreeLeft) {
-                            returnPort = firstFreeRight
-                            callback(returnPort)
-                            break;
-                        }
-                        else {
-                            var indexLeft= freeLeft.indexOf(firstFreeLeft);
+                        if (firstFreeRight > firstFreeLeft) {
+                            var indexLeft = freeLeft.indexOf(firstFreeLeft);
                             if (indexLeft !== -1) freeLeft.splice(indexLeft, 1);
                             console.log("Should have min removed: " + freeLeft)
-                            var indexRight= freeRight.indexOf(firstFreeRight);
-                            if (indexRight !== -1) freeLeft.splice(indexRight, 1);
-
-
+                        }
+                        else if (firstFreeRight < firstFreeLeft) {
+         
+                            var indexRight = freeRight.indexOf(firstFreeRight);
+                            if (indexRight !== -1) freeRight.splice(indexRight, 1);
+                        }
+                        else {
+                            returnPort = firstFreeRight
+                            break;
                         }
                     }
+                    callback(returnPort)
 
 
                 }).catch(error => console.log(error))

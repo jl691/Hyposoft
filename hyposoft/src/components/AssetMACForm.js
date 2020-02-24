@@ -76,7 +76,6 @@ export default class AssetMACForm extends Component {
         //let { macAddresses } = this.props.macAddresses
         let idx = 0;
         let { model } = this.props.model
-        console.log(model)
 
         //if(model!==""){
             this.createForm("HPE ProLiant DL20 Gen10", idx)

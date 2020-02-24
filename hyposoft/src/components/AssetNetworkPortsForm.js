@@ -3,6 +3,7 @@ import { Grommet, Box, Text, FormField, TextInput } from 'grommet'
 import theme from "../theme";
 import * as assetutils from '../utils/assetutils'
 
+
 //Instead of validate connections, upon all fields for one set of inputs, have a toast that pops up with error message
 //If the connection is not valid
 

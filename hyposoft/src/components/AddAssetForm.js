@@ -61,52 +61,61 @@ export default class AddAssetForm extends Component {
         //find the first available spot
         let numPorts = 0;
         //instead of going into modelsRef, use a backend method
-        modelutils.getModelByModelname(model, status => {
+        try{
+            modelutils.getModelByModelname(model, status => {
 
-            if (status) {
-                console.log(status.powerPorts)
-                //TODO: change this back, was using 3 for testing
-                //numPorts = status.powerPorts.length
-                numPorts = 3;
-                if (numPorts >= 2) {
-                    //call assetpowerportutils to find first available spot on the rack on both left and right sides
-                    //set the state
-                    //let portField = 
-                    assetpowerportutils.getFirstFreePort(rack, datacenter, returnedPort =>{
-                        console.log(returnedPort)
-                        if (returnedPort) {
-
-                            this.setState(oldState => ({
-                                ...oldState,
-                                powerConnections: [{
-                                    pduSide: "Left",
-                                    port: returnedPort.toString()
-                                },
-                                {
-                                    pduSide: "Right",
-                                    port: returnedPort.toString()
-                                },
+                if (status) {
+                    console.log(status.powerPorts)
+                    //TODO: change this back, was using 3 for testing
+                    //numPorts = status.powerPorts.length
+                    numPorts = 3;
+                    if (numPorts >= 2) {
+                        //call assetpowerportutils to find first available spot on the rack on both left and right sides
+                        //set the state
+                        //let portField = 
+                        assetpowerportutils.getFirstFreePort(rack, datacenter, returnedPort =>{
+                            console.log("In AddAssetForm. returned power port: "+returnedPort)
+                            if (returnedPort) {
     
-                                ]
-                            }))
-
-                            console.log(this.state.powerConnections)
-                        }
-
-
-                    });
-                 
-                    
+                                this.setState(oldState => ({
+                                    ...oldState,
+                                    powerConnections: [{
+                                        pduSide: "Left",
+                                        port: returnedPort.toString()
+                                    },
+                                    {
+                                        pduSide: "Right",
+                                        port: returnedPort.toString()
+                                    },
+        
+                                    ]
+                                }))
+    
+                                console.log(this.state.powerConnections)
+                            }
+    
+    
+                        });
+                     
+                        
+                    }
                 }
-            }
-        })
+            })
+
+
+        }
+        catch(error){
+            console.log(error)
+        }
+      
     }
 
     handleChange(event) {
         this.setState({
             [event.target.name]: event.target.value
         });
-        if (event.target.name == "rack" || event.target.name == "model" || event.target.name == "datacenter") {
+        //catchall for default power port fields
+        if (event.target.name == "rackU") {
             console.log(this.state)
             console.log(this.state.datacenter)
             this.defaultPDUFields(this.state.model, this.state.rack, this.state.datacenter)
@@ -223,7 +232,6 @@ export default class AddAssetForm extends Component {
                         <Box direction="column" pad='xsmall' gap="small" flex overflow={{ vertical: 'scroll' }}>
                             <FormField name="model" label="Model">
 
-
                                 <TextInput name="model" required="true"
                                     placeholder="eg. Dell R710"
                                     onChange={e => {
@@ -233,10 +241,12 @@ export default class AddAssetForm extends Component {
                                             ...oldState,
                                             modelSuggestions: results
                                         })))
+                                        //Update the default power port fields
+                                        //this.defaultPDUFields(e.suggestion, this.state.rack, this.state.datacenter)
                                     }}
                                     onSelect={e => {
                                         this.setState(oldState => ({ ...oldState, model: e.suggestion }))
-                                        //this.defaultPDUFields(e.suggestion, this.state.rack, this.state.datacenter)
+                                        
                                     }}
                                     value={this.state.model}
                                     suggestions={this.state.modelSuggestions}
@@ -265,10 +275,11 @@ export default class AddAssetForm extends Component {
                                             ...oldState,
                                             datacenterSuggestions: results
                                         })))
+                                        //Update the default power port fields
+                                        //this.defaultPDUFields(this.state.model, this.state.rack, e.suggestion)
                                     }}
                                     onSelect={e => {
                                         this.setState(oldState => ({ ...oldState, datacenter: e.suggestion }))
-                                        //this.defaultPDUFields(this.state.model, this.state.rack, e.suggestion)
                                     }}
                                     value={this.state.datacenter}
                                     suggestions={this.state.datacenterSuggestions}
@@ -299,6 +310,8 @@ export default class AddAssetForm extends Component {
                                             ...oldState,
                                             rackSuggestions: results
                                         })))
+                                        //Update the default power port fields
+                                        //this.defaultPDUFields(this.state.model, e.suggestion, this.state.datacenter)
                                     }}
                                     onSelect={e => {
                                         this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
