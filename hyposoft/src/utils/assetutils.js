@@ -13,6 +13,7 @@ const index = client.initIndex('assets')
 
 function getAsset(callback, field = null, direction = null) {
     let query;
+    field = (field === "asset_id") ? firebase.firestore.FieldPath.documentId() : field;
     if (field && direction !== null) {
         query = direction ? assetRef.limit(25).orderBy(field) : assetRef.limit(25).orderBy(field, "desc");
     } else {
@@ -29,13 +30,15 @@ function getAsset(callback, field = null, direction = null) {
                 model: doc.data().model,
                 hostname: doc.data().hostname,
                 rack: doc.data().rack,
+                rackRow: doc.data().rackRow,
+                rackNum: doc.data().rackNum,
                 rackU: doc.data().rackU,
                 owner: doc.data().owner,
                 comment: doc.data().comment,
                 datacenter: doc.data().datacenter,
                 datacenterAbbreviation: doc.data().datacenterAbbrev,
                 macAddress: doc.data().macAddress,
-
+                powerConnections: doc.data().powerConnections
             });
             count++;
             if (count === docSnaps.docs.length) {
@@ -44,6 +47,7 @@ function getAsset(callback, field = null, direction = null) {
 
         })
     }).catch(function (error) {
+        console.log(error);
         callback(null, null)
     })
 }
@@ -816,14 +820,16 @@ function getAssetDetails(assetID, callback) {
             model: doc.data().model.trim(),
             hostname: doc.data().hostname.trim(),
             rack: doc.data().rack.trim(),
+            rackNum: doc.data().rackNum,
             rackU: doc.data().rackU,
+            rackRow: doc.data().rackRow,
             owner: doc.data().owner.trim(),
             comment: doc.data().comment.trim(),
             modelNum: doc.data().modelNumber.trim(),
             vendor: doc.data().vendor.trim(),
             datacenter: doc.data().datacenter.trim(),
-            datacenterAbbrev: doc.data().datacenterAbbrev.trim()
-
+            datacenterAbbrev: doc.data().datacenterAbbrev.trim(),
+            powerConnections: doc.data().powerConnections
         }
         callback(inst)
     }

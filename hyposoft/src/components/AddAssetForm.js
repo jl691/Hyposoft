@@ -410,3 +410,4 @@ export default class AddAssetForm extends Component {
     }
 
 }
+;
