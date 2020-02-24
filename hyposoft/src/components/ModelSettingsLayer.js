@@ -37,7 +37,7 @@ class ModelSettingsLayer extends React.Component {
         comment: ''
     }
 
-    componentWillMount() {
+    componentDidMount() {
         // Change from add form to edit form depending on props
         if (this.props.type === 'add') {
             this.hideFunction = this.props.parent.hideAddModelDialog
@@ -130,7 +130,7 @@ class ModelSettingsLayer extends React.Component {
                     this.state.comment, (model, id) => {
                         ToastsStore.info('Model saved', 3000, 'burntToast')
                         this.hideFunction()
-                        this.props.parent.init()
+                        this.props.parent.componentDidMount()
                         index.saveObject({...model, objectID: id})
                     })
             }

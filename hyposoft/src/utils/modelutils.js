@@ -107,15 +107,14 @@ function matchesFilters(data, filters) {
     )
 }
 
-function getModels(startAfter, callback, filters) {
-    firebaseutils.modelsRef.startAfter(startAfter)
+function getModels(itemNo, startAfter, callback, filters) {
+    firebaseutils.modelsRef
     .orderBy('vendor').orderBy('modelNumber')
     .startAfter(startAfter)
     .get()
     .then( docSnaps => {
       // added this in from anshu
       var models = []
-      var itemNo = 1
       for (var i = 0; i < docSnaps.docs.length; i++) {
           if (matchesFilters(docSnaps.docs[i].data(), filters)) {
               models = [...models, {...docSnaps.docs[i].data(), id: docSnaps.docs[i].id, itemNo: itemNo++}]
@@ -124,16 +123,16 @@ function getModels(startAfter, callback, filters) {
                   if (i < docSnaps.docs.length - 1) {
                       newStartAfter = docSnaps.docs[i+1]
                   }
-                  callback(models, newStartAfter)
+                  callback(itemNo, models, newStartAfter)
                   return
               }
           }
       }
-      callback(models, null)
+      callback(itemNo, models, null)
     })
     .catch( error => {
       console.log("Error getting documents: ", error)
-      callback(null,null)
+      callback(null, null,null)
     })
 }
 
