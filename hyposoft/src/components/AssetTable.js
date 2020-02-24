@@ -405,7 +405,6 @@ export default class AssetTable extends Component {
 
     handleRackRackUSort(sortedAssets) {
         this.setState({assets: sortedAssets})
-
     }
 
 

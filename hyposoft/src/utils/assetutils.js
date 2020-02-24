@@ -387,6 +387,49 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback) {
     })
 }
 
+// rackAsc should be a boolean corresponding to true if rack is ascending
+// rackUAsc should be a boolean corresponding to true if rackU is ascending
+function sortAssetsByRackAndRackUFilter(rackAsc, rackUAsc, datacenter, rowStart, rowEnd, numberStart, numberEnd, callback) {
+    var vendorArray = []
+    var query = assetRef
+    if (!rackAsc && !rackUAsc) {
+        query = assetRef.orderBy("rackRow", "desc").orderBy("rackNum", "desc").orderBy("rackU", "desc")
+    } else if (rackAsc && !rackUAsc) {
+        query = assetRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU", "desc")
+    } else if (!rackAsc && rackUAsc) {
+        query = assetRef.orderBy("rackRow", "desc").orderBy("rackNum", "desc").orderBy("rackU")
+    } else {
+        query = assetRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU")
+    }
+    query.get().then(querySnapshot => {
+        let count = 0;
+        querySnapshot.forEach(doc => {
+            datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
+                if (datacenterAbbrev) {
+                    vendorArray.push({
+                        asset_id: doc.id,
+                        model: doc.data().model,
+                        hostname: doc.data().hostname,
+                        rack: doc.data().rack,
+                        rackU: doc.data().rackU,
+                        owner: doc.data().owner,
+                        datacenterAbbreviation: datacenterAbbrev
+                    });
+                    count++;
+                    if (count === querySnapshot.size) {
+                        callback(vendorArray);
+                    }
+                } else {
+                    callback(null);
+                }
+            })
+        })
+    }).catch(error => {
+        console.log("Error getting documents: ", error)
+        callback(null)
+    })
+}
+
 
 // This will check if the instance fits on rack (after checking rack exists): fits within in the height of rack, and does not conflict with other instances
 // The echo param was added by Anshu and will be passed back via callback to the import functions as-is
