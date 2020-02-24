@@ -83,14 +83,18 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
 
 }
 
-function getFirstFreePort(rack, datacenter) { //only expecting at most 2 ports
-console.log(rack)
+function getFirstFreePort(rack, datacenter, callback) { //only expecting at most 2 ports
+    console.log(rack)
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
+
+    let freeLeft = []
+    let freeRight = []
+    let occupiedLeft = []
+    let occupiedRight = []
+    let allPorts = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
     //ASSUMING THAT PDUs ONLY HAVE PORTS UP TO 24
-    let minLeftPort = 25;
-    let minRightPort = 25;
     let returnPort = -1
     let rackPowerConns;
 
@@ -98,30 +102,60 @@ console.log(rack)
         datacenterutils.getDataFromName(datacenter, (id, abbrev) => {
             if (rackRow.trim() !== "" && rackNum.trim !== "" && datacenter.trim() !== "") {
                 console.log(rackRow, rackNum, id)
-         
-                //WHY DOES THIS BITCH RETURN AN UNDEFINED QUERYSNAPSHOT
-                racksRef.where("letter", "==", rackRow).where("height", "==", parseInt(rackNum)).where("datacenter", "==", id).get().then(function (querySnapshot) {
+
+                racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", id).get().then(function (querySnapshot) {
                     console.log(querySnapshot)
+                    //NEED TO ADD THIS POWERPORTS ARRAY TO THE DB
                     rackPowerConns = querySnapshot.docs[0].data().powerPorts
                     console.log(rackPowerConns)
-                    let totalConnectionsChecked = 0;
-                    rackPowerConns.forEach(function (connection) {
-                        totalConnectionsChecked++;
-                        if (connection.pduSide === "Left") {
-                            minLeftPort = (connection.port < minLeftPort) ? connection.port : minLeftPort
+
+                    for (let i = 0; i < rackPowerConns.length; i++) {
+
+                        if (rackPowerConns[i].pduSide === "Left") {
+                            occupiedLeft.push(rackPowerConns[i].port)
                         }
                         else {
-                            //get min for right side
-                            minRightPort = (connection.port < minRightPort) ? connection.port : minRightPort
+                            occupiedRight.push(rackPowerConns[i].port)
                         }
-                    }).catch(error => console.log(error))
-                    //then take the max of the port numbers and that's the default port number
-
-                    if (totalConnectionsChecked == rackPowerConns.length) {
-                        returnPort = Math.max(minLeftPort, minRightPort)
-                        console.log(returnPort)
-                        return returnPort;
                     }
+
+                    //Take the difference to find all the free ports available for each PDU side
+
+                    freeLeft = allPorts.filter(x => !occupiedLeft.includes(x));
+                    freeRight = allPorts.filter(x => !occupiedRight.includes(x));
+                    console.log(freeLeft)
+                    console.log(freeRight)
+
+                    let firstFreeLeft;
+                    let firstFreeRight;
+
+                    let portLimit = 24
+                    let count = 0
+                    while (count <= portLimit) {
+                        count++;
+                        firstFreeLeft = Math.min(...freeLeft)
+                        console.log("Min port on the left: " + firstFreeLeft)
+                        firstFreeRight = Math.min(...freeRight)
+
+                        //Test this function some more by changing db values
+                        //Add a 'no connection' button
+                        if (firstFreeRight === firstFreeLeft) {
+                            returnPort = firstFreeRight
+                            callback(returnPort)
+                            break;
+                        }
+                        else {
+                            var indexLeft= freeLeft.indexOf(firstFreeLeft);
+                            if (indexLeft !== -1) freeLeft.splice(indexLeft, 1);
+                            console.log("Should have min removed: " + freeLeft)
+                            var indexRight= freeRight.indexOf(firstFreeRight);
+                            if (indexRight !== -1) freeLeft.splice(indexRight, 1);
+
+
+                        }
+                    }
+
+
                 }).catch(error => console.log(error))
 
 
@@ -134,7 +168,8 @@ console.log(rack)
     }
     catch (error) {
         console.log(error)
-        return null;
+        //return null;
+        callback(null)
     }
 
 }

@@ -8,15 +8,25 @@ import theme from "../theme";
 
 
 export default class AssetMACForm extends Component {
+    state = {
+        macTextFields: []
+    }
+
 
     constructor(props) {
 
         super(props);
+
         this.handleChange = this.handleChange.bind(this);
+        this.createForm = this.createForm.bind(this);
+        //This was an anonymous function, but this.setState was not working. Give name to anon function, move out of the method it was in (so it gets a class scope) and htne bind
+        this.createFormCallback = this.createFormCallback.bind(this);
+
 
     }
     //Form validation/error catching: ???
 
+    //Need to handle change: pass state back up
     handleChange(e, idx) {
         //You are either typing into an output
         if (e.target.name === "macAddress") {
@@ -30,37 +40,50 @@ export default class AssetMACForm extends Component {
         }
     }
 
+    createFormCallback(status, idx) {
+
+        //create a bunch of new macAddress objects {}
+        const fields = status.map((port) => (
+            
+            < FormField
+                margin={{ horizontal: 'medium', vertical: 'xsmall' }}
+                size="small" name="macAddress" label={`Network Port Name: ${port}`} >
+                <TextInput name="macAddress"
+                    //value={this.props.macAddresses.port}
+                    size="small"
+
+                    onChange={e => {
+                        this.handleChange(e, idx)
+                    }}
+                />
+            </FormField >
+        ))
+        this.setState(oldState => ({
+            ...oldState, macTextFields: fields
+        }))
+        //this.props.fieldCallback(fields)
+    }
+
     createForm(model, idx) {
 
-        assetmacutils.getNetworkPortLabels(model, function (status) {
-
-            console.log(status)
-            return status.map((port) => (
-
-                < FormField
-                    margin={{ horizontal: 'medium', vertical: 'xsmall' }}
-                    size="small" name="macAddress" label={port} >
-                    <TextInput name="macAddress"
-                        //value={this.props.macAddresses.port}
-                        size="small"
-
-                        onChange={e => {
-                            this.handleChange(e, idx)
-                        }}
-                    />
-                </FormField >
-            ))
-        })
+        assetmacutils.getNetworkPortLabels(model, status => this.createFormCallback(status, idx))
 
         //return <Text> Bitch</Text>
 
     }
 
     render() {
-        let { macAddresses } = this.props.macAddresses
+        //let { macAddresses } = this.props.macAddresses
         let idx = 0;
         let { model } = this.props.model
-        console.log(macAddresses)
+        console.log(model)
+
+        //if(model!==""){
+            this.createForm("HPE ProLiant DL20 Gen10", idx)
+
+
+        //}
+        
 
         return (
 
@@ -68,7 +91,8 @@ export default class AssetMACForm extends Component {
 
                 <Box direction="column" gap="small" overflow="auto" background="light-2">
 
-                    {this.createForm("HPE ProLiant DL20 Gen10", idx)}
+
+                    {this.state.macTextFields}
 
                 </Box>
 

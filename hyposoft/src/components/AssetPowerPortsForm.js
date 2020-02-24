@@ -77,7 +77,7 @@ export default class AssetPowerPortsForm extends Component {
                                 margin={{ horizontal: 'medium', vertical: 'xsmall' }}
                                 size="small" name="port" label="Port">
                                 <TextInput name="port"
-                                    //value={this.props.powerConnections.port}
+                                    value={this.props.powerConnections[idx].port}
                                     size="small"
                                     onChange={e => {
                                         this.handleChange(e, idx)

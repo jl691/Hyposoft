@@ -12,7 +12,6 @@ function getNetworkPortLabels(model, callback) {
     modelsRef.where("modelName", "==", model).get().then(function (modelDoc) {
         if(!modelDoc.empty){ 
             modelNetworkPorts = modelDoc.docs[0].data().networkPorts
-            console.log(modelNetworkPorts)
             callback(modelNetworkPorts);
         }
         else{

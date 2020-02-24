@@ -76,6 +76,7 @@ function addSingleRack(row, number, height, datacenter, callback) {
                         number: number,
                         height: height,
                         assets: [],
+                        powerPorts:[],
                         datacenter: datacenterID
                     }).then(function (docRef) {
                         datacenterutils.addRackToDatacenter(docRef.id, datacenter, result => {

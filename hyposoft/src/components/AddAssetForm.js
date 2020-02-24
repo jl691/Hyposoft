@@ -71,22 +71,32 @@ export default class AddAssetForm extends Component {
                 if (numPorts >= 2) {
                     //call assetpowerportutils to find first available spot on the rack on both left and right sides
                     //set the state
-                    let portField = assetpowerportutils.getFirstFreePort(rack, datacenter);
-                    if (portField) {
-                        this.setState(oldState => ({
-                            ...oldState,
-                            powerConnections: [{
-                                pduSide: "Left",
-                                port: [portField]
-                            },
-                            {
-                                pduSide: "Right",
-                                port: [portField]
-                            },
+                    //let portField = 
+                    assetpowerportutils.getFirstFreePort(rack, datacenter, returnedPort =>{
+                        console.log(returnedPort)
+                        if (returnedPort) {
 
-                            ]
-                        }))
-                    }
+                            this.setState(oldState => ({
+                                ...oldState,
+                                powerConnections: [{
+                                    pduSide: "Left",
+                                    port: returnedPort.toString()
+                                },
+                                {
+                                    pduSide: "Right",
+                                    port: returnedPort.toString()
+                                },
+    
+                                ]
+                            }))
+
+                            console.log(this.state.powerConnections)
+                        }
+
+
+                    });
+                 
+                    
                 }
             }
         })
@@ -96,11 +106,16 @@ export default class AddAssetForm extends Component {
         this.setState({
             [event.target.name]: event.target.value
         });
-        if (event.target.name == "rackU") {
+        if (event.target.name == "rack" || event.target.name == "model" || event.target.name == "datacenter") {
             console.log(this.state)
             console.log(this.state.datacenter)
             this.defaultPDUFields(this.state.model, this.state.rack, this.state.datacenter)
         }
+    }
+
+    handleDisplayMACFields(event){
+        console.log(this.state.macAddresses)
+        this.setState(prevState => ({ }))
     }
 
 
@@ -272,8 +287,6 @@ export default class AddAssetForm extends Component {
                                     onSelect={e => {
                                         this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
 
-                                        // console.log(this.state)
-                                        // this.defaultPDUFields(this.state.model, e.suggestion, this.state.datacenter)
                                     }}
                                     value={this.state.rack}
                                     suggestions={this.state.rackSuggestions}
@@ -326,18 +339,13 @@ export default class AddAssetForm extends Component {
                                 />
                             </FormField>
 
-                            <FormField name="macAddress" label="MAC Address">
-                                <TextInput name="macAddress" placeholder="eg. 11-ab-cd-79-aa-c9" onChange={this.handleChange}
-                                    value={this.state.macAddress}
-                                />
-                            </FormField>
-
                             <Accordion>
                                 <AccordionPanel label="MAC Addresses">
                                     <AssetMACForm
 
-                                        macAddresses={this.state.macAddresses}
                                         model={this.state.model}
+                                        fieldCallback={this.handleDisplayMACFields}
+                                        
 
                                     />
 
