@@ -9,6 +9,7 @@ import * as userutils from '../utils/userutils'
 import * as modelutils from '../utils/modelutils'
 import * as assetutils from '../utils/assetutils'
 import * as bulkutils from '../utils/bulkutils'
+import * as bulkconnectionsutils from '../utils/bulkconnectionsutils'
 import CSVReader from 'react-csv-reader'
 
 import {
@@ -35,6 +36,7 @@ class PortScreen extends Component {
         this.importAssets = this.importAssets.bind(this)
         this.addAssetsToDb = this.addAssetsToDb.bind(this)
         this.showFormatDocumentation = this.showFormatDocumentation.bind(this)
+        this.importConnections = this.importConnections.bind(this)
     }
 
     exportModels () {
@@ -59,9 +61,62 @@ class PortScreen extends Component {
         })
     }
 
+    importConnections (uselessdata, filename) {
+        const file = document.querySelector('#csvreaderconn').files[0]
+        bulkutils.parseCSVFile(file, data => {
+            document.getElementById('csvreaderconn').value = ''
+            if (data.length === 0) {
+                ToastsStore.info('No records found in imported file', 3000, 'burntToast')
+                return
+            }
+
+            if (!('src_hostname' in data[0] && 'src_port' in data[0] && 'src_mac' in data[0]
+                && 'dest_hostname' in data[0] && 'dest_port' in data[0])) {
+                ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
+                return
+            }
+            this.setState(oldState => ({...oldState, showLoadingDialog: true}))
+            bulkconnectionsutils.validateImportedConnections(data, ({ errors, toBeIgnored, toBeModified, toBeAdded, fetchedAssets }) => {
+                if (errors.length > 0) {
+                    this.setState(oldState => ({
+                        ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
+                    }))
+                } else {
+                    // NOTE: Addition and modification are done by the same utils function
+                    // The only difference is that you have to confirm modifications
+
+                    this.setState(oldState => ({...oldState, showLoadingDialog: false, errors: undefined}))
+                    if (toBeModified.length === 0) {
+                        if (toBeAdded.length > 0) {
+                            bulkconnectionsutils.addConnections(toBeAdded, fetchedAssets, () => {
+                                this.setState(oldState => ({...oldState, modificationsInfoConns: undefined, showStatsForConns: true, ignoredConns: toBeIgnored, modifiedConns: [], createdConns: toBeAdded}))
+                            })
+                        } else {
+                            this.setState(oldState => ({...oldState, modificationsInfoConns: undefined, showStatsForConns: true, ignoredConns: toBeIgnored, modifiedConns: [], createdConns: []}))
+                        }
+                    } else {
+                        // Ask if they want to modify, then add.
+                        this.setState(oldState => ({
+                            ...oldState, showLoadingDialog: false,
+                            ignoredConns: toBeIgnored, modifiedConns: toBeModified, createdConns: toBeAdded,
+                            showStatsForConns: false,
+                            fetchedAssets: fetchedAssets,
+                            modificationsInfoConns: toBeModified.map(m => <div><b>Row {m.rowNumber}:</b> {m.src_hostname+' ('+m.src_port+') '+String.fromCharCode(8594)+' '+(m.dest_hostname ? m.dest_hostname+' ('+m.dest_port+')' : 'Disconnected')}</div>)
+                        }))
+
+                        if (toBeAdded.length > 0) {
+                            bulkconnectionsutils.addConnections(toBeAdded, fetchedAssets, () => {})
+                        }
+                    }
+                }
+            })
+        })
+    }
+
     importModels (uselessdata, fileName) {
         const file = document.querySelector('#csvreadermodels').files[0]
         bulkutils.parseCSVFile(file, data => {
+            document.getElementById('csvreadermodels').value = ''
             if (data.length === 0) {
                 ToastsStore.info('No records found in imported file', 3000, 'burntToast')
                 return
@@ -88,9 +143,7 @@ class PortScreen extends Component {
                             modelutils.bulkAddModels(toBeAdded, () => {
                                 this.setState(oldState => ({...oldState, modificationsInfo: undefined, showStatsForModels: true, ignoredModels: toBeIgnored, modifiedModels: [], createdModels: toBeAdded}))
                             })
-                            console.log('just add')
                         } else {
-                            console.log('just ignore')
                             this.setState(oldState => ({...oldState, modificationsInfo: undefined, showStatsForModels: true, ignoredModels: toBeIgnored, modifiedModels: [], createdModels: []}))
                         }
                     } else {
@@ -104,9 +157,6 @@ class PortScreen extends Component {
 
                         if (toBeAdded.length > 0) {
                             modelutils.bulkAddModels(toBeAdded, () => {})
-                            console.log('add and confirm modify')
-                        } else {
-                            console.log('ignore and confirm modify')
                         }
                     }
                 }
@@ -178,7 +228,9 @@ class PortScreen extends Component {
                 <Button primary label="Export Models" onClick={this.exportModels}/>,
                 <Button label="Import Models" onClick={()=>{document.getElementById('csvreadermodels').click()}}/>,
                 <Button primary label="Export Assets" onClick={this.exportAssets}/>,
-                <Button label="Import Assets" onClick={()=>{document.getElementById('csvreaderassets').click()}}/>
+                <Button label="Import Assets" onClick={()=>{document.getElementById('csvreaderassets').click()}}/>,
+                <Button primary label="Export Network Connections" onClick={this.exportAssets}/>,
+                <Button label="Import Network Connections" onClick={()=>{document.getElementById('csvreaderconn').click()}}/>,
         ]
         if (!userutils.isLoggedInUserAdmin()) {
             content = [
@@ -264,13 +316,15 @@ class PortScreen extends Component {
                     </Layer>
                 )}
                 {this.state.errors && (
-                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState => ({...oldState, errors: undefined}))}} onEsc={()=>{this.setState(oldState => ({...oldState, errors: undefined}))}}>
+                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState => ({...oldState, errors: undefined}))}} onEsc={()=>{this.setState(oldState => ({...oldState, errors: undefined}))}}
+                    margin='medium'>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
                                 Import failed due to the following errors
                             </Heading>
                             <Box
                                 margin={{top: 'small'}}
+                                overflow='auto'
                                 as="footer"
                                 gap="small"
                                 direction="column"
@@ -282,7 +336,10 @@ class PortScreen extends Component {
                     </Layer>
                 )}
                 {this.state.modifiedModels && (
-                    <Layer position="center" modal onClickOutside={()=>{}} onEsc={()=>{}}>
+                    <Layer margin='medium' position="center" modal onClickOutside={() => this.setState(oldState => ({...oldState, modificationsInfo: undefined,
+                    showStatsForModels: true, ignoredModels: [...oldState.ignoredModels, ...oldState.modifiedModels], modifiedModels: []}))}
+                     onEsc={() => this.setState(oldState => ({...oldState, modificationsInfo: undefined,
+                     showStatsForModels: true, ignoredModels: [...oldState.ignoredModels, ...oldState.modifiedModels], modifiedModels: []}))}>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
                                 Update or ignore?
@@ -294,6 +351,7 @@ class PortScreen extends Component {
                                 gap="small"
                                 direction="column"
                                 align="start"
+                                overflow='auto'
                                 justify="start" >
                                 {this.state.modificationsInfo}
                             </Box>
@@ -318,6 +376,47 @@ class PortScreen extends Component {
                         </Box>
                     </Layer>
                 )}
+                {this.state.modifiedConns && (
+                    <Layer margin='medium' position="center" modal onClickOutside={() => this.setState(oldState => ({...oldState, modificationsInfoConns: undefined,
+                    showStatsForConns: true, ignoredConns: [...oldState.ignoredConns, ...oldState.modifiedConns], modifiedConns: []}))}
+                     onEsc={() => this.setState(oldState => ({...oldState, modificationsInfoConns: undefined,
+                     showStatsForConns: true, ignoredConns: [...oldState.ignoredConns, ...oldState.modifiedConns], modifiedConns: []}))}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Update or ignore?
+                            </Heading>
+                            <p>Some of the assets' ports in your file already have connections. Would you like to ignore these entries or update the existing values to your new values?</p>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                overflow='auto'
+                                direction="column"
+                                align="start"
+                                justify="start" >
+                                {this.state.modificationsInfoConns}
+                            </Box>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="end" >
+                                <Button label="Ignore" primary onClick={() => this.setState(oldState => ({...oldState, modificationsInfoConns: undefined,
+                                showStatsForConns: true, ignoredConns: [...oldState.ignoredConns, ...oldState.modifiedConns], modifiedConns: []}))} />
+                                <Button
+                                    label="Update"
+                                    onClick={() => {
+                                        bulkconnectionsutils.addConnections(this.state.modifiedConns, this.state.fetchedAssets, () => {
+                                            this.setState(oldState => ({...oldState, modificationsInfoConns: undefined, showStatsForConns: true}))
+                                        })
+                                    }}
+                                    />
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
                 {this.state.assetsToBeModified && (
                     <Layer position="center" modal onClickOutside={()=>{}} onEsc={()=>{}}>
                         <Box pad="medium" gap="small" width="medium">
@@ -335,7 +434,7 @@ class PortScreen extends Component {
                                 {this.state.assetsToBeModified.map(tbm => <div><b>Row {tbm.row}:</b> {tbm.hostname} ({tbm.vendor} {tbm.model_number})</div>)}
                             </Box>
                             <Box
-                                margin={{top: 'small'}}
+                                margin='small'
                                 as="footer"
                                 gap="small"
                                 direction="row"
@@ -400,11 +499,11 @@ class PortScreen extends Component {
                             <p>Here are statistics on how your database is different after import.</p>
                             <Box
                                 margin={{top: 'small'}}
+                                overflow='auto'
                                 as="footer"
                                 gap="small"
                                 direction="column"
                                 align="start"
-                                overflow='auto'
                                 justify="start" >
                                 <div><b>Models created ({this.state.createdModels.length}):</b></div>
                                 {this.state.createdModels.map(m => <div><b>Row {m.rowNumber}:</b> {m.vendor+' '+m.model_number}</div>)}
@@ -414,6 +513,40 @@ class PortScreen extends Component {
                                 <div></div>
                                 <div><b>Models ignored ({this.state.ignoredModels.length}):</b></div>
                                 {this.state.ignoredModels.map(m => <div><b>Row {m.rowNumber}:</b> {m.vendor+' '+m.model_number}</div>)}
+                                <div></div>
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
+                {this.state.showStatsForConns && (
+                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState=>({
+                        ...oldState, showStatsForConns: false, ignoredConns: undefined, createdConns: undefined,
+                        modifiedConns: undefined
+                    }))}} onEsc={()=>{this.setState(oldState=>({
+                        ...oldState, showStatsForConns: false, ignoredConns: undefined, createdConns: undefined,
+                        modifiedConns: undefined
+                    }))}} margin={{top: 'medium', bottom: 'medium'}}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Import Successful
+                            </Heading>
+                            <p>Here are statistics on how your database is different after import.</p>
+                            <Box
+                                margin={{top: 'small'}}
+                                overflow='auto'
+                                as="footer"
+                                gap="small"
+                                direction="column"
+                                align="start"
+                                justify="start" >
+                                <div><b>Connections created ({this.state.createdConns.length}):</b></div>
+                                {this.state.createdConns.map(m => <div><b>Row {m.rowNumber}:</b> {m.src_hostname+' ('+m.src_port+') '+String.fromCharCode(8594)+' '+(m.dest_hostname ? m.dest_hostname+' ('+m.dest_port+')' : 'Disconnected')}</div>)}
+                                <div></div>
+                                <div><b>Connections modified ({this.state.modifiedConns.length}):</b></div>
+                                {this.state.modifiedConns.map(m => <div><b>Row {m.rowNumber}:</b> {m.src_hostname+' ('+m.src_port+') '+String.fromCharCode(8594)+' '+(m.dest_hostname ? m.dest_hostname+' ('+m.dest_port+')' : 'Disconnected')}</div>)}
+                                <div></div>
+                                <div><b>Connections ignored ({this.state.ignoredConns.length}):</b></div>
+                                {this.state.ignoredConns.map(m => <div><b>Row {m.rowNumber}:</b> {m.src_hostname+' ('+m.src_port+') '+String.fromCharCode(8594)+' '+(m.dest_hostname ? m.dest_hostname+' ('+m.dest_port+')' : 'Disconnected')}</div>)}
                                 <div></div>
                             </Box>
                         </Box>
@@ -432,6 +565,13 @@ class PortScreen extends Component {
                     parserOptions={this.papaparseOptions}
                     inputStyle={{ display: "none" }}
                     inputId='csvreaderassets'
+                />
+                <CSVReader
+                    cssClass="react-csv-input"
+                    onFileLoaded={this.importConnections}
+                    parserOptions={this.papaparseOptions}
+                    inputStyle={{ display: "none" }}
+                    inputId='csvreaderconn'
                 />
             </Grommet>
         )
