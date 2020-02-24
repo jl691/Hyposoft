@@ -16,9 +16,9 @@ export default class AssetTable extends Component {
     columns = [
         {
             property: 'assetID',
-            header: <Link onClick={() => {
-                this.setSort("asset_id")
-            }}><Text size='small'> Asset ID</Text></Link>,
+            header: <Text size='small' onClick={() => {
+                this.setSort("assetId")
+            }} style={{cursor: "pointer"}}>Asset ID</Text>,
             primary: true,
             render: datum => <Text size='small'>
                 {datum.asset_id}
@@ -27,43 +27,43 @@ export default class AssetTable extends Component {
         },
         {
             property: 'model',
-            header: <Link onClick={() => {
+            header: <Text size='small' onClick={() => {
                 this.setSort("model")
-            }}><Text size='small'>Model</Text></Link>,
+            }} style={{cursor: "pointer"}}>Model</Text>,
             // align:"start",
             render: datum => <Text size='small'>{datum.model}</Text>,
 
         },
         {
             property: 'hostname',
-            header: <Link onClick={() => {
+            header: <Text size='small' onClick={() => {
                 this.setSort("hostname")
-            }}><Text size='small'>Hostname</Text></Link>,
+            }} style={{cursor: "pointer"}}>Hostname</Text>,
             // align:"start",
             render: datum => <Text size='small'>{datum.hostname}</Text>,
         },
         {
             property: 'rack',
-            header: <Link onClick={() => {
+            header: <Text size='small' onClick={() => {
                 this.setSort("rack")
-            }}><Text size='small'>Rack</Text></Link>,
+            }} style={{cursor: "pointer"}}>Rack</Text>,
             //align:"end",
             render: datum => <Text size='small'>{datum.rack}</Text>,
 
         },
         {
             property: 'rackU',
-            header: <Link onClick={() => {
+            header: <Text size='small' onClick={() => {
                 this.setSort("rackU")
-            }}><Text size='small'>Rack U</Text></Link>,
+            }} style={{cursor: "pointer"}}>Rack U</Text>,
             render: datum => <Text size='small'>{datum.rackU}</Text>,
 
         },
         {
             property: 'owner',
-            header: <Link onClick={() => {
+            header: <Text size='small' onClick={() => {
                 this.setSort("owner")
-            }}><Text size='small'>Owner</Text></Link>,
+            }} style={{cursor: "pointer"}}>Owner</Text>,
             render: datum => <Text size='small'>{datum.owner}</Text>,
 
         },
@@ -77,9 +77,9 @@ export default class AssetTable extends Component {
         // },
         {
             property: 'datacenterAbbrev',
-            header: <Link onClick={() => {
+            header: <Text size='small' onClick={() => {
                 this.setSort("datacenterAbbrev")
-            }}><Text size='small'> Datacenter Abbrev.</Text></Link>,
+            }} style={{cursor: "pointer"}}> Datacenter Abbrev.</Text>,
             render: datum => <Text size='small'>
                 {datum.datacenterAbbreviation}
             </Text>,

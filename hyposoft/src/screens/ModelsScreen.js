@@ -137,6 +137,23 @@ class ModelsScreen extends React.Component {
 
     componentWillMount() {
         this.init()
+/*        let models = [];
+        let itemNo = 1;
+        firebaseutils.modelsRef.orderBy("vendor").orderBy("modelNumber").get().then(docSnaps => {
+            this.startAfter = docSnaps.docs[docSnaps.docs.length - 1];
+            docSnaps.forEach(doc => {
+                models.push({
+                    ...doc.data(),
+                    id: doc.id,
+                    itemNo: itemNo++
+                })
+                if(models.length === docSnaps.size){
+                    this.setState({
+                        models: models
+                    })
+                }
+            })
+        })*/
     }
 
     constructor() {
@@ -341,6 +358,12 @@ class ModelsScreen extends React.Component {
                                                                     property: 'modelNumber',
                                                                     header: <Text size='small'>Model #</Text>,
                                                                     render: datum => <Text size='small'>{datum.modelNumber}</Text>,
+                                                                    sortable: true,
+                                                                },
+                                                                {
+                                                                    property: 'cpu',
+                                                                    header: <Text size='small'>CPU</Text>,
+                                                                    render: datum => <Text size='small'>{datum.cpu}</Text>,
                                                                     sortable: true,
                                                                 },
                                                                 {
