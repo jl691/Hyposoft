@@ -14,6 +14,7 @@ const index = client.initIndex('assets')
 
 function getAsset(callback, field = null, direction = null) {
     let query;
+    field = (field === "asset_id") ? firebase.firestore.FieldPath.documentId() : field;
     if (field && direction !== null) {
         query = direction ? assetRef.limit(25).orderBy(field) : assetRef.limit(25).orderBy(field, "desc");
     } else {
@@ -30,13 +31,15 @@ function getAsset(callback, field = null, direction = null) {
                 model: doc.data().model,
                 hostname: doc.data().hostname,
                 rack: doc.data().rack,
+                rackRow: doc.data().rackRow,
+                rackNum: doc.data().rackNum,
                 rackU: doc.data().rackU,
                 owner: doc.data().owner,
                 comment: doc.data().comment,
                 datacenter: doc.data().datacenter,
                 datacenterAbbreviation: doc.data().datacenterAbbrev,
                 macAddress: doc.data().macAddress,
-
+                powerConnections: doc.data().powerConnections
             });
             count++;
             if (count === docSnaps.docs.length) {
@@ -45,6 +48,7 @@ function getAsset(callback, field = null, direction = null) {
 
         })
     }).catch(function (error) {
+        console.log(error);
         callback(null, null)
     })
 }
@@ -357,6 +361,49 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 // rackAsc should be a boolean corresponding to true if rack is ascending
 // rackUAsc should be a boolean corresponding to true if rackU is ascending
 function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback) {
+    var vendorArray = []
+    var query = assetRef
+    if (!rackAsc && !rackUAsc) {
+        query = assetRef.orderBy("rackRow", "desc").orderBy("rackNum", "desc").orderBy("rackU", "desc")
+    } else if (rackAsc && !rackUAsc) {
+        query = assetRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU", "desc")
+    } else if (!rackAsc && rackUAsc) {
+        query = assetRef.orderBy("rackRow", "desc").orderBy("rackNum", "desc").orderBy("rackU")
+    } else {
+        query = assetRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU")
+    }
+    query.get().then(querySnapshot => {
+        let count = 0;
+        querySnapshot.forEach(doc => {
+            datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
+                if (datacenterAbbrev) {
+                    vendorArray.push({
+                        asset_id: doc.id,
+                        model: doc.data().model,
+                        hostname: doc.data().hostname,
+                        rack: doc.data().rack,
+                        rackU: doc.data().rackU,
+                        owner: doc.data().owner,
+                        datacenterAbbreviation: datacenterAbbrev
+                    });
+                    count++;
+                    if (count === querySnapshot.size) {
+                        callback(vendorArray);
+                    }
+                } else {
+                    callback(null);
+                }
+            })
+        })
+    }).catch(error => {
+        console.log("Error getting documents: ", error)
+        callback(null)
+    })
+}
+
+// rackAsc should be a boolean corresponding to true if rack is ascending
+// rackUAsc should be a boolean corresponding to true if rackU is ascending
+function sortAssetsByRackAndRackUFilter(rackAsc, rackUAsc, datacenter, rowStart, rowEnd, numberStart, numberEnd, callback) {
     var vendorArray = []
     var query = assetRef
     if (!rackAsc && !rackUAsc) {
@@ -736,6 +783,65 @@ function getSuggestedRacks(datacenter, userInput, callback) {
         })
 }
 
+function getNetworkPorts(model, userInput, callback) {
+    var modelArray = []
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    modelsRef.where('modelName', '==', model ? model : '').get().then(docSnaps => {
+        var port;
+        const data = docSnaps.docs[0].data().networkPorts
+        for (port in data) {
+          if (shouldAddToSuggestedItems(modelArray, data[port].trim(), userInput)) {
+              modelArray.push(data[port])
+          }
+        }
+        callback(modelArray)
+    })
+    .catch(error => {
+        callback([])
+    })
+}
+
+// need to change logic here for editing asset, don't allow to pick own name
+function getSuggestedAssetIds(userInput, callback) {
+    var modelArray = []
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    assetRef.orderBy('assetId').get().then(querySnapshot => {
+        querySnapshot.forEach(doc => {
+            const data = doc.data().assetId;
+            if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
+                modelArray.push(data)
+            }
+        })
+        callback(modelArray)
+    })
+    .catch(error => {
+        callback([])
+    })
+}
+
+function getSuggestedOtherAssetPorts(assetId, userInput, callback) {
+    var modelArray = []
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    assetRef.where('assetId', '==', assetId ? assetId : '').get().then(docSnaps => {
+        modelsRef.doc(docSnaps.docs[0].data().modelId).get().then(doc => {
+          var port;
+          const data = doc.data().networkPorts
+          for (port in data) {
+            if (shouldAddToSuggestedItems(modelArray, data[port].trim(), userInput)) {
+                modelArray.push(data[port])
+            }
+          }
+          callback(modelArray)
+        })
+        .catch(error => {
+            callback([])
+        })
+    })
+    .catch(error => {
+        callback([])
+    })
+}
+
 function getSuggestedDatacenters(userInput, callback) {
     // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
     var modelArray = []
@@ -771,14 +877,16 @@ function getAssetDetails(assetID, callback) {
             model: doc.data().model.trim(),
             hostname: doc.data().hostname.trim(),
             rack: doc.data().rack.trim(),
+            rackNum: doc.data().rackNum,
             rackU: doc.data().rackU,
+            rackRow: doc.data().rackRow,
             owner: doc.data().owner.trim(),
             comment: doc.data().comment.trim(),
             modelNum: doc.data().modelNumber.trim(),
             vendor: doc.data().vendor.trim(),
             datacenter: doc.data().datacenter.trim(),
-            datacenterAbbrev: doc.data().datacenterAbbrev.trim()
-
+            datacenterAbbrev: doc.data().datacenterAbbrev.trim(),
+            powerConnections: doc.data().powerConnections
         }
         callback(inst)
     }
@@ -1038,6 +1146,9 @@ export {
     getAssetFromModel,
     getSuggestedOwners,
     getSuggestedRacks,
+    getSuggestedAssetIds,
+    getSuggestedOtherAssetPorts,
+    getNetworkPorts,
     getAssetAt,
     validateAssetForm,
     getAssetsForExport,

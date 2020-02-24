@@ -69,8 +69,11 @@ class ModelsScreen extends React.Component {
             networkPortsStart: 0, networkPortsEnd: 25,
             memoryStart: 0, memoryEnd: 1000,
             powerPortsStart: 0, powerPortsEnd: 10
-        }
+        },
+        initialLoaded: false
     }
+
+    itemNo = 1;
 
     search () {
         if (this.state.searchQuery.trim() === '') {
@@ -97,6 +100,7 @@ class ModelsScreen extends React.Component {
     startAfter = null
 
     init() {
+        this.itemNo = 1;
         if (this.state.searchQuery.trim() !== '') {
             this.search()
             return
@@ -135,8 +139,29 @@ class ModelsScreen extends React.Component {
         })
     }
 
-    componentWillMount() {
-        this.init()
+    componentDidMount() {
+        // this.init()
+        this.setState({
+            initialLoaded: false
+        });
+        this.itemNo = 1;
+        let models = [];
+        firebaseutils.modelsRef.orderBy("vendor").orderBy("modelNumber").limit(25).get().then(docSnaps => {
+            this.startAfter = docSnaps.docs[docSnaps.docs.length - 1];
+            docSnaps.forEach(doc => {
+                models.push({
+                    ...doc.data(),
+                    id: doc.id,
+                    itemNo: this.itemNo++
+                })
+                if(models.length === docSnaps.size){
+                    this.setState({
+                        models: models,
+                        initialLoaded: true
+                    })
+                }
+            })
+        })
     }
 
     constructor() {
@@ -228,36 +253,119 @@ class ModelsScreen extends React.Component {
         })
     }
 
-    render() {
+    getDatatable(){
         const adminColumns = userutils.isLoggedInUserAdmin() ? [{
             property: 'dummy',
             render: datum => (
-            <FormEdit style={{cursor: 'pointer'}} onClick={(e) => {
-                e.persist()
-                e.nativeEvent.stopImmediatePropagation()
-                e.stopPropagation()
-                 this.showEditDialog(datum.itemNo)
-            }} />
-        ),
+                <FormEdit style={{cursor: 'pointer'}} onClick={(e) => {
+                    e.persist()
+                    e.nativeEvent.stopImmediatePropagation()
+                    e.stopPropagation()
+                    this.showEditDialog(datum.itemNo)
+                }} />
+            ),
             align: 'center',
             header: <Text size='small'>Edit</Text>,
             sortable: false
         },
-        {
-            property: 'dummy2',
-            render: datum => (
-            <FormTrash style={{cursor: 'pointer'}} onClick={(e) => {
-                e.persist()
-                e.nativeEvent.stopImmediatePropagation()
-                e.stopPropagation()
-                this.showDeleteDialog(datum.itemNo)
-            }} />
-        ),
-            align: 'center',
-            header: <Text size='small'>Delete</Text>,
-            sortable: false
-        }] : []
+            {
+                property: 'dummy2',
+                render: datum => (
+                    <FormTrash style={{cursor: 'pointer'}} onClick={(e) => {
+                        e.persist()
+                        e.nativeEvent.stopImmediatePropagation()
+                        e.stopPropagation()
+                        this.showDeleteDialog(datum.itemNo)
+                    }} />
+                ),
+                align: 'center',
+                header: <Text size='small'>Delete</Text>,
+                sortable: false
+            }] : [];
 
+        if(!this.state.initialLoaded){
+            return (<Text>Please wait...</Text>);
+        } else {
+            return (<DataTable
+                step={25}
+                onMore={() => {
+                    console.log("eyyyyyyyyyyyyyyyyyyy")
+                    if (this.startAfter) {
+                        console.log("getting more models")
+                        modelutils.getModels(this.itemNo, this.startAfter, (newItemNo, models, newStartAfter) => {
+                            this.startAfter = newStartAfter;
+                            this.itemNo = newItemNo;
+                            this.setState(oldState => (
+                                {...oldState, models: [...oldState.models, ...models]}
+                            ))
+                        }, this.state.filters)
+                    }
+                }}
+                columns={
+                    [
+                        {
+                            property: 'itemNo',
+                            header: <Text size='small'>#</Text>,
+                            render: datum => <Text size='small'>{datum.itemNo}</Text>,
+                            primary: true,
+                            sortable: true,
+                        },
+                        {
+                            property: 'vendor',
+                            header: <Text size='small'>Vendor</Text>,
+                            render: datum => <Text size='small'>{datum.vendor}</Text>,
+                            sortable: true,
+                        },
+                        {
+                            property: 'modelNumber',
+                            header: <Text size='small'>Model #</Text>,
+                            render: datum => <Text size='small'>{datum.modelNumber}</Text>,
+                            sortable: true,
+                        },
+                        {
+                            property: 'cpu',
+                            header: <Text size='small'>CPU</Text>,
+                            render: datum => <Text size='small'>{datum.cpu}</Text>,
+                            sortable: true,
+                        },
+                        {
+                            property: 'height',
+                            header: <Text size='small'>Height</Text>,
+                            render: datum => <Text size='small'>{datum.height}</Text>,
+                            sortable: true,
+                        },
+                        {
+                            property: 'networkPorts',
+                            header: <Text size='small'>Network ports #</Text>,
+                            render: datum => <Text size='small'>{datum.networkPortsCount}</Text>,
+                            sortable: true,
+                        },
+                        {
+                            property: 'portPorts',
+                            header: <Text size='small'>Power ports #</Text>,
+                            render: datum => <Text size='small'>{datum.powerPorts}</Text>,
+                            sortable: true,
+                        },
+                        {
+                            property: 'memory',
+                            header: <Text size='small'>Memory</Text>,
+                            render: datum => <Text size='small'>{datum.memory}</Text>,
+                            sortable: true,
+                        },
+                        ...adminColumns
+                    ]
+                }
+                data={this.state.models}
+                sortable={true}
+                size="medium"
+                onClickRow={({datum}) => {
+                    this.props.history.push('/models/'+datum.vendor+'/'+datum.modelNumber)
+                }}
+            />);
+        }
+    }
+
+    render() {
         if (localStorage.getItem('tipShown') !== 'yes') {
             ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
             localStorage.setItem('tipShown', 'yes')
@@ -310,73 +418,7 @@ class ModelsScreen extends React.Component {
                                            <Box margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}} direction='column'
                                                justify='start' alignSelf='stretch' flex>
                                                <Box align="center">
-                                                    <DataTable
-                                                        step={25}
-                                                        onMore={() => {
-                                                            if (this.startAfter) {
-                                                                modelutils.getModels(this.startAfter, (models, newStartAfter) => {
-                                                                    this.startAfter = newStartAfter
-                                                                    this.setState(oldState => (
-                                                                        {...oldState, models: [...oldState.userse, ...models]}
-                                                                    ))
-                                                                }, this.state.filters)
-                                                            }
-                                                        }}
-                                                        columns={
-                                                            [
-                                                                {
-                                                                    property: 'itemNo',
-                                                                    header: <Text size='small'>#</Text>,
-                                                                    render: datum => <Text size='small'>{datum.itemNo}</Text>,
-                                                                    primary: true,
-                                                                    sortable: true,
-                                                                },
-                                                                {
-                                                                    property: 'vendor',
-                                                                    header: <Text size='small'>Vendor</Text>,
-                                                                    render: datum => <Text size='small'>{datum.vendor}</Text>,
-                                                                    sortable: true,
-                                                                },
-                                                                {
-                                                                    property: 'modelNumber',
-                                                                    header: <Text size='small'>Model #</Text>,
-                                                                    render: datum => <Text size='small'>{datum.modelNumber}</Text>,
-                                                                    sortable: true,
-                                                                },
-                                                                {
-                                                                    property: 'height',
-                                                                    header: <Text size='small'>Height</Text>,
-                                                                    render: datum => <Text size='small'>{datum.height}</Text>,
-                                                                    sortable: true,
-                                                                },
-                                                                {
-                                                                    property: 'networkPorts',
-                                                                    header: <Text size='small'>Network ports #</Text>,
-                                                                    render: datum => <Text size='small'>{datum.networkPortsCount}</Text>,
-                                                                    sortable: true,
-                                                                },
-                                                                {
-                                                                    property: 'portPorts',
-                                                                    header: <Text size='small'>Power ports #</Text>,
-                                                                    render: datum => <Text size='small'>{datum.powerPorts}</Text>,
-                                                                    sortable: true,
-                                                                },
-                                                                {
-                                                                    property: 'memory',
-                                                                    header: <Text size='small'>Memory</Text>,
-                                                                    render: datum => <Text size='small'>{datum.memory}</Text>,
-                                                                    sortable: true,
-                                                                },
-                                                                ...adminColumns
-                                                            ]
-                                                        }
-                                                        data={this.state.models}
-                                                        sortable={true}
-                                                        size="medium"
-                                                        onClickRow={({datum}) => {
-                                                            this.props.history.push('/models/'+datum.vendor+'/'+datum.modelNumber)
-                                                        }}
-                                                    />
+                                                   {this.getDatatable()}
                                                 </Box>
                                            </Box>
                                        </Box>

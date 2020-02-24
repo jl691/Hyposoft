@@ -129,6 +129,22 @@ export default class AddAssetForm extends Component {
     addPowerConnection(event) {
         //Bletsch said to expect no more than 8 power ports on an asset
 
+            this.setState((prevState) => ({
+                powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
+            }));
+
+
+    }
+
+    //toLowercase, to colon
+    handleMacAddressFixAndSet(event) {
+
+        let fixedMAC = "";
+        if (this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
+            fixedMAC = this.fixMACAddress(this.state.macAddress);
+
+        }
+            //TODO: this is not correct
         this.setState((prevState) => ({
             powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
         }));
@@ -376,6 +392,7 @@ export default class AddAssetForm extends Component {
                                 <AccordionPanel label="Network Port Connections">
                                     <AssetNetworkPortsForm
 
+                                        model={this.state.model}
                                         networkConnections={this.state.networkConnections}
 
                                     />
@@ -441,3 +458,4 @@ export default class AddAssetForm extends Component {
     }
 
 }
+;

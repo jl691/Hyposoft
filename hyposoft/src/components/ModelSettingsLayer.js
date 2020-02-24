@@ -37,7 +37,7 @@ class ModelSettingsLayer extends React.Component {
         comment: ''
     }
 
-    componentWillMount() {
+    componentDidMount() {
         // Change from add form to edit form depending on props
         if (this.props.type === 'add') {
             this.hideFunction = this.props.parent.hideAddModelDialog
@@ -130,7 +130,7 @@ class ModelSettingsLayer extends React.Component {
                     this.state.comment, (model, id) => {
                         ToastsStore.info('Model saved', 3000, 'burntToast')
                         this.hideFunction()
-                        this.props.parent.init()
+                        this.props.parent.componentDidMount()
                         index.saveObject({...model, objectID: id})
                     })
             }
@@ -181,11 +181,12 @@ class ModelSettingsLayer extends React.Component {
                     <Form>
                         <Box direction='row' justify='center' gap='medium'>
                             <Box direction="column" pad='xsmall' gap="small" flex height={{max: 'medium'}} overflow={{vertical: 'scroll'}}>
+                                <Text size={"small"} style={{marginLeft: "20px"}}>Vendor</Text>
                                 <TextInput style={{
                                         borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                         width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal'
                                     }}
-                                    placeholder="Vendor"
+                                    placeholder="eg. Dell, Apple"
                                     onChange={e => {
                                         const value = e.target.value
                                         this.setState(oldState => ({...oldState, vendor: value}))
@@ -199,11 +200,12 @@ class ModelSettingsLayer extends React.Component {
                                     onClick={() => modelutils.getSuggestedVendors(this.state.vendor, results => this.setState(oldState => ({...oldState, vendorSuggestions: results})))}
                                     title='Vendor'
                                     />
+                                <Text size={"small"} style={{marginLeft: "20px"}}>Model Number</Text>
                                 <TextInput style={{
                                         borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                         width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                     }}
-                                    placeholder="Model number"
+                                    placeholder="eg. Vostro 5400, iServer 2.0"
                                     onChange={e => {
                                         const value = e.target.value
                                         this.setState(oldState => ({...oldState, modelNumber: value}))
@@ -211,11 +213,12 @@ class ModelSettingsLayer extends React.Component {
                                     value={this.state.modelNumber}
                                     title='Model number'
                                     />
+                                <Text size={"small"} style={{marginLeft: "20px"}}>Height</Text>
                                 <TextInput style={{
                                         borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                         width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                     }}
-                                    placeholder="Height"
+                                    placeholder="eg. 2, 4"
                                     onChange={e => {
                                         const value = e.target.value
                                         this.setState(oldState => ({...oldState, height: value}))
@@ -223,11 +226,12 @@ class ModelSettingsLayer extends React.Component {
                                     value={this.state.height}
                                     title='Height'
                                     />
+                                <Text size={"small"} style={{marginLeft: "20px"}}>Network Ports (Optional)</Text>
                                 <TextInput style={{
                                         borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                         width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                     }}
-                                    placeholder="Network ports count (Optional)"
+                                    placeholder="eg. 2, 4"
                                     onChange={e => {
                                         const value = e.target.value
                                         this.setState(oldState => ({...oldState, networkPortsCount: value}))
@@ -236,12 +240,13 @@ class ModelSettingsLayer extends React.Component {
                                     value={this.state.networkPortsCount}
                                     title='Network ports'
                                     />
+                                <Text size={"small"} style={{marginLeft: "20px"}}>Network Port Names (Optional)</Text>
                                 <TextInput style={{
                                         borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                         width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                     }}
                                     disabled={this.state.networkPortsDisabled}
-                                    placeholder="Network ports names (Optional)"
+                                    placeholder="eg. port1, port2"
                                     onChange={e => {
                                         const value = e.target.value
                                         this.setState(oldState => ({...oldState, networkPorts: value}))
@@ -250,11 +255,12 @@ class ModelSettingsLayer extends React.Component {
                                     value={this.state.networkPorts}
                                     title='Network ports'
                                     />
+                                <Text size={"small"} style={{marginLeft: "20px"}}>Power Ports (Optional)</Text>
                                 <TextInput style={{
                                         borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                         width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                     }}
-                                    placeholder="Power ports (Optional)"
+                                    placeholder="eg. 2, 4"
                                     onChange={e => {
                                         const value = e.target.value
                                         this.setState(oldState => ({...oldState, powerPorts: value}))
@@ -262,11 +268,12 @@ class ModelSettingsLayer extends React.Component {
                                     value={this.state.powerPorts}
                                     title='Power ports'
                                     />
+                                <Text size={"small"} style={{marginLeft: "20px"}}>CPU (Optional)</Text>
                                 <TextInput style={{
                                         borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                         width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                     }}
-                                    placeholder="cpu (Optional)"
+                                    placeholder="eg. Intel Xeon, AMD Ryzen 7"
                                     onChange={e => {
                                         const value = e.target.value
                                         this.setState(oldState => ({...oldState, cpu: value}))
@@ -274,11 +281,12 @@ class ModelSettingsLayer extends React.Component {
                                     value={this.state.cpu}
                                     title='cpu'
                                     />
+                                <Text size={"small"} style={{marginLeft: "20px"}}>Memory (GB, Optional)</Text>
                                 <TextInput style={{
                                         borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                         width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                     }}
-                                    placeholder="Memory (Optional)"
+                                    placeholder="eg. 2, 4"
                                     onChange={e => {
                                         const value = e.target.value
                                         this.setState(oldState => ({...oldState, memory: value}))
@@ -286,11 +294,12 @@ class ModelSettingsLayer extends React.Component {
                                     value={this.state.memory}
                                     title='Memory'
                                     />
+                                <Text size={"small"} style={{marginLeft: "20px"}}>Storage (GB, Optional)</Text>
                                 <TextInput style={{
                                         borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                         width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                     }}
-                                    placeholder="Storage (Optional)"
+                                    placeholder="eg. 2, 4"
                                     onChange={e => {
                                         const value = e.target.value
                                         this.setState(oldState => ({...oldState, storage: value}))
@@ -298,12 +307,13 @@ class ModelSettingsLayer extends React.Component {
                                     value={this.state.storage}
                                     title='Storage'
                                     />
+                                <Text size={"small"} style={{marginLeft: "20px"}}>Comment (Optional)</Text>
                                 <TextArea style={{
                                         borderRadius: 20, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                         width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                         minHeight: 100
                                     }}
-                                    placeholder="Comment (Optional)"
+                                    placeholder="eg. Retired model, Only 1 power port"
                                     onChange={e => {
                                         const value = e.target.value
                                         this.setState(oldState => ({...oldState, comment: value}))

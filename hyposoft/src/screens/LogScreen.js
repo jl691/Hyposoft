@@ -97,7 +97,7 @@ class LogScreen extends Component {
                 columns={
                     [
                         {
-                            property: 'date',
+                            property: 'itemNo',
                             header: <Text size='small'>Date and Time (EST)</Text>,
                             render: datum => <Text size='small'>{'['+datum.itemNo+'] '+datum.date}</Text>,
                             primary: true,
@@ -154,7 +154,7 @@ class LogScreen extends Component {
                       wrap={true}>
                       <Box direction='row' justify='center'>
                              <Box direction='row' justify='center'>
-                                 <Box width='large' direction='column' align='stretch' justify='start'>
+                                 <Box width='xlarge' direction='column' align='stretch' justify='start'>
                                     <Box margin={{top: 'medium'}}>
                                         <Form onSubmit={() => this.search()}>
                                             <TextInput style={styles.TIStyle}
