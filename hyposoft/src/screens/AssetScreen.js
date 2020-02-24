@@ -153,6 +153,17 @@ class AssetScreen extends Component {
         });
     }
 
+    handleChildToast = (datum) => {
+        //toast
+        if(datum.type === "success"){
+            ToastsStore.success(datum.message);
+        } else if (datum.type === "error"){
+            ToastsStore.error(datum.message);
+        } else {
+            ToastsStore.info(datum.message);
+        }
+    }
+
     handleDeleteButton = (datum) => {
         console.log(datum.model);
         this.setState({
@@ -563,6 +574,8 @@ class AssetScreen extends Component {
                                                                 deleteButtonCallbackFromParent={this.handleDeleteButton}
 
                                                                 UpdateButtonCallbackFromParent={this.handleUpdateButton}
+
+                                                                handleToast={this.handleChildToast}
 
                                                                 ref={this.assetTable}
                                                                 searchResults={this.state.searchResults}

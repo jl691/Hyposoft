@@ -8,16 +8,16 @@ function getPortStatus(pdu, portNumber, callback) {
     })
 }
 
-function powerPowerOn(pdu, portNumber, callback) {
+function powerPortOn(pdu, portNumber, callback) {
     axios.get('https://hyposoft-53c70.appspot.com/poweron?pdu='+pdu+'&port='+portNumber, {}).then(response => {
-        callback()
+        callback(response)
     })
 }
 
 function powerPortOff(pdu, portNumber, callback) {
     axios.get('https://hyposoft-53c70.appspot.com/poweroff?pdu='+pdu+'&port='+portNumber, {}).then(response => {
-        callback()
+        callback(response)
     })
 }
 
-export { getPortStatus, powerPortOff, powerPowerOn }
+export { getPortStatus, powerPortOff, powerPortOn }
