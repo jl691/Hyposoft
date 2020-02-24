@@ -37,6 +37,18 @@ class PortScreen extends Component {
         this.addAssetsToDb = this.addAssetsToDb.bind(this)
         this.showFormatDocumentation = this.showFormatDocumentation.bind(this)
         this.importConnections = this.importConnections.bind(this)
+        this.exportConnections = this.exportConnections.bind(this)
+    }
+
+    exportConnections () {
+        this.setState(oldState => ({...oldState, showLoadingDialog: true}))
+        bulkconnectionsutils.getConnectionsForExport(rows => {
+            var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
+                type: "data:text/csv;charset=utf-8;",
+            })
+            saveAs(blob, "hyposoft_connections.csv")
+            this.setState(oldState => ({...oldState, showLoadingDialog: false}))
+        })
     }
 
     exportModels () {
@@ -229,7 +241,7 @@ class PortScreen extends Component {
                 <Button label="Import Models" onClick={()=>{document.getElementById('csvreadermodels').click()}}/>,
                 <Button primary label="Export Assets" onClick={this.exportAssets}/>,
                 <Button label="Import Assets" onClick={()=>{document.getElementById('csvreaderassets').click()}}/>,
-                <Button primary label="Export Network Connections" onClick={this.exportAssets}/>,
+                <Button primary label="Export Network Connections" onClick={this.exportConnections}/>,
                 <Button label="Import Network Connections" onClick={()=>{document.getElementById('csvreaderconn').click()}}/>,
         ]
         if (!userutils.isLoggedInUserAdmin()) {

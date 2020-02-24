@@ -38,8 +38,8 @@ function validateImportedConnections (data, callback) {
                 // NOTE: This means the three arrays are accurate only if there are no errors
                 const datumAssetId = (fetchedAssets[datum.dest_hostname] ? fetchedAssets[datum.dest_hostname].id : null)
                 if ((datumAssetId === null && fetchedAssets[datum.src_hostname].networkConnections[datum.src_port] === null) ||
-                    (fetchedAssets[datum.src_hostname].networkConnections[datum.src_port] && fetchedAssets[datum.src_hostname].networkConnections[datum.src_port].otherAssetId === datumAssetId)) {
-                    // TODO: Confirm w Janice that the entire object is null and not just otherAssetId
+                    (fetchedAssets[datum.src_hostname].networkConnections[datum.src_port] && fetchedAssets[datum.src_hostname].networkConnections[datum.src_port].otherAssetID === datumAssetId)) {
+                    // TODO: Confirm w Janice that the entire object is null and not just otherAssetID
                     if (fetchedAssets[datum.src_hostname].networkConnections[datum.src_port].otherPort === datum.dest_port) {
                         if (fetchedAssets[datum.src_hostname].macAddresses[datum.src_port] === datum.src_mac) {
                             toBeIgnored.push(datum)
@@ -110,7 +110,7 @@ function addConnections (data, fetchedAssets, callback) {
 
         // First remove connection from old destination
         if (fetchedAssets[datum.src_hostname].networkConnections[datum.src_port]) {
-            const oldDestinationId = fetchedAssets[datum.src_hostname].networkConnections[datum.src_port].otherAssetId
+            const oldDestinationId = fetchedAssets[datum.src_hostname].networkConnections[datum.src_port].otherAssetID
             const oldDestinationPort = fetchedAssets[datum.src_hostname].networkConnections[datum.src_port].otherPort
             firebaseutils.assetRef.doc(oldDestinationId).update({
                 ["networkConnections."+oldDestinationPort]: null
@@ -123,14 +123,14 @@ function addConnections (data, fetchedAssets, callback) {
             // Now add new connection to source
             const newMacAddress = (datum.src_mac ? datum.src_mac : fetchedAssets[datum.src_hostname].macAddresses[datum.src_port])
             firebaseutils.assetRef.doc(fetchedAssets[datum.src_hostname].id).update({
-                ["networkConnections."+datum.src_port+".otherAssetId"]: fetchedAssets[datum.dest_hostname].id,
+                ["networkConnections."+datum.src_port+".otherAssetID"]: fetchedAssets[datum.dest_hostname].id,
                 ["networkConnections."+datum.src_port+".otherPort"]: datum.dest_port,
                 ["macAddresses."+datum.src_port]: newMacAddress
             })
 
             // Lastly add new connection to new destination
             firebaseutils.assetRef.doc(fetchedAssets[datum.dest_hostname].id).update({
-                ["networkConnections."+datum.dest_port+".otherAssetId"]: fetchedAssets[datum.src_hostname].id,
+                ["networkConnections."+datum.dest_port+".otherAssetID"]: fetchedAssets[datum.src_hostname].id,
                 ["networkConnections."+datum.dest_port+".otherPort"]: datum.src_port
             })
 
@@ -149,4 +149,55 @@ function addConnections (data, fetchedAssets, callback) {
     }
 }
 
-export { validateImportedConnections, addConnections }
+function getConnectionsForExport (callback) {
+    var rows = [
+        ["src_hostname", "src_port", "src_mac", "dest_hostname", "dest_port"]
+    ]
+    var assetsFound = []
+    var portsToIgnore = []
+    var hostnamesOfIds = {}
+
+    function postFetch() {
+        assetsFound.sort(function(a, b){
+            return b.numPorts - a.numPorts
+        })
+
+        for (var i = 0; i < assetsFound.length; i++) {
+            const asset = assetsFound[i]
+            if (asset.networkConnections) {
+                for (var j = 0; j < Object.keys(asset.networkConnections).length; j++) {
+                    if (!portsToIgnore.includes(asset.id+'.'+Object.keys(asset.networkConnections)[j])) {
+                        const portInfo = asset.networkConnections[Object.keys(asset.networkConnections)[j]]
+                        const macAddress = (asset.macAddresses ? asset.macAddresses[Object.keys(asset.networkConnections)[j]] : '')
+                        if (portInfo) {
+                            rows.push([asset.hostname, Object.keys(asset.networkConnections)[j], macAddress, hostnamesOfIds[portInfo.otherAssetID], portInfo.otherPort])
+                            portsToIgnore.push(portInfo.otherAssetID+'.'+portInfo.otherPort)
+                        } else {
+                            rows.push([asset.hostname, Object.keys(asset.networkConnections)[j], macAddress, '', ''])
+                        }
+                    }
+                }
+            }
+        }
+
+        callback(rows)
+    }
+
+    firebaseutils.assetRef.get().then(qs => {
+
+        for (var i = 0; i < qs.size; i++) {
+            const numPorts = (qs.docs[i].data().networkConnections ? Object.keys(qs.docs[i].data().networkConnections).length : 0)
+            // NOTE: I shouldn't have to do the ternary check above bc networkConnections shouldn't ever be undefined/null
+            // but until Janice fixes the schema of assets, I'll do this extra check to be safe.
+            // Remove it afterwards! (Not necessary but it'll be cleaner)
+            assetsFound.push({...qs.docs[i].data(), id: qs.docs[i].id, numPorts: numPorts})
+            hostnamesOfIds[''+qs.docs[i].id] = qs.docs[i].data().hostname
+
+            if (assetsFound.length === qs.size) {
+                postFetch()
+            }
+        }
+    })
+}
+
+export { validateImportedConnections, addConnections, getConnectionsForExport }
