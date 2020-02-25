@@ -384,7 +384,7 @@ class ModelPermaScreen extends Component {
                 <ToastsContainer store={ToastsStore} lightBackground/>
 
                 {this.state.showEditDialog && (
-                    <ModelSettingsLayer type='edit' parent={this} model={this.state.model}/>
+                    <ModelSettingsLayer type='edit' parent={this} model={this.state.model} assets={this.state.assets}/>
                 )}
 
                 {this.state.showDeleteDialog && (
