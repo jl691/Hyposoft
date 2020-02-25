@@ -24,52 +24,75 @@ export default class AssetMACForm extends Component {
         this.createFormCallback = this.createFormCallback.bind(this);
 
 
+
     }
     //Form validation/error catching: ???
 
     //Need to handle change: pass state back up
-    handleChange(e, idx) {
+    handleChange(e, idx, port) {
         //You are either typing into an output
         if (e.target.name === "macAddress") {
-            console.log("tryna do this shit")
 
             let macAddresses = [...this.props.macAddresses]
-            macAddresses[idx][e.target.name] = e.target.value
-            // this.setState({ macAddress: e.target.value })
-            // //or it's something already 'submitted'
-            this.props.fieldCallback(this.state.macTextFields)
+            console.log(macAddresses)
+
+            if (macAddresses[idx]) {
+                macAddresses[idx][e.target.name]= e.target.value 
+                macAddresses[idx]["networkPort"]= port 
+
+                this.setState({ macAddress: e.target.value })
+            }
+            else {
+                macAddresses[idx][e.target.name]= e.target.value 
+                macAddresses[idx]["networkPort"]= port 
+
+                this.setState({ macAddress: e.target.value })
+
+            }
+   
+
 
         } else {
-            this.setState({ [e.target.name]: e.target.value })
+
+            this.setState({ [e.target.name]: e.target.value, networkPort: port })
         }
     }
 
     createFormCallback(status) {
 
         //create a bunch of new macAddress objects {}
-        const fields = status.map((port, idx) => (
+        const fields = status.map((port, idx) => {
+            // let macAddresses = [...this.props.macAddresses]
+            // macAddresses.push({ networkPort: "", macAddress:"" })
+            console.log(idx)
+            this.props.addMACAddrCallback()
+            return (
 
-            // TODO Masked input grommet component
-            < FormField
-                margin={{ horizontal: 'medium', vertical: 'xsmall' }}
-                size="small" name="macAddress" label={`Network Port Name: ${port}`} >
-                <TextInput name="macAddress"
-                    //value={this.props.macAddresses.port}
-                    size="small"
+                // TODO Masked input grommet component
+                < FormField key={idx}
+                    margin={{ horizontal: 'medium', vertical: 'xsmall' }}
+                    size="small" name="macAddress" label={`Network Port Name: ${port}`} >
+                    <TextInput name="macAddress"
+                        value={this.props.macAddresses.macAddress}
+                        size="small"
+    
+                        onChange={e => {
 
-                    onChange={e => {
-                        this.handleChange(e, idx)
-                    }}
-                />
-            </FormField >
-        ))
+                            this.handleChange(e, idx, port);
+                        }}
+                    />
+                </FormField >
+            )
+        })
+
         this.setState(oldState => ({
             ...oldState, macTextFields: fields
         }))
-        //this.props.fieldCallback(fields)
+
     }
 
     createForm(model) {
+        console.log("here")
 
         assetmacutils.getNetworkPortLabels(model, status => this.createFormCallback(status))
 
@@ -77,9 +100,7 @@ export default class AssetMACForm extends Component {
 
     render() {
         //let { macAddresses } = this.props.macAddresses
-
         this.createForm(this.props.model)
-   
         return (
 
             <Grommet theme={theme}>

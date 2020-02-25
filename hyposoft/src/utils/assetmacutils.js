@@ -10,7 +10,7 @@ function getNetworkPortLabels(model, callback) {
     let modelNetworkPorts;
 
     modelsRef.where("modelName", "==", model).get().then(function (modelDoc) {
-        if(!modelDoc.empty){ 
+        if(!modelDoc.empty && modelDoc.docs[0].data().networkPorts != null){ 
             modelNetworkPorts = modelDoc.docs[0].data().networkPorts
             callback(modelNetworkPorts);
         }

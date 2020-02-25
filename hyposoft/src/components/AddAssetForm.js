@@ -53,6 +53,7 @@ export default class AddAssetForm extends Component {
         this.addNetworkConnection = this.addNetworkConnection.bind(this);
         this.addPowerConnection = this.addPowerConnection.bind(this);
         this.defaultPDUFields = this.defaultPDUFields.bind(this)
+        this.addMACAddress = this.addMACAddress.bind(this);
     }
 
 
@@ -61,18 +62,18 @@ export default class AddAssetForm extends Component {
         //find the first available spot
         let numPorts = 0;
         //instead of going into modelsRef, use a backend method
-        try{
+        try {
             modelutils.getModelByModelname(model, status => {
 
                 if (status) {
                     //test with model lenovo foobar
                     numPorts = status.data().powerPorts
-                    
+
                     if (numPorts >= 2) {
-                        assetpowerportutils.getFirstFreePort(rack, datacenter, returnedPort =>{
-                            console.log("In AddAssetForm. returned power port: "+returnedPort)
+                        assetpowerportutils.getFirstFreePort(rack, datacenter, returnedPort => {
+                            console.log("In AddAssetForm. returned power port: " + returnedPort)
                             if (returnedPort) {
-    
+
                                 this.setState(oldState => ({
                                     ...oldState,
                                     powerConnections: [{
@@ -83,27 +84,27 @@ export default class AddAssetForm extends Component {
                                         pduSide: "Right",
                                         port: returnedPort.toString()
                                     },
-        
+
                                     ]
                                 }))
-    
+
                                 console.log(this.state.powerConnections)
                             }
-    
-    
+
+
                         });
-                     
-                        
+
+
                     }
                 }
             })
 
 
         }
-        catch(error){
+        catch (error) {
             console.log(error)
         }
-      
+
     }
 
     handleChange(event) {
@@ -113,16 +114,17 @@ export default class AddAssetForm extends Component {
         //catchall for default power port fields
         if (event.target.name == "rackU") {
             //console.log(this.state)
-           // console.log(this.state.datacenter)
+            // console.log(this.state.datacenter)
             this.defaultPDUFields(this.state.model, this.state.rack, this.state.datacenter)
         }
     }
 
-    handleDisplayMACFields(macTextFields){
-        console.log(this.state.macAddresses)
-        this.setState(prevState => ({macAddresses: [...prevState.macAddresses, ]}))
-    }
 
+    addMACAddress(event) {
+        this.setState(prevState => ({
+            macAddresses: [...prevState.macAddresses, { networkPort: "", macAddress: "" }]
+        }));
+    }
 
 
     addNetworkConnection(event) {
@@ -134,9 +136,9 @@ export default class AddAssetForm extends Component {
     addPowerConnection(event) {
         //Bletsch said to expect no more than 8 power ports on an asset
 
-            this.setState((prevState) => ({
-                powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
-            }));
+        this.setState((prevState) => ({
+            powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
+        }));
 
 
     }
@@ -149,7 +151,7 @@ export default class AddAssetForm extends Component {
             fixedMAC = this.fixMACAddress(this.state.macAddress);
 
         }
-            //TODO: this is not correct
+        //TODO: this is not correct
         this.setState((prevState) => ({
             powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
         }));
@@ -214,7 +216,7 @@ export default class AddAssetForm extends Component {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
         }
-        console.log(this.state)
+        //console.log(this.state)
 
 
         return (
@@ -243,7 +245,7 @@ export default class AddAssetForm extends Component {
                                     }}
                                     onSelect={e => {
                                         this.setState(oldState => ({ ...oldState, model: e.suggestion }))
-                                        
+
                                     }}
                                     value={this.state.model}
                                     suggestions={this.state.modelSuggestions}
@@ -334,7 +336,6 @@ export default class AddAssetForm extends Component {
 
                             <FormField name="rackU" label="RackU">
 
-
                                 <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
                                     value={this.state.rackU} required="true" />
                             </FormField>
@@ -365,16 +366,23 @@ export default class AddAssetForm extends Component {
                                 />
                             </FormField>
 
-                            <Accordion>
+                            <Accordion >
                                 <AccordionPanel label="MAC Addresses">
                                     <AssetMACForm
 
+                                        addMACAddrCallback={this.addMACAddress}
                                         fieldCallback={this.handleDisplayMACFields}
                                         model={this.state.model}
                                         macAddresses={this.state.macAddresses}
-                                        
+
 
                                     />
+
+                                    <Button
+                                        onClick={this.addMACAddress}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+
+                                        label="Add a MAC Address" />
 
                                 </AccordionPanel>
 
