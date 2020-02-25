@@ -11,7 +11,7 @@ function getDatacenters(itemCount, callback, start = null) {
             callback(null, null, null, true);
         } else {
             const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-            console.log(docSnaps.docs)
+            //console.log(docSnaps.docs)
             let count = 0;
             docSnaps.forEach(doc => {
                 console.log(doc.data())
@@ -41,7 +41,7 @@ function getAllDatacenterNames (callback) {
         if(docSnaps.empty){
             callback([]);
         } else {
-            console.log(docSnaps.docs)
+            //console.log(docSnaps.docs)
             docSnaps.docs.forEach(document => {
                 datacenters.push(document.data().name);
                 count++;

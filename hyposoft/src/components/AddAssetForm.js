@@ -65,14 +65,10 @@ export default class AddAssetForm extends Component {
             modelutils.getModelByModelname(model, status => {
 
                 if (status) {
-                    console.log(status.powerPorts)
-                    //TODO: change this back, was using 3 for testing
-                    //numPorts = status.powerPorts.length
-                    numPorts = 3;
+                    //test with model lenovo foobar
+                    numPorts = status.data().powerPorts
+                    
                     if (numPorts >= 2) {
-                        //call assetpowerportutils to find first available spot on the rack on both left and right sides
-                        //set the state
-                        //let portField = 
                         assetpowerportutils.getFirstFreePort(rack, datacenter, returnedPort =>{
                             console.log("In AddAssetForm. returned power port: "+returnedPort)
                             if (returnedPort) {
@@ -116,8 +112,8 @@ export default class AddAssetForm extends Component {
         });
         //catchall for default power port fields
         if (event.target.name == "rackU") {
-            console.log(this.state)
-            console.log(this.state.datacenter)
+            //console.log(this.state)
+           // console.log(this.state.datacenter)
             this.defaultPDUFields(this.state.model, this.state.rack, this.state.datacenter)
         }
     }

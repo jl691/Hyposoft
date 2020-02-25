@@ -22,29 +22,22 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
             if (success == powerConnections.length) {
                 callback(null)
             }
-
             //TODO: need to signify to store a null in the DB. That way, can do a .length check to know to dispplay "no connection" in the asset detail view
         }
 
-
-        //TODO: check for the right number of connections
-
-
-
         else if (pduSide.trim() != "" && port.trim() != "") {
-            console.log("up in this bitch")
+            
 
             modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
-                // let numPowerPorts = querySnapshot.docs[0].data().powerPorts;
-                //FOR TESTING
-                let numPowerPorts = 1
+                let numPowerPorts = querySnapshot.docs[0].data().powerPorts;
+                console.log("Num powerPorts for this model: " + numPowerPorts)
 
                 if (parseInt(port) >= 1 && parseInt(port) <= 24) {
 
-
-                    if (powerConnections.length <= numPowerPorts) {
+                    //all or nothing
+                    if (powerConnections.length == numPowerPorts) {
                         //check for conflicts
-                        checkConflicts(inputDatacenter, inputRack, inputRackU, model, pduSide, port, status => {
+                        checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, status => {
                             if (status) {
                                 callback(status)
                             }
@@ -59,7 +52,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
 
                     }
                     else {
-                        callback("Cannot make more power connections than the model " + model + " allows. Can only make up to " + numPowerPorts + " connections.")
+                        callback("To make power connections for this model" + model + " need to make" + numPowerPorts + " connections.")
 
                     }
 
@@ -101,29 +94,28 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
     try {
         datacenterutils.getDataFromName(datacenter, (id, abbrev) => {
             if (rackRow.trim() !== "" && rackNum.trim !== "" && datacenter.trim() !== "") {
-                console.log(rackRow, rackNum, id)
+                //console.log(rackRow, rackNum, id)
 
                 racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", id).get().then(function (querySnapshot) {
-                    //NEED TO ADD THIS POWERPORTS ARRAY TO THE DB
+        
                     rackPowerConns = querySnapshot.docs[0].data().powerPorts
 
                     for (let i = 0; i < rackPowerConns.length; i++) {
 
                         if (rackPowerConns[i].pduSide === "Left") {
                             occupiedLeft.push(parseInt(rackPowerConns[i].port))
-                            console.log(occupiedLeft)
+                            //console.log(occupiedLeft)
                         }
                         else {
                             occupiedRight.push(parseInt(rackPowerConns[i].port))
                         }
                     }
-
                     //Take the difference to find all the free ports available for each PDU side
 
                     freeLeft = allPorts.filter(x => !occupiedLeft.includes(x));
                     freeRight = allPorts.filter(x => !occupiedRight.includes(x));
-                    console.log(freeLeft)
-                    console.log(freeRight)
+                    // console.log(freeLeft)
+                    // console.log(freeRight)
 
                     let firstFreeLeft;
                     let firstFreeRight;
@@ -133,7 +125,7 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
                     while (count <= portLimit) {
                         count++;
                         firstFreeLeft = Math.min(...freeLeft)
-                        console.log("Min port on the left: " + firstFreeLeft)
+                       // console.log("Min port on the left: " + firstFreeLeft)
                         firstFreeRight = Math.min(...freeRight)
 
                         //Test this function some more by changing db values
@@ -141,7 +133,7 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
                         if (firstFreeRight > firstFreeLeft) {
                             var indexLeft = freeLeft.indexOf(firstFreeLeft);
                             if (indexLeft !== -1) freeLeft.splice(indexLeft, 1);
-                            console.log("Should have min removed: " + freeLeft)
+                            //console.log("Should have min removed: " + freeLeft)
                         }
                         else if (firstFreeRight < firstFreeLeft) {
          
@@ -174,23 +166,10 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
 
 }
 
-function autofillPowerConnections(modelNumPorts, callback) {
-    //If the model has 2 power ports, then the form should already be filled out: port 1 gets the left, topmost available,
-    //And right needs to match the port number
-    //^^How to extend the above to 8 ports? lol im just not
-
-
-
-}
-
 //everytime I add, I keep a map in the rack DB, and asset DB
-function checkConflicts(inputDatacenter, inputRack, inputRackU, inputModel, pduSide, port, callback) {
+function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, callback) {
     //No 'double connections': no PDU has more than one power port associated with it: conflicts/availability
 
-    //let PDU = "hpdu"
-    //only rtp1 has network control over PDUs, but still need to be able to add power connections for racks that don't
-    // PDU=PDU+"-"+abbrev+"-"+inputRack+"-"+inputRackU+pduSide.charAt(0)
-    // console.log(PDU)
     if (parseInt(inputRackU) < 10) {
         inputRackU = "0" + inputRackU
     }
@@ -252,10 +231,22 @@ function addConnections(newID, inputModel, powerConnections) {
 
 }
 
+function formatPowerConnections(powerPorts){
+    //need to return null if no power port conections have been made
+    if (powerPorts[0].pduSide === "") {
+        //TODO:didn't fill out anything. But what if first is empty but second is not?
+        return null;
+    } 
+    else{
+        return powerPorts;
+    }
+
+}
+
 export {
     validatePowerConnections,
-    autofillPowerConnections,
     checkConflicts,
     addConnections,
     getFirstFreePort,
+    formatPowerConnections,
 }

@@ -16,9 +16,7 @@ export default class AssetPowerPortsForm extends Component {
     }
     //Form validation/error catching: user can keep adding power connections, but in the end, need to limit the number 
     //of connections to be equal to the number of power ports on the model. So if you try to add another connection and it
-    //exceeds the number of power ports on model, will throw a toast error
-    //This means in the backend, need to pass in the model to get the number of power ports
-
+    //exceeds the number of power ports on model, will throw a toast error. Also, all or nothing power connections
 
     handleChange(e, idx) {
         //You are either typing into an output
@@ -46,9 +44,6 @@ export default class AssetPowerPortsForm extends Component {
 
     }
 
-
-    //TODO:
-    //If user fills out, must be all or nothing? Or will users know if they jsut pick left, it will be symmetric?
     render() {
         let { powerConnections } = this.props
         return (
@@ -62,7 +57,6 @@ export default class AssetPowerPortsForm extends Component {
 
                             <Select
                                 margin={{ horizontal: 'medium', vertical: 'xsmall' }}
-                                // IS IT APPROPRIATE TO CALL THIS PDU SIDE
                                 placeholder="PDU Side"
                                 value={this.props.powerConnections[idx].pduSide}
 
@@ -72,7 +66,6 @@ export default class AssetPowerPortsForm extends Component {
 
                                 }}
                             />
-                            {/* TODO: AUTOCOMPLETE/PICKLIST */}
                             <FormField
                                 margin={{ horizontal: 'medium', vertical: 'xsmall' }}
                                 size="small" name="port" label="Port">
