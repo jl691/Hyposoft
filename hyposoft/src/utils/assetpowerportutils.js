@@ -26,7 +26,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
         }
 
         else if (pduSide.trim() != "" && port.trim() != "") {
-            
+
 
             modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
                 let numPowerPorts = querySnapshot.docs[0].data().powerPorts;
@@ -97,7 +97,7 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
                 //console.log(rackRow, rackNum, id)
 
                 racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", id).get().then(function (querySnapshot) {
-        
+
                     rackPowerConns = querySnapshot.docs[0].data().powerPorts
 
                     for (let i = 0; i < rackPowerConns.length; i++) {
@@ -125,7 +125,7 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
                     while (count <= portLimit) {
                         count++;
                         firstFreeLeft = Math.min(...freeLeft)
-                       // console.log("Min port on the left: " + firstFreeLeft)
+                        // console.log("Min port on the left: " + firstFreeLeft)
                         firstFreeRight = Math.min(...freeRight)
 
                         //Test this function some more by changing db values
@@ -136,7 +136,7 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
                             //console.log("Should have min removed: " + freeLeft)
                         }
                         else if (firstFreeRight < firstFreeLeft) {
-         
+
                             var indexRight = freeRight.indexOf(firstFreeRight);
                             if (indexRight !== -1) freeRight.splice(indexRight, 1);
                         }
@@ -166,7 +166,6 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
 
 }
 
-//everytime I add, I keep a map in the rack DB, and asset DB
 function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, callback) {
     //No 'double connections': no PDU has more than one power port associated with it: conflicts/availability
 
@@ -180,9 +179,11 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
         let rackRow = splitRackArray[0]
         let rackNum = parseInt(splitRackArray[1])
 
-        racksRef.where("letter", "==", rackRow).where("height", "==", rackNum).where("datacenter", "==", id).get().then(function (rackConnectionsDoc) {
-            let rackPowerConns = rackConnectionsDoc.powerPorts
+        racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", id).get().then(function (rackConnectionsDoc) {
+            let rackPowerConns = rackConnectionsDoc.docs[0].data().powerPorts
+            console.log(rackConnectionsDoc)
             console.log(rackPowerConns)
+
             rackPowerConns.forEach(function (powerConn) {
                 if (powerConn.pduSide == pduSide && powerConn.port == port) {
                     callback("Trying to make a conflicting power connection at " + pduSide + " " + port)
@@ -190,7 +191,8 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
                 else {
                     callback(null)
                 }
-            }).catch(error => console.log(error))
+            })
+
 
         }).catch(error => console.log(error))
 
@@ -198,46 +200,14 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
 
 }
 
-//Is this method even neessary when you can jsut pass in the array directly in? can delete--check
-//Call this in assetutils: addAsset()
-//Call this after validating
-function addConnections(newID, inputModel, powerConnections) {
-
-    let numPorts = 0;
-
-    powerConnections.forEach(function (connection) {
-        modelsRef.where("modelName", "==", inputModel).get().then(function (modelDoc) {
-            numPorts = modelDoc.docs[0].data().powerPorts;
-
-            //Already validated the ports
-            //have more than one port, need to add according to the fields. The fields should default to symm connections. So instead of if, just have each connection added accordingly
-            if (numPorts == 1) {
-                assetRef.doc(newID).set({
-                    powerConnections: {
-                        pduSide: connection.pduSide,
-                        port: connection.port
-                    }
-                }, { merge: true }) //double check that this is added correctly
-
-
-            }
-
-        }).then(
-            //Also need to update in racks, the power connections
-        ).
-            catch(error => console.log(error))
-
-    })
-
-}
-
-function formatPowerConnections(powerPorts){
+//This is so the db in assets collection will store null instead of "" if no power connections are made
+function formatPowerConnections(powerPorts) {
     //need to return null if no power port conections have been made
     if (powerPorts[0].pduSide === "") {
         //TODO:didn't fill out anything. But what if first is empty but second is not?
         return null;
-    } 
-    else{
+    }
+    else {
         return powerPorts;
     }
 
@@ -246,7 +216,7 @@ function formatPowerConnections(powerPorts){
 export {
     validatePowerConnections,
     checkConflicts,
-    addConnections,
     getFirstFreePort,
     formatPowerConnections,
+    
 }
