@@ -408,7 +408,7 @@ function addPortsByAsset(assetID, level, callback) {
         }
         let count = 0;
         console.log(docSnap.data())
-        if (docSnap.data().networkConnections) {
+        if (docSnap.data().networkConnections && docSnap.data().networkConnections.length) {
             Object.keys(docSnap.data().networkConnections).forEach(function (connection) {
                 assetRef.doc(docSnap.data().networkConnections[connection].otherAssetID.toString()).get().then(otherDocSnap => {
                     assetSecondLevel.push(docSnap.data().networkConnections[connection].otherAssetID.toString());

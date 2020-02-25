@@ -11,6 +11,7 @@ class NetworkNeighborhood extends React.Component {
 
     componentDidMount() {
         let data;
+        console.log("here")
         assetnetworkportutils.getNetworkPortConnections(this.props.match.params.assetID, result => {
             console.log(result)
             if(result){
