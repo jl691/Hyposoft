@@ -1,4 +1,4 @@
-import React, {Component} from 'react'
+import React, { Component } from 'react'
 import {
     Button,
     Grommet,
@@ -11,13 +11,14 @@ import {
     AccordionPanel,
     CheckBox
 } from 'grommet'
-import {ToastsContainer, ToastsStore} from 'react-toasts';
+import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as assetpowerportutils from '../utils/assetpowerportutils'
+import * as assetmacutils from '../utils/assetmacutils'
 import * as modelutils from '../utils/modelutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
-import {Redirect} from "react-router-dom";
+import { Redirect } from "react-router-dom";
 import theme from "../theme";
 
 import AssetPowerPortsForm from './AssetPowerPortsForm'
@@ -60,6 +61,8 @@ export default class AddAssetForm extends Component {
         this.addNetworkConnection = this.addNetworkConnection.bind(this);
         this.addPowerConnection = this.addPowerConnection.bind(this);
         this.defaultPDUFields = this.defaultPDUFields.bind(this)
+        this.handleMacAddressFixAndSet = this.handleMacAddressFixAndSet.bind(this)
+        this.fixMACAddress = this.fixMACAddress.bind(this)
     }
 
 
@@ -86,10 +89,10 @@ export default class AddAssetForm extends Component {
                                         pduSide: "Left",
                                         port: returnedPort.toString()
                                     },
-                                        {
-                                            pduSide: "Right",
-                                            port: returnedPort.toString()
-                                        },
+                                    {
+                                        pduSide: "Right",
+                                        port: returnedPort.toString()
+                                    },
 
                                     ]
                                 }))
@@ -137,7 +140,7 @@ export default class AddAssetForm extends Component {
 
     addNetworkConnection(event) {
         this.setState(prevState => ({
-            networkConnections: [...prevState.networkConnections, {otherAssetID: "", otherPort: "", thisPort: ""}]
+            networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort: "" }]
         }));
     }
 
@@ -145,25 +148,67 @@ export default class AddAssetForm extends Component {
         //Bletsch said to expect no more than 8 power ports on an asset
 
         this.setState((prevState) => ({
-            powerConnections: [...prevState.powerConnections, {pduSide: "", port: ""}],
+            powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
         }));
 
 
     }
+    fixMACAddress(mac) {
+        let noSepMac;
+        if (mac.charAt(2) == "-") {
+            noSepMac = mac.split("-").join("");
+
+        } else if (mac.charAt(2) == "_") {
+            noSepMac = mac.split("_").join("");
+        }
+        else {//if the admin put in a mac address with no separators
+            noSepMac = mac;
+        }
+
+        let canonicalMAC = noSepMac.substr(0, 2).toLowerCase() + ":" + noSepMac.substr(2, 2).toLowerCase() + ":" + noSepMac.substr(4, 2).toLowerCase() + ":" + noSepMac.substr(6, 2).toLowerCase() + ":" + noSepMac.substr(8, 2).toLowerCase() + ":" + noSepMac.substr(10, 2).toLowerCase();
+        console.log("Canonical MAC: " + canonicalMAC)
+        return canonicalMAC;
+    }
 
     //toLowercase, to colon
-    handleMacAddressFixAndSet(event) {
+    handleMacAddressFixAndSet(macAddresses) {
+        //need to loop through macAddresses and specfically get the macAddress field
+        console.log(macAddresses)
+        macAddresses.forEach(function fixMAC(obj) {
+            let address = obj.macAddress
+            console.log(address)
 
-        let fixedMAC = "";
-        if (this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
-            fixedMAC = this.fixMACAddress(this.state.macAddress);
+            if (address && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(address)) {
+                //let fixedMAC = fixMACAddress(address);
+                let noSepMac;
+                if (address.charAt(2) == "-") {
+                    noSepMac = address.split("-").join("");
 
-        }
-        //TODO: this is not correct
-        this.setState((prevState) => ({
-            powerConnections: [...prevState.powerConnections, {pduSide: "", port: ""}],
-        }));
+                } else if (address.charAt(2) == "_") {
+                    noSepMac = address.split("_").join("");
+                }
+                else {//if the admin put in a mac address with no separators
+                    noSepMac = address;
+                }
 
+                let canonicalMAC = noSepMac.substr(0, 2).toLowerCase() + ":" + noSepMac.substr(2, 2).toLowerCase() + ":" + noSepMac.substr(4, 2).toLowerCase() + ":" + noSepMac.substr(6, 2).toLowerCase() + ":" + noSepMac.substr(8, 2).toLowerCase() + ":" + noSepMac.substr(10, 2).toLowerCase();
+                console.log("Canonical MAC: " + canonicalMAC)
+
+
+                this.setState({ macAddress: canonicalMAC })
+
+                console.log("MAC address passed to database: " + canonicalMAC)
+                console.log(this.state)
+
+            } else if (address) {
+                let fixedMAC = address;
+                this.setState({ macAddress: fixedMAC })
+
+                console.log("MAC address passed to database: " + fixedMAC)
+
+            }
+
+        })
 
     }
 
@@ -185,39 +230,51 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Rack U must be positive.");
 
                 //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
-            } else if (this.state.macAddress && !/^([0-9A-Fa-f]{2}[-:_]?){5}([0-9A-Fa-f]{2})$/.test(this.state.macAddress)) {
-                ToastsStore.error("Invalid MAC address. Ensure it is a six-byte hexadecimal value with any byte separator punctuation.");
-            } else {
+            }  else {
 
                 //TODO: fix this in assetmacutils
-                //assetmacutils.handleMacAddressFixAndSet();
+                assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
-                assetutils.addAsset(
-                    this.state.asset_id,
-                    this.state.model,
-                    this.state.hostname,
-                    this.state.rack,
-                    parseInt(this.state.rackU),
-                    this.state.owner,
-                    this.state.comment,
-                    this.state.datacenter,
-                    this.state.macAddress,
-                    this.state.networkConnections,
-                    this.state.showPowerConnections ? this.state.powerConnections : [{
+                    if(fixedAddr){
+                        console.log(fixedAddr)
+                        assetutils.addAsset(
+                            this.state.asset_id,
+                            this.state.model,
+                            this.state.hostname,
+                            this.state.rack,
+                            parseInt(this.state.rackU),
+                            this.state.owner,
+                            this.state.comment,
+                            this.state.datacenter,
+                            fixedAddr,
+                            this.state.networkConnections,
+                            this.state.showPowerConnections ? this.state.powerConnections : [{
+    
+                                pduSide: "",
+                                port: ""
+                            }],
+    
+                            errorMessage => {
+                                if (errorMessage) {
+                                    ToastsStore.error(errorMessage, 10000)
+                                } else {
+                                    this.props.parentCallback(true);
+                                    ToastsStore.success('Successfully added asset!');
+                                }
+                            }
+                        );
 
-                        pduSide: "",
-                        port: ""
-                    }],
 
-                    errorMessage => {
-                        if (errorMessage) {
-                            ToastsStore.error(errorMessage, 10000)
-                        } else {
-                            this.props.parentCallback(true);
-                            ToastsStore.success('Successfully added asset!');
-                        }
                     }
-                );
+                    else{
+                        ToastsStore.error(macError)
+                    }
+                
+
+
+                });
+
+
             }
 
         }
@@ -226,7 +283,7 @@ export default class AddAssetForm extends Component {
     render() {
 
         if (!userutils.isUserLoggedIn()) {
-            return <Redirect to='/'/>
+            return <Redirect to='/' />
         }
         console.log(this.state)
 
@@ -240,72 +297,72 @@ export default class AddAssetForm extends Component {
                         level="4"
                     >Add Asset</Heading>
                     <Form onSubmit={this.handleSubmit} name="addInst">
-                        <Box direction="column" pad='xsmall' gap="small" flex overflow={{vertical: 'scroll'}}>
+                        <Box direction="column" pad='xsmall' gap="small" flex overflow={{ vertical: 'scroll' }}>
                             <FormField name="model" label="Model">
 
                                 <TextInput name="model" required="true"
-                                           placeholder="eg. Dell R710"
-                                           onChange={e => {
-                                               const value = e.target.value
-                                               this.setState(oldState => ({...oldState, model: value}))
-                                               assetutils.getSuggestedModels(value, results => this.setState(oldState => ({
-                                                   ...oldState,
-                                                   modelSuggestions: results
-                                               })))
-                                               //Update the default power port fields
-                                               //this.defaultPDUFields(e.suggestion, this.state.rack, this.state.datacenter)
-                                           }}
-                                           onSelect={e => {
-                                               this.setState(oldState => ({...oldState, model: e.suggestion}))
+                                    placeholder="eg. Dell R710"
+                                    onChange={e => {
+                                        const value = e.target.value
+                                        this.setState(oldState => ({ ...oldState, model: value }))
+                                        assetutils.getSuggestedModels(value, results => this.setState(oldState => ({
+                                            ...oldState,
+                                            modelSuggestions: results
+                                        })))
+                                        //Update the default power port fields
+                                        //this.defaultPDUFields(e.suggestion, this.state.rack, this.state.datacenter)
+                                    }}
+                                    onSelect={e => {
+                                        this.setState(oldState => ({ ...oldState, model: e.suggestion }))
 
-                                           }}
-                                           value={this.state.model}
-                                           suggestions={this.state.modelSuggestions}
-                                           onClick={() => assetutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({
-                                               ...oldState,
-                                               modelSuggestions: results
-                                           })))}
-                                           title='Model'
+                                    }}
+                                    value={this.state.model}
+                                    suggestions={this.state.modelSuggestions}
+                                    onClick={() => assetutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({
+                                        ...oldState,
+                                        modelSuggestions: results
+                                    })))}
+                                    title='Model'
                                 />
                             </FormField>
 
                             <FormField name="hostname" label="Hostname">
 
                                 <TextInput padding="medium" name="hostname" placeholder="eg. server9"
-                                           onChange={this.handleChange}
-                                           value={this.state.hostname}/>
+                                    onChange={this.handleChange}
+                                    value={this.state.hostname} />
                             </FormField>
 
                             <FormField name="datacenter" label="Datacenter">
                                 <TextInput name="datacenter"
-                                           placeholder="eg. Research Triangle Park #1"
-                                           onChange={e => {
-                                               const value = e.target.value
-                                               this.setState(oldState => ({...oldState, datacenter: value}))
-                                               assetutils.getSuggestedDatacenters(value, results => this.setState(oldState => ({
-                                                   ...oldState,
-                                                   datacenterSuggestions: results
-                                               })))
-                                               //Update the default power port fields
-                                               //this.defaultPDUFields(this.state.model, this.state.rack, e.suggestion)
-                                           }}
-                                           onSelect={e => {
-                                               this.setState(oldState => ({...oldState, datacenter: e.suggestion}))
-                                           }}
-                                           value={this.state.datacenter}
-                                           suggestions={this.state.datacenterSuggestions}
-                                           onClick={() => {
-                                               console.log("blah");
-                                               assetutils.getSuggestedDatacenters(this.state.datacenter, results => {
-                                                   console.log(results);
-                                                   this.setState(oldState => ({
-                                                       ...oldState,
-                                                       datacenterSuggestions: results
-                                                   }))
-                                               })
-                                           }}
-                                           title='Datacenter'
-                                           required="true"
+                                    placeholder="eg. Research Triangle Park #1"
+                                    onChange={e => {
+                                        const value = e.target.value
+                                        this.setState(oldState => ({ ...oldState, datacenter: value }))
+                                        assetutils.getSuggestedDatacenters(value, results => this.setState(oldState => ({
+                                            ...oldState,
+                                            datacenterSuggestions: results
+                                        })))
+                                        //Update the default power port fields
+                                        //this.defaultPDUFields(this.state.model, this.state.rack, e.suggestion)
+                                    }}
+                                    onSelect={e => {
+                                        this.setState(oldState => ({ ...oldState, datacenter: e.suggestion }))
+                                    }}
+                                    value={this.state.datacenter}
+                                    suggestions={this.state.datacenterSuggestions}
+                                    onClick={() => {
+                                        console.log("blah");
+                                        assetutils.getSuggestedDatacenters(this.state.datacenter, results => {
+                                            console.log(results);
+                                            this.setState(oldState => ({
+                                                ...oldState,
+                                                datacenterSuggestions: results
+                                            }))
+                                        })
+                                    }}
+                                    title='Datacenter'
+                                    required="true"
                                 />
                             </FormField>
 
@@ -313,35 +370,35 @@ export default class AddAssetForm extends Component {
 
 
                                 <TextInput name="rack"
-                                           placeholder="eg. B12"
-                                           onChange={e => {
-                                               const value = e.target.value
-                                               this.setState(oldState => ({...oldState, rack: value}))
-                                               assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({
-                                                   ...oldState,
-                                                   rackSuggestions: results
-                                               })))
-                                               //Update the default power port fields
-                                               //this.defaultPDUFields(this.state.model, e.suggestion, this.state.datacenter)
-                                           }}
-                                           onSelect={e => {
-                                               this.setState(oldState => ({...oldState, rack: e.suggestion}))
+                                    placeholder="eg. B12"
+                                    onChange={e => {
+                                        const value = e.target.value
+                                        this.setState(oldState => ({ ...oldState, rack: value }))
+                                        assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({
+                                            ...oldState,
+                                            rackSuggestions: results
+                                        })))
+                                        //Update the default power port fields
+                                        //this.defaultPDUFields(this.state.model, e.suggestion, this.state.datacenter)
+                                    }}
+                                    onSelect={e => {
+                                        this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
 
-                                           }}
-                                           value={this.state.rack}
-                                           suggestions={this.state.rackSuggestions}
-                                           onClick={() => {
-                                               if (this.state.datacenter) {
-                                                   assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
-                                                       ...oldState,
-                                                       rackSuggestions: results
-                                                   })))
+                                    }}
+                                    value={this.state.rack}
+                                    suggestions={this.state.rackSuggestions}
+                                    onClick={() => {
+                                        if (this.state.datacenter) {
+                                            assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
+                                                ...oldState,
+                                                rackSuggestions: results
+                                            })))
 
-                                               }
-                                           }
-                                           }
-                                           title='Rack'
-                                           required="true"
+                                        }
+                                    }
+                                    }
+                                    title='Rack'
+                                    required="true"
                                 />
                             </FormField>
 
@@ -350,49 +407,49 @@ export default class AddAssetForm extends Component {
 
 
                                 <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
-                                           value={this.state.rackU} required="true"/>
+                                    value={this.state.rackU} required="true" />
                             </FormField>
 
 
                             <FormField name="owner" label="Owner">
 
                                 <TextInput name="owner"
-                                           placeholder="Optional"
-                                           onChange={e => {
-                                               const value = e.target.value
-                                               this.setState(oldState => ({...oldState, owner: value}))
-                                               assetutils.getSuggestedOwners(value, results => this.setState(oldState => ({
-                                                   ...oldState,
-                                                   ownerSuggestions: results
-                                               })))
-                                           }}
-                                           onSelect={e => {
-                                               this.setState(oldState => ({...oldState, owner: e.suggestion}))
-                                           }}
-                                           value={this.state.owner}
-                                           suggestions={this.state.ownerSuggestions}
-                                           onClick={() => assetutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({
-                                               ...oldState,
-                                               ownerSuggestions: results
-                                           })))}
-                                           title='Owner'
+                                    placeholder="Optional"
+                                    onChange={e => {
+                                        const value = e.target.value
+                                        this.setState(oldState => ({ ...oldState, owner: value }))
+                                        assetutils.getSuggestedOwners(value, results => this.setState(oldState => ({
+                                            ...oldState,
+                                            ownerSuggestions: results
+                                        })))
+                                    }}
+                                    onSelect={e => {
+                                        this.setState(oldState => ({ ...oldState, owner: e.suggestion }))
+                                    }}
+                                    value={this.state.owner}
+                                    suggestions={this.state.ownerSuggestions}
+                                    onClick={() => assetutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({
+                                        ...oldState,
+                                        ownerSuggestions: results
+                                    })))}
+                                    title='Owner'
                                 />
                             </FormField>
 
 
                             <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"}
-                                      toggle={true} onChange={(e) => {
-                                let panel = document.getElementById("powerPortConnectionsPanel");
-                                let display = !this.state.showPowerConnections;
-                                this.setState({
-                                    showPowerConnections: display
-                                }, function () {
-                                    panel.style.display = display ? "block" : "none";
-                                })
-                            }}/>
+                                toggle={true} onChange={(e) => {
+                                    let panel = document.getElementById("powerPortConnectionsPanel");
+                                    let display = !this.state.showPowerConnections;
+                                    this.setState({
+                                        showPowerConnections: display
+                                    }, function () {
+                                        panel.style.display = display ? "block" : "none";
+                                    })
+                                }} />
 
                             <Accordion>
-                                <div id={"powerPortConnectionsPanel"} style={{display: "none"}}>
+                                <div id={"powerPortConnectionsPanel"} style={{ display: "none" }}>
 
                                     <AccordionPanel label="Power Port Connections">
                                         <AssetPowerPortsForm
@@ -403,9 +460,9 @@ export default class AddAssetForm extends Component {
 
                                         <Button
                                             onClick={this.addPowerConnection}
-                                            margin={{horizontal: 'medium', vertical: 'small'}}
+                                            margin={{ horizontal: 'medium', vertical: 'small' }}
 
-                                            label="Add a power connection"/>
+                                            label="Add a power connection" />
 
 
                                     </AccordionPanel>
@@ -433,9 +490,9 @@ export default class AddAssetForm extends Component {
 
                                     <Button
                                         onClick={this.addNetworkConnection}
-                                        margin={{horizontal: 'medium', vertical: 'small'}}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
 
-                                        label="Add a network connection"/>
+                                        label="Add a network connection" />
 
                                     {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
                                     {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
@@ -447,48 +504,48 @@ export default class AddAssetForm extends Component {
                             </Accordion>
 
 
-                                <FormField name="asset_id" label="Override Asset ID">
-                                    <TextInput name="asset_id" placeholder="If left blank, will auto-generate"
-                                               onChange={this.handleChange}
-                                               value={this.state.asset_id}
-                                    />
-                                </FormField>
+                            <FormField name="asset_id" label="Override Asset ID">
+                                <TextInput name="asset_id" placeholder="If left blank, will auto-generate"
+                                    onChange={this.handleChange}
+                                    value={this.state.asset_id}
+                                />
+                            </FormField>
 
-                                {/* NEW FIELDS END HERE ============================================================================================*/}
+                            {/* NEW FIELDS END HERE ============================================================================================*/}
 
-                                <FormField name="comment" label="Comment">
+                            <FormField name="comment" label="Comment">
 
-                                    <TextInput name="comment" placeholder="Optional" onChange={this.handleChange}
-                                               value={this.state.comment}/>
-                                </FormField>
+                                <TextInput name="comment" placeholder="Optional" onChange={this.handleChange}
+                                    value={this.state.comment} />
+                            </FormField>
 
-                                <Box direction={"row"}>
+                            <Box direction={"row"}>
 
-                                    <Button
-                                        margin="small"
-                                        type="submit"
-                                        primary label="Submit"
-                                    />
-                                    <Button
-                                        margin="small"
-                                        label="Cancel"
-                                        onClick={() => this.props.cancelCallback()}
-                                    />
-                                </Box>
+                                <Button
+                                    margin="small"
+                                    type="submit"
+                                    primary label="Submit"
+                                />
+                                <Button
+                                    margin="small"
+                                    label="Cancel"
+                                    onClick={() => this.props.cancelCallback()}
+                                />
+                            </Box>
                         </Box>
 
                     </Form>
                 </Box>
 
 
-                <ToastsContainer store={ToastsStore}/>
+                <ToastsContainer store={ToastsStore} />
             </Grommet>
 
 
-    )
+        )
 
 
     }
 
-    }
-    ;
+}
+;
