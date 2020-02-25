@@ -1,4 +1,6 @@
 import axios from 'axios'
+import * as assetutils from '../utils/assetutils'
+import * as firebaseutils from './firebaseutils'
 
 // Example usage: powerutils.getPortStatus('hpdu-rtp1-A01L', 4, () => {})
 function getPortStatus(pdu, portNumber, callback) {
@@ -20,4 +22,20 @@ function powerPortOff(pdu, portNumber, callback) {
     })
 }
 
-export { getPortStatus, powerPortOff, powerPortOn }
+function checkConnectedToPDU(assetID, callback){
+    firebaseutils.assetRef.doc(assetID).get().then(function (docSnapshot) {
+        if(docSnapshot.exists){
+            console.log(docSnapshot.data())
+            if(docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1" && docSnapshot.data().rackRow.charCodeAt(0) >= 65 && docSnapshot.data().rackRow.charCodeAt(0) <= 69 && parseInt(docSnapshot.data().rackNum) >= 1 && parseInt(docSnapshot.data().rackNum) <= 19 && docSnapshot.data().powerConnections && docSnapshot.data().powerConnections.length){
+                console.log("Should be true")
+                callback(true);
+            } else {
+                callback(false);
+            }
+        } else {
+            callback(null);
+        }
+    })
+}
+
+export { getPortStatus, powerPortOff, powerPortOn, checkConnectedToPDU }

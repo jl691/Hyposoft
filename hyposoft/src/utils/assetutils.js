@@ -14,7 +14,6 @@ const index = client.initIndex('assets')
 
 function getAsset(callback, field = null, direction = null) {
     let query;
-    field = (field === "asset_id") ? firebase.firestore.FieldPath.documentId() : field;
     if (field && direction !== null) {
         query = direction ? assetRef.limit(25).orderBy(field) : assetRef.limit(25).orderBy(field, "desc");
     } else {
@@ -942,7 +941,9 @@ function getAssetDetails(assetID, callback) {
             vendor: doc.data().vendor.trim(),
             datacenter: doc.data().datacenter.trim(),
             datacenterAbbrev: doc.data().datacenterAbbrev.trim(),
-            powerConnections: doc.data().powerConnections
+            powerConnections: doc.data().powerConnections,
+            macAddresses: doc.data().macAddresses,
+            networkConnections: doc.data().networkConnections
         }
         callback(inst)
     }

@@ -1,5 +1,7 @@
 import * as firebaseutils from './firebaseutils'
 import * as logutils from './logutils'
+import {firebase} from "./firebaseutils";
+import {assetRef} from "./firebaseutils";
 
 function packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment) {
     const model = {
@@ -34,20 +36,23 @@ function createModel(id, vendor, modelNumber, height, displayColor, networkPorts
 
 function modifyModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, callback) {
     var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment)
-    logutils.getObjectData(id,logutils.MODEL(),data => {
+    /*logutils.getObjectData(id,logutils.MODEL(),data => {
       firebaseutils.modelsRef.doc(id).update(model).then(() => {
           logutils.addLog(id,logutils.MODEL(),logutils.MODIFY(),data)
           callback(model, id)
       })
-    })
+    })*/
 
     // Now update all instances of this model just in case the modelNumber or vendor changed
     firebaseutils.assetRef.where('modelId', '==', id).get().then(qs => {
         if (!qs.empty) {
             delete model.height // Don't change height if instances exist
         }
-        firebaseutils.modelsRef.doc(id).update(model).then(() => {
-            callback(model, id)
+        logutils.getObjectData(id,logutils.MODEL(),data => {
+            firebaseutils.modelsRef.doc(id).update(model).then(() => {
+                logutils.addLog(id,logutils.MODEL(),logutils.MODIFY(),data)
+                callback(model, id)
+            })
         })
         qs.forEach(doc => {
             doc.ref.update({
@@ -107,14 +112,21 @@ function matchesFilters(data, filters) {
     )
 }
 
-function getModels(itemNo, startAfter, callback, filters) {
-    firebaseutils.modelsRef
-    .orderBy('vendor').orderBy('modelNumber')
-    .startAfter(startAfter)
-    .get()
+function getModels(itemNo, startAfter, callback, filters, field = null, direction = null) {
+    let query;
+    if (field && direction !== null) {
+        query = direction ? (startAfter ? firebaseutils.modelsRef.orderBy(field).startAfter(startAfter) : firebaseutils.modelsRef.orderBy(field)) : (startAfter ? firebaseutils.modelsRef.orderBy(field, "desc").startAfter(startAfter) : firebaseutils.modelsRef.orderBy(field, "desc"));
+    } else {
+        query = startAfter ? firebaseutils.modelsRef.orderBy('vendor').orderBy('modelNumber').startAfter(startAfter) : firebaseutils.modelsRef.orderBy('vendor').orderBy('modelNumber');
+    }
+
+    console.log(query)
+
+    query.get()
     .then( docSnaps => {
       // added this in from anshu
-      var models = []
+      var models = [];
+      console.log(docSnaps.docs.length)
       for (var i = 0; i < docSnaps.docs.length; i++) {
           if (matchesFilters(docSnaps.docs[i].data(), filters)) {
               models = [...models, {...docSnaps.docs[i].data(), id: docSnaps.docs[i].id, itemNo: itemNo++}]
