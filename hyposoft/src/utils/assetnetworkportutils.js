@@ -245,6 +245,7 @@ function symmetricNetworkConnectionsAdd(networkConnectionsArray, newID) {
         //TODO:didn't fill out any fields?? But what if first one was left blank
         return;
     }
+    else{
 
     //Only add once everything has been validated. Go up into assetutils and call this method there
     for (let i = 0; i < networkConnectionsArray.length; i++) {
@@ -264,6 +265,10 @@ function symmetricNetworkConnectionsAdd(networkConnectionsArray, newID) {
         }).catch(error => console.log(error))
 
     }
+
+
+    }
+
 
 }
 //TODO: asset utils and add this method
@@ -329,7 +334,8 @@ function networkConnectionsToMap(networkConnectionsArray) {
 
     if (networkConnectionsArray[0].otherAssetID === "") {
         //TODO:didn't fill out anything. But what if first is empty but second is not?
-        return null;
+        let emptyConns=[];
+        return emptyConns;
     } else {
         for (let i = 0; i < networkConnectionsArray.length; i++) {
 

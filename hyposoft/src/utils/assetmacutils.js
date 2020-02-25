@@ -6,15 +6,15 @@ function getNetworkPortLabels(model, callback) {
     let modelNetworkPorts;
 
     modelsRef.where("modelName", "==", model).get().then(function (modelDoc) {
-        if(!modelDoc.empty){ 
+        if (!modelDoc.empty && modelDoc.docs[0].data().networkPorts != null) {
             modelNetworkPorts = modelDoc.docs[0].data().networkPorts
             callback(modelNetworkPorts);
         }
-        else{
+        else {
             callback(null)
         }
-       
-    }).catch(error=>console.log(error))
+
+    }).catch(error => console.log(error))
 
 }
 
@@ -27,6 +27,9 @@ function fixMACAddress(mac) {
     } else if (mac.charAt(2) === "_") {
         noSepMac = mac.split("_").join("");
     }
+    else if (mac.charAt(2) == ":") {
+        noSepMac = mac.split(":").join("");
+    }
     else {//if the admin put in a mac address with no separators
         noSepMac = mac;
     }
@@ -38,23 +41,47 @@ function fixMACAddress(mac) {
 
 //TODO: NEED TO FIX THIS SINCE IT USES STATE
 //toLowercase, to colon
-function handleMacAddressFixAndSet(event) {
+function handleMacAddressFixAndSet(addresses, callback) {
+    let macAddresses = {};
+    console.log(addresses)
+    let count = 0;
+    addresses.forEach(obj => {
+        
+        let address = obj.macAddress
+        let port = obj.networkPort
+        console.log(address)
+        console.log(port)
 
-    let fixedMAC = "";
-    if (this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
-        fixedMAC = this.fixMACAddress(this.state.macAddress);
+        if (address && !/^([0-9A-Fa-f]{2}[-:\_]?){5}([0-9A-Fa-f]{2})$/.test(address)) {
+            callback(null, "Invalid MAC address. Ensure it is a six-byte hexadecimal value with any byte separator punctuation.");
+        }
+        else {
+            count++;
+            let fixedMAC = "";
+   
 
-    } else if (this.state.macAddress) {
-        fixedMAC = this.state.macAddress;
-    }
-    //RACE CONDITION: i think it's not setting the state before calling this.state.macAddress in addAsset()
-    this.setState({ macAddress: fixedMAC })
+            if (address) {
+                fixedMAC = this.fixMACAddress(address);
+                let fixedObj = { networkPort: port, macAddress: fixedMAC }
+                macAddresses[port]=fixedMAC
+            }
 
-    console.log("MAC address passed to database: " + fixedMAC)
-    console.log(this.state.networkConnections)
+            console.log("MAC address passed to database: " + fixedMAC)
+            if (count === addresses.length) {
+                callback(macAddresses)
+            }
+
+
+        }
+
+
+
+    })
+
 
 
 }
+
 
 export {
     getNetworkPortLabels,

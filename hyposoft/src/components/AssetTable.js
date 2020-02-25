@@ -335,6 +335,9 @@ export default class AssetTable extends Component {
                                 data.owner,
                                 data.comment,
                                 data.datacenter,
+                                data.macAddresses,
+                                data.networkConnections,
+                                data.powerConnections
                             )
                             console.log(data)
 
