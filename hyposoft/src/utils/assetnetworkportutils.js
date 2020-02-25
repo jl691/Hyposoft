@@ -271,33 +271,39 @@ function symmetricNetworkConnectionsAdd(networkConnectionsArray, newID) {
 //for all network connections, delete te matching port
 function symmetricNetworkConnectionsDelete(deleteID, callback) {
     //deleteID refers to asset you are deleting
-    let otherConnectedAsset = ""
+    console.log("fucking kms")
     assetRef.doc(deleteID).get().then(function (docRef) {
         let networkConnections = Object.keys(docRef.data().networkConnections);
+        console.log(networkConnections)
         let count = 0;
         //Go through each connection made, go to each connected asset, and delete yourself
         networkConnections.forEach(function (connection) {
-            otherConnectedAsset = docRef.data().networkConnections[connection].otherAssetID;
+            let otherConnectedAsset = docRef.data().networkConnections[connection].otherAssetID;
+            console.log(otherConnectedAsset)
             assetRef.doc(otherConnectedAsset).get().then(function (otherAssetDoc) {
+                console.log(otherAssetDoc)
                 //delete yourself
                 let conns = Object.keys(otherAssetDoc.data().networkConnections);
+                console.log(conns)
                 conns.forEach(function (conn) {
-                    let tempConn = otherAssetDoc.data().networkConnections[conn];
-                    if (tempConn.otherAssetID == deleteID) {
+                    console.log("in the innerforeach for ", conn)
+                    if (otherAssetDoc.data().networkConnections[conn].otherAssetID == deleteID) {
+                        console.log("matched")
                         //then call firld delete frecase code
                         assetRef.doc(otherConnectedAsset).update({
-                            networkConnections: {
-                                [conn]: firebase.firestore.FieldValue.delete()
-                            }
+                            [`networkConnections.${conn}`]: firebase.firestore.FieldValue.delete()
                         }).then(function () {
+                            console.log("update worked for " + otherConnectedAsset)
                             count++;
                             if(count === networkConnections.size){
                                 callback(true);
                             }
                         }).catch(function (error) {
+                            console.log("not quite")
                             console.log(error);
                             callback(null);
-                        })
+                        });
+                        console.log("after the update")
                     }
                 })
             }).catch(function (error) {
