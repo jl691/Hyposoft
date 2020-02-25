@@ -1,13 +1,10 @@
 import React, {Component} from 'react'
-import {Link, Redirect} from 'react-router-dom'
-import {DataTable, Button, Text, Box} from 'grommet'
-import {FormEdit, FormTrash, FormFolder, Power, Clear, PowerCycle} from "grommet-icons"
+import {Redirect} from 'react-router-dom'
+import {DataTable, Text, Box} from 'grommet'
+import {FormEdit, FormTrash, Power, Clear, PowerCycle} from "grommet-icons"
 import * as assetutils from '../utils/assetutils'
-import DetailedAssetScreen from '../screens/DetailedAssetScreen'
 import * as powerutils from '../utils/powerutils'
-
 import * as userutils from "../utils/userutils";
-
 
 export default class AssetTable extends Component {
 

@@ -230,7 +230,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 callback(ppStatus)
                                             }
                                             else {
-                                                if (overrideAssetID.trim() != "") {
+                                                if (overrideAssetID.trim() !== "") {
 
                                                     assetIDutils.overrideAssetID(overrideAssetID).then(
                                                         _ => {
@@ -419,7 +419,7 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback) {
     })
 }
 
-// rackAsc should be a boolean corresponding to true if rack is ascending
+/*// rackAsc should be a boolean corresponding to true if rack is ascending
 // rackUAsc should be a boolean corresponding to true if rackU is ascending
 function sortAssetsByRackAndRackUFilter(rackAsc, rackUAsc, datacenter, rowStart, rowEnd, numberStart, numberEnd, callback) {
     var vendorArray = []
@@ -460,7 +460,7 @@ function sortAssetsByRackAndRackUFilter(rackAsc, rackUAsc, datacenter, rowStart,
         console.log("Error getting documents: ", error)
         callback(null)
     })
-}
+}*/
 
 
 // This will check if the instance fits on rack (after checking rack exists): fits within in the height of rack, and does not conflict with other instances
@@ -1007,11 +1007,13 @@ function replaceAssetRack(oldRack, newRack, id, callback) {
     })
 }
 
+/*
 function checkHostnameExists(hostname, id, callback) {
     assetRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
         callback(!docSnaps.empty && id !== docSnaps.docs[0].id)
     })
 }
+*/
 
 function getAssetByHostname(hostname, callback, echo = null) {
     assetRef.where("hostname", "==", hostname).get().then(function (docSnaps) {

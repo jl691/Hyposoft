@@ -20,15 +20,15 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
         console.log(thisPort)
 
         //Left entirely empty is OK
-        if (otherAssetID.toString() === "" && otherPort.trim() == "" && thisPort.trim() == "") {
+        if (otherAssetID.toString() === "" && otherPort.trim() === "" && thisPort.trim() === "") {
             success++;
-            if (success == networkPortConnections.length) {
+            if (success === networkPortConnections.length) {
                 callback(null)
             }
 
         }
         //All of the fields have been filled in
-        else if (otherAssetID != null && otherPort.trim() !== "" && thisPort.trim() !== "") {
+        else if (otherPort.trim() !== "" && thisPort.trim() !== "") {
 
             modelsRef.where("modelName", "==", thisModelName).get().then(function (querySnapshot) {
                 //Number of ports on the model that you are trying to add an asset of
@@ -84,7 +84,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                                                     }
                                                     else {
                                                         success++;
-                                                        if (success == networkPortConnections.length) {
+                                                        if (success === networkPortConnections.length) {
                                                             callback(null)
                                                         }
                                                         console.log("Congrats, you made it here.")
@@ -124,7 +124,7 @@ function checkThisModelPortsExist(thisModelName, thisPort, callback) {
 
         //does the model contain this port name?
 
-        let hardCodedNetworkPorts = ["1", "2", "e3"]
+        //let hardCodedNetworkPorts = ["1", "2", "e3"]
         //if (!hardCodedNetworkPorts.includes(thisPort)) {
         if (!querySnapshot.docs[0].data().networkPorts.includes(thisPort)) {
             errPort = thisPort
@@ -156,7 +156,7 @@ function checkOtherAssetPortsExist(otherAssetID, otherPort, callback) {
         errHostname = querySnapshot.data().hostname;
         modelsRef.where("modelName", "==", otherModel).get().then(function (querySnapshot) {
 
-            let hardCodedNetworkPorts = ["a", "b", "c", "1"]
+            //let hardCodedNetworkPorts = ["a", "b", "c", "1"]
             //if (!hardCodedNetworkPorts.includes(otherPort)) {
             if (!querySnapshot.docs[0].data().networkPorts.includes(otherPort)) {
 
@@ -287,7 +287,7 @@ function symmetricNetworkConnectionsDelete(deleteID, callback) {
                 console.log(conns)
                 conns.forEach(function (conn) {
                     console.log("in the innerforeach for ", conn)
-                    if (otherAssetDoc.data().networkConnections[conn].otherAssetID == deleteID) {
+                    if (otherAssetDoc.data().networkConnections[conn].otherAssetID === deleteID) {
                         console.log("matched")
                         //then call firld delete frecase code
                         assetRef.doc(otherConnectedAsset).update({
@@ -392,7 +392,7 @@ function addPortsByAsset(assetID, level, callback) {
     let assets = [];
     let assetSecondLevel = [];
     assetRef.doc(assetID).get().then(docSnap => {
-        let assetModel = docSnap.data().model;
+        //let assetModel = docSnap.data().model;
         let nodeClass = (level === 1) ? "origin" : "second";
         let nodeLevel = (level === 1) ? 1 : 2;
         let hostname = docSnap.data().hostname ? docSnap.data().hostname : "No hostname";
@@ -412,7 +412,7 @@ function addPortsByAsset(assetID, level, callback) {
             Object.keys(docSnap.data().networkConnections).forEach(function (connection) {
                 assetRef.doc(docSnap.data().networkConnections[connection].otherAssetID.toString()).get().then(otherDocSnap => {
                     assetSecondLevel.push(docSnap.data().networkConnections[connection].otherAssetID.toString());
-                    let otherAssetModel = otherDocSnap.data().model;
+                    //let otherAssetModel = otherDocSnap.data().model;
                     let innerNodeClass = (level === 1) ? "second" : "third";
                     let innerNodeLevel = (level === 1) ? 2 : 3;
                     let otherHostname = otherDocSnap.data().hostname ? otherDocSnap.data().hostname : "No hostname";

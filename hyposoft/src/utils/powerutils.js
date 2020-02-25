@@ -1,5 +1,4 @@
 import axios from 'axios'
-import * as assetutils from '../utils/assetutils'
 import * as firebaseutils from './firebaseutils'
 
 // Example usage: powerutils.getPortStatus('hpdu-rtp1-A01L', 4, () => {})

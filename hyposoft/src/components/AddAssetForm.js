@@ -7,7 +7,6 @@ import {
     Heading,
     TextInput,
     Box,
-    Layer,
     Accordion,
     AccordionPanel,
     CheckBox
@@ -118,7 +117,7 @@ export default class AddAssetForm extends Component {
             [event.target.name]: event.target.value
         });
         //catchall for default power port fields
-        if (event.target.name == "rackU") {
+        if (event.target.name === "rackU") {
             //console.log(this.state)
             // console.log(this.state.datacenter)
             this.defaultPDUFields(this.state.model, this.state.rack, this.state.datacenter)
@@ -186,7 +185,7 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Rack U must be positive.");
 
                 //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
-            } else if (this.state.macAddress && !/^([0-9A-Fa-f]{2}[-:\_]?){5}([0-9A-Fa-f]{2})$/.test(this.state.macAddress)) {
+            } else if (this.state.macAddress && !/^([0-9A-Fa-f]{2}[-:_]?){5}([0-9A-Fa-f]{2})$/.test(this.state.macAddress)) {
                 ToastsStore.error("Invalid MAC address. Ensure it is a six-byte hexadecimal value with any byte separator punctuation.");
             } else {
 

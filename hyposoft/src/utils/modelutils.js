@@ -1,7 +1,5 @@
 import * as firebaseutils from './firebaseutils'
 import * as logutils from './logutils'
-import {firebase} from "./firebaseutils";
-import {assetRef} from "./firebaseutils";
 
 function packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment) {
     displayColor = displayColor.trim()
@@ -335,10 +333,10 @@ function validateImportedModels (data, callback) {
 
             if (!modelFromDb.found) {
                 toBeAdded.push(datum)
-            } else if (!(modelFromDb.height == height && modelFromDb.displayColor.toLowerCase() == model.display_color.toLowerCase()
-                    && networkPorts == network_ports && powerPorts == power_ports
-                    &&  cpu == modelCpu && storage == modelStorage && modelMemory == memory
-                    && comment == modelComment)) {
+            } else if (!(modelFromDb.height === height && modelFromDb.displayColor.toLowerCase() === model.display_color.toLowerCase()
+                    && networkPorts === network_ports && powerPorts === power_ports
+                    &&  cpu === modelCpu && storage === modelStorage && modelMemory === memory
+                    && comment === modelComment)) {
                 datum.id = modelFromDb.id
                 toBeModified.push(datum)
             } else {

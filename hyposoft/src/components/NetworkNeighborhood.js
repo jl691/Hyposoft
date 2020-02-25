@@ -1,6 +1,6 @@
 import React from "react";
 import theme from "../theme";
-import {Box, Grommet, Heading, Text} from "grommet";
+import {Box, Grommet, Heading} from "grommet";
 import cytoscape from "cytoscape";
 import * as assetnetworkportutils from '../utils/assetnetworkportutils'
 import BackButton from "./BackButton";

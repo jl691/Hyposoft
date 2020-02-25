@@ -1,7 +1,4 @@
-import { assetRef, racksRef, modelsRef, usersRef, firebase } from './firebaseutils'
-import * as rackutils from './rackutils'
-import * as modelutils from './modelutils'
-import * as assetIDutils from './assetidutils'
+import { racksRef, modelsRef } from './firebaseutils'
 import * as datacenterutils from './datacenterutils'
 
 //Toast message at the front end level
@@ -19,13 +16,13 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
 
         if (pduSide.trim() === "" && port.trim() === "") {
             success++;
-            if (success == powerConnections.length) {
+            if (success === powerConnections.length) {
                 callback(null)
             }
             //TODO: need to signify to store a null in the DB. That way, can do a .length check to know to dispplay "no connection" in the asset detail view
         }
 
-        else if (pduSide.trim() != "" && port.trim() != "") {
+        else if (pduSide.trim() !== "" && port.trim() !== "") {
 
 
             modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
@@ -35,7 +32,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
                 if (parseInt(port) >= 1 && parseInt(port) <= 24) {
 
                     //all or nothing
-                    if (powerConnections.length == numPowerPorts) {
+                    if (powerConnections.length === numPowerPorts) {
                         //check for conflicts
                         checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, status => {
                             if (status) {
@@ -43,7 +40,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
                             }
                             else {
                                 success++;
-                                if (success == powerConnections.length) {
+                                if (success === powerConnections.length) {
                                     callback(null)
                                 }
                             }
@@ -185,7 +182,7 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
             console.log(rackPowerConns)
 
             rackPowerConns.forEach(function (powerConn) {
-                if (powerConn.pduSide == pduSide && powerConn.port == port) {
+                if (powerConn.pduSide === pduSide && powerConn.port === port) {
                     callback("Trying to make a conflicting power connection at " + pduSide + " " + port)
                 }
                 else {
