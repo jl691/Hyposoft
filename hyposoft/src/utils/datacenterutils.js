@@ -1,5 +1,4 @@
 import * as firebaseutils from "./firebaseutils";
-import * as rackutils from "./rackutils";
 import {datacentersRef} from "./firebaseutils";
 import * as logutils from "./logutils";
 

@@ -1,7 +1,7 @@
 import React from "react";
 import {fabric} from "fabric";
 import {generateRackDiagram} from "../utils/rackutils";
-import {Box, Button, Grommet} from "grommet";
+import {Box, Grommet} from "grommet";
 import * as jsPDF from 'jspdf'
 
 class SingleRackElevation extends React.Component {

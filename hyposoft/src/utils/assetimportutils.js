@@ -208,14 +208,14 @@ function validateImportedAssets (data, callback) {
                 const ppC1 = (assetFromDb.powerConnections && assetFromDb.powerConnections[0] && ((assetFromDb.powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[0].port)) || ''
                 const ppC2 = (assetFromDb.powerConnections && assetFromDb.powerConnections[1] && ((assetFromDb.powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[1].port)) || ''
 
-                if (assetFromDb.hostname.toLowerCase().trim() == datum.hostname.toLowerCase().trim() &&
-                    assetFromDb.datacenterAbbrev.toLowerCase().trim() == datum.datacenter.toLowerCase().trim() &&
-                    assetFromDb.rack.toUpperCase().trim() == datum.rack &&
-                    ''+assetFromDb.rackU == datum.rack_position.trim() &&
-                    assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim() &&
-                    assetFromDb.comment.trim() == datum.comment.trim() &&
-                    ppC1 == datum.power_port_connection_1.trim().toUpperCase() &&
-                    ppC2 == datum.power_port_connection_2.trim().toUpperCase()) {
+                if (assetFromDb.hostname.toLowerCase().trim() === datum.hostname.toLowerCase().trim() &&
+                    assetFromDb.datacenterAbbrev.toLowerCase().trim() === datum.datacenter.toLowerCase().trim() &&
+                    assetFromDb.rack.toUpperCase().trim() === datum.rack &&
+                    ''+assetFromDb.rackU === datum.rack_position.trim() &&
+                    assetFromDb.owner.toLowerCase().trim() === datum.owner.toLowerCase().trim() &&
+                    assetFromDb.comment.trim() === datum.comment.trim() &&
+                    ppC1 === datum.power_port_connection_1.trim().toUpperCase() &&
+                    ppC2 === datum.power_port_connection_2.trim().toUpperCase()) {
                     toBeIgnored.push(datum)
                 } else {
                     toBeModified.push(datum)

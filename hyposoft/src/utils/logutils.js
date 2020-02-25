@@ -187,9 +187,9 @@ function doesObjectStillExist(objectType,objectId,callback) {
 
 function buildLog(data) {
     var log = data.userName + ' '
-              + data.action + (data.action == MODIFY() && data.previousData ? buildDiff(data) : ' ')
+              + data.action + (data.action === MODIFY() && data.previousData ? buildDiff(data) : ' ')
               + data.objectType + ' ' + data.objectName
-              + (data.objectType == RACK() || data.objectType == ASSET() ? (' in datacenter ' + data.datacenter + '.') : '.')
+              + (data.objectType === RACK() || data.objectType === ASSET() ? (' in datacenter ' + data.datacenter + '.') : '.')
     return log
 }
 
@@ -232,7 +232,7 @@ function getDate(timestamp) {
 }
 
 function getUserName(id,data,action,callback) {
-    if (data && action == DELETE()) {
+    if (data && action === DELETE()) {
         callback({name: data.username, data: data, previousData: null, datacenter: null})
     } else {
         firebaseutils.usersRef.doc(id).get().then(doc => callback({name: doc.data().username, data: doc.data(), previousData: data, datacenter: null}))
@@ -244,7 +244,7 @@ function getUserName(id,data,action,callback) {
 }
 
 function getAssetName(id,data,action,callback) {
-    if (data && action == DELETE()) {
+    if (data && action === DELETE()) {
         callback({name: data.model+' '+data.hostname, data: data, previousData: null, datacenter: data.datacenter})
     } else {
         firebaseutils.assetRef.doc(id).get().then(doc => callback({name: doc.data().model+' '+doc.data().hostname, data: doc.data(), previousData: data, datacenter: doc.data().datacenter}))
@@ -256,7 +256,7 @@ function getAssetName(id,data,action,callback) {
 }
 
 function getModelName(id,data,action,callback) {
-    if (data && action == DELETE()) {
+    if (data && action === DELETE()) {
         callback({name: data.modelName, data: data, previousData: null, datacenter: null})
     } else {
         firebaseutils.modelsRef.doc(id).get().then(doc => callback({name: doc.data().modelName, data: doc.data(), previousData: data, datacenter: null}))
@@ -268,7 +268,7 @@ function getModelName(id,data,action,callback) {
 }
 
 function getRackName(id,data,action,callback) {
-    if (data && action == DELETE()) {
+    if (data && action === DELETE()) {
         firebaseutils.datacentersRef.doc(data.datacenter).get()
         .then(doc => {
           callback({name: data.letter+data.number, data: data, previousData: null, datacenter: doc.data().name})
@@ -291,7 +291,7 @@ function getRackName(id,data,action,callback) {
 }
 
 function getDatacenterName(id,data,action,callback) {
-    if (data && action == DELETE()) {
+    if (data && action === DELETE()) {
         callback({name: data.name, data: data, previousData: null, datacenter: null})
     } else {
         firebaseutils.datacentersRef.doc(id).get().then(doc => callback({name: doc.data().name, data: doc.data(), previousData: data, datacenter: null}))
