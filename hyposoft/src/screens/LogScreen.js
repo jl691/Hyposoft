@@ -197,7 +197,7 @@ class LogScreen extends Component {
                          </Box>
                      </Box>
               </Box>
-              <ToastsContainer store={ToastsStore} lightBackground/>
+              <ToastsContainer store={ToastsStore}/>
           </Grommet>
         )
     }
