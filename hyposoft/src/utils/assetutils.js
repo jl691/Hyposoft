@@ -813,7 +813,9 @@ function getAssetDetails(assetID, callback) {
             vendor: doc.data().vendor.trim(),
             datacenter: doc.data().datacenter.trim(),
             datacenterAbbrev: doc.data().datacenterAbbrev.trim(),
-            powerConnections: doc.data().powerConnections
+            powerConnections: doc.data().powerConnections,
+            macAddresses: doc.data().macAddresses,
+            networkConnections: doc.data().networkConnections
         }
         callback(inst)
     }
