@@ -489,7 +489,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                     console.log(model)
                     modelutils.getModelByModelname(model, doc => {
                         //doc.data().height refers to model height
-                        if (rackHeight >= parseInt(rackU) + doc.data().height) {
+                        if (rackHeight > parseInt(rackU) + doc.data().height) {
                             //We know the instance will fit on the rack, but now does it conflict with anything?
 
                             rackutils.checkAssetFits(rackU, doc.data().height, rackID, function (status) {
