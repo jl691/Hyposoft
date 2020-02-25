@@ -1,176 +1,135 @@
-// import React, { Component } from 'react'
-// import { Grommet, Box, Text, FormField, TextInput } from 'grommet'
-// import * as assetmacutils from '../utils/assetmacutils'
-// import * as assetutils from '../utils/assetutils'
-// import * as modelutils from '../utils/modelutils'
-// import theme from "../theme";
+import React, { Component } from 'react'
+import { Grommet, Box, Text, FormField, TextInput } from 'grommet'
+import * as assetmacutils from '../utils/assetmacutils'
+import * as modelutils from '../utils/modelutils'
+import theme from "../theme";
 
-// //Instead of validate connections, upon all fields for one set of inputs, have a toast that pops up with error message
-// //If the connection is not valid
-
-
-// export default class AssetMACForm extends Component {
-//     state = {
-//         macTextFields: []
-//     }
+//Instead of validate connections, upon all fields for one set of inputs, have a toast that pops up with error message
+//If the connection is not valid
 
 
-//     constructor(props) {
-
-//         super(props);
-
-//         this.handleChange = this.handleChange.bind(this);
-//         this.createForm = this.createForm.bind(this);
-//         //This was an anonymous function, but this.setState was not working. Give name to anon function, move out of the method it was in (so it gets a class scope) and htne bind
-//         this.createFormCallback = this.createFormCallback.bind(this);
+export default class AssetMACForm extends Component {
+    state = {
+      macTextFields: [],
+      initialLoaded: false,
+      model: ""
+    }
 
 
+    constructor(props) {
 
-//     }
-//     //Form validation/error catching: ???
+        super(props);
 
-//     //Need to handle change: pass state back up
-//     handleChange(e, idx) {
-//         //You are either typing into an output
-//         if (e.target.name === "macAddress" || e.target.name === "networkPort") {
-
-//             let macAddresses = [...this.props.macAddresses]
-//             macAddresses[idx][e.target.name] = e.target.value
-
-//             this.setState({ macAddress: e.target.value })
-
-//         } else {
-
-//             this.setState({ [e.target.name]: e.target.value})
-//         }
-//     }
+        this.handleChange = this.handleChange.bind(this);
+        // this.createForm = this.createForm.bind(this);
+        //This was an anonymous function, but this.setState was not working. Give name to anon function, move out of the method it was in (so it gets a class scope) and htne bind
+        this.createFormCallback = this.createFormCallback.bind(this);
 
 
-//     createFormCallback(status) {
+    }
 
-//         //create a bunch of new macAddress objects {}
-//         const fields = status.map((port, idx) => {
-//             // let macAddresses = [...this.props.macAddresses]
-//             // macAddresses.push({ networkPort: "", macAddress:"" })
-//             console.log(idx)
-//             this.props.addMACAddrCallback()
-//             return (
+    componentDidMount() {
+      // assetmacutils.getNetworkPortLabels(this.props.model, status => {
+      //   this.createFormCallback(status)
+      //   return
+      // })
+    }
+    //Form validation/error catching: ???
 
-//                 // TODO Masked input grommet component
-//                 < FormField key={idx}
-//                     margin={{ horizontal: 'medium', vertical: 'xsmall' }}
-//                     size="small" name="macAddress" label={`Network Port Name: ${port}`} >
-//                     <TextInput name="macAddress"
-//                         value={this.props.macAddresses.macAddress}
-//                         size="small"
+    //Need to handle change: pass state back up
+    handleChange(e, idx) {
+        //You are either typing into an output
+        if (e.target.name === "macAddress") {
+            console.log("tryna do this shit")
 
-//                         onChange={e => {
+            let macAddresses = [...this.props.macAddresses]
+            macAddresses[idx][e.target.name] = e.target.value
+            // this.setState({ macAddress: e.target.value })
+            // //or it's something already 'submitted'
+            //this.props.fieldCallback(this.state.macTextFields)
+            console.log(macAddresses);
 
-//                             this.handleChange(e, idx, port);
-//                         }}
-//                     />
-//                 </FormField >
-//             )
-//         })
+        } else {
+            this.setState({ [e.target.name]: e.target.value })
+        }
+    }
 
-//         // this.setState(oldState => ({
-//         //     ...oldState, macTextFields: fields
-//         // }))
+    createFormCallback(model) {
 
-//     }
+        //create a bunch of new macAddress objects {}
+        assetmacutils.getNetworkPortLabels(this.props.model, status => {
+        const fields = status.map((port, idx) => (
 
-//     createForm(model) {
-//         console.log("here")
+            // TODO Masked input grommet component
+            <FormField
+                margin={{ horizontal: 'medium', vertical: 'xsmall' }}
+                size="small" name="macAddress" label={`Network Port Name: ${port}`} >
+                <TextInput name="macAddress"
+                    //value={this.props.macAddresses.port}
+                    size="small"
 
-//         assetmacutils.getNetworkPortLabels(model, status => this.createFormCallback(status))
+                    onChange={e => {
+                        this.handleChange(e, idx)
+                    }}
+                />
+            </FormField >
+        ))
+        this.props.macAddresses.length = 0
+        var index = 0
+        fields.forEach(() => {
+          this.props.macAddresses.push({networkPort: status[index].trim(),macAddress: ""})
+          index++
+        });
+        if (!this.state.initialLoaded) {
+          this.setState(oldState => ({macTextFields: fields, initialLoaded: true}))
+        }
+      })
+        // console.log(this.props.macAddresses);
+        // return fields
+        //console.log(this.props.macAddresses);
 
-//     }
+        // this.setState(oldState => ({
+        //     macTextFields: fields
+        // }))
+        //this.props.fieldCallback(fields)
+    }
 
-//     render() {
-//         let { macAddresses } = this.props.macAddresses
-//         // console.log(networkConnections)
-//         return (
-//             macAddresses.map((val, idx) => {
-//                 return (
-//                     <Grommet key={idx} theme={theme}>
+    // createForm(model) {
+    //
+    //     assetmacutils.getNetworkPortLabels(model, status => {
+    //       return this.createFormCallback(status));
+    //     }
+    //
+    // }
 
-//                         <Box direction="column" gap="small" overflow="auto" background="light-2">
+    render() {
+        //let { macAddresses } = this.props.macAddresses
 
-//                             <Text>{idx + 1}</Text>
+        //this.createForm(this.props.model)
+        if (this.props.model !== this.state.model) {
+          this.state.initialLoaded = false
+          this.state.model = this.props.model
+        }
+        if (!this.state.initialLoaded) {
+            this.createFormCallback(this.state.model)
+            return (
+                <Text>Please select valid model</Text>
+            )
+        }
+            return (
 
-                         
+                <Grommet theme={theme}>
 
-//                             {/* TODO: AUTOCOMPLETE/PICKLIST */}
-//                             <FormField
-//                                 margin={{ horizontal: 'medium', vertical: 'xsmall' }}
-//                                 size="small" name="macAddress" label="MAC Address">
-//                                 <TextInput name="macAddress"
-//                                     //value={this.props.networkConnections.port}
-
-//                                     size="small"
-
-//                                     onChange={e => {
-//                                         this.handleChange(e, idx)
-//                                         assetutils.getSuggestedAssetIds(e.target.value, results => this.setState(oldState => ({
-//                                             ...oldState,
-//                                             assetIdSuggestions: results
-//                                         })))
-//                                     }}
-//                                     onSelect={e => {
-//                                         this.handleSuggestion(e, idx)
-//                                     }}
-//                                     value={this.props.macAddresses[idx]['otherAssetID']}
-//                                     suggestions={this.state.assetIdSuggestions}
-//                                     onClick={() => {
-//                                       assetutils.getSuggestedAssetIds(this.props.networkConnections[idx]['otherAssetID'], results => this.setState(oldState => ({
-//                                         ...oldState,
-//                                         assetIdSuggestions: results
-//                                     })))}}
-//                                 />
-//                             </FormField>
-
-//                             {/* TODO: AUTOCOMPLETE/PICKLIST */}
-//                             <FormField
-//                                 margin={{ horizontal: 'medium', vertical: 'xsmall' }}
-//                                 size="small" name="otherPort" label="Other Asset Port">
-//                                 <TextInput name="otherPort"
-//                                     //value={this.props.networkConnections.port}
-
-//                                     size="small"
-
-//                                     onChange={e => {
-//                                         this.handleChange(e, idx)
-//                                         assetutils.getSuggestedOtherAssetPorts(this.props.macAddresses[idx]['otherAssetID'],e.target.value, results => this.setState(oldState => ({
-//                                             ...oldState,
-//                                             otherAssetPortSuggestions: results
-//                                         })))
-//                                     }}
-//                                     onSelect={e => {
-//                                         this.handleSuggestion(e, idx)
-//                                     }}
-//                                     value={this.props.macAddresses[idx]['otherPort']}
-//                                     suggestions={this.state.otherAssetPortSuggestions}
-//                                     onClick={() => {
-//                                       assetutils.getSuggestedOtherAssetPorts(this.props.macAddresses[idx]['otherAssetID'],this.props.macAddresses[idx]['otherPort'], results => this.setState(oldState => ({
-//                                         ...oldState,
-//                                         otherAssetPortSuggestions: results
-//                                     })))}}
-//                                 />
-
-//                             </FormField>
+                    <Box direction="column" gap="small" overflow="auto" background="light-2">
 
 
+                    {this.state.macTextFields}
+
+                    </Box>
+
+                </Grommet >
 
 
-//                         </Box>
-
-//                     </Grommet >
-
-
-//                 )
-//             })
-//         )
-//     }
-
-
-// }
+            )
+    }
+}

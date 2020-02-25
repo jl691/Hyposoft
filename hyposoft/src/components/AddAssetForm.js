@@ -1,5 +1,17 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer, Accordion, AccordionPanel } from 'grommet'
+import {
+    Button,
+    Grommet,
+    Form,
+    FormField,
+    Heading,
+    TextInput,
+    Box,
+    Layer,
+    Accordion,
+    AccordionPanel,
+    CheckBox
+} from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as assetpowerportutils from '../utils/assetpowerportutils'
@@ -30,12 +42,8 @@ export default class AddAssetForm extends Component {
             comment: "",
             datacenterName: "",
             datacenterAbbrev: "",
-            macAddresses: [
-                {
-                    networkPort: "",
-                    macAddress: ""
-                }
-            ],
+            showPowerConnections: false,
+            macAddresses: [],
             networkConnections: [
                 {
                     otherAssetID: "",
@@ -99,7 +107,6 @@ export default class AddAssetForm extends Component {
                 }
             })
 
-
         }
         catch (error) {
             console.log(error)
@@ -125,7 +132,6 @@ export default class AddAssetForm extends Component {
             macAddresses: [...prevState.macAddresses, { networkPort: "", macAddress: "" }]
         }));
     }
-
 
     addNetworkConnection(event) {
         this.setState(prevState => ({
@@ -195,7 +201,11 @@ export default class AddAssetForm extends Component {
                     this.state.datacenter,
                     this.state.macAddress,
                     this.state.networkConnections,
-                    this.state.powerConnections,
+                    this.state.showPowerConnections ? this.state.powerConnections : [{
+
+                        pduSide: "",
+                        port: ""
+                    }],
 
                     errorMessage => {
                         if (errorMessage) {
@@ -366,48 +376,47 @@ export default class AddAssetForm extends Component {
                                 />
                             </FormField>
 
-                            <Accordion >
+                            <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"}
+                                toggle={true} onChange={(e) => {
+                                    let panel = document.getElementById("powerPortConnectionsPanel");
+                                    let display = !this.state.showPowerConnections;
+                                    this.setState({
+                                        showPowerConnections: display
+                                    }, function () {
+                                        panel.style.display = display ? "block" : "none";
+                                    })
+                                }} />
+
+                            <Accordion>
+                                <div id={"powerPortConnectionsPanel"} style={{ display: "none" }}>
+
+                                    <AccordionPanel label="Power Port Connections">
+                                        <AssetPowerPortsForm
+
+                                            powerConnections={this.state.powerConnections}
+
+                                        />
+
+                                        <Button
+                                            onClick={this.addPowerConnection}
+                                            margin={{ horizontal: 'medium', vertical: 'small' }}
+
+                                            label="Add a power connection" />
+
+
+                                    </AccordionPanel>
+                                </div>
                                 <AccordionPanel label="MAC Addresses">
                                     <AssetMACForm
-
-                                        addMACAddrCallback={this.addMACAddress}
-                                        fieldCallback={this.handleDisplayMACFields}
                                         model={this.state.model}
                                         macAddresses={this.state.macAddresses}
 
 
                                     />
 
-                                    <Button
-                                        onClick={this.addMACAddress}
-                                        margin={{ horizontal: 'medium', vertical: 'small' }}
-
-                                        label="Add a MAC Address" />
-
                                 </AccordionPanel>
 
-                            </Accordion>
 
-                            <Accordion>
-                                <AccordionPanel label="Power Port Connections">
-                                    <AssetPowerPortsForm
-
-                                        powerConnections={this.state.powerConnections}
-
-                                    />
-
-                                    <Button
-                                        onClick={this.addPowerConnection}
-                                        margin={{ horizontal: 'medium', vertical: 'small' }}
-
-                                        label="Add a power connection" />
-
-
-                                </AccordionPanel>
-
-                            </Accordion>
-
-                            <Accordion>
                                 <AccordionPanel label="Network Port Connections">
                                     <AssetNetworkPortsForm
 
@@ -422,20 +431,15 @@ export default class AddAssetForm extends Component {
 
                                         label="Add a network connection" />
 
-                                    {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
-                                    {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
-                                    {/* <Button onClick={this.handleConnect}
-                                        margin={{ horizontal: 'medium', vertical: 'small' }}
-                                        label="Validate Connections" /> */}
 
                                 </AccordionPanel>
-
                             </Accordion>
 
 
 
                             <FormField name="asset_id" label="Override Asset ID">
-                                <TextInput name="asset_id" placeholder="If left blank, will auto-generate" onChange={this.handleChange}
+                                <TextInput name="asset_id" placeholder="If left blank, will auto-generate"
+                                    onChange={this.handleChange}
                                     value={this.state.asset_id}
                                 />
                             </FormField>
@@ -468,7 +472,7 @@ export default class AddAssetForm extends Component {
 
 
                 <ToastsContainer store={ToastsStore} />
-            </Grommet>
+            </Grommet >
 
 
         )

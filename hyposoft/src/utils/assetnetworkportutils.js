@@ -1,4 +1,4 @@
-import { assetRef, modelsRef } from './firebaseutils'
+import { assetRef, modelsRef, firebase } from './firebaseutils'
 
 //These variable are used in the checkConflicts method
 let otherAssetsMap = {};
@@ -272,33 +272,47 @@ function symmetricNetworkConnectionsAdd(networkConnectionsArray, newID) {
 
 }
 //TODO: asset utils and add this method
-function symmetricNetworkConnectionsDelete(deleteID) {
+//takes in id of asset being deleted
+//for all network connections, delete te matching port
+function symmetricNetworkConnectionsDelete(deleteID, callback) {
     //deleteID refers to asset you are deleting
     let otherConnectedAsset = ""
-
     assetRef.doc(deleteID).get().then(function (docRef) {
-        let networkConnections = docRef.data().networkConnections;
-
+        let networkConnections = Object.keys(docRef.data().networkConnections);
+        let count = 0;
         //Go through each connection made, go to each connected asset, and delete yourself
         networkConnections.forEach(function (connection) {
-            otherConnectedAsset = connection.otherAssetID;
+            otherConnectedAsset = docRef.data().networkConnections[connection].otherAssetID;
             assetRef.doc(otherConnectedAsset).get().then(function (otherAssetDoc) {
                 //delete yourself
-                let conns = otherAssetDoc.networkConnections;
+                let conns = Object.keys(otherAssetDoc.data().networkConnections);
                 conns.forEach(function (conn) {
-                    if (conn.otherAssetID = deleteID) {
-                        //then call field delete firebase code
+                    let tempConn = otherAssetDoc.data().networkConnections[conn];
+                    if (tempConn.otherAssetID == deleteID) {
+                        //then call firld delete frecase code
+                        assetRef.doc(otherConnectedAsset).update({
+                            networkConnections: {
+                                [conn]: firebase.firestore.FieldValue.delete()
+                            }
+                        }).then(function () {
+                            count++;
+                            if(count === networkConnections.size){
+                                callback(true);
+                            }
+                        }).catch(function (error) {
+                            console.log(error);
+                            callback(null);
+                        })
                     }
-
-
                 })
-
+            }).catch(function (error) {
+                console.log(error);
+                callback(null);
             })
-
-
-
         })
-
+    }).catch(function (error) {
+        console.log(error);
+        callback(null);
     })
 
 
