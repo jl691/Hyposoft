@@ -4,7 +4,7 @@ import HomeButton from '../components/HomeButton'
 import UserMenu from '../components/UserMenu'
 import {Redirect} from "react-router-dom";
 import { ToastsContainer, ToastsStore } from 'react-toasts'
-import { Anchor, Box, Button, DataTable, Form, Grommet, Heading, Text, TextInput } from 'grommet'
+import { Box, DataTable, Form, Grommet, Heading, Text, TextInput } from 'grommet'
 import theme from '../theme'
 import * as userutils from '../utils/userutils'
 import * as logutils from '../utils/logutils'
@@ -51,9 +51,12 @@ class LogScreen extends Component {
         this.startAfter = null
         this.itemNo = 1
         if (this.state.searchQuery.trim() === '') {
-            this.state.initialLoaded = false
-            this.init()
-            return
+            this.setState({
+                initialLoaded: false
+            }, function () {
+                this.init()
+                return
+            })
         }
         logutils.filterLogsFromName(this.state.searchQuery, this.itemNo, this.startAfter, (logs, newStartAfter, itemNo) => {
             this.startAfter = newStartAfter
@@ -84,7 +87,7 @@ class LogScreen extends Component {
             return <Text>Please wait...</Text>
         } else {
             return <DataTable
-                step={25}
+                step={200}
                 onMore={() => {
                     logutils.filterLogsFromName(this.state.searchQuery,this.itemNo, this.startAfter, (logs, newStartAfter, itemNo) => {
                         this.startAfter = newStartAfter;

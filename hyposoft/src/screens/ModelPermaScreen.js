@@ -97,6 +97,7 @@ class ModelPermaScreen extends Component {
 
         if (this.state.assets.length > 0) {
             ToastsStore.info("Can't delete model with live assets", 3000, 'burntToast')
+            this.hideDeleteDialog()
         } else {
             modelutils.deleteModel(this.state.id, () => {
                 ToastsStore.info("Model deleted", 3000, 'burntToast')
@@ -384,7 +385,7 @@ class ModelPermaScreen extends Component {
                 <ToastsContainer store={ToastsStore} lightBackground/>
 
                 {this.state.showEditDialog && (
-                    <ModelSettingsLayer type='edit' parent={this} model={this.state.model}/>
+                    <ModelSettingsLayer type='edit' parent={this} model={this.state.model} assets={this.state.assets}/>
                 )}
 
                 {this.state.showDeleteDialog && (

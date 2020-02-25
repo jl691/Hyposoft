@@ -1,9 +1,8 @@
-import React, { Component } from 'react'
+import React from 'react'
 import AppBar from '../components/AppBar'
 import HomeButton from '../components/HomeButton'
 import UserMenu from '../components/UserMenu'
 import ModelSettingsLayer from '../components/ModelSettingsLayer'
-import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import * as modelutils from '../utils/modelutils'
 import * as firebaseutils from '../utils/firebaseutils'
@@ -25,7 +24,6 @@ import {
 
 import { Add, FormEdit, FormTrash } from "grommet-icons"
 import theme from '../theme'
-import * as assetutils from "../utils/assetutils";
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
@@ -348,6 +346,13 @@ class ModelsScreen extends React.Component {
                             render: datum => <Text size='small'>{datum.cpu}</Text>
                         },
                         {
+                            property: 'cpu',
+                            header: <Text size='small' onClick={() => {
+                                this.setSort("storage")
+                            }} style={{cursor: "pointer"}}>Storage</Text>,
+                            render: datum => <Text size='small'>{datum.storage}</Text>
+                        },
+                        {
                             property: 'height',
                             header: <Text size='small' onClick={() => {
                                 this.setSort("height")
@@ -392,14 +397,16 @@ class ModelsScreen extends React.Component {
         if (this.state.sortField && this.state.sortField === field) {
             //reverse direction
             this.setState({
-                sortAscending: !this.state.sortAscending
+                sortAscending: !this.state.sortAscending,
+                initialLoaded: false,
             });
             newSort = !this.state.sortAscending;
         } else {
             //start with ascending
             this.setState({
                 sortField: field,
-                sortAscending: true
+                sortAscending: true,
+                initialLoaded: false,
             });
             newSort = true;
         }
@@ -407,7 +414,7 @@ class ModelsScreen extends React.Component {
         this.startAfter = null;
         this.setState({
             models: [],
-            initialLoaded: false
+            initialLoaded: false,
         });
 
         console.log("111")

@@ -442,7 +442,7 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback) {
     })
 }
 
-// rackAsc should be a boolean corresponding to true if rack is ascending
+/*// rackAsc should be a boolean corresponding to true if rack is ascending
 // rackUAsc should be a boolean corresponding to true if rackU is ascending
 function sortAssetsByRackAndRackUFilter(rackAsc, rackUAsc, datacenter, rowStart, rowEnd, numberStart, numberEnd, callback) {
     var vendorArray = []
@@ -483,7 +483,7 @@ function sortAssetsByRackAndRackUFilter(rackAsc, rackUAsc, datacenter, rowStart,
         console.log("Error getting documents: ", error)
         callback(null)
     })
-}
+}*/
 
 
 // This will check if the instance fits on rack (after checking rack exists): fits within in the height of rack, and does not conflict with other instances
@@ -887,7 +887,7 @@ function getSuggestedAssetIds(userInput, callback) {
         querySnapshot.forEach(doc => {
             const data = doc.data().assetId;
             if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
-                modelArray.push(data)
+                modelArray.push(data + ' - ' + doc.data().model + ' ' + doc.data().hostname)
             }
         })
         callback(modelArray)
@@ -1030,11 +1030,13 @@ function replaceAssetRack(oldRack, newRack, id, callback) {
     })
 }
 
+/*
 function checkHostnameExists(hostname, id, callback) {
     assetRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
         callback(!docSnaps.empty && id !== docSnaps.docs[0].id)
     })
 }
+*/
 
 function getAssetByHostname(hostname, callback, echo = null) {
     assetRef.where("hostname", "==", hostname).get().then(function (docSnaps) {

@@ -1,12 +1,10 @@
 import React, {Component} from 'react'
 import {BrowserRouter as Router, Route} from 'react-router-dom'
-import {Link} from 'react-router-dom'
 import {
     Button,
     Grommet,
     Heading,
     Box,
-    List,
     CheckBox,
     Table,
     TableHeader,
@@ -17,7 +15,6 @@ import {
 import * as assetutils from '../utils/assetutils'
 import * as powerutils from '../utils/powerutils'
 import theme from '../theme'
-import ModelPermaScreen from '../screens/ModelPermaScreen'
 import BackButton from '../components/BackButton'
 import AppBar from '../components/AppBar'
 import UserMenu from '../components/UserMenu'

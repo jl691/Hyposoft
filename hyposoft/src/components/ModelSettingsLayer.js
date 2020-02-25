@@ -133,11 +133,11 @@ class ModelSettingsLayer extends React.Component {
                     powerPorts, this.state.cpu,
                     memory, this.state.storage,
                     this.state.comment, (model, id) => {
-                        if (this.props.model.height != this.state.height) {
+                        if (this.props.model.height !== this.state.height && this.props.assets && this.props.assets.length) {
                             ToastsStore.info("Didn't update height because there are deployed assets of this model!")
                         }
                         ToastsStore.info('Model saved', 3000, 'burntToast')
-                        if(this.props.model.vendor != this.state.vendor || this.props.model.modelNumber != this.state.modelNumber){
+                        if(this.props.model.vendor !== this.state.vendor || this.props.model.modelNumber !== this.state.modelNumber){
                             window.location.href = "/models/" + this.state.vendor + "/" + this.state.modelNumber;
                         }
                         this.hideFunction()

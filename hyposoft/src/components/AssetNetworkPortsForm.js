@@ -25,8 +25,9 @@ export default class AssetNetworkPortsForm extends Component {
         if (e.target.name === "otherAssetID" || e.target.name === "otherPort" || e.target.name === "thisPort") {
 
             let networkConnections = [...this.props.networkConnections]
-            networkConnections[idx][e.target.name] = e.target.value
-            this.setState({ port: e.target.value })
+            const value = e.target.name === "otherAssetID" ? e.target.value.split(' ',1).join(' ') : e.target.value
+            networkConnections[idx][e.target.name] = value
+            this.setState({ port: value })
 
             //or it's something already 'submitted'
         } else {
@@ -39,8 +40,9 @@ export default class AssetNetworkPortsForm extends Component {
         if (e.target.name === "otherAssetID" || e.target.name === "otherPort" || e.target.name === "thisPort") {
 
             let networkConnections = [...this.props.networkConnections]
-            networkConnections[idx][e.target.name] = e.suggestion
-            this.setState({ port: e.suggestion })
+            const suggestion = e.target.name === "otherAssetID" ? e.suggestion.split(' ',1).join(' ') : e.suggestion
+            networkConnections[idx][e.target.name] = suggestion
+            this.setState({ port: suggestion })
 
             //or it's something already 'submitted'
         } else {

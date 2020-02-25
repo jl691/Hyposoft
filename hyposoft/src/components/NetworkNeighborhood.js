@@ -1,6 +1,6 @@
 import React from "react";
 import theme from "../theme";
-import {Box, Grommet, Heading, Text} from "grommet";
+import {Box, Grommet, Heading} from "grommet";
 import cytoscape from "cytoscape";
 import * as assetnetworkportutils from '../utils/assetnetworkportutils'
 import BackButton from "./BackButton";
@@ -11,6 +11,7 @@ class NetworkNeighborhood extends React.Component {
 
     componentDidMount() {
         let data;
+        console.log("here")
         assetnetworkportutils.getNetworkPortConnections(this.props.match.params.assetID, result => {
             console.log(result)
             if(result){

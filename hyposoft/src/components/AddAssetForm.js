@@ -7,7 +7,6 @@ import {
     Heading,
     TextInput,
     Box,
-    Layer,
     Accordion,
     AccordionPanel,
     CheckBox
@@ -121,7 +120,7 @@ export default class AddAssetForm extends Component {
             [event.target.name]: event.target.value
         });
         //catchall for default power port fields
-        if (event.target.name == "rackU") {
+        if (event.target.name === "rackU") {
             //console.log(this.state)
             // console.log(this.state.datacenter)
             this.defaultPDUFields(this.state.model, this.state.rack, this.state.datacenter)

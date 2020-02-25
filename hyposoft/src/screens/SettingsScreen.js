@@ -31,7 +31,7 @@ class SettingsScreen extends React.Component {
     changePassword () {
         userutils.getUser(localStorage.getItem('email'), user => {
             if (user) {
-                if (user.password !== firebaseutils.hashAndSalt(this.state.currPass)) {
+                if (user.password !== firebaseutils.hashAndSalt2(this.state.currPass, user.password.split('|')[1])) {
                     ToastsStore.info('Incorrect current password', 3000, 'burntToast')
                 } else {
                     if (this.state.newPass.trim().length === 0) {

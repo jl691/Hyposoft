@@ -1,8 +1,4 @@
-import { assetRef, racksRef, modelsRef, usersRef, firebase } from './firebaseutils'
-import * as rackutils from './rackutils'
-import * as modelutils from './modelutils'
-import * as assetIDutils from './assetidutils'
-import * as datacenterutils from './datacenterutils'
+import { modelsRef } from './firebaseutils'
 
 
 
@@ -25,10 +21,10 @@ function getNetworkPortLabels(model, callback) {
 //Puts the MAC address into canonical form: lower case and colon-delimited
 function fixMACAddress(mac) {
     let noSepMac;
-    if (mac.charAt(2) == "-") {
+    if (mac.charAt(2) === "-") {
         noSepMac = mac.split("-").join("");
 
-    } else if (mac.charAt(2) == "_") {
+    } else if (mac.charAt(2) === "_") {
         noSepMac = mac.split("_").join("");
     }
     else if (mac.charAt(2) == ":") {

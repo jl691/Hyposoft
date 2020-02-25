@@ -1,14 +1,16 @@
 import * as firebaseutils from './firebaseutils'
 import * as logutils from './logutils'
-import {firebase} from "./firebaseutils";
-import {assetRef} from "./firebaseutils";
 
 function packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment) {
+    displayColor = displayColor.trim()
+    if (!displayColor.startsWith('#')) {
+        displayColor = '#'+displayColor
+    }
     const model = {
         vendor: vendor.trim(),
         modelNumber: modelNumber.trim(),
         height: height,
-        displayColor: displayColor.trim(),
+        displayColor: displayColor,
         networkPorts: networkPorts,
         networkPortsCount: networkPorts.length,
         powerPorts: powerPorts,
@@ -229,22 +231,55 @@ function escapeStringForCSV(string) {
 function getModelsForExport(callback) {
     firebaseutils.modelsRef.orderBy('vendor').get().then(qs => {
         var rows = [
-            ["vendor", "model_number", "height", "display_color", "network_ports", "power_ports", "cpu", "memory", "storage", "comment"]
+            ["vendor", "model_number", "height", "display_color", "network_ports",
+            "power_ports", "cpu", "memory", "storage", "comment", "network_port_name_1",
+            "network_port_name_2", "network_port_name_3", "network_port_name_4"]
         ]
 
         for (var i = 0; i < qs.size; i++) {
+            var network_port_name_1 = ''
+            var network_port_name_2 = ''
+            var network_port_name_3 = ''
+            var network_port_name_4 = ''
+
+            if (qs.docs[i].data().networkPortsCount >=1 ){
+                network_port_name_1 = qs.docs[i].data().networkPorts[0]
+            }
+
+            if (qs.docs[i].data().networkPortsCount >=2 ){
+                network_port_name_2 = qs.docs[i].data().networkPorts[1]
+            }
+
+            if (qs.docs[i].data().networkPortsCount >=3 ){
+                network_port_name_3 = qs.docs[i].data().networkPorts[2]
+            }
+
+            if (qs.docs[i].data().networkPortsCount >=4 ){
+                network_port_name_4 = qs.docs[i].data().networkPorts[3]
+            }
+
+            var displayColor = qs.docs[i].data().displayColor.trim()
+            if (!displayColor.startsWith('#')) {
+                displayColor = '#'+displayColor
+            }
+
             rows = [...rows, [
                 escapeStringForCSV(qs.docs[i].data().vendor),
                 escapeStringForCSV(qs.docs[i].data().modelNumber),
                 ''+qs.docs[i].data().height,
-                ''+qs.docs[i].data().displayColor,
-                ''+(qs.docs[i].data().networkPorts || ''),
+                displayColor.toUpperCase(),
+                ''+(qs.docs[i].data().networkPortsCount || ''),
                 ''+(qs.docs[i].data().powerPorts || ''),
                 escapeStringForCSV(qs.docs[i].data().cpu),
                 ''+(qs.docs[i].data().memory || ''),
                 escapeStringForCSV(qs.docs[i].data().storage),
-                escapeStringForCSV(qs.docs[i].data().comment)
+                escapeStringForCSV(qs.docs[i].data().comment),
+                network_port_name_1,
+                network_port_name_2,
+                network_port_name_3,
+                network_port_name_4,
             ]]
+
             if (rows.length === qs.size+1) {
                 callback(rows)
             }
@@ -255,6 +290,63 @@ function getModelsForExport(callback) {
 function validateImportedModels (data, callback) {
     var errors = []
     var modelsSeen = {}
+    var fetchedModels = []
+    var fetchedModelsCount = 0
+
+    var toBeIgnored = []
+    var toBeModified = []
+    var toBeAdded = []
+
+    function postValidation () {
+        if (fetchedModelsCount < data.length)
+            return
+
+        for (var i = 0; i < data.length; i++) {
+            var datum = data[i]
+            datum.rowNumber = i+1
+            if (datum.height) {
+                if (fetchedModels[i].found && fetchedModels[i].hasAssets && parseInt(datum.height) !== fetchedModels[i].height) {
+                    errors = [...errors, [i+1, "Can't change height for a model with deployed instances"]]
+                }
+            } else {
+                if (!fetchedModels[i].found) {
+                    errors = [...errors, [i+1, "Height required for creating a new model"]]
+                }
+            }
+
+            const model = datum // redundancy for legacy and lazy and timecrunch reasons
+            const height = parseInt(model.height)
+            const network_ports = (model.network_ports !== null ? parseInt(model.network_ports) : null)
+            const power_ports = (model.power_ports !== null ? parseInt(model.power_ports) : null)
+            const memory = (model.memory !== null ? parseInt(model.memory) : null)
+            const storage = (model.storage !== null ? model.storage.trim() : "")
+            const cpu = (model.cpu !== null ? model.cpu.trim() : "")
+            const comment = (model.comment !== null ? model.comment.trim() : "")
+
+            const modelFromDb = fetchedModels[i]
+            const modelMemory = (modelFromDb.memory > 0 ? modelFromDb.memory : null)
+            const networkPorts = (modelFromDb.networkPortsCount > 0 ? modelFromDb.networkPortsCount : null)
+            const powerPorts = (modelFromDb.powerPorts > 0 ? modelFromDb.powerPorts : null)
+            const modelStorage = (modelFromDb.storage !== undefined ? modelFromDb.storage.trim() : "")
+            const modelCpu = (modelFromDb.cpu !== undefined ? modelFromDb.cpu.trim() : "")
+            const modelComment = (modelFromDb.comment !== undefined ? modelFromDb.comment.trim() : "")
+
+            if (!modelFromDb.found) {
+                toBeAdded.push(datum)
+            } else if (!(modelFromDb.height === height && modelFromDb.displayColor.toLowerCase() === model.display_color.toLowerCase()
+                    && networkPorts === network_ports && powerPorts === power_ports
+                    &&  cpu === modelCpu && storage === modelStorage && modelMemory === memory
+                    && comment === modelComment)) {
+                datum.id = modelFromDb.id
+                toBeModified.push(datum)
+            } else {
+                toBeIgnored.push(datum)
+            }
+        }
+
+        callback({ errors, toBeIgnored, toBeModified, toBeAdded })
+    }
+
     for (var i = 0; i < data.length; i++) {
         var datum = data[i]
         var modelAndVendorFound = true
@@ -276,87 +368,119 @@ function validateImportedModels (data, callback) {
                 modelsSeen[datum.vendor][datum.model_number] = i+1
             }
         }
-        if (!datum.height || String(datum.height).trim() === '') {
-            errors = [...errors, [i+1, 'Height not found']]
-        } else if (isNaN(String(datum.height).trim()) || !Number.isInteger(parseFloat(String(datum.height).trim())) || parseInt(String(datum.height).trim()) <= 0) {
+        // if (!datum.height || String(datum.height).trim() === '') {
+        //     errors = [...errors, [i+1, 'Height not found']]
+        // } else
+        if (datum.height && (isNaN(String(datum.height).trim()) || !Number.isInteger(parseFloat(String(datum.height).trim())) || parseInt(String(datum.height).trim()) <= 0)) {
             errors = [...errors, [i+1, 'Height is not a positive integer']]
         }
         if (!datum.display_color || String(datum.display_color).trim() === '') {
             datum.display_color = '#000000'
-        } else if (/^#[0-9A-F]{6}$/i.test(String(datum.display_color))) {
+        } else if (datum.displayColor && !/^#[0-9A-F]{6}$/i.test(String(datum.display_color))) {
             errors = [...errors, [i+1, 'Invalid display color']]
         }
-        if (datum.network_ports !== null && String(datum.network_ports).trim() !== '' &&
+        if (datum.network_ports && String(datum.network_ports).trim() !== '' &&
          (isNaN(String(datum.network_ports).trim()) || !Number.isInteger(parseFloat(String(datum.network_ports).trim())) || parseInt(String(datum.network_ports).trim()) < 0)) {
              errors = [...errors, [i+1, 'Network ports is not a non-negative integer']]
         }
-        if (datum.power_ports !== null && String(datum.power_ports).trim() !== '' &&
+        if (datum.power_ports && String(datum.power_ports).trim() !== '' &&
          (isNaN(String(datum.power_ports).trim()) || !Number.isInteger(parseFloat(String(datum.power_ports).trim())) || parseInt(String(datum.power_ports).trim()) < 0)) {
              errors = [...errors, [i+1, 'Power ports is not a non-negative integer']]
         }
-        if (datum.memory !== null && String(datum.memory).trim() !== '' &&
+        if (datum.memory && String(datum.memory).trim() !== '' &&
          (isNaN(String(datum.memory).trim()) || !Number.isInteger(parseFloat(String(datum.memory).trim())) || parseInt(String(datum.memory).trim()) < 0)) {
              errors = [...errors, [i+1, 'Memory is not a non-negative integer']]
         }
+
+        // If all is good, just get the model and whether it has any assets
+        getModel(datum.vendor.trim(), datum.model_number.trim(), modelData => {
+            if (modelData.found) {
+                firebaseutils.assetRef.where('modelId', '==', modelData.id).get().then(qs => {
+                    if (!qs.empty) {
+                        modelData.hasAssets = true
+                    } else {
+                        modelData.hasAssets = false
+                    }
+                    fetchedModelsCount++
+                    fetchedModels[modelData.extra_data] = modelData
+                    postValidation()
+                })
+            } else {
+                modelData.hasAssets = false
+                fetchedModelsCount++
+                fetchedModels[modelData.extra_data] = modelData
+                postValidation()
+            }
+
+        }, i)
     }
-    callback(errors)
+    if (errors.length > 0) {
+        callback({ errors, toBeIgnored, toBeModified, toBeAdded })
+        // If no errors, the callback will be called by postValidation()
+    }
 }
 
-function addModelsFromImport (models, force, callback) {
-    var modelsProcessed = 0
-    var modelsPending = []
-    var modelsPendingInfo = []
-    var modelIndices = {}
+function bulkAddModels (models, callback) {
+    var addedModelsCount = 0
     for (var i = 0; i < models.length; i++) {
         const model = models[i]
-        var ignoredModels = 0
-        var modifiedModels = 0
-        var createdModels = 0
+        var network_ports = []
+        for (var j = 1; j <= parseInt(model.network_ports); j++) {
+            network_ports.push(''+j)
+        }
+        if (parseInt(model.network_ports) >= 1) {
+            network_ports[0] = ((''+model.network_port_name_1).trim() ? (''+model.network_port_name_1).trim() : '1')
+        }
+        if (parseInt(model.network_ports) >= 2) {
+            network_ports[1] = ((''+model.network_port_name_2).trim() ? (''+model.network_port_name_2).trim() : '2')
+        }
+        if (parseInt(model.network_ports) >= 3) {
+            network_ports[2] = ((''+model.network_port_name_3).trim() ? (''+model.network_port_name_3).trim() : '3')
+        }
+        if (parseInt(model.network_ports) >= 4) {
+            network_ports[3] = ((''+model.network_port_name_4).trim() ? (''+model.network_port_name_4).trim() : '4')
+        }
 
-        if (!modelIndices[''+model.vendor])
-            modelIndices[''+model.vendor] = {}
-        modelIndices[''+model.vendor][''+model.model_number] = i
-        getModel(''+model.vendor, ''+model.model_number, modelFromDb => {
-            const model = models[modelIndices[''+modelFromDb.vendor][''+modelFromDb.modelNumber]]
-            const height = parseInt(model.height)
-            const network_ports = (model.network_ports !== null ? parseInt(model.network_ports) : null)
-            const power_ports = (model.power_ports !== null ? parseInt(model.power_ports) : null)
-            const memory = (model.memory !== null ? parseInt(model.memory) : null)
-            const storage = (model.storage !== null ? model.storage.trim() : "")
-            const cpu = (model.cpu !== null ? model.cpu.trim() : "")
-            const comment = (model.comment !== null ? model.comment.trim() : "")
+        createModel(null, ''+model.vendor, ''+model.model_number, parseInt(model.height), ''+model.display_color,
+         network_ports, parseInt(model.power_ports), ''+model.cpu, ''+model.memory, ''+model.storage,
+         ''+model.comment, () => {
+             addedModelsCount++
+             if (addedModelsCount === models.length) {
+                 callback()
+             }
+         })
+    }
+}
 
-            const modelMemory = (modelFromDb.memory > 0 ? modelFromDb.memory : null)
-            const networkPorts = (modelFromDb.networkPorts > 0 ? modelFromDb.networkPorts : null)
-            const powerPorts = (modelFromDb.powerPorts > 0 ? modelFromDb.powerPorts : null)
-            const modelStorage = (modelFromDb.storage !== undefined ? modelFromDb.storage.trim() : "")
-            const modelCpu = (modelFromDb.cpu !== undefined ? modelFromDb.cpu.trim() : "")
-            const modelComment = (modelFromDb.comment !== undefined ? modelFromDb.comment.trim() : "")
+function bulkModifyModels (models, callback) {
+    var modifiedModelsCount = 0
+    for (var i = 0; i < models.length; i++) {
+        const model = models[i]
+        var network_ports = []
+        for (var j = 1; j <= parseInt(model.network_ports); j++) {
+            network_ports.push(''+j)
+        }
+        if (parseInt(model.network_ports) >= 1) {
+            network_ports[0] = ((''+model.network_port_name_1).trim() ? (''+model.network_port_name_1).trim() : '1')
+        }
+        if (parseInt(model.network_ports) >= 2) {
+            network_ports[1] = ((''+model.network_port_name_2).trim() ? (''+model.network_port_name_2).trim() : '2')
+        }
+        if (parseInt(model.network_ports) >= 3) {
+            network_ports[2] = ((''+model.network_port_name_3).trim() ? (''+model.network_port_name_3).trim() : '3')
+        }
+        if (parseInt(model.network_ports) >= 4) {
+            network_ports[3] = ((''+model.network_port_name_4).trim() ? (''+model.network_port_name_4).trim() : '4')
+        }
 
-            if (!modelFromDb.found) {
-                createModel(null, ''+model.vendor, ''+model.model_number, height, ''+model.display_color, network_ports, power_ports, cpu, memory, storage, comment, () => {})
-                createdModels += 1
-            } else if (!(modelFromDb.height == height && modelFromDb.displayColor == model.display_color
-                    && networkPorts == network_ports && powerPorts == power_ports
-                    &&  cpu == modelCpu && storage == modelStorage && modelMemory == memory
-                    && comment == modelComment)) {
-                modifiedModels += 1
-                if (force) {
-                    // Modify model
-                    modifyModel(modelFromDb.id, ''+model.vendor, ''+model.model_number, height, ''+model.display_color, network_ports, power_ports, cpu, memory, storage, comment, () => {})
-                } else {
-                    modelsPending = [...modelsPending, model]
-                    modelsPendingInfo = [...modelsPendingInfo, [modelIndices[''+modelFromDb.vendor][''+modelFromDb.modelNumber]+1, model.vendor+' '+model.model_number]]
-                }
-            } else {
-                ignoredModels += 1
-            }
-
-            modelsProcessed++
-            if (modelsProcessed === models.length) {
-                callback({modelsPending, modelsPendingInfo, createdModels, ignoredModels, modifiedModels})
-            }
-        })
+        modifyModel(model.id, ''+model.vendor, ''+model.model_number, parseInt(model.height), ''+model.display_color,
+         network_ports, parseInt(model.power_ports), ''+model.cpu, ''+model.memory, ''+model.storage,
+         ''+model.comment, () => {
+             modifiedModelsCount++
+             if (modifiedModelsCount === models.length) {
+                 callback()
+             }
+         })
     }
 }
 
@@ -391,5 +515,5 @@ function getAllModels (callback) {
 
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
 getModelByModelname, doesModelHaveAssets, matchesFilters, getAssetsByModel,
-getModelsForExport, escapeStringForCSV, validateImportedModels, addModelsFromImport, getVendorAndNumberFromModel,
-getModelIdFromModelName, getAllModels, combineVendorAndModelNumber }
+getModelsForExport, escapeStringForCSV, validateImportedModels, getVendorAndNumberFromModel,
+getModelIdFromModelName, getAllModels, combineVendorAndModelNumber, bulkAddModels, bulkModifyModels }
