@@ -274,7 +274,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                             let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
                                             console.log(owner)
                                             console.log(networkConnections)
-                                            
+
                                             assetIDutils.generateAssetID().then(newID =>
 
                                                 assetRef.doc(newID)
@@ -769,6 +769,65 @@ function getSuggestedRacks(datacenter, userInput, callback) {
         })
 }
 
+function getNetworkPorts(model, userInput, callback) {
+    var modelArray = []
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    modelsRef.where('modelName', '==', model ? model : '').get().then(docSnaps => {
+        var port;
+        const data = docSnaps.docs[0].data().networkPorts
+        for (port in data) {
+          if (shouldAddToSuggestedItems(modelArray, data[port].trim(), userInput)) {
+              modelArray.push(data[port])
+          }
+        }
+        callback(modelArray)
+    })
+    .catch(error => {
+        callback([])
+    })
+}
+
+// need to change logic here for editing asset, don't allow to pick own name
+function getSuggestedAssetIds(userInput, callback) {
+    var modelArray = []
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    assetRef.orderBy('assetId').get().then(querySnapshot => {
+        querySnapshot.forEach(doc => {
+            const data = doc.data().assetId;
+            if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
+                modelArray.push(data)
+            }
+        })
+        callback(modelArray)
+    })
+    .catch(error => {
+        callback([])
+    })
+}
+
+function getSuggestedOtherAssetPorts(assetId, userInput, callback) {
+    var modelArray = []
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    assetRef.where('assetId', '==', assetId ? assetId : '').get().then(docSnaps => {
+        modelsRef.doc(docSnaps.docs[0].data().modelId).get().then(doc => {
+          var port;
+          const data = doc.data().networkPorts
+          for (port in data) {
+            if (shouldAddToSuggestedItems(modelArray, data[port].trim(), userInput)) {
+                modelArray.push(data[port])
+            }
+          }
+          callback(modelArray)
+        })
+        .catch(error => {
+            callback([])
+        })
+    })
+    .catch(error => {
+        callback([])
+    })
+}
+
 function getSuggestedDatacenters(userInput, callback) {
     // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
     var modelArray = []
@@ -1075,6 +1134,9 @@ export {
     getAssetFromModel,
     getSuggestedOwners,
     getSuggestedRacks,
+    getSuggestedAssetIds,
+    getSuggestedOtherAssetPorts,
+    getNetworkPorts,
     getAssetAt,
     validateAssetForm,
     getAssetsForExport,

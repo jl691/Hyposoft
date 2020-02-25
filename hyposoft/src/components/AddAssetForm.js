@@ -36,7 +36,7 @@ export default class AddAssetForm extends Component {
             }
         ],
             powerConnections: [{
-                
+
                 pduSide: "",
                 port: ""
             }],
@@ -85,12 +85,12 @@ export default class AddAssetForm extends Component {
 
     addPowerConnection(event) {
         //Bletsch said to expect no more than 8 power ports on an asset
-      
+
             this.setState((prevState) => ({
                 powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
             }));
 
-          
+
     }
 
     //toLowercase, to colon
@@ -345,6 +345,7 @@ export default class AddAssetForm extends Component {
                                 <AccordionPanel label="Network Port Connections">
                                     <AssetNetworkPortsForm
 
+                                        model={this.state.model}
                                         networkConnections={this.state.networkConnections}
                                     />
 

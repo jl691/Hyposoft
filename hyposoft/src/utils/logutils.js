@@ -151,8 +151,7 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
     var query = startAfter ? firebaseutils.logsRef.orderBy('timestamp','desc').startAfter(startAfter)
                            : firebaseutils.logsRef.orderBy('timestamp','desc')
     query.get().then(docSnaps => {
-        var newStartAfter = docSnaps.docs.length >= 25 ? docSnaps.docs[24] : docSnaps.docs[docSnaps.docs.length-1]
-
+        var newStartAfter;
         var logs = []
         const searchName = search.trim().toLowerCase()
         docSnaps.docs.forEach(doc => {
@@ -162,6 +161,7 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
             const includesUser = user.includes(searchName) || (doc.data().objectType === USER() && object.includes(searchName))
             if (!search || includesAsset || includesUser) {
                 logs = [...logs,{...doc.data(), log: buildLog(doc.data()), date: getDate(doc.data().timestamp), itemNo: itemNo++}]
+                newStartAfter = doc
             }
         })
         callback(logs,newStartAfter,itemNo)
@@ -305,9 +305,9 @@ function getDatacenterName(id,data,action,callback) {
 function assetDiff(data,field) {
     switch (field) {
       case 'networkConnections':
-        return isEqual(data.previousData[field],data.currentData[field]) ? '' : field
+        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       case 'powerConnections':
-        return isEqual(data.previousData[field],data.currentData[field]) ? '' : field
+        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       default:
         return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
     }
@@ -316,9 +316,13 @@ function assetDiff(data,field) {
 function modelDiff(data,field) {
     switch (field) {
       case 'networkPorts':
-        return isEqual(data.previousData[field],data.currentData[field]) ? '' : field
+        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       case 'powerPorts':
-        return isEqual(data.previousData[field],data.currentData[field]) ? '' : field
+        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+      case 'modelName':
+        return ''
+      case 'networkPortsCount':
+        return ''
       default:
         return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
     }
@@ -327,7 +331,7 @@ function modelDiff(data,field) {
 function rackDiff(data,field) {
     switch (field) {
       case 'assets':
-        return isEqual(data.previousData[field],data.currentData[field]) ? '' : field
+        return complexObjectDiff(data.previousData[field],data.currentData[field],'asset') ? '' : (field + complexDiffString)
       default:
         return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
     }
@@ -345,14 +349,21 @@ function userDiff(data,field) {
 function datacenterDiff(data,field) {
     switch (field) {
       case 'racks':
-        return isEqual(data.previousData[field],data.currentData[field]) ? '' : field
+        return complexObjectDiff(data.previousData[field],data.currentData[field],'rack') ? '' : (field + complexDiffString)
       default:
         return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
     }
 }
 
+var complexDiffString = ''
+
+function complexObjectDiff(value, other, name = 'port') {
+    complexDiffString = ''
+    return isEqual(value,other,name)
+}
+
 // from https://gomakethings.com/check-if-two-arrays-or-objects-are-equal-with-javascript/
-var isEqual = function (value, other) {
+var isEqual = function (value, other, name) {
 
 	// Get the value type
 	var type = Object.prototype.toString.call(value);
@@ -366,7 +377,10 @@ var isEqual = function (value, other) {
 	// Compare the length of the length of the two items
 	var valueLen = type === '[object Array]' ? value.length : Object.keys(value).length;
 	var otherLen = type === '[object Array]' ? other.length : Object.keys(other).length;
-	if (valueLen !== otherLen) return false;
+	if (valueLen !== otherLen) {
+    complexDiffString = complexDiffString + ' by changing size from ' + valueLen + ' to ' + otherLen
+    return false;
+  }
 
 	// Compare two items
 	var compare = function (item1, item2) {
@@ -376,7 +390,7 @@ var isEqual = function (value, other) {
 
 		// If an object or array, compare recursively
 		if (['[object Array]', '[object Object]'].indexOf(itemType) >= 0) {
-			if (!isEqual(item1, item2)) return false;
+			if (!isEqual(item1, item2, name)) return false;
 		}
 
 		// Otherwise, do a simple comparison
@@ -390,7 +404,14 @@ var isEqual = function (value, other) {
 			if (itemType === '[object Function]') {
 				if (item1.toString() !== item2.toString()) return false;
 			} else {
-				if (item1 !== item2) return false;
+				if (item1 !== item2) {
+          if (complexDiffString) {
+            complexDiffString = complexDiffString + ', from ' + item1 + ' to ' + item2
+          } else {
+            complexDiffString = complexDiffString + ' from ' + item1 + ' to ' + item2
+          }
+          return false;
+        }
 			}
 
 		}
@@ -399,12 +420,18 @@ var isEqual = function (value, other) {
 	// Compare properties
 	if (type === '[object Array]') {
 		for (var i = 0; i < valueLen; i++) {
-			if (compare(value[i], other[i]) === false) return false;
+			if (compare(value[i], other[i]) === false) {
+        complexDiffString = ' by changing ' + name + ' ' + i + complexDiffString
+        return false;
+      }
 		}
 	} else {
 		for (var key in value) {
 			if (value.hasOwnProperty(key)) {
-				if (compare(value[key], other[key]) === false) return false;
+				if (compare(value[key], other[key]) === false) {
+          complexDiffString = ' by changing ' + key + complexDiffString
+          return false;
+        }
 			}
 		}
 	}
