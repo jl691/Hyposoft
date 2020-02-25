@@ -22,8 +22,10 @@ function validateImportedAssets (data, callback) {
     var existingModels = {} // vendors => {model number: model...}
     var datacenterIdsToAbbreviations = {}
     var rackIdsToNames = {}
-    var usedRackUsInRack = {} // rackId => [a list of integers that correspond to rackU's that've been used]
+    var usedRackUsInRack = {} // rackId => {U => assetID, }
     var existingDCs = {} // abbrev => datacentre object
+
+    var assetNumbersSeenInImport = []
 
     function postTaskCompletion () {
         tasksPending--
@@ -34,19 +36,18 @@ function validateImportedAssets (data, callback) {
         for (var a = 0; a < Object.keys(assetsLoaded).length; a++) {
             const asset = assetsLoaded[Object.keys(assetsLoaded)[a]]
             for (var t = asset.rackU; t < asset.rackU + existingModels[asset.vendor][asset.modelNumber].height; t++) {
-                usedRackUsInRack[asset.rackID].push(t)
+                usedRackUsInRack[asset.rackID][t] = asset.id
             }
         }
 
         for (var i = 0; i < data.length; i++) {
-            console.log('in loop start')
             var datum = data[i]
             datum.rowNumber = i+1
-            datum.datacenter = datum.datacenter && datum.datacenter.toLowerCase().trim()
+            datum.datacenter = datum.datacenter && datum.datacenter.trim()
             datum.vendor = datum.vendor && datum.vendor.trim()
             datum.model_number = datum.model_number && datum.model_number.trim()
-            datum.owner = datum.owner && datum.owner.toLowerCase().trim()
-            datum.hostname = datum.hostname && datum.hostname.toLowerCase().trim()
+            datum.owner = datum.owner && datum.owner.trim()
+            datum.hostname = datum.hostname && datum.hostname.trim()
             datum.rack = datum.rack && datum.rack.toUpperCase().trim()
             datum.power_port_connection_1 = datum.power_port_connection_1 && datum.power_port_connection_1.toUpperCase().trim()
             datum.power_port_connection_2 = datum.power_port_connection_2 && datum.power_port_connection_2.toUpperCase().trim()
@@ -61,11 +62,17 @@ function validateImportedAssets (data, callback) {
                 errors = [...errors, [i + 1, 'Asset number not in range 100000-999999']]
             }
 
+            if (assetNumbersSeenInImport.includes(datum.asset_number)) {
+                errors = [...errors, [i + 1, 'Another row exists for this same asset number (Row '+assetNumbersSeenInImport.indexOf(datum.asset_number)+')']]
+            } else {
+                assetNumbersSeenInImport.push(datum.asset_number)
+            }
+
             if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(datum.hostname)) {
                 errors = [...errors, [i + 1, 'Invalid hostname (does not follow RFC-1034 specs)']]
             }
 
-            if (datum.hostname in hostnamesToId) {
+            if (datum.hostname in hostnamesToId && hostnamesToId[datum.hostname] !== datum.asset_number) {
                 errors = [...errors, [i + 1, 'Hostname taken by another asset']]
             }
 
@@ -73,7 +80,7 @@ function validateImportedAssets (data, callback) {
                 errors = [...errors, [i + 1, 'Rack position not found']]
                 canTestForFit = false
             } else if (isNaN(String(datum.rack_position).trim()) || !Number.isInteger(parseFloat(String(datum.rack_position).trim())) || parseInt(String(datum.rack_position).trim()) <= 0 || parseInt(String(datum.rack_position).trim()) > 42) {
-                errors = [...errors, [i + 1, 'Rack position is not a positive integer less than 42']]
+                errors = [...errors, [i + 1, 'Rack position is not a positive integer less than 43']]
                 canTestForFit = false
             }
 
@@ -101,7 +108,6 @@ function validateImportedAssets (data, callback) {
                     errors = [...errors, [i + 1, 'You cannot change the model for an existing asset']]
                 }
             }
-            console.log('in loop loc 2')
 
             if (datum.vendor && !(datum.vendor in existingModels)) {
                 canTestForFit = false
@@ -135,7 +141,6 @@ function validateImportedAssets (data, callback) {
                     canTestForFit = false
                 }
             }
-            console.log('in loop loc 3')
             if (canTestForFit) {
                 // Can do rack fit test only if model exists, datacenter is valid, rack is valid and rack position is valid
 
@@ -146,9 +151,8 @@ function validateImportedAssets (data, callback) {
                     var rackId = existingRacks[datum.datacenter][r]
                     rackNamesToIdsForOurDC[rackIdsToNames[rackId]] = rackId
                 }
-                console.log('in loop loc 3.1')
                 for (var j = parseInt(datum.rack_position); j < parseInt(datum.rack_position) + parseInt(existingModels[datum.vendor][datum.model_number].height); j++) {
-                    if (usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]].includes(j) || j > 42) {
+                    if ((j in usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]] && usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]][j] !== datum.asset_number) || j > 42) {
                         errors = [...errors, [i + 1, 'Asset will not fit on the rack at this position']]
                     }
                 }
@@ -185,14 +189,13 @@ function validateImportedAssets (data, callback) {
                         datum.power_connections.push(assetsLoaded[datum.asset_number].powerConnections[1])
                     }
                 }
-                console.log(datum.rack)
-                console.log(rackNamesToIdsForOurDC[datum.rack])
-                console.log(usedPowerConnections)
                 if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]] && datum.power_port_connection_1 in usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]]) {
-                    errors = [...errors, [i + 1, 'Power port connection 1 is being used by another asset']]
+                    if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]][datum.power_port_connection_1] !== datum.asset_number)
+                        errors = [...errors, [i + 1, 'Power port connection 1 is being used by another asset']]
                 }
                 if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]] && datum.power_port_connection_2 in usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]]) {
-                    errors = [...errors, [i + 1, 'Power port connection 2 is being used by another asset']]
+                    if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]][datum.power_port_connection_2] !== datum.asset_number)
+                        errors = [...errors, [i + 1, 'Power port connection 2 is being used by another asset']]
                 }
             }
 
@@ -202,17 +205,17 @@ function validateImportedAssets (data, callback) {
             } else {
                 // Either ignore or modify
                 const assetFromDb = assetsLoaded[datum.asset_number]
-                const ppC1 = assetFromDb.powerConnections && assetFromDb.powerConnections[0] && ((assetFromDb.powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[0].port)
-                const ppC2 = assetFromDb.powerConnections && assetFromDb.powerConnections[1] && ((assetFromDb.powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[1].port)
+                const ppC1 = (assetFromDb.powerConnections && assetFromDb.powerConnections[0] && ((assetFromDb.powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[0].port)) || ''
+                const ppC2 = (assetFromDb.powerConnections && assetFromDb.powerConnections[1] && ((assetFromDb.powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[1].port)) || ''
 
-                if (assetFromDb.hostname.trim() === datum.hostname.trim() &&
-                    assetFromDb.datacenter.toLowerCase().trim() === datum.datacenter &&
-                    assetFromDb.rack.toUpperCase().trim() === datum.rack &&
-                    assetFromDb.rackU.trim() === datum.rack_position.trim() &&
-                    assetFromDb.owner.trim() === datum.owner &&
-                    assetFromDb.comment.trim() === datum.comment &&
-                    ppC1 === datum.power_port_connection_1.trim().toUpperCase() &&
-                    ppC2 === datum.power_port_connection_2.trim().toUpperCase()) {
+                if (assetFromDb.hostname.toLowerCase().trim() == datum.hostname.toLowerCase().trim() &&
+                    assetFromDb.datacenterAbbrev.toLowerCase().trim() == datum.datacenter.toLowerCase().trim() &&
+                    assetFromDb.rack.toUpperCase().trim() == datum.rack &&
+                    ''+assetFromDb.rackU == datum.rack_position.trim() &&
+                    assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim() &&
+                    assetFromDb.comment.trim() == datum.comment.trim() &&
+                    ppC1 == datum.power_port_connection_1.trim().toUpperCase() &&
+                    ppC2 == datum.power_port_connection_2.trim().toUpperCase()) {
                     toBeIgnored.push(datum)
                 } else {
                     toBeModified.push(datum)
@@ -304,7 +307,7 @@ function validateImportedAssets (data, callback) {
 
 function bulkAddAssets (assets, callback) {
     assets.forEach((asset, i) => {
-        firebaseutils.assetRef.add({
+        firebaseutils.assetRef.doc(asset.asset_number).set({
             assetId: asset.asset_number,
             modelId: asset.modelID,
             model: asset.vendor+' '+asset.model_number,
@@ -325,9 +328,10 @@ function bulkAddAssets (assets, callback) {
             datacenterAbbrev:  asset.datacenter
         })
     })
+    callback()
 }
 
-function bulkModifyAssets (assets, calleback) {
+function bulkModifyAssets (assets, callback) {
     assets.forEach((asset, i) => {
         const updates = {}
         if (asset.hostname) {
@@ -377,6 +381,7 @@ function bulkModifyAssets (assets, calleback) {
 
         firebaseutils.assetRef.doc(asset.asset_number).update(updates)
     })
+    callback()
 }
 
 function escapeStringForCSV(string) {

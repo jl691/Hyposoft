@@ -195,7 +195,6 @@ class PortScreen extends Component {
             }
             this.setState(oldState => ({...oldState, showLoadingDialog: true}))
             assetimportutils.validateImportedAssets(data, ({ errors, toBeIgnored, toBeModified, toBeAdded }) => {
-                alert('here')
                 if (errors.length > 0) {
                     this.setState(oldState => ({
                         ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
