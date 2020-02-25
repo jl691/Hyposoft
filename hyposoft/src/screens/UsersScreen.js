@@ -372,11 +372,12 @@ class UsersScreen extends Component {
 
                             <Form>
                                 <Box direction="column" gap="small">
+                                    <Text size={"small"} style={{marginLeft: "20px"}}>Username</Text>
                                     <TextInput style={{
                                             borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                             width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal'
                                         }}
-                                        placeholder="Username"
+                                        placeholder="eg. admin, tkb13"
                                         onChange={e => {
                                             const value = e.target.value
                                             this.setState(oldState => ({...oldState, newUserUsername: value}))
@@ -384,11 +385,12 @@ class UsersScreen extends Component {
                                         value={this.state.newUserUsername}
                                         title='Username'
                                         />
+                                    <Text size={"small"} style={{marginLeft: "20px"}}>Email</Text>
                                     <TextInput style={{
                                             borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                             width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                         }}
-                                        placeholder="Email"
+                                        placeholder="eg. example@example.com"
                                         onChange={e => {
                                             const value = e.target.value
                                             this.setState(oldState => ({...oldState, newUserEmail: value}))

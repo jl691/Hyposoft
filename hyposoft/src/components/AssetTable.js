@@ -1,9 +1,10 @@
-import React, { Component } from 'react'
-import { Link, Redirect } from 'react-router-dom'
-import { DataTable, Button, Text, Box } from 'grommet'
-import {  FormEdit, FormTrash, FormFolder } from "grommet-icons"
+import React, {Component} from 'react'
+import {Link, Redirect} from 'react-router-dom'
+import {DataTable, Button, Text, Box} from 'grommet'
+import {FormEdit, FormTrash, FormFolder, Power, Clear, PowerCycle} from "grommet-icons"
 import * as assetutils from '../utils/assetutils'
 import DetailedAssetScreen from '../screens/DetailedAssetScreen'
+import * as powerutils from '../utils/powerutils'
 
 import * as userutils from "../utils/userutils";
 
@@ -15,7 +16,9 @@ export default class AssetTable extends Component {
     columns = [
         {
             property: 'assetID',
-            header: <Link onClick={() => {this.setSort("asset_id")}}><Text size='small'> Asset ID</Text></Link>,
+            header: <Text size='small' onClick={() => {
+                this.setSort("assetId")
+            }} style={{cursor: "pointer"}}>Asset ID</Text>,
             primary: true,
             render: datum => <Text size='small'>
                 {datum.asset_id}
@@ -24,33 +27,43 @@ export default class AssetTable extends Component {
         },
         {
             property: 'model',
-            header: <Link onClick={() => {this.setSort("model")}}><Text size='small'>Model</Text></Link>,
-           // align:"start",
+            header: <Text size='small' onClick={() => {
+                this.setSort("model")
+            }} style={{cursor: "pointer"}}>Model</Text>,
+            // align:"start",
             render: datum => <Text size='small'>{datum.model}</Text>,
 
         },
         {
             property: 'hostname',
-            header: <Link onClick={() => {this.setSort("hostname")}}><Text size='small'>Hostname</Text></Link>,
-           // align:"start",
+            header: <Text size='small' onClick={() => {
+                this.setSort("hostname")
+            }} style={{cursor: "pointer"}}>Hostname</Text>,
+            // align:"start",
             render: datum => <Text size='small'>{datum.hostname}</Text>,
         },
         {
             property: 'rack',
-            header: <Link onClick={() => {this.setSort("rack")}}><Text size='small'>Rack</Text></Link>,
+            header: <Text size='small' onClick={() => {
+                this.setSort("rack")
+            }} style={{cursor: "pointer"}}>Rack</Text>,
             //align:"end",
             render: datum => <Text size='small'>{datum.rack}</Text>,
 
         },
         {
             property: 'rackU',
-            header: <Link onClick={() => {this.setSort("rackU")}}><Text size='small'>Rack U</Text></Link>,
+            header: <Text size='small' onClick={() => {
+                this.setSort("rackU")
+            }} style={{cursor: "pointer"}}>Rack U</Text>,
             render: datum => <Text size='small'>{datum.rackU}</Text>,
 
         },
         {
             property: 'owner',
-            header: <Link onClick={() => {this.setSort("owner")}}><Text size='small'>Owner</Text></Link>,
+            header: <Text size='small' onClick={() => {
+                this.setSort("owner")
+            }} style={{cursor: "pointer"}}>Owner</Text>,
             render: datum => <Text size='small'>{datum.owner}</Text>,
 
         },
@@ -64,12 +77,160 @@ export default class AssetTable extends Component {
         // },
         {
             property: 'datacenterAbbrev',
-            header: <Link onClick={() => {this.setSort("datacenterAbbrev")}}><Text size='small'> Datacenter Abbrev.</Text></Link>,
+            header: <Text size='small' onClick={() => {
+                this.setSort("datacenterAbbrev")
+            }} style={{cursor: "pointer"}}> Datacenter Abbrev.</Text>,
             render: datum => <Text size='small'>
                 {datum.datacenterAbbreviation}
             </Text>,
 
         },
+        {
+            property: "power",
+            header: <Text size='small'>Power</Text>,
+            sortable: false,
+            align: 'center',
+
+            render: datum => {
+               //if(docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1" && docSnapshot.data().rackRow.charCodeAt(0) >= 65 && docSnapshot.data().rackRow.charCodeAt(0) <= 69 && parseInt(docSnapshot.data().rackNum) >= 1 && parseInt(docSnapshot.data().rackNum) <= 19 && docSnapshot.data().powerConnections && docSnapshot.data().powerConnections.length){
+
+
+                    if ((userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === datum.owner) && datum.datacenterAbbreviation.toUpperCase() === "RTP1" && datum.rackRow.charCodeAt(0) >= 65 && datum.rackRow.charCodeAt(0) <= 69 && parseInt(datum.rackNum) >= 1 && parseInt(datum.rackNum) <=19 && datum.powerConnections && datum.powerConnections.length) {
+                    return (<Box direction={"row"}>
+                        <Power onClick={(e) => {
+                            e.persist()
+                            e.nativeEvent.stopImmediatePropagation()
+                            e.stopPropagation()
+                            //turn on all ports
+                            let count = 0;
+                            Object.keys(datum.powerConnections).forEach((connection) => {
+                                let formattedNum;
+                                console.log(datum);
+                                if(datum.rackNum.toString().length === 1){
+                                    formattedNum = "0" + datum.rackNum;
+                                } else {
+                                    formattedNum = datum.rackNum;
+                                }
+                                powerutils.powerPortOn("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                    if(result){
+                                        count++;
+                                        if(count === Object.keys(datum.powerConnections).length){
+                                            this.props.handleToast({
+                                                type: "success",
+                                                message: "Successfully powered on the asset!"
+                                            })
+                                        }
+                                    } else {
+                                        this.props.handleToast({
+                                            type: "error",
+                                            message: "Something went wrong. Please try again later."
+                                        })
+                                    }
+                                })
+                            })
+                        }
+                        }/>
+                        <Clear onClick={(e) => {
+                            e.persist()
+                            e.nativeEvent.stopImmediatePropagation()
+                            e.stopPropagation()
+                            //turn on all ports
+                            let count = 0;
+                            Object.keys(datum.powerConnections).forEach((connection) => {
+                                let formattedNum;
+                                console.log(datum);
+                                if(datum.rackNum.toString().length === 1){
+                                    formattedNum = "0" + datum.rackNum;
+                                } else {
+                                    formattedNum = datum.rackNum;
+                                }
+                                powerutils.powerPortOff("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                    if(result){
+                                        count++;
+                                        if(count === Object.keys(datum.powerConnections).length){
+                                            this.props.handleToast({
+                                                type: "success",
+                                                message: "Successfully powered off the asset!"
+                                            })
+                                        }
+                                    } else {
+                                        this.props.handleToast({
+                                            type: "error",
+                                            message: "Something went wrong. Please try again later."
+                                        })
+                                    }
+                                })
+                            })
+                        }
+                        }/>
+                        <PowerCycle onClick={(e) => {
+                            e.persist()
+                            e.nativeEvent.stopImmediatePropagation()
+                            e.stopPropagation()
+                            //turn on all ports
+                            this.props.handleToast({
+                                type: "info",
+                                message: "Power cycling the asset. Please wait..."
+                            })
+                            let count = 0;
+                            Object.keys(datum.powerConnections).forEach((connection) => {
+                                let formattedNum;
+                                console.log(datum);
+                                if(datum.rackNum.toString().length === 1){
+                                    formattedNum = "0" + datum.rackNum;
+                                } else {
+                                    formattedNum = datum.rackNum;
+                                }
+                                powerutils.powerPortOff("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                    if(result){
+                                        count++;
+                                        if(count === Object.keys(datum.powerConnections).length){
+                                            //wait
+                                            setTimeout(() => {
+                                                let count = 0;
+                                                Object.keys(datum.powerConnections).forEach((connection) => {
+                                                    let formattedNum;
+                                                    console.log(datum);
+                                                    if(datum.rackNum.toString().length === 1){
+                                                        formattedNum = "0" + datum.rackNum;
+                                                    } else {
+                                                        formattedNum = datum.rackNum;
+                                                    }
+                                                    powerutils.powerPortOn("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                                        if(result){
+                                                            count++;
+                                                            if(count === Object.keys(datum.powerConnections).length){
+                                                                this.props.handleToast({
+                                                                    type: "success",
+                                                                    message: "Successfully powered cycled the asset!"
+                                                                })
+                                                            }
+                                                        } else {
+                                                            this.props.handleToast({
+                                                                type: "error",
+                                                                message: "Something went wrong. Please try again later."
+                                                            })
+                                                        }
+                                                    })
+                                                })
+                                            }, 2000);
+                                        }
+                                    } else {
+                                        this.props.handleToast({
+                                            type: "error",
+                                            message: "Something went wrong. Please try again later."
+                                        })
+                                    }
+                                })
+                            })
+                        }
+                        }/>
+                    </Box>)
+                } else {
+                    return (<Text size={"small"}>No options available.</Text>)
+                }
+            }
+        }
         // {
         //     property: 'powerConnections',
         //     header: <Text size='small'> Power Connections</Text>,
@@ -94,9 +255,9 @@ export default class AssetTable extends Component {
         this.handleRackRackUSort = this.handleRackRackUSort.bind(this);
     }
 
-    setSort(field){
+    setSort(field) {
         let newSort;
-        if(this.state.sortField && this.state.sortField === field){
+        if (this.state.sortField && this.state.sortField === field) {
             //reverse direction
             this.setState({
                 sortAscending: !this.state.sortAscending
@@ -118,8 +279,9 @@ export default class AssetTable extends Component {
         });
         assetutils.getAsset((newStartAfter, assetdb) => {
             if (newStartAfter && assetdb) {
+                console.log("new sorted ", assetdb)
                 this.startAfter = newStartAfter;
-                this.setState({ assets: assetdb, initialLoaded: true })
+                this.setState({assets: assetdb, initialLoaded: true})
             }
         }, field, newSort)
     }
@@ -129,13 +291,11 @@ export default class AssetTable extends Component {
             if (!(newStartAfter === null) && !(assetdb === null)) {
                 this.startAfter = newStartAfter;
                 this.defaultAssets = assetdb;
-                this.setState({ assets: assetdb, initialLoaded: true })
+                this.setState({assets: assetdb, initialLoaded: true})
             }
         })
-        this.adminButtons();       
+        this.adminButtons();
     }
-
-
 
     adminButtons() {
         if (userutils.isLoggedInUserAdmin()) {
@@ -154,7 +314,7 @@ export default class AssetTable extends Component {
                             e.nativeEvent.stopImmediatePropagation()
                             e.stopPropagation()
                             this.props.deleteButtonCallbackFromParent(datum)
-                        }} />
+                        }}/>
                 )
             });
             this.columns.push({
@@ -181,7 +341,7 @@ export default class AssetTable extends Component {
                             )
                             console.log(data)
 
-                        }} />
+                        }}/>
                 )
             })
         }
@@ -196,13 +356,13 @@ export default class AssetTable extends Component {
         assetutils.getAsset((newStartAfter, assetdb) => {
             if (newStartAfter && assetdb) {
                 this.startAfter = newStartAfter;
-                this.setState({ assets: assetdb, initialLoaded: true })
+                this.setState({assets: assetdb, initialLoaded: true})
             }
         })
     }
 
     restoreDefault() {
-        this.setState({ assets: this.defaultAssets });
+        this.setState({assets: this.defaultAssets});
     }
 
     handleFilter(start, end, datacenter) {
@@ -228,7 +388,7 @@ export default class AssetTable extends Component {
                 console.log("found a match!")
                 newInstances.push(asset);
             }*/
-            if(datacenter === "All datacenters" || asset.datacenter === datacenter){
+            if (datacenter === "All datacenters" || asset.datacenter === datacenter) {
                 if ((rackRowTemp === rackRowStart && rackNumTemp >= rackNumStart) || (rackRowTemp === rackRowEnd && rackNumTemp <= rackNumEnd) || (rackRowTemp.charCodeAt(0) > rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) < rackRowEnd.charCodeAt(0))) {
                     if (rackRowStart === rackRowEnd && rackRowEnd === rackRowTemp) {
                         if (rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd) {
@@ -243,18 +403,17 @@ export default class AssetTable extends Component {
             }
         })
 
-        this.setState({ assets: newAssets })
+        this.setState({assets: newAssets})
     }
 
-    handleRackRackUSort(sortedAssets){
-        this.setState({assets:sortedAssets})
-
+    handleRackRackUSort(sortedAssets) {
+        this.setState({assets: sortedAssets})
     }
 
 
     render() {
         if (!userutils.isUserLoggedIn()) {
-            return <Redirect to='/' />
+            return <Redirect to='/'/>
         }
 
         if (!this.state.initialLoaded) {
@@ -288,36 +447,36 @@ export default class AssetTable extends Component {
             //                     <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column'
             //                         justify='start' alignSelf='stretch' flex >
             //                         <Box align="center" >
-                                        <DataTable
-                                            step={5}
-                                            onMore={() => {
-                                                if (this.startAfter && !this.props.searchResults && this.state.initialLoaded) {
-                                                    if(this.state.sortField){
-                                                        assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
-                                                            this.startAfter = newStartAfter
-                                                            this.setState({ assets: this.state.assets.concat(newAssets) })
-                                                        }, this.state.sortField, this.state.sortAscending);
-                                                    } else {
-                                                        assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
-                                                            this.startAfter = newStartAfter
-                                                            this.setState({ assets: this.state.assets.concat(newAssets) })
-                                                        });
-                                                    }
-                                                }
-                                            }}
-                                            
-                                            columns={this.columns}
-                                            size="large"
-                                            //pad={{ horizontal: "medium", vertical: "xsmall" }}
-                                           
-                                            onClickRow={({datum}) => {
-                                                this.props.parent.props.history.push('/assets/'+datum.asset_id)
-                                            }}
+            <DataTable
+                step={5}
+                onMore={() => {
+                    if (this.startAfter && !this.props.searchResults && this.state.initialLoaded) {
+                        if (this.state.sortField) {
+                            assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
+                                this.startAfter = newStartAfter
+                                this.setState({assets: this.state.assets.concat(newAssets)})
+                            }, this.state.sortField, this.state.sortAscending);
+                        } else {
+                            assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
+                                this.startAfter = newStartAfter
+                                this.setState({assets: this.state.assets.concat(newAssets)})
+                            });
+                        }
+                    }
+                }}
 
-                                            data={this.props.searchResults||this.state.assets}
-                                         
+                columns={this.columns}
+                size="large"
+                //pad={{ horizontal: "medium", vertical: "xsmall" }}
 
-                                        />
+                onClickRow={({datum}) => {
+                    this.props.parent.props.history.push('/assets/' + datum.asset_id)
+                }}
+
+                data={this.props.searchResults || this.state.assets}
+
+
+            />
             //                         </Box>
             //                     </Box>
             //                 </Box>
@@ -325,8 +484,6 @@ export default class AssetTable extends Component {
             //         </Box>
             //     </Box>
             // </Box>
-
-
 
 
         );

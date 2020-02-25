@@ -171,11 +171,12 @@ class SingleRackElevation extends React.Component {
                 }
                 console.log("mde it here")
                 result.forEach(asset => {
+                    console.log(asset.color)
                     let assetBox
                         = new fabric.Rect({
                         left: 30,
                         top: 50 + (20 * (42 - asset.position)) - (20 * asset.height),
-                        fill: "#" + asset.color,
+                        fill: asset.color,
                         width: 290,
                         height: (20 * asset.height),
                         stroke: 'black',

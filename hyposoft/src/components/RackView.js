@@ -26,6 +26,7 @@ import AppBar from "./AppBar";
 import RackUsageReport from "./RackUsageReport";
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as datacenterutils from "../utils/datacenterutils";
+import * as assetnetworkportutils from "../utils/assetnetworkportutils";
 import {Redirect} from "react-router-dom";
 import SingleRackElevation from "./SingleRackElevation";
 
@@ -70,6 +71,9 @@ class RackView extends React.Component {
     }
 
     componentDidMount() {
+        assetnetworkportutils.symmetricNetworkConnectionsDelete("553087", result => {
+            console.log(result)
+        })
         this.fetchDatacenters();
     }
 
@@ -306,11 +310,32 @@ class RackView extends React.Component {
                         <Box flex
                              margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
                              direction='column' justify='start'>
+                            <Heading level='4' margin='none'>Datacenter</Heading>
+                            {this.generateDatacenters()}
+                        </Box>
+                    </Box>
+                    <Box style={{
+                        borderRadius: 10,
+                        borderColor: '#EDEDED'
+                    }}
+                         direction='row'
+                         alignSelf='stretch'
+                         background='#FFFFFF'
+                         width={'medium'}
+                         margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                         pad='small'>
+                        <Box flex
+                             margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                             direction='column' justify='start'>
                             <Heading level='4' margin='none'>View rack elevations</Heading>
                             <p>View rack elevations for a range of racks.</p>
                             <Box direction='column' flex alignSelf='stretch'>
                                 <Button primary icon={<View/>} label="Elevation" onClick={() => {
-                                    this.setState({popupType: "Diagram"})
+                                    if(this.state.datacenter){
+                                        this.setState({popupType: "Diagram"})
+                                    } else {
+                                        ToastsStore.error("Please select a datacenter first.");
+                                    }
                                 }}/>
                             </Box>
                         </Box>
@@ -329,10 +354,17 @@ class RackView extends React.Component {
                              margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
                              direction='column' justify='start'>
                             <Heading level='4' margin='none'>View rack usage report</Heading>
-                            <p>View an overall rack usage report for all racks.</p>
+                            <p>View an overall rack usage report for all racks, either globally or per datacenter..</p>
                             <Box direction='column' flex alignSelf='stretch'>
-                                <Button primary icon={<Analytics/>} label="Report" onClick={() => {
+                                <Button primary icon={<Analytics/>} margin={"small"} label="Global" onClick={() => {
                                     this.setState({popupType: "ReportAll"})
+                                }}/>
+                                <Button primary icon={<Analytics/>} margin={"small"} label="Datacenter" onClick={() => {
+                                    if(this.state.datacenter){
+                                        this.setState({popupType: "ReportDatacenter"})
+                                    } else {
+                                        ToastsStore.error("Please select a datacenter first.");
+                                    }
                                 }}/>
                             </Box>
                         </Box>
@@ -344,7 +376,9 @@ class RackView extends React.Component {
     RackDeleteButton(datum) {
         if (userutils.isLoggedInUserAdmin()) {
             return (
-                <Trash onClick={() => {
+                <Trash
+                    style={{cursor: 'pointer'}}
+                    onClick={() => {
                     console.log(datum)
                     this.setState({
                         popupType: 'Delete',
@@ -387,6 +421,7 @@ class RackView extends React.Component {
                 property: "view",
                 header: <Text size='small'>View</Text>,
                 render: datum => (<View
+                    style={{cursor: 'pointer'}}
                     onClick={() => {
                         console.log(datum)
                         this.setState({
@@ -399,6 +434,7 @@ class RackView extends React.Component {
                 property: "report",
                 header: <Text size='small'>Report</Text>,
                 render: datum => (<Analytics
+                    style={{cursor: 'pointer'}}
                     onClick={() => {
                         this.setState({
                             popupType: 'Report',
@@ -599,16 +635,18 @@ class RackView extends React.Component {
             popup = (
                 <Layer onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
-                    <SingleRackElevation rackID={this.state.elevation}/>
-                    <Button label="Close" icon={<Close/>}
-                            onClick={() => this.setState({popupType: ""})}/>
+                    <Box overflow={"auto"}>
+                        <SingleRackElevation rackID={this.state.elevation}/>
+                        <Button label="Close" icon={<Close/>}
+                                onClick={() => this.setState({popupType: ""})}/>
+                    </Box>
                 </Layer>
             );
         }
 
         return (
             <Grommet theme={theme} full className='fade'>
-                <Box fill background='light-2'>
+                <Box fill background='light-2' overflow={"auto"}>
                     <AppBar>
                         <HomeButton alignSelf='start' this={this}/>
                         <Heading alignSelf='center' level='4' margin={{
