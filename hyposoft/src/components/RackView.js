@@ -26,6 +26,7 @@ import AppBar from "./AppBar";
 import RackUsageReport from "./RackUsageReport";
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as datacenterutils from "../utils/datacenterutils";
+import * as assetnetworkportutils from "../utils/assetnetworkportutils";
 import {Redirect} from "react-router-dom";
 import SingleRackElevation from "./SingleRackElevation";
 
@@ -70,6 +71,9 @@ class RackView extends React.Component {
     }
 
     componentDidMount() {
+        assetnetworkportutils.symmetricNetworkConnectionsDelete("553087", result => {
+            console.log(result)
+        })
         this.fetchDatacenters();
     }
 
