@@ -36,20 +36,23 @@ function createModel(id, vendor, modelNumber, height, displayColor, networkPorts
 
 function modifyModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, callback) {
     var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment)
-    logutils.getObjectData(id,logutils.MODEL(),data => {
+    /*logutils.getObjectData(id,logutils.MODEL(),data => {
       firebaseutils.modelsRef.doc(id).update(model).then(() => {
           logutils.addLog(id,logutils.MODEL(),logutils.MODIFY(),data)
           callback(model, id)
       })
-    })
+    })*/
 
     // Now update all instances of this model just in case the modelNumber or vendor changed
     firebaseutils.assetRef.where('modelId', '==', id).get().then(qs => {
         if (!qs.empty) {
             delete model.height // Don't change height if instances exist
         }
-        firebaseutils.modelsRef.doc(id).update(model).then(() => {
-            callback(model, id)
+        logutils.getObjectData(id,logutils.MODEL(),data => {
+            firebaseutils.modelsRef.doc(id).update(model).then(() => {
+                logutils.addLog(id,logutils.MODEL(),logutils.MODIFY(),data)
+                callback(model, id)
+            })
         })
         qs.forEach(doc => {
             doc.ref.update({
