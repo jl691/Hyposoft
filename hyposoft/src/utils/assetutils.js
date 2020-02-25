@@ -864,7 +864,7 @@ function getSuggestedAssetIds(userInput, callback) {
         querySnapshot.forEach(doc => {
             const data = doc.data().assetId;
             if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
-                modelArray.push(data)
+                modelArray.push(data + ' - ' + doc.data().model + ' ' + doc.data().hostname)
             }
         })
         callback(modelArray)

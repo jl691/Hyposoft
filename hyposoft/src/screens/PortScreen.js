@@ -9,6 +9,8 @@ import * as userutils from '../utils/userutils'
 import * as modelutils from '../utils/modelutils'
 import * as assetutils from '../utils/assetutils'
 import * as bulkutils from '../utils/bulkutils'
+import * as bulkconnectionsutils from '../utils/bulkconnectionsutils'
+import * as assetimportutils from '../utils/assetimportutils'
 import CSVReader from 'react-csv-reader'
 
 import {
@@ -35,6 +37,19 @@ class PortScreen extends Component {
         this.importAssets = this.importAssets.bind(this)
         this.addAssetsToDb = this.addAssetsToDb.bind(this)
         this.showFormatDocumentation = this.showFormatDocumentation.bind(this)
+        this.importConnections = this.importConnections.bind(this)
+        this.exportConnections = this.exportConnections.bind(this)
+    }
+
+    exportConnections () {
+        this.setState(oldState => ({...oldState, showLoadingDialog: true}))
+        bulkconnectionsutils.getConnectionsForExport(rows => {
+            var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
+                type: "data:text/csv;charset=utf-8;",
+            })
+            saveAs(blob, "hyposoft_connections.csv")
+            this.setState(oldState => ({...oldState, showLoadingDialog: false}))
+        })
     }
 
     exportModels () {
@@ -50,7 +65,7 @@ class PortScreen extends Component {
 
     exportAssets () {
         this.setState(oldState => ({...oldState, showLoadingDialog: true}))
-        assetutils.getAssetsForExport(rows => {
+        assetimportutils.getAssetsForExport(rows => {
             var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
                 type: "data:text/csv;charset=utf-8;",
             })
@@ -59,86 +74,156 @@ class PortScreen extends Component {
         })
     }
 
-    importModels (data, fileName) {
-        const file = document.querySelector('#csvreadermodels').files[0]
+    importConnections (uselessdata, filename) {
+        const file = document.querySelector('#csvreaderconn').files[0]
         bulkutils.parseCSVFile(file, data => {
-            console.log(data)
-        })
-        return
+            document.getElementById('csvreaderconn').value = ''
+            if (data.length === 0) {
+                ToastsStore.info('No records found in imported file', 3000, 'burntToast')
+                return
+            }
 
-        this.setState(oldState => ({...oldState, showLoadingDialog: true}))
-        if (data.length === 0) {
-            ToastsStore.info('No records found in imported file', 3000, 'burntToast')
-            return
-        }
+            if (!('src_hostname' in data[0] && 'src_port' in data[0] && 'src_mac' in data[0]
+                && 'dest_hostname' in data[0] && 'dest_port' in data[0])) {
+                ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
+                return
+            }
+            this.setState(oldState => ({...oldState, showLoadingDialog: true}))
+            bulkconnectionsutils.validateImportedConnections(data, ({ errors, toBeIgnored, toBeModified, toBeAdded, fetchedAssets }) => {
+                if (errors.length > 0) {
+                    this.setState(oldState => ({
+                        ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
+                    }))
+                } else {
+                    // NOTE: Addition and modification are done by the same utils function
+                    // The only difference is that you have to confirm modifications
 
-        if (!('vendor' in data[0] && 'model_number' in data[0] && 'height' in data[0]
-           && 'display_color' in data[0] && 'network_ports' in data[0] && 'power_ports' in data[0]
-           && 'cpu' in data[0] && 'memory' in data[0] && 'storage' in data[0] && 'comment' in data[0])) {
-           ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
-           return
-       }
-
-        modelutils.validateImportedModels(data, errors => {
-            if (errors.length > 0) {
-                this.setState(oldState => ({
-                    ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
-                }))
-            } else {
-                this.setState(oldState => ({...oldState, showLoadingDialog: false, errors: undefined}))
-                modelutils.addModelsFromImport(data, false, ({modelsPending, modelsPendingInfo, ignoredModels, createdModels, modifiedModels}) => {
-                    if (modelsPending.length > 0) {
-                        // Show confirmation
+                    this.setState(oldState => ({...oldState, showLoadingDialog: false, errors: undefined}))
+                    if (toBeModified.length === 0) {
+                        if (toBeAdded.length > 0) {
+                            bulkconnectionsutils.addConnections(toBeAdded, fetchedAssets, () => {
+                                this.setState(oldState => ({...oldState, modificationsInfoConns: undefined, showStatsForConns: true, ignoredConns: toBeIgnored, modifiedConns: [], createdConns: toBeAdded}))
+                            })
+                        } else {
+                            this.setState(oldState => ({...oldState, modificationsInfoConns: undefined, showStatsForConns: true, ignoredConns: toBeIgnored, modifiedConns: [], createdConns: []}))
+                        }
+                    } else {
+                        // Ask if they want to modify, then add.
                         this.setState(oldState => ({
                             ...oldState, showLoadingDialog: false,
-                            ignoredModels: ignoredModels, modifiedModels: modifiedModels, createdModels: createdModels,
-                            showStatsForModels: false,
-                            modifications: modelsPending, modificationsInfo: modelsPendingInfo.map(m => <div><b>Row {m[0]}:</b> {m[1]}</div>)
+                            ignoredConns: toBeIgnored, modifiedConns: toBeModified, createdConns: toBeAdded,
+                            showStatsForConns: false,
+                            fetchedAssets: fetchedAssets,
+                            modificationsInfoConns: toBeModified.map(m => <div><b>Row {m.rowNumber}:</b> {m.src_hostname+' ('+m.src_port+') '+String.fromCharCode(8594)+' '+(m.dest_hostname ? m.dest_hostname+' ('+m.dest_port+')' : 'Disconnected')}</div>)
                         }))
-                    } else {
-                        this.setState(oldState => ({...oldState, showLoadingDialog: false,
-                        ignoredModels: ignoredModels, modifiedModels: modifiedModels, createdModels: createdModels,
-                        showStatsForModels: true, modifications: undefined, modificationsInfo: undefined}))
+
+                        if (toBeAdded.length > 0) {
+                            bulkconnectionsutils.addConnections(toBeAdded, fetchedAssets, () => {})
+                        }
                     }
-                })
+                }
+            })
+        })
+    }
+
+    importModels (uselessdata, fileName) {
+        const file = document.querySelector('#csvreadermodels').files[0]
+        bulkutils.parseCSVFile(file, data => {
+            document.getElementById('csvreadermodels').value = ''
+            if (data.length === 0) {
+                ToastsStore.info('No records found in imported file', 3000, 'burntToast')
+                return
             }
+
+            if (!('vendor' in data[0] && 'model_number' in data[0] && 'height' in data[0]
+                && 'display_color' in data[0] && 'network_ports' in data[0] && 'power_ports' in data[0]
+                && 'cpu' in data[0] && 'memory' in data[0] && 'storage' in data[0] && 'comment' in data[0]
+                && 'network_port_name_1' in data[0] && 'network_port_name_2' in data[0] && 'network_port_name_3' in data[0]
+                && 'network_port_name_4' in data[0])) {
+                ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
+                return
+            }
+            this.setState(oldState => ({...oldState, showLoadingDialog: true}))
+            modelutils.validateImportedModels(data, ({ errors, toBeIgnored, toBeModified, toBeAdded }) => {
+                if (errors.length > 0) {
+                    this.setState(oldState => ({
+                        ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
+                    }))
+                } else {
+                    this.setState(oldState => ({...oldState, showLoadingDialog: false, errors: undefined}))
+                    if (toBeModified.length === 0) {
+                        if (toBeAdded.length > 0) {
+                            modelutils.bulkAddModels(toBeAdded, () => {
+                                this.setState(oldState => ({...oldState, modificationsInfo: undefined, showStatsForModels: true, ignoredModels: toBeIgnored, modifiedModels: [], createdModels: toBeAdded}))
+                            })
+                        } else {
+                            this.setState(oldState => ({...oldState, modificationsInfo: undefined, showStatsForModels: true, ignoredModels: toBeIgnored, modifiedModels: [], createdModels: []}))
+                        }
+                    } else {
+                        // Ask if they want to modify, then add.
+                        this.setState(oldState => ({
+                            ...oldState, showLoadingDialog: false,
+                            ignoredModels: toBeIgnored, modifiedModels: toBeModified, createdModels: toBeAdded,
+                            showStatsForModels: false,
+                            modificationsInfo: toBeModified.map(m => <div><b>Row {m.rowNumber}:</b> {m.vendor+' '+m.model_number}</div>)
+                        }))
+
+                        if (toBeAdded.length > 0) {
+                            modelutils.bulkAddModels(toBeAdded, () => {})
+                        }
+                    }
+                }
+            })
         })
     }
 
     importAssets (data, fileName) {
-        this.setState(oldState => ({...oldState, showLoadingDialog: true}))
-        if (data.length === 0) {
-            ToastsStore.info('No records found in imported file', 3000, 'burntToast')
-            return
-        }
+        const file = document.querySelector('#csvreaderassets').files[0]
+        bulkutils.parseCSVFile(file, data => {
+            document.getElementById('csvreaderassets').value = ''
+            if (data.length === 0) {
+                ToastsStore.info('No records found in imported file', 3000, 'burntToast')
+                return
+            }
 
-        if (!('hostname' in data[0] && 'rack' in data[0] && 'rack_position' in data[0]
-            && 'vendor' in data[0] && 'model_number' in data[0] && 'owner' in data[0]
-            && 'comment' in data[0])) {
-            ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
-            return
-        }
-
-        assetutils.validateImportedAssets(data, ({errors, toBeAdded, toBeModified, toBeIgnored}) => {
-            if (errors.length > 0) {
-                this.setState(oldState => ({
-                    ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
-                }))
-            } else {
-                if (toBeModified.length > 0) {
-                    // Confirm modifications
+            if (!('asset_number' in data[0] && 'hostname' in data[0] && 'datacenter' in data[0]
+                && 'rack' in data[0] && 'rack_position' in data[0] && 'vendor' in data[0]
+                && 'model_number' in data[0] && 'owner' in data[0] && 'comment' in data[0]
+                && 'power_port_connection_1' in data[0] && 'power_port_connection_2' in data[0])) {
+                ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
+                return
+            }
+            this.setState(oldState => ({...oldState, showLoadingDialog: true}))
+            assetimportutils.validateImportedAssets(data, ({ errors, toBeIgnored, toBeModified, toBeAdded }) => {
+                if (errors.length > 0) {
                     this.setState(oldState => ({
-                        ...oldState, showLoadingDialog: false, errors: undefined, assetsToBeAdded: toBeAdded, assetsToBeIgnored: toBeIgnored, assetsToBeModified: toBeModified, assetsModified: undefined
+                        ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
                     }))
                 } else {
-                    // Just add the ones to be added
-                    this.setState(oldState => ({
-                        ...oldState, showLoadingDialog: false, errors: undefined, assetsToBeAdded: toBeAdded, assetsToBeIgnored: toBeIgnored, assetsModified: [], assetsToBeModified: undefined
-                    }))
-                }
+                    this.setState(oldState => ({...oldState, showLoadingDialog: false, errors: undefined}))
+                    if (toBeModified.length === 0) {
+                        if (toBeAdded.length > 0) {
+                            assetimportutils.bulkAddAssets(toBeAdded, () => {
+                                this.setState(oldState => ({...oldState, modificationsInfoAssets: undefined, showStatsForAssets: true, ignoredAssets: toBeIgnored, modifiedAssets: [], createdAssets: toBeAdded}))
+                            })
+                        } else {
+                            this.setState(oldState => ({...oldState, modificationsInfoAssets: undefined, showStatsForAssets: true, ignoredAssets: toBeIgnored, modifiedAssets: [], createdAssets: []}))
+                        }
+                    } else {
+                        // Ask if they want to modify, then add.
+                        this.setState(oldState => ({
+                            ...oldState, showLoadingDialog: false,
+                            ignoredAssets: toBeIgnored, modifiedAssets: toBeModified, createdAssets: toBeAdded,
+                            showStatsForAssets: false,
+                            modificationsInfoAssets: toBeModified.map(m => <div><b>Row {m.rowNumber}:</b> Asset #{m.asset_number} ({m.vendor+' '+m.model_number})</div>)
+                        }))
 
-                this.addAssetsToDb(toBeAdded)
-            }
+                        if (toBeAdded.length > 0) {
+                            assetimportutils.bulkAddAssets(toBeAdded, () => {})
+                        }
+                    }
+                }
+            })
         })
     }
 
@@ -169,7 +254,9 @@ class PortScreen extends Component {
                 <Button primary label="Export Models" onClick={this.exportModels}/>,
                 <Button label="Import Models" onClick={()=>{document.getElementById('csvreadermodels').click()}}/>,
                 <Button primary label="Export Assets" onClick={this.exportAssets}/>,
-                <Button label="Import Assets" onClick={()=>{document.getElementById('csvreaderassets').click()}}/>
+                <Button label="Import Assets" onClick={()=>{document.getElementById('csvreaderassets').click()}}/>,
+                <Button primary label="Export Network Connections" onClick={this.exportConnections}/>,
+                <Button label="Import Network Connections" onClick={()=>{document.getElementById('csvreaderconn').click()}}/>,
         ]
         if (!userutils.isLoggedInUserAdmin()) {
             content = [
@@ -255,13 +342,15 @@ class PortScreen extends Component {
                     </Layer>
                 )}
                 {this.state.errors && (
-                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState => ({...oldState, errors: undefined}))}} onEsc={()=>{this.setState(oldState => ({...oldState, errors: undefined}))}}>
+                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState => ({...oldState, errors: undefined}))}} onEsc={()=>{this.setState(oldState => ({...oldState, errors: undefined}))}}
+                    margin='medium'>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
                                 Import failed due to the following errors
                             </Heading>
                             <Box
                                 margin={{top: 'small'}}
+                                overflow='auto'
                                 as="footer"
                                 gap="small"
                                 direction="column"
@@ -272,8 +361,11 @@ class PortScreen extends Component {
                         </Box>
                     </Layer>
                 )}
-                {this.state.modificationsInfo && (
-                    <Layer position="center" modal onClickOutside={()=>{}} onEsc={()=>{}}>
+                {this.state.modifiedModels && (
+                    <Layer margin='medium' position="center" modal onClickOutside={() => this.setState(oldState => ({...oldState, modificationsInfo: undefined,
+                    showStatsForModels: true, ignoredModels: [...oldState.ignoredModels, ...oldState.modifiedModels], modifiedModels: []}))}
+                     onEsc={() => this.setState(oldState => ({...oldState, modificationsInfo: undefined,
+                     showStatsForModels: true, ignoredModels: [...oldState.ignoredModels, ...oldState.modifiedModels], modifiedModels: []}))}>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
                                 Update or ignore?
@@ -285,6 +377,7 @@ class PortScreen extends Component {
                                 gap="small"
                                 direction="column"
                                 align="start"
+                                overflow='auto'
                                 justify="start" >
                                 {this.state.modificationsInfo}
                             </Box>
@@ -295,13 +388,13 @@ class PortScreen extends Component {
                                 direction="row"
                                 align="center"
                                 justify="end" >
-                                <Button label="Ignore" primary onClick={() => this.setState(oldState => ({...oldState, modifications: undefined, modificationsInfo: undefined,
-                                showStatsForModels: true, ignoredModels: oldState.ignoredModels+oldState.modifiedModels, modifiedModels: 0}))} />
+                                <Button label="Ignore" primary onClick={() => this.setState(oldState => ({...oldState, modificationsInfo: undefined,
+                                showStatsForModels: true, ignoredModels: [...oldState.ignoredModels, ...oldState.modifiedModels], modifiedModels: []}))} />
                                 <Button
                                     label="Update"
                                     onClick={() => {
-                                        modelutils.addModelsFromImport(this.state.modifications, true, () => {
-                                            this.setState(oldState => ({...oldState, modifications: undefined, modificationsInfo: undefined, showStatsForModels: true}))
+                                        modelutils.bulkModifyModels(this.state.modifiedModels, () => {
+                                            this.setState(oldState => ({...oldState, modificationsInfo: undefined, showStatsForModels: true}))
                                         })
                                     }}
                                     />
@@ -309,8 +402,52 @@ class PortScreen extends Component {
                         </Box>
                     </Layer>
                 )}
-                {this.state.assetsToBeModified && (
-                    <Layer position="center" modal onClickOutside={()=>{}} onEsc={()=>{}}>
+                {this.state.modifiedConns && (
+                    <Layer margin='medium' position="center" modal onClickOutside={() => this.setState(oldState => ({...oldState, modificationsInfoConns: undefined,
+                    showStatsForConns: true, ignoredConns: [...oldState.ignoredConns, ...oldState.modifiedConns], modifiedConns: []}))}
+                     onEsc={() => this.setState(oldState => ({...oldState, modificationsInfoConns: undefined,
+                     showStatsForConns: true, ignoredConns: [...oldState.ignoredConns, ...oldState.modifiedConns], modifiedConns: []}))}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Update or ignore?
+                            </Heading>
+                            <p>Some of the assets' ports in your file already have connections. Would you like to ignore these entries or update the existing values to your new values?</p>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                overflow='auto'
+                                direction="column"
+                                align="start"
+                                justify="start" >
+                                {this.state.modificationsInfoConns}
+                            </Box>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="end" >
+                                <Button label="Ignore" primary onClick={() => this.setState(oldState => ({...oldState, modificationsInfoConns: undefined,
+                                showStatsForConns: true, ignoredConns: [...oldState.ignoredConns, ...oldState.modifiedConns], modifiedConns: []}))} />
+                                <Button
+                                    label="Update"
+                                    onClick={() => {
+                                        bulkconnectionsutils.addConnections(this.state.modifiedConns, this.state.fetchedAssets, () => {
+                                            this.setState(oldState => ({...oldState, modificationsInfoConns: undefined, showStatsForConns: true}))
+                                        })
+                                    }}
+                                    />
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
+                {this.state.modifiedAssets && (
+                    <Layer margin='medium' position="center" modal onClickOutside={() => this.setState(oldState => ({...oldState, modificationsInfoAssets: undefined,
+                    showStatsForAssets: true, ignoredAssets: [...oldState.ignoredAssets, ...oldState.modifiedAssets], modifiedAssets: []}))}
+                     onEsc={() => this.setState(oldState => ({...oldState, modificationsInfoAssets: undefined,
+                     showStatsForAssets: true, ignoredAssets: [...oldState.ignoredAssets, ...oldState.modifiedAssets], modifiedAssets: []}))}>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
                                 Update or ignore?
@@ -322,8 +459,9 @@ class PortScreen extends Component {
                                 gap="small"
                                 direction="column"
                                 align="start"
+                                overflow='auto'
                                 justify="start" >
-                                {this.state.assetsToBeModified.map(tbm => <div><b>Row {tbm.row}:</b> {tbm.hostname} ({tbm.vendor} {tbm.model_number})</div>)}
+                                {this.state.modificationsInfoAssets}
                             </Box>
                             <Box
                                 margin={{top: 'small'}}
@@ -332,31 +470,28 @@ class PortScreen extends Component {
                                 direction="row"
                                 align="center"
                                 justify="end" >
-                                <Button label="Ignore" primary onClick={() => this.setState(oldState => ({
-                                    ...oldState, errors: undefined, assetsToBeAdded: oldState.assetsToBeAdded, assetsToBeIgnored: [...oldState.assetsToBeIgnored, oldState.assetsToBeModified], assetsToBeModified: undefined,
-                                    assetsModified: []
-                                }))} />
+                                <Button label="Ignore" primary onClick={() => this.setState(oldState => ({...oldState, modificationsInfoAssets: undefined,
+                                showStatsForAssets: true, ignoredAssets: [...oldState.ignoredAssets, ...oldState.modifiedAssets], modifiedAssets: []}))} />
                                 <Button
                                     label="Update"
                                     onClick={() => {
-                                        this.modifyAssetsInDb(this.state.assetsToBeModified)
-                                        this.setState(oldState => ({
-                                            ...oldState, errors: undefined, assetsToBeAdded: oldState.assetsToBeAdded, assetsToBeIgnored: [...oldState.assetsToBeIgnored], assetsToBeModified: undefined,
-                                            assetsModified: [...oldState.assetsToBeModified]
-                                        }))
+                                        assetimportutils.bulkModifyAssets(this.state.modifiedAssets, () => {
+                                            this.setState(oldState => ({...oldState, modificationsInfoAssets: undefined, showStatsForAssets: true}))
+                                        })
                                     }}
                                     />
                             </Box>
                         </Box>
                     </Layer>
                 )}
-                {(this.state.assetsToBeAdded && this.state.assetsToBeIgnored && this.state.assetsModified
-                && !this.state.errors && !this.state.assetsToBeModified) && (
+                {this.state.showStatsForAssets && (
                     <Layer position="center" modal onClickOutside={()=>{this.setState(oldState=>({
-                        ...oldState, assetsToBeAdded: undefined, assetsToBeIgnored: undefined, assetsModified: undefined
+                        ...oldState, showStatsForAssets: false, ignoredAssets: undefined, createdAssets: undefined,
+                        modifiedAssets: undefined
                     }))}} onEsc={()=>{this.setState(oldState=>({
-                        ...oldState, assetsToBeAdded: undefined, assetsToBeIgnored: undefined, assetsModified: undefined
-                    }))}}>
+                        ...oldState, showStatsForAssets: false, ignoredAssets: undefined, createdAssets: undefined,
+                        modifiedAssets: undefined
+                    }))}} margin={{top: 'medium', bottom: 'medium'}}>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
                                 Import Successful
@@ -364,14 +499,21 @@ class PortScreen extends Component {
                             <p>Here are statistics on how your database is different after import.</p>
                             <Box
                                 margin={{top: 'small'}}
+                                overflow='auto'
                                 as="footer"
                                 gap="small"
                                 direction="column"
                                 align="start"
                                 justify="start" >
-                                <div><b>Assets created:</b> {this.state.assetsToBeAdded.length}</div>
-                                <div><b>Assets modified:</b> {this.state.assetsModified.length}</div>
-                                <div><b>Records ignored:</b> {this.state.assetsToBeIgnored.length}</div>
+                                <div><b>Assets created ({this.state.createdAssets.length}):</b></div>
+                                {this.state.createdAssets.map(m => <div><b>Row {m.rowNumber}:</b> Asset #{m.asset_number} ({m.vendor+' '+m.model_number})</div>)}
+                                <div></div>
+                                <div><b>Assets modified ({this.state.modifiedAssets.length}):</b></div>
+                                {this.state.modifiedAssets.map(m => <div><b>Row {m.rowNumber}:</b> Asset #{m.asset_number} ({m.vendor+' '+m.model_number})</div>)}
+                                <div></div>
+                                <div><b>Assets ignored ({this.state.ignoredAssets.length}):</b></div>
+                                {this.state.ignoredAssets.map(m => <div><b>Row {m.rowNumber}:</b> Asset #{m.asset_number} ({m.vendor+' '+m.model_number})</div>)}
+                                <div></div>
                             </Box>
                         </Box>
                     </Layer>
@@ -383,7 +525,7 @@ class PortScreen extends Component {
                     }))}} onEsc={()=>{this.setState(oldState=>({
                         ...oldState, showStatsForModels: false, ignoredModels: undefined, createdModels: undefined,
                         modifiedModels: undefined
-                    }))}}>
+                    }))}} margin={{top: 'medium', bottom: 'medium'}}>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
                                 Import Successful
@@ -391,14 +533,55 @@ class PortScreen extends Component {
                             <p>Here are statistics on how your database is different after import.</p>
                             <Box
                                 margin={{top: 'small'}}
+                                overflow='auto'
                                 as="footer"
                                 gap="small"
                                 direction="column"
                                 align="start"
                                 justify="start" >
-                                <div><b>Models created:</b> {this.state.createdModels}</div>
-                                <div><b>Models modified:</b> {this.state.modifiedModels}</div>
-                                <div><b>Records ignored:</b> {this.state.ignoredModels}</div>
+                                <div><b>Models created ({this.state.createdModels.length}):</b></div>
+                                {this.state.createdModels.map(m => <div><b>Row {m.rowNumber}:</b> {m.vendor+' '+m.model_number}</div>)}
+                                <div></div>
+                                <div><b>Models modified ({this.state.modifiedModels.length}):</b></div>
+                                {this.state.modifiedModels.map(m => <div><b>Row {m.rowNumber}:</b> {m.vendor+' '+m.model_number}</div>)}
+                                <div></div>
+                                <div><b>Models ignored ({this.state.ignoredModels.length}):</b></div>
+                                {this.state.ignoredModels.map(m => <div><b>Row {m.rowNumber}:</b> {m.vendor+' '+m.model_number}</div>)}
+                                <div></div>
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
+                {this.state.showStatsForConns && (
+                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState=>({
+                        ...oldState, showStatsForConns: false, ignoredConns: undefined, createdConns: undefined,
+                        modifiedConns: undefined
+                    }))}} onEsc={()=>{this.setState(oldState=>({
+                        ...oldState, showStatsForConns: false, ignoredConns: undefined, createdConns: undefined,
+                        modifiedConns: undefined
+                    }))}} margin={{top: 'medium', bottom: 'medium'}}>
+                        <Box pad="medium" gap="small" width="medium">
+                            <Heading level={4} margin="none">
+                                Import Successful
+                            </Heading>
+                            <p>Here are statistics on how your database is different after import.</p>
+                            <Box
+                                margin={{top: 'small'}}
+                                overflow='auto'
+                                as="footer"
+                                gap="small"
+                                direction="column"
+                                align="start"
+                                justify="start" >
+                                <div><b>Connections created ({this.state.createdConns.length}):</b></div>
+                                {this.state.createdConns.map(m => <div><b>Row {m.rowNumber}:</b> {m.src_hostname+' ('+m.src_port+') '+String.fromCharCode(8594)+' '+(m.dest_hostname ? m.dest_hostname+' ('+m.dest_port+')' : 'Disconnected')}</div>)}
+                                <div></div>
+                                <div><b>Connections modified ({this.state.modifiedConns.length}):</b></div>
+                                {this.state.modifiedConns.map(m => <div><b>Row {m.rowNumber}:</b> {m.src_hostname+' ('+m.src_port+') '+String.fromCharCode(8594)+' '+(m.dest_hostname ? m.dest_hostname+' ('+m.dest_port+')' : 'Disconnected')}</div>)}
+                                <div></div>
+                                <div><b>Connections ignored ({this.state.ignoredConns.length}):</b></div>
+                                {this.state.ignoredConns.map(m => <div><b>Row {m.rowNumber}:</b> {m.src_hostname+' ('+m.src_port+') '+String.fromCharCode(8594)+' '+(m.dest_hostname ? m.dest_hostname+' ('+m.dest_port+')' : 'Disconnected')}</div>)}
+                                <div></div>
                             </Box>
                         </Box>
                     </Layer>
@@ -416,6 +599,13 @@ class PortScreen extends Component {
                     parserOptions={this.papaparseOptions}
                     inputStyle={{ display: "none" }}
                     inputId='csvreaderassets'
+                />
+                <CSVReader
+                    cssClass="react-csv-input"
+                    onFileLoaded={this.importConnections}
+                    parserOptions={this.papaparseOptions}
+                    inputStyle={{ display: "none" }}
+                    inputId='csvreaderconn'
                 />
             </Grommet>
         )

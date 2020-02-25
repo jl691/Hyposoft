@@ -406,8 +406,7 @@ class ModelsScreen extends React.Component {
 
         this.startAfter = null;
         this.setState({
-            models: [],
-            initialLoaded: false
+            models: []
         });
 
         console.log("111")

@@ -309,7 +309,7 @@ function assetDiff(data,field) {
       case 'powerConnections':
         return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       default:
-        return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
+        return defaultDiff(data,field)
     }
 }
 
@@ -324,7 +324,7 @@ function modelDiff(data,field) {
       case 'networkPortsCount':
         return ''
       default:
-        return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
+        return defaultDiff(data,field)
     }
 }
 
@@ -333,7 +333,7 @@ function rackDiff(data,field) {
       case 'assets':
         return complexObjectDiff(data.previousData[field],data.currentData[field],'asset') ? '' : (field + complexDiffString)
       default:
-        return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
+        return defaultDiff(data,field)
     }
 }
 
@@ -342,7 +342,7 @@ function userDiff(data,field) {
       case 'password':
         return field
       default:
-        return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
+        return defaultDiff(data,field)
     }
 }
 
@@ -351,8 +351,12 @@ function datacenterDiff(data,field) {
       case 'racks':
         return complexObjectDiff(data.previousData[field],data.currentData[field],'rack') ? '' : (field + complexDiffString)
       default:
-        return field + ' from ' + data.previousData[field] + ' to ' + data.currentData[field]
+        return defaultDiff(data,field)
     }
+}
+
+function defaultDiff(data,field) {
+    return field + ' from ' + (data.previousData[field] ? data.previousData[field] : 'none') + ' to ' + (data.currentData[field] ? data.currentData[field] : 'none')
 }
 
 var complexDiffString = ''
