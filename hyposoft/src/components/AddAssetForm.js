@@ -1,5 +1,17 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer, Accordion, AccordionPanel } from 'grommet'
+import {
+    Button,
+    Grommet,
+    Form,
+    FormField,
+    Heading,
+    TextInput,
+    Box,
+    Layer,
+    Accordion,
+    AccordionPanel,
+    CheckBox
+} from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as assetpowerportutils from '../utils/assetpowerportutils'
@@ -30,6 +42,7 @@ export default class AddAssetForm extends Component {
             comment: "",
             datacenterName: "",
             datacenterAbbrev: "",
+            showPowerConnections: false,
             macAddresses: [
                 {
                     networkPort: "",
@@ -193,7 +206,11 @@ export default class AddAssetForm extends Component {
                     this.state.datacenter,
                     this.state.macAddress,
                     this.state.networkConnections,
-                    this.state.powerConnections,
+                    this.state.showPowerConnections ? this.state.powerConnections : [{
+
+                        pduSide: "",
+                        port: ""
+                    }],
 
                     errorMessage => {
                         if (errorMessage) {
@@ -365,22 +382,20 @@ export default class AddAssetForm extends Component {
                                 />
                             </FormField>
 
-                            <Accordion>
-                                <AccordionPanel label="MAC Addresses">
-                                    <AssetMACForm
 
-                                        fieldCallback={this.handleDisplayMACFields}
-                                        model={this.state.model}
-                                        macAddresses={this.state.macAddresses}
-                                        
+                            <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"} toggle={true} onChange={(e) => {
+                                let panel = document.getElementById("powerPortConnectionsPanel");
+                                let display = !this.state.showPowerConnections;
+                                this.setState({
+                                    showPowerConnections: display
+                                }, function () {
+                                    panel.style.display = display ? "block" : "none";
+                                })
+                            }}/>
 
-                                    />
+                        <Accordion>
+                            <div id={"powerPortConnectionsPanel"} style={{display: "none"}}>
 
-                                </AccordionPanel>
-
-                            </Accordion>
-
-                            <Accordion>
                                 <AccordionPanel label="Power Port Connections">
                                     <AssetPowerPortsForm
 
@@ -396,10 +411,20 @@ export default class AddAssetForm extends Component {
 
 
                                 </AccordionPanel>
+                            </div>
+<AccordionPanel label="MAC Addresses">
+                                    <AssetMACForm
 
-                            </Accordion>
+                                        fieldCallback={this.handleDisplayMACFields}
+                                        model={this.state.model}
+                                        macAddresses={this.state.macAddresses}
+                                        
 
-                            <Accordion>
+                                    />
+
+                                </AccordionPanel>
+
+    
                                 <AccordionPanel label="Network Port Connections">
                                     <AssetNetworkPortsForm
 
@@ -421,8 +446,6 @@ export default class AddAssetForm extends Component {
                                         label="Validate Connections" /> */}
 
                                 </AccordionPanel>
-
-                            </Accordion>
 
 
 
