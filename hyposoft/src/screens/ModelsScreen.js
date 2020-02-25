@@ -348,7 +348,7 @@ class ModelsScreen extends React.Component {
                         {
                             property: 'cpu',
                             header: <Text size='small' onClick={() => {
-                                this.setSort("cpu")
+                                this.setSort("storage")
                             }} style={{cursor: "pointer"}}>Storage</Text>,
                             render: datum => <Text size='small'>{datum.storage}</Text>
                         },
