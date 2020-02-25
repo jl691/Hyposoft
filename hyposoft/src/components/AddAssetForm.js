@@ -43,12 +43,7 @@ export default class AddAssetForm extends Component {
             datacenterName: "",
             datacenterAbbrev: "",
             showPowerConnections: false,
-            macAddresses: [
-                {
-                    networkPort: "",
-                    macAddress: ""
-                }
-            ],
+            macAddresses: [],
             networkConnections: [
                 {
                     otherAssetID: "",
@@ -131,8 +126,13 @@ export default class AddAssetForm extends Component {
     }
 
     handleDisplayMACFields(macTextFields) {
-        console.log(this.state.macAddresses)
-        this.setState(prevState => ({}))
+        // this.setState(prevState => ({
+        //     macAddresses: [...prevState.macAddresses, {networkPort: "", macAddress: ""}]
+        // }));
+        // this.state.macAddresses = []
+        // macTextFields.forEach(() => {
+        //   this.state.macAddresses.push({networkPort: "",macAddress: ""})
+        // });
     }
 
 
