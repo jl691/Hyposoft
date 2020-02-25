@@ -113,7 +113,7 @@ export default class AssetNetworkPortsForm extends Component {
                                         assetutils.getSuggestedAssetIds(this.props.datacenter,e.target.value, results => this.setState(oldState => ({
                                             ...oldState,
                                             assetIdSuggestions: results
-                                        })))
+                                        })),this.props.currentId ? this.props.currentId : '')
                                     }}
                                     onSelect={e => {
                                         this.handleSuggestion(e, idx)
@@ -124,7 +124,7 @@ export default class AssetNetworkPortsForm extends Component {
                                       assetutils.getSuggestedAssetIds(this.props.datacenter,this.props.networkConnections[idx]['otherAssetID'], results => this.setState(oldState => ({
                                         ...oldState,
                                         assetIdSuggestions: results
-                                    })))}}
+                                    })),this.props.currentId ? this.props.currentId : '')}}
                                 />
                             </FormField>
 

@@ -27,7 +27,7 @@ export default class EditAssetForm extends Component {
             comment: this.props.updateCommentFromParent,
             datacenter: this.props.updateDatacenterFromParent,
             macAddresses: this.props.updateMacAddressesFromParent,
-            networkConnections: this.props.updatePowerConnectionsFromParent, 
+            networkConnections: this.props.updatePowerConnectionsFromParent,
             powerConnections: this.props.updateNetworkConnectionsFromParent,
 
         }
@@ -45,7 +45,7 @@ export default class EditAssetForm extends Component {
     }
 
     handleUpdate(event) {
-        
+
         if (event.target.name === "updateInst") {
             //this is where you pass in props updateData from AssetScreen . Want to keep old unchanged data, ow
 
@@ -252,6 +252,8 @@ export default class EditAssetForm extends Component {
                                     <AssetNetworkPortsForm
 
                                         model={this.state.model}
+                                        datacenter={this.state.datacenter}
+                                        currentId={this.state.asset_id}
                                         networkConnections={this.state.networkConnections}
 
                                     />
