@@ -158,7 +158,7 @@ function checkOtherAssetPortsExist(otherAssetID, otherPort, callback) {
 
             let hardCodedNetworkPorts = ["a", "b", "c", "1"]
             //if (!hardCodedNetworkPorts.includes(otherPort)) {
-            if (!querySnapshot.data().networkPorts.includes(otherPort)) {
+            if (!querySnapshot.docs[0].data().networkPorts.includes(otherPort)) {
 
                 errPort = otherPort;
                 errInstance = otherAssetID;
@@ -235,7 +235,7 @@ function checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, callback) 
 
 function symmetricNetworkConnectionsAdd(networkConnectionsArray, newID) {
     //Make sure connections are symmetric. Meaning the other asset should have their network port connectiosn updated too
-    //So when someone adds an asset and makes network connections, the networkconnections field for otherAssetID otherPort will be updated 
+    //So when someone adds an asset and makes network connections, the networkconnections field for otherAssetID otherPort will be updated
     let thisPort = "";
     let otherAssetID = ""
     let otherPort = "";
