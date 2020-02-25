@@ -526,7 +526,7 @@ class AssetScreen extends Component {
                     exact path="/assets" render={props => (
                     <React.Fragment>
                         <Grommet theme={theme} full className='fade'>
-                            <Box fill background='light-2'>
+                            <Box fill background='light-2' overflow={"auto"}>
                                 {popup}
                                 <AppBar>
 

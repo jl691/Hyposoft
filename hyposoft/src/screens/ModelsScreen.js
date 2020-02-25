@@ -74,6 +74,7 @@ class ModelsScreen extends React.Component {
     }
 
     itemNo = 1;
+    prefilterState;
 
     search () {
         if (this.state.searchQuery.trim() === '') {
@@ -100,6 +101,7 @@ class ModelsScreen extends React.Component {
     startAfter = null
 
     init() {
+        this.prefilterState = this.state;
         this.itemNo = 1;
         if (this.state.searchQuery.trim() !== '') {
             this.search()
@@ -604,9 +606,9 @@ class ModelsScreen extends React.Component {
                                              <Button primary label="Apply filters" onClick={() => {this.init()}}
                                                 />
                                             <Button label="Clear filters" onClick={() => {
-                                                this.setState(oldState => ({
-                                                    ...oldState, ...this.defaultFilters
-                                                }), () => this.init())
+                                                this.setState({
+                                                    ...this.prefilterState
+                                                })
                                             }} margin={{left: 'small'}}
                                                />
                                         </Box>
