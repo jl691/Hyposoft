@@ -274,7 +274,7 @@ function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, datacenter, c
 }
 
 function checkRackExists(letter, number, datacenter, callback) {
-    console.log("checking if rack " + letter + number + " in datacenter " + datacenter + " exists")
+    //console.log("checking if rack " + letter + number + " in datacenter " + datacenter + " exists")
     let parsedNumber = parseInt(number);
     datacenterutils.getDataFromName(datacenter, datacenterID => {
         if (datacenterID) {
