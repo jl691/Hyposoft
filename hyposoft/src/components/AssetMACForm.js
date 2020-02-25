@@ -106,10 +106,9 @@ export default class AssetMACForm extends Component {
 
         //this.createForm(this.props.model)
         if (this.props.model !== this.state.model) {
-            this.setState({
-                initialLoaded: false,
-                model: this.props.mode
-            });
+            
+          this.state.initialLoaded = false
+          this.state.model = this.props.model
         }
         if (!this.state.initialLoaded) {
             this.createFormCallback(this.state.model)
