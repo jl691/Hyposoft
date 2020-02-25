@@ -1,5 +1,17 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Layer, Accordion, AccordionPanel } from 'grommet'
+import {
+    Button,
+    Grommet,
+    Form,
+    FormField,
+    Heading,
+    TextInput,
+    Box,
+    Layer,
+    Accordion,
+    AccordionPanel,
+    CheckBox
+} from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
@@ -28,6 +40,7 @@ export default class AddAssetForm extends Component {
             macAddress: "",
             datacenterName: "",
             datacenterAbbrev: "",
+            showPowerConnections: false,
             networkConnections: [
                 {
                 otherAssetID: "",
@@ -147,7 +160,11 @@ export default class AddAssetForm extends Component {
                     this.state.datacenter,
                     this.state.macAddress,
                     this.state.networkConnections,
-                    this.state.powerConnections,
+                    this.state.showPowerConnections ? this.state.powerConnections : [{
+
+                        pduSide: "",
+                        port: ""
+                    }],
 
                     errorMessage => {
                         if (errorMessage) {
@@ -319,7 +336,18 @@ export default class AddAssetForm extends Component {
                                 />
                             </FormField>
 
+                            <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"} toggle={true} onChange={(e) => {
+                                let panel = document.getElementById("powerPortConnectionsPanel");
+                                let display = !this.state.showPowerConnections;
+                                this.setState({
+                                    showPowerConnections: display
+                                }, function () {
+                                    panel.style.display = display ? "block" : "none";
+                                })
+                            }}/>
+
                         <Accordion>
+                            <div id={"powerPortConnectionsPanel"} style={{display: "none"}}>
                                 <AccordionPanel label="Power Port Connections">
                                     <AssetPowerPortsForm
                                         powerConnections={this.state.powerConnections}
@@ -338,6 +366,7 @@ export default class AddAssetForm extends Component {
                                         label="Validate Connections" /> */}
 
                                 </AccordionPanel>
+                            </div>
 
                             </Accordion>
 
