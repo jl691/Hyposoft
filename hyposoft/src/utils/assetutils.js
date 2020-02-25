@@ -857,10 +857,10 @@ function getNetworkPorts(model, userInput, callback) {
 }
 
 // need to change logic here for editing asset, don't allow to pick own name
-function getSuggestedAssetIds(userInput, callback) {
+function getSuggestedAssetIds(datacenter, userInput, callback) {
     var modelArray = []
     // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
-    assetRef.orderBy('assetId').get().then(querySnapshot => {
+    assetRef.where('datacenter','==',datacenter ? datacenter : '').get().then(querySnapshot => {
         querySnapshot.forEach(doc => {
             const data = doc.data().assetId;
             if (shouldAddToSuggestedItems(modelArray, data, userInput)) {

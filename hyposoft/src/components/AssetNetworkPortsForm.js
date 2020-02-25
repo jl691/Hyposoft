@@ -110,7 +110,7 @@ export default class AssetNetworkPortsForm extends Component {
 
                                     onChange={e => {
                                         this.handleChange(e, idx)
-                                        assetutils.getSuggestedAssetIds(e.target.value, results => this.setState(oldState => ({
+                                        assetutils.getSuggestedAssetIds(this.props.datacenter,e.target.value, results => this.setState(oldState => ({
                                             ...oldState,
                                             assetIdSuggestions: results
                                         })))
@@ -121,7 +121,7 @@ export default class AssetNetworkPortsForm extends Component {
                                     value={this.props.networkConnections[idx]['otherAssetID']}
                                     suggestions={this.state.assetIdSuggestions}
                                     onClick={() => {
-                                      assetutils.getSuggestedAssetIds(this.props.networkConnections[idx]['otherAssetID'], results => this.setState(oldState => ({
+                                      assetutils.getSuggestedAssetIds(this.props.datacenter,this.props.networkConnections[idx]['otherAssetID'], results => this.setState(oldState => ({
                                         ...oldState,
                                         assetIdSuggestions: results
                                     })))}}
