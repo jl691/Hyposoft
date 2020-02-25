@@ -617,7 +617,7 @@ class RackView extends React.Component {
             popup = (
                 <Layer onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
-                    <RackUsageReport rack={this.state.rackReport} type={"all"}/>
+                    <Box overflow={"auto"}><RackUsageReport rack={this.state.rackReport} type={"all"}/></Box>
                     <Button label="Close" icon={<Close/>}
                             onClick={() => this.setState({popupType: ""})}/>
                 </Layer>
