@@ -212,7 +212,8 @@ function formatPowerConnections(powerPorts) {
     //need to return null if no power port conections have been made
     if (powerPorts[0].pduSide === "") {
         //TODO:didn't fill out anything. But what if first is empty but second is not?
-        return null;
+        powerPorts=[];
+        return powerPorts;
     }
     else {
         return powerPorts;

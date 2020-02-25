@@ -328,7 +328,8 @@ function networkConnectionsToMap(networkConnectionsArray) {
 
     if (networkConnectionsArray[0].otherAssetID === "") {
         //TODO:didn't fill out anything. But what if first is empty but second is not?
-        return null;
+        let emptyConns=[];
+        return emptyConns;
     } else {
         for (let i = 0; i < networkConnectionsArray.length; i++) {
 

@@ -187,7 +187,7 @@ function forceModifyAssetsInDb(toBeModified) {
     }
 }
 
-function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, fixedMac, networkConnectionsArray, powerConnectionsInput, callback) {
+function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnectionsInput, callback) {
 
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
@@ -246,7 +246,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                 owner: owner,
                                                                 comment: comment,
                                                                 rackID: rackID,
-                                                                //macAddress: fixedMac,
+                                                                macAddresses,
                                                                 networkConnections,
                                                                 powerConnections,
 
@@ -264,7 +264,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                             }).then(function (docRef) {
                                                                 assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, overrideAssetID);
 
-                                                                if (powerConnections != null) {
+                                                                if (powerConnections.length != 0) {
                                                                     racksRef.doc(String(rackID)).update({
                                                                         assets: firebase.firestore.FieldValue.arrayUnion(overrideAssetID),
                                                                         powerPorts: firebase.firestore.FieldValue.arrayUnion(...powerConnections)
@@ -317,7 +317,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                 owner: owner,
                                                                 comment: comment,
                                                                 rackID: rackID,
-                                                                //macAddress: fixedMac,
+                                                                macAddresses,
                                                                 networkConnections,
                                                                 powerConnections,
 
@@ -334,7 +334,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
                                                                 assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, newID);
 
-                                                                if (powerConnections != null) {
+                                                                if (powerConnections.length != 0) {
                                                                     racksRef.doc(String(rackID)).update({
                                                                         assets: firebase.firestore.FieldValue.arrayUnion(newID),
                                                                         powerPorts: firebase.firestore.FieldValue.arrayUnion(...powerConnections)
@@ -604,7 +604,7 @@ function deleteAsset(assetID, callback) {
                     let deleteAssetConnections = docData.powerConnections
                     console.log(deleteAssetConnections)
 
-                    if (deleteAssetConnections) {
+                    if (deleteAssetConnections.length!= 0) {//
                         console.log("THere are asset connections to delete")
                         //need to get the datacenter, rack that the asset it on
                         racksRef.doc(String(rackID)).update({

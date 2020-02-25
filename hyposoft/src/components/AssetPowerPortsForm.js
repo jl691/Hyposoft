@@ -47,7 +47,9 @@ export default class AssetPowerPortsForm extends Component {
     render() {
         let { powerConnections } = this.props
         console.log(this.props)
+
         return (
+
             powerConnections.map((val, idx) => {
                 return (
                     <Grommet key={idx} theme={theme}>

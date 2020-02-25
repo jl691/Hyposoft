@@ -27,7 +27,7 @@ export default class EditAssetForm extends Component {
             comment: this.props.updateCommentFromParent,
             datacenter: this.props.updateDatacenterFromParent,
             macAddresses: this.props.updateMacAddressesFromParent,
-            networkConnections: this.props.updatePowerConnectionsFromParent,
+            networkConnections: this.props.updatePowerConnectionsFromParent, 
             powerConnections: this.props.updateNetworkConnectionsFromParent,
 
         }
