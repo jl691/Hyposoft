@@ -435,7 +435,7 @@ export default class DetailedAssetScreen extends Component {
                                                 {this.generateMACTable()}
                                             </TableBody>
                                         </Table>
-                                        <span style={{maxHeight: 100, overflow: 'scroll'}}>
+                                        <span style={{maxHeight: 100, overflow: 'auto'}}>
                                          {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
                                              return <div key={key}>{i}</div>
                                          })}

@@ -38,14 +38,18 @@ class ModelSettingsLayer extends React.Component {
     }
 
     componentDidMount() {
+        console.log(this.props)
         // Change from add form to edit form depending on props
         if (this.props.type === 'add') {
+            console.log("adding")
             this.hideFunction = this.props.parent.hideAddModelDialog
-            this.layerTitle = 'Add Model'
+            this.setState({
+                layerTitle: 'Add Model'
+            });
             this.dbFunction = modelutils.createModel
+            console.log(this.layerTitle)
         } else {
             this.hideFunction = this.props.parent.hideEditDialog
-            this.layerTitle = 'Edit Model'
             this.dbFunction = modelutils.modifyModel
             this.setState({
                 ...this.props.model,
@@ -54,7 +58,8 @@ class ModelSettingsLayer extends React.Component {
                 networkPortsDisabled: this.props.model.networkPortsCount === 0,
                 powerPorts: (this.props.model.powerPorts ? ''+this.props.model.powerPorts : ''),
                 memory: (this.props.model.memory ? ''+this.props.model.memory : ''),
-                networkPortsCount: (this.props.model.networkPortsCount === 0 ? '' : ''+this.props.model.networkPortsCount)
+                networkPortsCount: (this.props.model.networkPortsCount === 0 ? '' : ''+this.props.model.networkPortsCount),
+                layerTitle: 'Edit Model'
             })
         }
     }
@@ -174,7 +179,7 @@ class ModelSettingsLayer extends React.Component {
             <Layer position="center" modal onClickOutside={this.hideFunction} onEsc={this.hideFunction}>
                 <Box pad="medium" gap="small" width="large">
                     <Heading level={4} margin="none">
-                        {this.layerTitle}
+                        {this.state.layerTitle}
                     </Heading>
                     <p>Models are uniquely identified by a model number for each given Vendor.</p>
 
