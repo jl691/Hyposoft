@@ -87,7 +87,7 @@ class LogScreen extends Component {
             return <Text>Please wait...</Text>
         } else {
             return <DataTable
-                step={25}
+                step={100}
                 onMore={() => {
                     logutils.filterLogsFromName(this.state.searchQuery,this.itemNo, this.startAfter, (logs, newStartAfter, itemNo) => {
                         this.startAfter = newStartAfter;
