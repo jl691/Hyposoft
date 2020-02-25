@@ -375,7 +375,7 @@ function checkAssetFits(position, height, rack, callback, id = null) { //rackU, 
     let conflicting = [];
     //generate all positions occupied in tentative instance
     let tentPositions = [];
-    for (let i = position; i <= position + height; i++) {
+    for (let i = position; i < position + height; i++) {
         tentPositions.push(i);
         //console.log("pushing " + i + " to array")
     }
