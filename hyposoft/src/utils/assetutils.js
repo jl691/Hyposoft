@@ -38,7 +38,8 @@ function getAsset(callback, field = null, direction = null) {
                 datacenter: doc.data().datacenter,
                 datacenterAbbreviation: doc.data().datacenterAbbrev,
                 macAddress: doc.data().macAddress,
-                powerConnections: doc.data().powerConnections
+                powerConnections: doc.data().powerConnections,
+                networkConnections: doc.data().networkConnections
             });
             count++;
             if (count === docSnaps.docs.length) {

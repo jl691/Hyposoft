@@ -65,7 +65,25 @@ class AssetScreen extends Component {
             rackSortChoice: "asc",//by default, will be ascending
             rackUSortChoice: "asc",
             searchQuery: "",
-            datacenter: "",
+            updateDatacenter: "",
+            updateAsset_id:"",
+            updateMacAddresses: [
+                {
+                    networkPort: "",
+                    macAddress: ""
+                }
+            ],
+            updateNetworkConnections: [
+                {
+                    otherAssetID: "",
+                    otherPort: "",
+                    thisPort: ""
+                }
+            ],
+            updatePowerConnections: [{
+                pduSide: "",
+                port: ""
+            }],
             datacentersLoaded: false,
             rangeStart: "",
             rangeEnd: ""
@@ -195,7 +213,7 @@ class AssetScreen extends Component {
             deleteHostname: datum.hostname
         });
     }
-    handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter) => {
+    handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter, datumMACAddresses, datumNetworkConnections, datumPowerConnections) => {
         this.setState({
             popupType: 'Update',
             updateID: datumID,
@@ -205,9 +223,16 @@ class AssetScreen extends Component {
             updateRackU: datumRackU,
             updateOwner: datumOwner,
             updateComment: datumComment,
-            updateDatacenter: datumDatacenter
+            updateDatacenter: datumDatacenter,
+            updateMacAddresses: datumMACAddresses,
+            updateNetworkConnections: datumNetworkConnections,
+            updatePowerConnections: datumPowerConnections
+
 
         });
+
+        console.log(datumNetworkConnections)
+        console.log(datumPowerConnections)
 
     }
 
@@ -356,6 +381,10 @@ class AssetScreen extends Component {
                         updateOwnerFromParent={this.state.updateOwner}
                         updateCommentFromParent={this.state.updateComment}
                         updateDatacenterFromParent={this.state.updateDatacenter}
+                        updateAssetIDFromParent={this.state.updateID}
+                        updateMacAddressesFromParent={this.state.updateMacAddresses}
+                        updatePowerConnectionsFromParent={this.state.updatePowerConnections}
+                        updateNetworkConnectionsFromParent={this.state.updateNetworkConnections}
                     />
                 </Layer>
             )
