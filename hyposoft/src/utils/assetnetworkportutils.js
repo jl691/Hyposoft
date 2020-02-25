@@ -245,6 +245,7 @@ function symmetricNetworkConnectionsAdd(networkConnectionsArray, newID) {
         //TODO:didn't fill out any fields?? But what if first one was left blank
         return;
     }
+    else{
 
     //Only add once everything has been validated. Go up into assetutils and call this method there
     for (let i = 0; i < networkConnectionsArray.length; i++) {
@@ -265,6 +266,10 @@ function symmetricNetworkConnectionsAdd(networkConnectionsArray, newID) {
 
     }
 
+
+    }
+
+
 }
 //TODO: asset utils and add this method
 function symmetricNetworkConnectionsDelete(deleteID) {
@@ -282,7 +287,7 @@ function symmetricNetworkConnectionsDelete(deleteID) {
                 let conns = otherAssetDoc.networkConnections;
                 conns.forEach(function (conn) {
                     if (conn.otherAssetID = deleteID) {
-                        //then call firld delete frecase code
+                        //then call field delete firebase code
                     }
 
 

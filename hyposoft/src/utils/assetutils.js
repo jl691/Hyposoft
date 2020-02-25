@@ -230,6 +230,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 callback(ppStatus)
                                             }
                                             else {
+                                                console.log("HERE and power connections validated")
                                                 if (overrideAssetID.trim() != "") {
 
                                                     assetIDutils.overrideAssetID(overrideAssetID).then(
@@ -258,15 +259,35 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                 datacenterID: datacenterID,
                                                                 datacenterAbbrev: datacenterAbbrev
 
+                                                                
                                                             }).then(function (docRef) {
-                                                                racksRef.doc(String(rackID)).update({
-                                                                    assets: firebase.firestore.FieldValue.arrayUnion(overrideAssetID),
-                                                                    powerPorts: firebase.firestore.FieldValue.arrayUnion(...powerConnections)
-                                                                }).then(function () {
-                                                                    console.log("Document successfully updated in racks");
-                                                                    logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
-                                                                    callback(null);
-                                                                })
+                                                                assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, overrideAssetID);
+
+                                                                if (powerConnections != null) {
+                                                                    racksRef.doc(String(rackID)).update({
+                                                                        assets: firebase.firestore.FieldValue.arrayUnion(overrideAssetID),
+                                                                        powerPorts: firebase.firestore.FieldValue.arrayUnion(...powerConnections)
+                                                                    }).then(function () {
+                                                              
+                                                                        console.log("Document successfully updated in racks");
+                                                                        logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
+                                                                        callback(null);
+                                                                    })
+
+
+                                                                }
+                                                                else {
+                                                                    racksRef.doc(String(rackID)).update({
+                                                                        assets: firebase.firestore.FieldValue.arrayUnion(overrideAssetID)
+                                                                    }).then(function () {
+                                                                
+                                                                        console.log("Document successfully updated in racks");
+                                                                        logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
+                                                                        callback(null);
+                                                                    })
+
+
+                                                                }
                                                                 docRef.get().then(ds => {
                                                                     index.saveObject({ ...ds.data(), objectID: ds.id })
                                                                 })
@@ -317,8 +338,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                         assets: firebase.firestore.FieldValue.arrayUnion(newID),
                                                                         powerPorts: firebase.firestore.FieldValue.arrayUnion(...powerConnections)
                                                                     }).then(function () {
-                                                                        // idx++
-                                                                        // if(idx == 2){
+                                                                        
                                                                         console.log("Document successfully updated in racks");
                                                                         logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
                                                                         callback(null);
@@ -330,8 +350,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                     racksRef.doc(String(rackID)).update({
                                                                         assets: firebase.firestore.FieldValue.arrayUnion(newID)
                                                                     }).then(function () {
-                                                                        // idx++
-                                                                        // if(idx == 2){
+                                                                
                                                                         console.log("Document successfully updated in racks");
                                                                         logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
                                                                         callback(null);
@@ -339,6 +358,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
 
                                                                 }
+                                                                docRef.get().then(ds => {
+                                                                    index.saveObject({ ...ds.data(), objectID: ds.id })
+                                                                })
 
                                                             }).catch(function (error) {
                                                                 // callback("Error");

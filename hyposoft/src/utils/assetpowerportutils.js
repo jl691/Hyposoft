@@ -11,15 +11,18 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
     // assuming all or nothing. If an asset has 2 power ports, can't just plug one in
 
     //How to handle when the rack does not have a network managed port?? How does this affect the detailed view? Getting the status?
-
+    let success = 0;
     for (let i = 0; i < powerConnections.length; i++) {
-        let success = 0;
+        
         let pduSide = powerConnections[i].pduSide;
         let port = powerConnections[i].port;
 
         if (pduSide.trim() === "" && port.trim() === "") {
             success++;
+            
             if (success == powerConnections.length) {
+                console.log("Returning successfully")
+                console.log(powerConnections.length)
                 callback(null)
             }
             //TODO: need to signify to store a null in the DB. That way, can do a .length check to know to dispplay "no connection" in the asset detail view
@@ -31,6 +34,9 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
             modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
                 let numPowerPorts = querySnapshot.docs[0].data().powerPorts;
                 console.log("Num powerPorts for this model: " + numPowerPorts)
+
+                //FOR TESTING
+                numPowerPorts=4
 
                 if (parseInt(port) >= 1 && parseInt(port) <= 24) {
 
@@ -44,6 +50,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
                             else {
                                 success++;
                                 if (success == powerConnections.length) {
+                                    console.log("Returning successfully")
                                     callback(null)
                                 }
                             }
@@ -51,8 +58,8 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
                         })
 
                     }
-                    else {
-                        callback("To make power connections for this model" + model + " need to make" + numPowerPorts + " connections.")
+                    else if (numPowerPorts!=null){
+                        callback("To make power connections for this model " + model + ", you need to make " + numPowerPorts + " connections.")
 
                     }
 
@@ -62,7 +69,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
 
                 }
 
-            }).catch(console.log("Could not find the model"))
+            }).catch(function (error) {console.log("Could not find the model: " + error)})
 
 
         }

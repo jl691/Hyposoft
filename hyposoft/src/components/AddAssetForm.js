@@ -120,7 +120,7 @@ export default class AddAssetForm extends Component {
 
     handleDisplayMACFields(macTextFields){
         console.log(this.state.macAddresses)
-        this.setState(prevState => ({ }))
+        this.setState(prevState => ({macAddresses: [...prevState.macAddresses, ]}))
     }
 
 
