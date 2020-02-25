@@ -33,7 +33,7 @@ function packageUser(displayName, username, email, password) {
         displayName: displayName.trim(),
         username: username.trim(),
         email: email.trim(),
-        password: (password !== null ? firebaseutils.hashAndSalt(password) : ''),
+        password: (password !== null ? firebaseutils.hashAndSalt2(password) : ''),
         role: USER_ROLE
     }
 
@@ -118,11 +118,16 @@ function deleteUser(username, callback) {
 }
 
 function isLoginValid(username, password, callback) {
-    firebaseutils.usersRef.where('username', '==', username)
-    .where('password', '==', firebaseutils.hashAndSalt(password.trim())).get()
+    firebaseutils.usersRef.where('username', '==', username).get()
     .then(querySnapshot => {
         if (!querySnapshot.empty) {
-            callback({...querySnapshot.docs[0].data(), docId: querySnapshot.docs[0].id})
+            console.log(password.trim())
+            console.log(firebaseutils.hashAndSalt2(password.trim(), querySnapshot.docs[0].data().password.split('|')[1]))
+            if (querySnapshot.docs[0].data().password === firebaseutils.hashAndSalt2(password.trim(), querySnapshot.docs[0].data().password.split('|')[1])) {
+                callback({...querySnapshot.docs[0].data(), docId: querySnapshot.docs[0].id})
+            } else {
+                callback(null)
+            }
         } else {
             callback(null)
         }
@@ -163,13 +168,13 @@ function usernameTaken(username, callback) {
 }
 
 function changePassword(newPass) {
-    firebaseutils.usersRef.doc(localStorage.getItem('email')).update({password: firebaseutils.hashAndSalt(newPass)})
+    firebaseutils.usersRef.doc(localStorage.getItem('email')).update({password: firebaseutils.hashAndSalt2(newPass)})
 }
 
 function changePasswordByEmail(email, newPass, callback) {
     firebaseutils.usersRef.where('email', '==', email).get().then(qs => {
         if (!qs.empty) {
-            qs.docs[0].ref.update({password: firebaseutils.hashAndSalt(newPass)}).then(() => callback())
+            qs.docs[0].ref.update({password: firebaseutils.hashAndSalt2(newPass)}).then(() => callback())
         }
     })
 }

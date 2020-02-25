@@ -398,21 +398,24 @@ class ModelsScreen extends React.Component {
         if (this.state.sortField && this.state.sortField === field) {
             //reverse direction
             this.setState({
-                sortAscending: !this.state.sortAscending
+                sortAscending: !this.state.sortAscending,
+                initialLoaded: false,
             });
             newSort = !this.state.sortAscending;
         } else {
             //start with ascending
             this.setState({
                 sortField: field,
-                sortAscending: true
+                sortAscending: true,
+                initialLoaded: false,
             });
             newSort = true;
         }
 
         this.startAfter = null;
         this.setState({
-            models: []
+            models: [],
+            initialLoaded: false,
         });
 
         console.log("111")
