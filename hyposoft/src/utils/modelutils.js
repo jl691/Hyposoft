@@ -112,7 +112,7 @@ function matchesFilters(data, filters) {
 }
 
 function getModels(startAfter, callback, filters) {
-    firebaseutils.modelsRef.startAfter(startAfter)
+    firebaseutils.modelsRef
     .orderBy('vendor').orderBy('modelNumber')
     .startAfter(startAfter)
     .get()

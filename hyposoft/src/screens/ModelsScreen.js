@@ -317,7 +317,7 @@ class ModelsScreen extends React.Component {
                                                                 modelutils.getModels(this.startAfter, (models, newStartAfter) => {
                                                                     this.startAfter = newStartAfter
                                                                     this.setState(oldState => (
-                                                                        {...oldState, models: [...oldState.userse, ...models]}
+                                                                        {...oldState, models: [...oldState.models, ...models]}
                                                                     ))
                                                                 }, this.state.filters)
                                                             }

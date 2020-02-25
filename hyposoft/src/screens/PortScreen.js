@@ -10,6 +10,7 @@ import * as modelutils from '../utils/modelutils'
 import * as assetutils from '../utils/assetutils'
 import * as bulkutils from '../utils/bulkutils'
 import * as bulkconnectionsutils from '../utils/bulkconnectionsutils'
+import * as assetimportutils from '../utils/assetimportutils'
 import CSVReader from 'react-csv-reader'
 
 import {
@@ -64,7 +65,7 @@ class PortScreen extends Component {
 
     exportAssets () {
         this.setState(oldState => ({...oldState, showLoadingDialog: true}))
-        assetutils.getAssetsForExport(rows => {
+        assetimportutils.getAssetsForExport(rows => {
             var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
                 type: "data:text/csv;charset=utf-8;",
             })
@@ -177,39 +178,53 @@ class PortScreen extends Component {
     }
 
     importAssets (data, fileName) {
-        this.setState(oldState => ({...oldState, showLoadingDialog: true}))
-        if (data.length === 0) {
-            ToastsStore.info('No records found in imported file', 3000, 'burntToast')
-            return
-        }
+        const file = document.querySelector('#csvreaderassets').files[0]
+        bulkutils.parseCSVFile(file, data => {
+            document.getElementById('csvreaderassets').value = ''
+            if (data.length === 0) {
+                ToastsStore.info('No records found in imported file', 3000, 'burntToast')
+                return
+            }
 
-        if (!('hostname' in data[0] && 'rack' in data[0] && 'rack_position' in data[0]
-            && 'vendor' in data[0] && 'model_number' in data[0] && 'owner' in data[0]
-            && 'comment' in data[0])) {
-            ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
-            return
-        }
-
-        assetutils.validateImportedAssets(data, ({errors, toBeAdded, toBeModified, toBeIgnored}) => {
-            if (errors.length > 0) {
-                this.setState(oldState => ({
-                    ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
-                }))
-            } else {
-                if (toBeModified.length > 0) {
-                    // Confirm modifications
+            if (!('asset_number' in data[0] && 'hostname' in data[0] && 'datacenter' in data[0]
+                && 'rack' in data[0] && 'rack_position' in data[0] && 'vendor' in data[0]
+                && 'model_number' in data[0] && 'owner' in data[0] && 'comment' in data[0]
+                && 'power_port_connection_1' in data[0] && 'power_port_connection_2' in data[0])) {
+                ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
+                return
+            }
+            this.setState(oldState => ({...oldState, showLoadingDialog: true}))
+            assetimportutils.validateImportedAssets(data, ({ errors, toBeIgnored, toBeModified, toBeAdded }) => {
+                alert('here')
+                if (errors.length > 0) {
                     this.setState(oldState => ({
-                        ...oldState, showLoadingDialog: false, errors: undefined, assetsToBeAdded: toBeAdded, assetsToBeIgnored: toBeIgnored, assetsToBeModified: toBeModified, assetsModified: undefined
+                        ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
                     }))
                 } else {
-                    // Just add the ones to be added
-                    this.setState(oldState => ({
-                        ...oldState, showLoadingDialog: false, errors: undefined, assetsToBeAdded: toBeAdded, assetsToBeIgnored: toBeIgnored, assetsModified: [], assetsToBeModified: undefined
-                    }))
-                }
+                    this.setState(oldState => ({...oldState, showLoadingDialog: false, errors: undefined}))
+                    if (toBeModified.length === 0) {
+                        if (toBeAdded.length > 0) {
+                            assetimportutils.bulkAddAssets(toBeAdded, () => {
+                                this.setState(oldState => ({...oldState, modificationsInfoAssets: undefined, showStatsForAssets: true, ignoredAssets: toBeIgnored, modifiedAssets: [], createdAssets: toBeAdded}))
+                            })
+                        } else {
+                            this.setState(oldState => ({...oldState, modificationsInfoAssets: undefined, showStatsForAssets: true, ignoredAssets: toBeIgnored, modifiedAssets: [], createdAssets: []}))
+                        }
+                    } else {
+                        // Ask if they want to modify, then add.
+                        this.setState(oldState => ({
+                            ...oldState, showLoadingDialog: false,
+                            ignoredAssets: toBeIgnored, modifiedAssets: toBeModified, createdAssets: toBeAdded,
+                            showStatsForAssets: false,
+                            modificationsInfoAssets: toBeModified.map(m => <div><b>Row {m.rowNumber}:</b> Asset #{m.asset_number} ({m.vendor+' '+m.model_number})</div>)
+                        }))
 
-                this.addAssetsToDb(toBeAdded)
-            }
+                        if (toBeAdded.length > 0) {
+                            assetimportutils.bulkAddAssets(toBeAdded, () => {})
+                        }
+                    }
+                }
+            })
         })
     }
 
@@ -429,8 +444,11 @@ class PortScreen extends Component {
                         </Box>
                     </Layer>
                 )}
-                {this.state.assetsToBeModified && (
-                    <Layer position="center" modal onClickOutside={()=>{}} onEsc={()=>{}}>
+                {this.state.modifiedAssets && (
+                    <Layer margin='medium' position="center" modal onClickOutside={() => this.setState(oldState => ({...oldState, modificationsInfoAssets: undefined,
+                    showStatsForAssets: true, ignoredAssets: [...oldState.ignoredAssets, ...oldState.modifiedAssets], modifiedAssets: []}))}
+                     onEsc={() => this.setState(oldState => ({...oldState, modificationsInfoAssets: undefined,
+                     showStatsForAssets: true, ignoredAssets: [...oldState.ignoredAssets, ...oldState.modifiedAssets], modifiedAssets: []}))}>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
                                 Update or ignore?
@@ -442,41 +460,39 @@ class PortScreen extends Component {
                                 gap="small"
                                 direction="column"
                                 align="start"
+                                overflow='auto'
                                 justify="start" >
-                                {this.state.assetsToBeModified.map(tbm => <div><b>Row {tbm.row}:</b> {tbm.hostname} ({tbm.vendor} {tbm.model_number})</div>)}
+                                {this.state.modificationsInfoAssets}
                             </Box>
                             <Box
-                                margin='small'
+                                margin={{top: 'small'}}
                                 as="footer"
                                 gap="small"
                                 direction="row"
                                 align="center"
                                 justify="end" >
-                                <Button label="Ignore" primary onClick={() => this.setState(oldState => ({
-                                    ...oldState, errors: undefined, assetsToBeAdded: oldState.assetsToBeAdded, assetsToBeIgnored: [...oldState.assetsToBeIgnored, oldState.assetsToBeModified], assetsToBeModified: undefined,
-                                    assetsModified: []
-                                }))} />
+                                <Button label="Ignore" primary onClick={() => this.setState(oldState => ({...oldState, modificationsInfoAssets: undefined,
+                                showStatsForAssets: true, ignoredAssets: [...oldState.ignoredAssets, ...oldState.modifiedAssets], modifiedAssets: []}))} />
                                 <Button
                                     label="Update"
                                     onClick={() => {
-                                        this.modifyAssetsInDb(this.state.assetsToBeModified)
-                                        this.setState(oldState => ({
-                                            ...oldState, errors: undefined, assetsToBeAdded: oldState.assetsToBeAdded, assetsToBeIgnored: [...oldState.assetsToBeIgnored], assetsToBeModified: undefined,
-                                            assetsModified: [...oldState.assetsToBeModified]
-                                        }))
+                                        assetimportutils.bulkModifyAssets(this.state.modifiedAssets, () => {
+                                            this.setState(oldState => ({...oldState, modificationsInfoAssets: undefined, showStatsForAssets: true}))
+                                        })
                                     }}
                                     />
                             </Box>
                         </Box>
                     </Layer>
                 )}
-                {(this.state.assetsToBeAdded && this.state.assetsToBeIgnored && this.state.assetsModified
-                && !this.state.errors && !this.state.assetsToBeModified) && (
+                {this.state.showStatsForAssets && (
                     <Layer position="center" modal onClickOutside={()=>{this.setState(oldState=>({
-                        ...oldState, assetsToBeAdded: undefined, assetsToBeIgnored: undefined, assetsModified: undefined
+                        ...oldState, showStatsForAssets: false, ignoredAssets: undefined, createdAssets: undefined,
+                        modifiedAssets: undefined
                     }))}} onEsc={()=>{this.setState(oldState=>({
-                        ...oldState, assetsToBeAdded: undefined, assetsToBeIgnored: undefined, assetsModified: undefined
-                    }))}}>
+                        ...oldState, showStatsForAssets: false, ignoredAssets: undefined, createdAssets: undefined,
+                        modifiedAssets: undefined
+                    }))}} margin={{top: 'medium', bottom: 'medium'}}>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
                                 Import Successful
@@ -484,14 +500,21 @@ class PortScreen extends Component {
                             <p>Here are statistics on how your database is different after import.</p>
                             <Box
                                 margin={{top: 'small'}}
+                                overflow='auto'
                                 as="footer"
                                 gap="small"
                                 direction="column"
                                 align="start"
                                 justify="start" >
-                                <div><b>Assets created:</b> {this.state.assetsToBeAdded.length}</div>
-                                <div><b>Assets modified:</b> {this.state.assetsModified.length}</div>
-                                <div><b>Records ignored:</b> {this.state.assetsToBeIgnored.length}</div>
+                                <div><b>Assets created ({this.state.createdAssets.length}):</b></div>
+                                {this.state.createdAssets.map(m => <div><b>Row {m.rowNumber}:</b> Asset #{m.asset_number} ({m.vendor+' '+m.model_number})</div>)}
+                                <div></div>
+                                <div><b>Assets modified ({this.state.modifiedAssets.length}):</b></div>
+                                {this.state.modifiedAssets.map(m => <div><b>Row {m.rowNumber}:</b> Asset #{m.asset_number} ({m.vendor+' '+m.model_number})</div>)}
+                                <div></div>
+                                <div><b>Assets ignored ({this.state.ignoredAssets.length}):</b></div>
+                                {this.state.ignoredAssets.map(m => <div><b>Row {m.rowNumber}:</b> Asset #{m.asset_number} ({m.vendor+' '+m.model_number})</div>)}
+                                <div></div>
                             </Box>
                         </Box>
                     </Layer>
