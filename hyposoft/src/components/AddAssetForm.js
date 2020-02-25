@@ -118,7 +118,7 @@ export default class AddAssetForm extends Component {
         }
     }
 
-    handleDisplayMACFields(event){
+    handleDisplayMACFields(macTextFields){
         console.log(this.state.macAddresses)
         this.setState(prevState => ({ }))
     }
@@ -214,6 +214,7 @@ export default class AddAssetForm extends Component {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
         }
+        console.log(this.state)
 
 
         return (
@@ -368,8 +369,9 @@ export default class AddAssetForm extends Component {
                                 <AccordionPanel label="MAC Addresses">
                                     <AssetMACForm
 
-                                        model={this.state.model}
                                         fieldCallback={this.handleDisplayMACFields}
+                                        model={this.state.model}
+                                        macAddresses={this.state.macAddresses}
                                         
 
                                     />
