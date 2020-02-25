@@ -65,6 +65,7 @@ class RackElevations extends React.Component {
                         if (result) {
                             racks.push(result);
                             if (racks.length === totalRacks) {
+                                console.log("found All the racks")
                                 this.setState({
                                     racks: racks
                                 })
@@ -78,7 +79,7 @@ class RackElevations extends React.Component {
 
     getPNGFromChild = (imageData, position) => {
         console.log("callback from child!");
-        console.log(imageData);
+        //console.log(imageData);
         images.set(position, imageData);
         if (images.size === totalRacks) {
             //sort
