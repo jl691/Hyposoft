@@ -76,6 +76,7 @@ function addSingleRack(row, number, height, datacenter, callback) {
                         number: number,
                         height: height,
                         assets: [],
+                        powerPorts:[],
                         datacenter: datacenterID
                     }).then(function (docRef) {
                         datacenterutils.addRackToDatacenter(docRef.id, datacenter, result => {
@@ -350,11 +351,11 @@ function getAssetData(assetID, callback) {
 }
 
 function getModelHeightColor(model, callback) {
-    console.log("Attempting to get model " + model)
+    //console.log("Attempting to get model " + model)
     modelutils.getModelByModelname(model, result => {
         if (result) {
-            console.log("get A RESULT OF " + result)
-            console.log(result.data());
+           // console.log("get A RESULT OF " + result)
+           // console.log(result.data());
             firebaseutils.modelsRef.doc(result.id).get().then(function (docRefModel) {
                 callback(docRefModel.data().height, docRefModel.data().displayColor);
             }).catch(function (error) {
@@ -376,20 +377,20 @@ function checkAssetFits(position, height, rack, callback, id = null) { //rackU, 
     let tentPositions = [];
     for (let i = position; i <= position + height; i++) {
         tentPositions.push(i);
-        console.log("pushing " + i + " to array")
+        //console.log("pushing " + i + " to array")
     }
     firebaseutils.racksRef.doc(rack).get().then(function (docRefRack) {
         let assetCount = 0;
         if (docRefRack.data().assets.length) {
             docRefRack.data().assets.forEach(assetID => {
-                console.log("this rack contains " + assetID);
+               // console.log("this rack contains " + assetID);
                 firebaseutils.assetRef.doc(assetID).get().then(function (docRefAsset) {
                     if (assetID != id) {
 
-                        console.log(docRefAsset.data().model)
+                       //console.log(docRefAsset.data().model)
                         modelutils.getModelByModelname(docRefAsset.data().model, result => {
                             if (result) {
-                                console.log("found a model!")
+                               // console.log("found a model!")
                                 //console.log(result)
                                 getModelHeightColor((docRefAsset.data().model), (height, color) => {
                                     if (height) {
@@ -439,7 +440,7 @@ function generateRackUsageReport(rack, callback) {
     let vendorCounts = new Map();
     let modelCounts = new Map();
     let ownerCounts = new Map();
-    console.log("rack is " + rack)
+   // console.log("rack is " + rack)
     firebaseutils.racksRef.doc(rack).get().then(function (docRefRack) {
         if (docRefRack.data().assets.length) {
             docRefRack.data().assets.forEach(assetID => {

@@ -14,6 +14,8 @@ import {
 } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
+import * as assetpowerportutils from '../utils/assetpowerportutils'
+import * as modelutils from '../utils/modelutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
 import { Redirect } from "react-router-dom";
@@ -21,6 +23,7 @@ import theme from "../theme";
 
 import AssetPowerPortsForm from './AssetPowerPortsForm'
 import AssetNetworkPortsForm from './AssetNetworkPortsForm';
+import AssetMACForm from './AssetMACForm';
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -37,58 +40,103 @@ export default class AddAssetForm extends Component {
             rackU: "",
             owner: "",
             comment: "",
-            macAddress: "",
             datacenterName: "",
             datacenterAbbrev: "",
             showPowerConnections: false,
+            macAddresses: [
+                {
+                    networkPort: "",
+                    macAddress: ""
+                }
+            ],
             networkConnections: [
                 {
-                otherAssetID: "",
-                otherPort: "",
-                thisPort: ""
-            }
-        ],
+                    otherAssetID: "",
+                    otherPort: "",
+                    thisPort: ""
+                }
+            ],
             powerConnections: [{
-
                 pduSide: "",
                 port: ""
             }],
-
-
-
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.addNetworkConnection = this.addNetworkConnection.bind(this);
         this.addPowerConnection = this.addPowerConnection.bind(this);
+        this.defaultPDUFields = this.defaultPDUFields.bind(this)
+    }
+
+
+    defaultPDUFields(model, rack, datacenter) {
+        //if the model has 2 or more ports, need to do these default fields
+        //find the first available spot
+        let numPorts = 0;
+        //instead of going into modelsRef, use a backend method
+        try{
+            modelutils.getModelByModelname(model, status => {
+
+                if (status) {
+                    //test with model lenovo foobar
+                    numPorts = status.data().powerPorts
+                    
+                    if (numPorts >= 2) {
+                        assetpowerportutils.getFirstFreePort(rack, datacenter, returnedPort =>{
+                            console.log("In AddAssetForm. returned power port: "+returnedPort)
+                            if (returnedPort) {
+    
+                                this.setState(oldState => ({
+                                    ...oldState,
+                                    powerConnections: [{
+                                        pduSide: "Left",
+                                        port: returnedPort.toString()
+                                    },
+                                    {
+                                        pduSide: "Right",
+                                        port: returnedPort.toString()
+                                    },
+        
+                                    ]
+                                }))
+    
+                                console.log(this.state.powerConnections)
+                            }
+    
+    
+                        });
+                     
+                        
+                    }
+                }
+            })
+
+
+        }
+        catch(error){
+            console.log(error)
+        }
+      
     }
 
     handleChange(event) {
         this.setState({
             [event.target.name]: event.target.value
         });
+        //catchall for default power port fields
+        if (event.target.name == "rackU") {
+            //console.log(this.state)
+           // console.log(this.state.datacenter)
+            this.defaultPDUFields(this.state.model, this.state.rack, this.state.datacenter)
+        }
     }
 
-    //Puts the MAC address into canonical form: lower case and colon-delimited
-    fixMACAddress(mac) {
-        let noSepMac;
-        if (mac.charAt(2) == "-") {
-            noSepMac = mac.split("-").join("");
-
-        } else if (mac.charAt(2) == "_") {
-            noSepMac = mac.split("_").join("");
-        }
-        else {//if the admin put in a mac address with no separators
-            noSepMac = mac;
-        }
-
-        let canonicalMAC = noSepMac.substr(0, 2).toLowerCase() + ":" + noSepMac.substr(2, 2).toLowerCase() + ":" + noSepMac.substr(4, 2).toLowerCase() + ":" + noSepMac.substr(6, 2).toLowerCase() + ":" + noSepMac.substr(8, 2).toLowerCase() + ":" + noSepMac.substr(10, 2).toLowerCase();
-
-        console.log("Canonical MAC: " + canonicalMAC)
-        return canonicalMAC;
-
-
+    handleDisplayMACFields(macTextFields){
+        console.log(this.state.macAddresses)
+        this.setState(prevState => ({ }))
     }
+
+
 
     addNetworkConnection(event) {
         this.setState(prevState => ({
@@ -113,14 +161,11 @@ export default class AddAssetForm extends Component {
         if (this.state.macAddress && !/^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$/.test(this.state.macAddress)) {
             fixedMAC = this.fixMACAddress(this.state.macAddress);
 
-        } else if (this.state.macAddress) {
-            fixedMAC = this.state.macAddress;
         }
-        //RACE CONDITION: i think it's not setting the state before calling this.state.macAddress in addAsset()
-        this.setState({ macAddress: fixedMAC })
-
-        console.log("MAC address passed to database: " + fixedMAC)
-        console.log(this.state.networkConnections)
+            //TODO: this is not correct
+        this.setState((prevState) => ({
+            powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
+        }));
 
 
     }
@@ -147,7 +192,8 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Invalid MAC address. Ensure it is a six-byte hexadecimal value with any byte separator punctuation.");
             } else {
 
-                this.handleMacAddressFixAndSet();
+                //TODO: fix this in assetmacutils
+                //assetmacutils.handleMacAddressFixAndSet();
 
                 assetutils.addAsset(
                     this.state.asset_id,
@@ -185,6 +231,7 @@ export default class AddAssetForm extends Component {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
         }
+        console.log(this.state)
 
 
         return (
@@ -199,7 +246,6 @@ export default class AddAssetForm extends Component {
                         <Box direction="column" pad='xsmall' gap="small" flex overflow={{ vertical: 'scroll' }}>
                             <FormField name="model" label="Model">
 
-
                                 <TextInput name="model" required="true"
                                     placeholder="eg. Dell R710"
                                     onChange={e => {
@@ -209,9 +255,12 @@ export default class AddAssetForm extends Component {
                                             ...oldState,
                                             modelSuggestions: results
                                         })))
+                                        //Update the default power port fields
+                                        //this.defaultPDUFields(e.suggestion, this.state.rack, this.state.datacenter)
                                     }}
                                     onSelect={e => {
                                         this.setState(oldState => ({ ...oldState, model: e.suggestion }))
+                                        
                                     }}
                                     value={this.state.model}
                                     suggestions={this.state.modelSuggestions}
@@ -224,7 +273,6 @@ export default class AddAssetForm extends Component {
                             </FormField>
 
                             <FormField name="hostname" label="Hostname">
-
 
                                 <TextInput padding="medium" name="hostname" placeholder="eg. server9"
                                     onChange={this.handleChange}
@@ -241,6 +289,8 @@ export default class AddAssetForm extends Component {
                                             ...oldState,
                                             datacenterSuggestions: results
                                         })))
+                                        //Update the default power port fields
+                                        //this.defaultPDUFields(this.state.model, this.state.rack, e.suggestion)
                                     }}
                                     onSelect={e => {
                                         this.setState(oldState => ({ ...oldState, datacenter: e.suggestion }))
@@ -274,9 +324,12 @@ export default class AddAssetForm extends Component {
                                             ...oldState,
                                             rackSuggestions: results
                                         })))
+                                        //Update the default power port fields
+                                        //this.defaultPDUFields(this.state.model, e.suggestion, this.state.datacenter)
                                     }}
                                     onSelect={e => {
                                         this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
+
                                     }}
                                     value={this.state.rack}
                                     suggestions={this.state.rackSuggestions}
@@ -286,6 +339,7 @@ export default class AddAssetForm extends Component {
                                                 ...oldState,
                                                 rackSuggestions: results
                                             })))
+
                                         }
                                     }
                                     }
@@ -328,13 +382,6 @@ export default class AddAssetForm extends Component {
                                 />
                             </FormField>
 
-                            {/* NEW FIELDS HERE> TODO: change the values/integrate with the backend, move datacenter stuff up the form========= */}
-
-                            <FormField name="macAddress" label="MAC Address">
-                                <TextInput name="macAddress" placeholder="eg. 11-ab-cd-79-aa-c9" onChange={this.handleChange}
-                                    value={this.state.macAddress}
-                                />
-                            </FormField>
 
                             <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"} toggle={true} onChange={(e) => {
                                 let panel = document.getElementById("powerPortConnectionsPanel");
@@ -348,9 +395,12 @@ export default class AddAssetForm extends Component {
 
                         <Accordion>
                             <div id={"powerPortConnectionsPanel"} style={{display: "none"}}>
+
                                 <AccordionPanel label="Power Port Connections">
                                     <AssetPowerPortsForm
+
                                         powerConnections={this.state.powerConnections}
+
                                     />
 
                                     <Button
@@ -359,23 +409,28 @@ export default class AddAssetForm extends Component {
 
                                         label="Add a power connection" />
 
-                                    {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
-                                    {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
-                                    {/* <Button onClick={this.handleConnect}
-                                        margin={{ horizontal: 'medium', vertical: 'small' }}
-                                        label="Validate Connections" /> */}
 
                                 </AccordionPanel>
                             </div>
+<AccordionPanel label="MAC Addresses">
+                                    <AssetMACForm
 
-                            </Accordion>
+                                        fieldCallback={this.handleDisplayMACFields}
+                                        model={this.state.model}
+                                        macAddresses={this.state.macAddresses}
+                                        
 
-                            <Accordion>
+                                    />
+
+                                </AccordionPanel>
+
+    
                                 <AccordionPanel label="Network Port Connections">
                                     <AssetNetworkPortsForm
 
                                         model={this.state.model}
                                         networkConnections={this.state.networkConnections}
+
                                     />
 
                                     <Button
@@ -391,8 +446,6 @@ export default class AddAssetForm extends Component {
                                         label="Validate Connections" /> */}
 
                                 </AccordionPanel>
-
-                            </Accordion>
 
 
 

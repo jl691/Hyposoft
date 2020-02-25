@@ -3,6 +3,7 @@ import { Grommet, Box, Text, FormField, TextInput } from 'grommet'
 import theme from "../theme";
 import * as assetutils from '../utils/assetutils'
 
+
 //Instead of validate connections, upon all fields for one set of inputs, have a toast that pops up with error message
 //If the connection is not valid
 
@@ -48,6 +49,7 @@ export default class AssetNetworkPortsForm extends Component {
     }
 
 
+    //TODO: Can have up to 48 network connections made. For each thing, collapse with labels 1, 2, .... within the accordion attop lvle 
     render() {
         let { networkConnections } = this.props
         // console.log(networkConnections)
