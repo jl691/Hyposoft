@@ -282,8 +282,12 @@ export default class AssetTable extends Component {
             assets: [],
             initialLoaded: false
         });
-        assetutils.getAsset((newStartAfter, assetdb) => {
-            if (newStartAfter && assetdb) {
+        assetutils.getAsset((newStartAfter, assetdb, empty) => {
+            if(empty){
+                this.setState({
+                    initialLoaded: true
+                })
+            } else if (newStartAfter && assetdb) {
                 console.log("new sorted ", assetdb)
                 this.startAfter = newStartAfter;
                 this.setState({assets: assetdb, initialLoaded: true})
@@ -427,7 +431,7 @@ export default class AssetTable extends Component {
             return <Redirect to='/'/>
         }
 
-        if (!this.state.initialLoaded && this.state.assets.length !== 0) {
+        if (!this.state.initialLoaded) {
             return (<Text>Please wait...</Text>);
         }
 
@@ -459,7 +463,7 @@ export default class AssetTable extends Component {
             //                         justify='start' alignSelf='stretch' flex >
             //                         <Box align="center" >
             <DataTable
-                step={5}
+                step={25}
                 onMore={() => {
                     if (this.startAfter && !this.props.searchResults && this.state.initialLoaded) {
                         if (this.state.sortField) {
