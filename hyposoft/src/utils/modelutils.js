@@ -4,6 +4,10 @@ import {firebase} from "./firebaseutils";
 import {assetRef} from "./firebaseutils";
 import { saveAs } from 'file-saver'
 
+const algoliasearch = require('algoliasearch')
+const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
+const index = client.initIndex('models')
+
 function packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment) {
     displayColor = displayColor.trim()
     if (!displayColor.startsWith('#')) {
@@ -577,7 +581,31 @@ function bulkAddModels (models, callback) {
 
         createModel(null, ''+model.vendor, ''+model.model_number, parseInt(model.height), ''+model.display_color,
          network_ports, model.power_ports&&parseInt(model.power_ports), ''+model.cpu, ''+model.memory, ''+model.storage,
-         ''+model.comment, () => {
+         ''+model.comment, (modelDoc, modelDocid) => {
+             let suffixes_list = []
+             let cpu = modelDoc.cpu
+
+             while (cpu.length > 1) {
+                 cpu = cpu.substr(1)
+                 suffixes_list.push(cpu)
+             }
+
+             let storage = modelDoc.storage
+
+             while (storage.length > 1) {
+                 storage = storage.substr(1)
+                 suffixes_list.push(storage)
+             }
+
+             let modelName = modelDoc.vendor+modelDoc.modelNumber
+
+             while (modelName.length > 1) {
+                 modelName = modelName.substr(1)
+                 suffixes_list.push(modelName)
+             }
+
+             index.saveObject({...modelDoc, objectID: modelDocid, suffixes: suffixes_list.join(' ')})
+
              addedModelsCount++
              if (addedModelsCount === models.length) {
                  callback()
@@ -609,7 +637,31 @@ function bulkModifyModels (models, callback) {
 
         modifyModel(model.id, ''+model.vendor, ''+model.model_number, parseInt(model.height), ''+model.display_color,
          network_ports, parseInt(model.power_ports), ''+model.cpu, ''+model.memory, ''+model.storage,
-         ''+model.comment, () => {
+         ''+model.comment, (modelDoc, modelDocid) => {
+             let suffixes_list = []
+             let cpu = modelDoc.cpu
+
+             while (cpu.length > 1) {
+                 cpu = cpu.substr(1)
+                 suffixes_list.push(cpu)
+             }
+
+             let storage = modelDoc.storage
+
+             while (storage.length > 1) {
+                 storage = storage.substr(1)
+                 suffixes_list.push(storage)
+             }
+
+             let modelName = modelDoc.vendor+modelDoc.modelNumber
+
+             while (modelName.length > 1) {
+                 modelName = modelName.substr(1)
+                 suffixes_list.push(modelName)
+             }
+
+             index.saveObject({...modelDoc, objectID: modelDocid, suffixes: suffixes_list.join(' ')})
+
              modifiedModelsCount++
              if (modifiedModelsCount === models.length) {
                  callback()

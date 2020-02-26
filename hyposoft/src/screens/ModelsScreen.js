@@ -86,6 +86,7 @@ class ModelsScreen extends React.Component {
         .then(({ hits }) => {
             var models = []
             var itemNo = 1
+            console.log(hits)
             this.startAfter = null
             for (var i = 0; i < hits.length; i++) {
                 if (modelutils.matchesFilters(hits[i], this.state.filters)) {

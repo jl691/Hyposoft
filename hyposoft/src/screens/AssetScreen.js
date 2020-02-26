@@ -407,13 +407,12 @@ class AssetScreen extends Component {
                 <Box background='light-2' align={"center"}
                      fill="vertical"
                      overflow="auto"
-                     width="520px"
-                     pad="medium">
+                     pad="small">
 
                     {/* BEGNINNING OF FILTER BAR ==========*/}
                     <Box
                         align='center'
-                        margin={{ left: 'medium', right: 'medium' }}
+                        margin={{ left: 'small', right: 'small' }}
                         justify='start' >
 
                         {/* This box below is for range of racks */}
@@ -421,8 +420,6 @@ class AssetScreen extends Component {
                             borderRadius: 10,
                             borderColor: '#EDEDED'
                         }}
-                             direction='row'
-                             alignSelf='stretch'
                              background='#FFFFFF'
                              width={"medium"}
                              margin={{ top: 'medium', left: 'medium', right: 'medium' }}
@@ -430,8 +427,8 @@ class AssetScreen extends Component {
                             <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
                                 <Text size='small'><b>Filter By Rack Range</b></Text>
                                 {this.generateDatacenters()}
-                                <Stack margin={{ top: 'small' }}>
-                                    <Box gap='small' direction="column" margin='none' align='center'>
+                                <Stack margin={{ top: 'small', bottom: 'small' }}>
+                                    <Box gap='small' direction="column" align='center' margin={{bottom: 'medium'}}>
 
                                         <TextInput style={styles.TIStyle2} name="rangeNumberStart" value={this.state.rangeStart} placeholder="eg. B1" size="xsmall" onChange={this.handleChangeRange} />
                                         <span>to</span>
@@ -506,8 +503,13 @@ class AssetScreen extends Component {
                                             />
 
                                         </Box>
-                                        <Box direction="column" justify="center" margin={{top: 'small'}}>
+                                        <Box direction="column" justify="center" margin={{top: 'small', bottom: 'medium'}}>
                                             <Button label={<Text size="small"> Apply</Text>} onClick={this.handleCombinedSort}/>
+                                            <Button label={<Text size="small">Close</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
+                                                this.setState({
+                                                    popupType: ""
+                                                })
+                                            }}/>
                                         </Box>
 
 
@@ -519,6 +521,7 @@ class AssetScreen extends Component {
 
                             </Box>
                         </Box>
+
                         <Box style={{
                             borderRadius: 10,
                             borderColor: '#EDEDED'
@@ -529,34 +532,14 @@ class AssetScreen extends Component {
                              width={"medium"}
                              margin={{ top: 'medium', left: 'medium', right: 'medium' }}
                              pad='small' >
-                            <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
-                                {/*<Box direction="column" width={"medium"} margin={{top: 'small'}}>*/}
-                                    <Button label={<Text size="small">Close</Text>} onClick={() => {
-                                        this.setState({
-                                            popupType: ""
-                                        })
-                                    }}/>
-                                {/*</Box>*/}
-                            </Box>
-                        </Box>
-                        <Box style={{
-                            borderRadius: 10,
-                            borderColor: '#EDEDED'
-                        }}
-                             direction='row'
-                             alignSelf='stretch'
-                             background='#FFFFFF'
-                             width={"medium"}
-                             margin={{ top: 'medium', left: 'medium', right: 'medium' }}
-                             pad='small' >
-                            <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
+                            <Box flex margin={{ left: 'medium', top: 'small', right: 'medium' }} direction='column' justify='start'>
                                 {/*<Box direction="column" width={"medium"} margin={{top: 'small'}}>*/}
                                 <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} onClick={() => {
                                     bulkassetutils.exportFilteredAssets(this.state.searchResults || this.assetTable.current.state.assets);
                                 }} style={{marginBottom: "10px"}}/>
                                 <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} onClick={() => {
                                     bulkconnectionstutils.exportFilteredConnections(this.state.searchResults || this.assetTable.current.state.assets);
-                                }}/>
+                                }} margin={{bottom: 'medium'}}/>
                                 {/*this.assetTable.current.state*/}
                                 {/*</Box>*/}
                             </Box>
