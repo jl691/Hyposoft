@@ -206,7 +206,7 @@ function buildDiff(data) {
          }
       }
     }
-    return diff + ' of '
+    return diff ? (diff + ' of ') : ' '
 }
 
 function buildSpecificDiff(data,field) {
