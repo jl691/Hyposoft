@@ -236,7 +236,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                     else {
 
                                         assetpowerportutils.validatePowerConnections(datacenter, rack, racku, powerConnectionsInput, model, ppStatus => {
+                                            console.log(ppStatus)
                                             if (ppStatus) {
+                                                console.log("breakpoint")
                                                 callback(ppStatus)
                                             }
                                             else {
