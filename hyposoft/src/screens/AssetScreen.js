@@ -24,8 +24,6 @@ import theme from '../theme'
 import AppBar from '../components/AppBar'
 import HomeButton from '../components/HomeButton'
 import UserMenu from '../components/UserMenu'
-import FilterBarAssets from '../components/FilterBarAssets'
-import SearchAssets from '../components/SearchAssets'
 import AssetTable from '../components/AssetTable'
 import * as userutils from "../utils/userutils";
 import * as assetutils from "../utils/assetutils";
@@ -65,7 +63,25 @@ class AssetScreen extends Component {
             rackSortChoice: "asc",//by default, will be ascending
             rackUSortChoice: "asc",
             searchQuery: "",
-            datacenter: "",
+            updateDatacenter: "",
+            updateAsset_id:"",
+            updateMacAddresses: [
+                {
+                    networkPort: "",
+                    macAddress: ""
+                }
+            ],
+            updateNetworkConnections: [
+                {
+                    otherAssetID: "",
+                    otherPort: "",
+                    thisPort: ""
+                }
+            ],
+            updatePowerConnections: [{
+                pduSide: "",
+                port: ""
+            }],
             datacentersLoaded: false,
             rangeStart: "",
             rangeEnd: ""
@@ -122,12 +138,16 @@ class AssetScreen extends Component {
         if (event.target.name === "rackSortChoice") {
             console.log(event.target.value)
             this.rackSort = event.target.value;
-            this.state.rackSortChoice = event.target.value
+            this.setState({
+                rackSortChoice: event.target.value
+            });
 
         } else if (event.target.name === "rackUSortChoice") {
             console.log(event.target.value)
             this.rackUSort = event.target.value;
-            this.state.rackUSortChoice = event.target.value
+            this.setState({
+                rackUSortChoice: event.target.value
+            });
         }
     }
 
@@ -150,8 +170,9 @@ class AssetScreen extends Component {
             console.log("Will be sorting rackU: " + this.state.rackUSortChoice)
 
             if (sortedInst) {
-                this.state.sortedAssets = sortedInst;
-                console.log(this.state.sortedAssets)
+                this.setState({
+                    sortedAssets: sortedInst
+                });
                 this.assetTable.current.handleRackRackUSort(sortedInst)
             } else {
                 console.log("Done goofed somehow trying to sort")
@@ -195,7 +216,7 @@ class AssetScreen extends Component {
             deleteHostname: datum.hostname
         });
     }
-    handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter) => {
+    handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter, datumMACAddresses, datumNetworkConnections, datumPowerConnections) => {
         this.setState({
             popupType: 'Update',
             updateID: datumID,
@@ -205,9 +226,16 @@ class AssetScreen extends Component {
             updateRackU: datumRackU,
             updateOwner: datumOwner,
             updateComment: datumComment,
-            updateDatacenter: datumDatacenter
+            updateDatacenter: datumDatacenter,
+            updateMacAddresses: datumMACAddresses,
+            updateNetworkConnections: datumNetworkConnections,
+            updatePowerConnections: datumPowerConnections
+
 
         });
+
+        console.log(datumNetworkConnections)
+        console.log(datumPowerConnections)
 
     }
 
@@ -274,7 +302,6 @@ class AssetScreen extends Component {
 
     fetchDatacenters() {
         let count = 0;
-        let items = [];
         datacenterutils.getAllDatacenterNames(names => {
             if (names.length) {
                 names.forEach(name => {
@@ -356,6 +383,10 @@ class AssetScreen extends Component {
                         updateOwnerFromParent={this.state.updateOwner}
                         updateCommentFromParent={this.state.updateComment}
                         updateDatacenterFromParent={this.state.updateDatacenter}
+                        updateAssetIDFromParent={this.state.updateID}
+                        updateMacAddressesFromParent={this.state.updateMacAddresses}
+                        updatePowerConnectionsFromParent={this.state.updatePowerConnections}
+                        updateNetworkConnectionsFromParent={this.state.updateNetworkConnections}
                     />
                 </Layer>
             )
@@ -600,7 +631,6 @@ class AssetScreen extends Component {
 
                                                                 ref={this.assetTable}
                                                                 searchResults={this.state.searchResults}
-                                                                ref={this.assetTable}
                                                                 parent={this}
 
                                                             />

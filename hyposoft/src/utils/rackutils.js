@@ -2,12 +2,10 @@ import * as firebaseutils from "./firebaseutils";
 import * as modelutils from "./modelutils";
 import * as datacenterutils from "./datacenterutils";
 import * as logutils from "./logutils";
-import {fabric} from "fabric";
 
 function getRackAt(itemCount, callback, datacenter = null, start = null) {
     let racks = [];
     let query;
-    let count = 1;
     console.log("startafter ", start);
     if(datacenter){
         datacenterutils.getDataFromName(datacenter, datacenterID => {
@@ -28,7 +26,6 @@ function getRackAt(itemCount, callback, datacenter = null, start = null) {
                                 height: doc.data().height,
                                 assets: (doc.data().assets ? Object.keys(doc.data().assets).length : 0)
                             });
-                            count++;
                         });
                         callback(itemCount, newStart, racks, false);
                     }
@@ -55,7 +52,6 @@ function getRackAt(itemCount, callback, datacenter = null, start = null) {
                         height: doc.data().height,
                         assets: (doc.data().assets ? Object.keys(doc.data().assets).length : 0)
                     });
-                    count++;
                 });
                 callback(itemCount, newStart, racks, false);
             }
@@ -155,7 +151,7 @@ function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, datacent
     })
 }
 
-function checkAssets(rowStart, rowEnd, numberStart, numberEnd, callback) {
+/*function checkAssets(rowStart, rowEnd, numberStart, numberEnd, callback) {
     let rowStartNumber = rowStart.charCodeAt(0);
     let rowEndNumber = rowEnd.charCodeAt(0);
     for (let i = rowStartNumber; i <= rowEndNumber; i++) {
@@ -169,7 +165,7 @@ function checkAssets(rowStart, rowEnd, numberStart, numberEnd, callback) {
         }
     }
     callback(true);
-}
+}*/
 
 function deleteSingleRack(id, callback) {
     firebaseutils.racksRef.doc(id).get().then(function (doc) {
@@ -375,7 +371,7 @@ function checkAssetFits(position, height, rack, callback, id = null) { //rackU, 
     let conflicting = [];
     //generate all positions occupied in tentative instance
     let tentPositions = [];
-    for (let i = position; i <= position + height; i++) {
+    for (let i = position; i < position + height; i++) {
         tentPositions.push(i);
         //console.log("pushing " + i + " to array")
     }
@@ -385,7 +381,7 @@ function checkAssetFits(position, height, rack, callback, id = null) { //rackU, 
             docRefRack.data().assets.forEach(assetID => {
                // console.log("this rack contains " + assetID);
                 firebaseutils.assetRef.doc(assetID).get().then(function (docRefAsset) {
-                    if (assetID != id) {
+                    if (assetID !== id) {
 
                        //console.log(docRefAsset.data().model)
                         modelutils.getModelByModelname(docRefAsset.data().model, result => {

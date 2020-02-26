@@ -2,7 +2,6 @@ import React from "react";
 import {Box, Button, Grommet, Heading, Layer, Text} from "grommet";
 import theme from "../theme";
 import {Close, Trash} from "grommet-icons";
-import * as rackutils from "../utils/rackutils";
 import {ToastsStore} from "react-toasts";
 import * as datacenterutils from "../utils/datacenterutils";
 

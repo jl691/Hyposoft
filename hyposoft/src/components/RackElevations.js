@@ -1,17 +1,16 @@
 import React from "react";
-import {Box, Button, Grid, Grommet, Heading, Text} from "grommet";
+import {Box, Button, Grid, Grommet, Heading} from "grommet";
 import SingleRackElevation from "./SingleRackElevation";
 import * as jsPDF from 'jspdf';
 import * as rackutils from "../utils/rackutils";
 import theme from "../theme";
-import HomeButton from "./HomeButton";
 import UserMenu from "./UserMenu";
 import AppBar from "./AppBar";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import BackButton from "./BackButton";
 import * as datacenterutils from "../utils/datacenterutils";
 
-var doc, count, totalRacks, datacenterID;
+var doc, count, totalRacks;
 var images = new Map();
 
 class RackElevations extends React.Component {
@@ -28,7 +27,6 @@ class RackElevations extends React.Component {
         if(this.props.location.state && this.props.location.state.startRow && this.props.location.state.endRow && this.props.location.state.startNumber && this.props.location.state.endNumber && this.props.location.state.datacenter){
             datacenterutils.getDataFromName(this.props.location.state.datacenter, ID => {
                 if(ID){
-                    datacenterID = ID;
                     count = 0;
                     this.getRackIDs();
                     doc = new jsPDF({

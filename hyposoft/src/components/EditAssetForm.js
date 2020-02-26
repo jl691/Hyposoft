@@ -1,11 +1,15 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box } from 'grommet'
+import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Accordion, AccordionPanel } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
 import {Redirect} from "react-router-dom";
 import theme from "../theme";
+
+import AssetPowerPortsForm from './AssetPowerPortsForm'
+import AssetNetworkPortsForm from './AssetNetworkPortsForm';
+import AssetMACForm from './AssetMACForm';
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -14,13 +18,17 @@ export default class EditAssetForm extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            asset_id: this.props.updateAssetIDFromParent,
             model: this.props.updateModelFromParent,
             hostname: this.props.updateHostnameFromParent,
             rack: this.props.updateRackFromParent,
             rackU: this.props.updateRackUFromParent,
             owner: this.props.updateOwnerFromParent,
             comment: this.props.updateCommentFromParent,
-            datacenter: this.props.updateDatacenterFromParent
+            datacenter: this.props.updateDatacenterFromParent,
+            macAddresses: this.props.updateMacAddressesFromParent,
+            networkConnections: this.props.updatePowerConnectionsFromParent,
+            powerConnections: this.props.updateNetworkConnectionsFromParent,
 
         }
         this.handleUpdate = this.handleUpdate.bind(this);
@@ -37,6 +45,7 @@ export default class EditAssetForm extends Component {
     }
 
     handleUpdate(event) {
+
         if (event.target.name === "updateInst") {
             //this is where you pass in props updateData from AssetScreen . Want to keep old unchanged data, ow
 
@@ -196,6 +205,83 @@ export default class EditAssetForm extends Component {
                                 title='Owner'
                               />
                         </FormField>
+
+                        {/* <Accordion >
+                                <AccordionPanel label="MAC Addresses">
+                                    <AssetMACForm
+
+                                        addMACAddrCallback={this.addMACAddress}
+                                        fieldCallback={this.handleDisplayMACFields}
+                                        model={this.state.model}
+                                        macAddresses={this.state.macAddresses}
+
+
+                                    />
+
+                                    <Button
+                                        onClick={this.addMACAddress}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+
+                                        label="Add a MAC Address" />
+
+                                </AccordionPanel>
+
+                            </Accordion> */}
+
+                            <Accordion>
+                                <AccordionPanel label="Power Port Connections">
+                                    <AssetPowerPortsForm
+
+                                        powerConnections={this.state.powerConnections}
+
+                                    />
+
+                                    <Button
+                                        onClick={this.addPowerConnection}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+
+                                        label="Add a power connection" />
+
+
+                                </AccordionPanel>
+
+                            </Accordion>
+
+                            <Accordion>
+                                <AccordionPanel label="Network Port Connections">
+                                    <AssetNetworkPortsForm
+
+                                        model={this.state.model}
+                                        datacenter={this.state.datacenter}
+                                        currentId={this.state.asset_id}
+                                        networkConnections={this.state.networkConnections}
+
+                                    />
+
+                                    <Button
+                                        onClick={this.addNetworkConnection}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+
+                                        label="Add a network connection" />
+
+                                    {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
+                                    {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
+                                    {/* <Button onClick={this.handleConnect}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+                                        label="Validate Connections" /> */}
+
+                                </AccordionPanel>
+
+                            </Accordion>
+
+
+
+                            <FormField name="asset_id" label="Override Asset ID">
+                                <TextInput name="asset_id" placeholder="If left blank, will auto-generate" onChange={this.handleChange}
+                                    value={this.state.asset_id}
+                                />
+                            </FormField>
+
 
                         <FormField name="comment" label="Comment" >
 

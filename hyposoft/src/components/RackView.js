@@ -10,11 +10,9 @@ import {
     Text,
     Form,
     TextInput,
-    Stack,
-    RangeSelector,
     Menu, Select
 } from "grommet";
-import {Add, Trash, Close, View, Analytics, FormEdit, FormTrash, FormView} from "grommet-icons";
+import {Add, Trash, Close, View, Analytics} from "grommet-icons";
 import * as userutils from "../utils/userutils";
 import * as rackutils from "../utils/rackutils";
 import AddRackView from "./AddRackView";
@@ -71,9 +69,6 @@ class RackView extends React.Component {
     }
 
     componentDidMount() {
-        assetnetworkportutils.symmetricNetworkConnectionsDelete("553087", result => {
-            console.log(result)
-        })
         this.fetchDatacenters();
     }
 
