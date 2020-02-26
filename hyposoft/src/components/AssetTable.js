@@ -468,7 +468,7 @@ export default class AssetTable extends Component {
                 }}
 
                 columns={this.columns}
-                size="large"
+                size="medium"
                 //pad={{ horizontal: "medium", vertical: "xsmall" }}
 
                 onClickRow={({datum}) => {
