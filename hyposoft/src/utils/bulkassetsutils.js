@@ -1,6 +1,10 @@
 import * as firebaseutils from './firebaseutils'
 import { saveAs } from 'file-saver'
 
+const algoliasearch = require('algoliasearch')
+const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
+const index = client.initIndex('assets')
+
 function validateImportedAssets (data, callback) {
     var tasksPending = 4 // Assets, users, datacenters+racks, models
     var errors = []
@@ -69,7 +73,7 @@ function validateImportedAssets (data, callback) {
                 assetNumbersSeenInImport.push(datum.asset_number)
             }
 
-            if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(datum.hostname)) {
+            if (datum.hostname && !/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(datum.hostname)) {
                 errors = [...errors, [i + 1, 'Invalid hostname (does not follow RFC-1034 specs)']]
             }
 
@@ -171,12 +175,12 @@ function validateImportedAssets (data, callback) {
                     })
                 } else {
                     if ((datum.asset_number in assetsLoaded) && assetsLoaded[datum.asset_number].powerConnections) {
-                        datum.power_connections.push(assetsLoaded[datum.asset_number].powerConnections[0])
-                    } else if (powerPortsNumber && powerPortsNumber >= 1){
-                        datum.power_connections.push({
-                            pduSide: null,
-                            port: null
-                        })
+                        if (powerPortsNumber && powerPortsNumber >= 1){
+                            datum.power_connections.push({
+                                pduSide: null,
+                                port: null
+                            })
+                        }
                     }
                 }
 
@@ -187,9 +191,15 @@ function validateImportedAssets (data, callback) {
                     })
                 } else {
                     if ((datum.asset_number in assetsLoaded) && powerPortsNumber && powerPortsNumber > 1 && assetsLoaded[datum.asset_number].powerConnections) {
-                        datum.power_connections.push(assetsLoaded[datum.asset_number].powerConnections[1])
+                        datum.power_connections.push({
+                            pduSide: null,
+                            port: null
+                        })
                     }
                 }
+
+
+
                 if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]] && datum.power_port_connection_1 in usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]]) {
                     if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]][datum.power_port_connection_1] !== datum.asset_number)
                         errors = [...errors, [i + 1, 'Power port connection 1 is being used by another asset']]
@@ -308,7 +318,7 @@ function validateImportedAssets (data, callback) {
 
 function bulkAddAssets (assets, callback) {
     assets.forEach((asset, i) => {
-        firebaseutils.assetRef.doc(asset.asset_number).set({
+        const assetObject = {
             assetId: asset.asset_number,
             modelId: asset.modelID,
             model: asset.vendor+' '+asset.model_number,
@@ -327,7 +337,46 @@ function bulkAddAssets (assets, callback) {
             datacenter: asset.dcFN,
             datacenterID: asset.dcID,
             datacenterAbbrev:  asset.datacenter
-        })
+        }
+
+        firebaseutils.assetRef.doc(asset.asset_number).set(assetObject)
+
+        let suffixes_list = []
+        let _model = assetObject.model
+
+        while (_model.length > 1) {
+            _model = _model.substr(1)
+            suffixes_list.push(_model)
+        }
+
+        let _hostname = assetObject.hostname
+
+        while (_hostname.length > 1) {
+            _hostname = _hostname.substr(1)
+            suffixes_list.push(_hostname)
+        }
+
+        let _datacenter = assetObject.datacenter
+
+        while (_datacenter.length > 1) {
+            _datacenter = _datacenter.substr(1)
+            suffixes_list.push(_datacenter)
+        }
+
+        let _datacenterAbbrev = assetObject.datacenterAbbrev
+
+        while (_datacenterAbbrev.length > 1) {
+            _datacenterAbbrev = _datacenterAbbrev.substr(1)
+            suffixes_list.push(_datacenterAbbrev)
+        }
+        let _owner = assetObject.owner
+
+        while (_owner.length > 1) {
+            _owner = _owner.substr(1)
+            suffixes_list.push(_owner)
+        }
+
+        index.saveObject({ ...assetObject, objectID: asset.asset_number, suffixes: suffixes_list.join(' ') })
     })
     callback()
 }
@@ -355,8 +404,8 @@ function bulkModifyAssets (assets, callback) {
             updates.comment = asset.comment
         }
 
-        if (asset.powerConnections) {
-            updates.powerConnections = asset.powerConnections
+        if (asset.power_connections) {
+            updates.powerConnections = asset.power_connections
         }
 
         if (asset.rackID) {
@@ -381,6 +430,47 @@ function bulkModifyAssets (assets, callback) {
         }
 
         firebaseutils.assetRef.doc(asset.asset_number).update(updates)
+
+        // Add to algolia index
+        firebaseutils.assetRef.doc(asset.asset_number).get().then(ds => {
+            var assetObject = Object.assign({}, ds.data(), updates)
+            let suffixes_list = []
+            let _model = assetObject.model
+
+            while (_model.length > 1) {
+                _model = _model.substr(1)
+                suffixes_list.push(_model)
+            }
+
+            let _hostname = assetObject.hostname
+
+            while (_hostname.length > 1) {
+                _hostname = _hostname.substr(1)
+                suffixes_list.push(_hostname)
+            }
+
+            let _datacenter = assetObject.datacenter
+
+            while (_datacenter.length > 1) {
+                _datacenter = _datacenter.substr(1)
+                suffixes_list.push(_datacenter)
+            }
+
+            let _datacenterAbbrev = assetObject.datacenterAbbrev
+
+            while (_datacenterAbbrev.length > 1) {
+                _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                suffixes_list.push(_datacenterAbbrev)
+            }
+            let _owner = assetObject.owner
+
+            while (_owner.length > 1) {
+                _owner = _owner.substr(1)
+                suffixes_list.push(_owner)
+            }
+
+            index.saveObject({ ...assetObject, objectID: ds.id, suffixes: suffixes_list.join(' ') })
+        })
     })
     callback()
 }
