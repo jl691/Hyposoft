@@ -459,7 +459,7 @@ class ModelsScreen extends React.Component {
                         wrap={true}>
                         <Box direction='row' justify='center'>
                                <Box direction='row' justify='center'>
-                                   <Box width='large' direction='column' align='stretch' justify='start'>
+                                   <Box width='xlarge' direction='column' align='stretch' justify='start'>
                                    <Box margin={{top: 'medium'}}>
                                        <Form onSubmit={() => this.search()}>
                                            <TextInput style={styles.TIStyle}
@@ -506,7 +506,7 @@ class ModelsScreen extends React.Component {
                                        )}
                                    </Box>
                                    <Box
-                                       width='medium'
+                                       width='small'
                                        align='center'
                                        margin={{left: 'medium', right: 'medium'}}
                                        justify='start' >

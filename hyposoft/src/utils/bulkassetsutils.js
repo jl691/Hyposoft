@@ -1,5 +1,6 @@
 import * as firebaseutils from './firebaseutils'
 import { saveAs } from 'file-saver'
+import * as logutils from './logutils'
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
@@ -73,11 +74,11 @@ function validateImportedAssets (data, callback) {
                 assetNumbersSeenInImport.push(datum.asset_number)
             }
 
-            if (datum.hostname && !/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(datum.hostname)) {
+            if (datum.hostname.trim() !== '' && !/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(datum.hostname)) {
                 errors = [...errors, [i + 1, 'Invalid hostname (does not follow RFC-1034 specs)']]
             }
 
-            if (datum.hostname && datum.hostname in hostnamesToId && hostnamesToId[datum.hostname] !== datum.asset_number) {
+            if (datum.hostname.trim() !== '' && datum.hostname in hostnamesToId && hostnamesToId[datum.hostname] !== datum.asset_number) {
                 errors = [...errors, [i + 1, 'Hostname taken by another asset']]
             }
 
@@ -340,6 +341,7 @@ function bulkAddAssets (assets, callback) {
         }
 
         firebaseutils.assetRef.doc(asset.asset_number).set(assetObject)
+        logutils.addLog(asset.asset_number, logutils.ASSET(), logutils.CREATE())
 
         let suffixes_list = []
         let _model = assetObject.model
@@ -470,6 +472,8 @@ function bulkModifyAssets (assets, callback) {
             }
 
             index.saveObject({ ...assetObject, objectID: ds.id, suffixes: suffixes_list.join(' ') })
+
+            logutils.addLog(String(asset.asset_number), logutils.ASSET(), logutils.MODIFY(), assetObject)
         })
     })
     callback()

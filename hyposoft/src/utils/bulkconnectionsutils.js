@@ -1,4 +1,5 @@
 import * as firebaseutils from './firebaseutils'
+import * as logutils from './logutils'
 import { saveAs } from 'file-saver'
 
 function validateImportedConnections (data, callback) {
@@ -116,6 +117,11 @@ function addConnections (data, fetchedAssets, callback) {
             firebaseutils.assetRef.doc(oldDestinationId).update({
                 ["networkConnections."+oldDestinationPort]: null
             })
+            if (datum.dest_hostname in fetchedAssets) {
+                var newAsset = fetchedAssets[datum.dest_hostname]
+                newAsset.networkConnections[oldDestinationPort] = null
+                logutils.addLog(String(oldDestinationId), logutils.ASSET(), logutils.MODIFY(), newAsset)
+            }
         }
 
         if (datum.dest_hostname) {
@@ -129,21 +135,47 @@ function addConnections (data, fetchedAssets, callback) {
                 ["macAddresses."+datum.src_port]: newMacAddress
             })
 
+            if (datum.src_hostname in fetchedAssets) {
+                var newAsset1 = fetchedAssets[datum.src_hostname]
+                newAsset1 = Object.assign({}, newAsset1, {
+                    ["networkConnections."+datum.src_port+".otherAssetID"]: fetchedAssets[datum.dest_hostname].id,
+                    ["networkConnections."+datum.src_port+".otherPort"]: datum.dest_port,
+                    ["macAddresses."+datum.src_port]: newMacAddress
+                })
+                logutils.addLog(String(fetchedAssets[datum.src_hostname].id), logutils.ASSET(), logutils.MODIFY(), newAsset1)
+            }
+
             // Lastly add new connection to new destination
             firebaseutils.assetRef.doc(fetchedAssets[datum.dest_hostname].id).update({
                 ["networkConnections."+datum.dest_port+".otherAssetID"]: fetchedAssets[datum.src_hostname].id,
                 ["networkConnections."+datum.dest_port+".otherPort"]: datum.src_port
             })
 
+            if (datum.dest_hostname in fetchedAssets) {
+                var newAsset2 = fetchedAssets[datum.dest_hostname]
+                newAsset2 = Object.assign({}, newAsset2, {
+                    ["networkConnections."+datum.dest_port+".otherAssetID"]: fetchedAssets[datum.src_hostname].id,
+                    ["networkConnections."+datum.dest_port+".otherPort"]: datum.src_port
+                })
+                logutils.addLog(String(fetchedAssets[datum.src_hostname].id), logutils.ASSET(), logutils.MODIFY(), newAsset2)
+            }
+
         } else {
             // This means: delete
 
             // Now delete connection from source
-            const newMacAddress = (datum.src_mac ? datum.src_mac : fetchedAssets[datum.src_hostname].macAddresses[datum.src_port])
+            const newMacAddress = (datum.src_mac ? datum.src_mac : (fetchedAssets[datum.src_hostname].macAddresses[datum.src_port] || null))
             firebaseutils.assetRef.doc(fetchedAssets[datum.src_hostname].id).update({
                 ["networkConnections."+datum.src_port]: null,
                 ["macAddresses."+datum.src_port]: newMacAddress
             })
+
+            var newAsset3 = fetchedAssets[datum.dest_hostname]
+            newAsset3 = Object.assign({}, newAsset3, {
+                ["networkConnections."+datum.src_port]: null,
+                ["macAddresses."+datum.src_port]: newMacAddress
+            })
+            logutils.addLog(String(fetchedAssets[datum.src_hostname].id), logutils.ASSET(), logutils.MODIFY(), newAsset3)
         }
 
         callback()
