@@ -38,7 +38,7 @@ export default class AssetTable extends Component {
                 this.setSort("hostname")
             }} style={{cursor: "pointer"}}>Hostname</Text>,
             // align:"start",
-            render: datum => <Text size='small'>{datum.hostname}</Text>,
+            render: datum => <Text wordBreak="break-all"size='small'>{datum.hostname}</Text>,
         },
         {
             property: 'rack',
