@@ -47,6 +47,18 @@ class RackUsageReport extends React.Component {
                     owner: owner
                 })
             })
+        } else if(this.props.type === "datacenter") {
+            //datacenter
+            rackutils.generateRackUsageReportDatacenter(this.props.rack, (count, total, vendor, model, owner) => {
+                this.setState({
+                    initialLoaded: true,
+                    count: count,
+                    total: total,
+                    vendor: vendor,
+                    model: model,
+                    owner: owner
+                })
+            })
         }
     }
 

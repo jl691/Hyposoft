@@ -1,9 +1,8 @@
-import React, { Component } from 'react'
+import React from 'react'
 import AppBar from '../components/AppBar'
 import HomeButton from '../components/HomeButton'
 import UserMenu from '../components/UserMenu'
 import ModelSettingsLayer from '../components/ModelSettingsLayer'
-import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import * as modelutils from '../utils/modelutils'
 import * as firebaseutils from '../utils/firebaseutils'
@@ -32,45 +31,51 @@ const index = client.initIndex('models')
 
 class ModelsScreen extends React.Component {
     defaultFilters = {
-        ethernetPortsFilterEnd: 25,
-        ethernetPortsFilterStart: 0,
+        networkPortsFilterEnd: 48,
+        networkPortsFilterStart: 0,
         heightFilterEnd: 42,
         heightFilterStart: 0,
-        powerFilterEnd: 10,
+        powerFilterEnd: 8,
         powerFilterStart: 0,
-        ethernetPortsFilterMax: 30,
-        powerFilterMax: 12,
-        memoryFilterMax: 1200,
+        networkPortsFilterMax: 48,
+        powerFilterMax: 8,
+        memoryFilterMax: 200,
         memoryFilterStart: 0,
-        memoryFilterEnd: 1000,
+        memoryFilterEnd: 200,
         filters: {
             heightStart: 0, heightEnd: 42,
-            ethernetPortsStart: 0, ethernetPortsEnd: 25,
-            memoryStart: 0, memoryEnd: 1000,
-            powerPortsStart: 0, powerPortsEnd: 10
+            networkPortsStart: 0, networkPortsEnd: 48,
+            memoryStart: 0, memoryEnd: 200,
+            powerPortsStart: 0, powerPortsEnd: 8
         }
     }
     state = {
         searchQuery: '',
-        ethernetPortsFilterEnd: 25,
-        ethernetPortsFilterStart: 0,
+        networkPortsFilterEnd: 48,
+        networkPortsFilterStart: 0,
         heightFilterEnd: 42,
         heightFilterStart: 0,
-        powerFilterEnd: 10,
+        powerFilterEnd: 8,
         powerFilterStart: 0,
-        ethernetPortsFilterMax: 30,
-        powerFilterMax: 12,
-        memoryFilterMax: 1200,
+        networkPortsFilterMax: 48,
+        powerFilterMax: 8,
+        memoryFilterMax: 200,
         memoryFilterStart: 0,
-        memoryFilterEnd: 1000,
+        memoryFilterEnd: 200,
         heightFilterMax: 42,
         filters: {
             heightStart: 0, heightEnd: 42,
-            ethernetPortsStart: 0, ethernetPortsEnd: 25,
-            memoryStart: 0, memoryEnd: 1000,
-            powerPortsStart: 0, powerPortsEnd: 10
-        }
+            networkPortsStart: 0, networkPortsEnd: 48,
+            memoryStart: 0, memoryEnd: 200,
+            powerPortsStart: 0, powerPortsEnd: 8
+        },
+        initialLoaded: false,
+        sortField: "",
+        sortAscending: ""
     }
+
+    itemNo = 1;
+    prefilterState;
 
     search () {
         if (this.state.searchQuery.trim() === '') {
@@ -97,6 +102,8 @@ class ModelsScreen extends React.Component {
     startAfter = null
 
     init() {
+        this.prefilterState = this.state;
+        this.itemNo = 1;
         if (this.state.searchQuery.trim() !== '') {
             this.search()
             return
@@ -122,6 +129,8 @@ class ModelsScreen extends React.Component {
                         }))
                         return
                     }
+                } else {
+                    console.log(docSnaps.docs[i].data())
                 }
             }
 
@@ -133,8 +142,29 @@ class ModelsScreen extends React.Component {
         })
     }
 
-    componentWillMount() {
-        this.init()
+    componentDidMount() {
+        // this.init()
+        this.setState({
+            initialLoaded: false
+        });
+        this.itemNo = 1;
+        let models = [];
+        firebaseutils.modelsRef.orderBy("vendor").orderBy("modelNumber").limit(25).get().then(docSnaps => {
+            this.startAfter = docSnaps.docs[docSnaps.docs.length - 1];
+            docSnaps.forEach(doc => {
+                models.push({
+                    ...doc.data(),
+                    id: doc.id,
+                    itemNo: this.itemNo++
+                })
+                if(models.length === docSnaps.size){
+                    this.setState({
+                        models: models,
+                        initialLoaded: true
+                    })
+                }
+            })
+        })
     }
 
     constructor() {
@@ -210,9 +240,9 @@ class ModelsScreen extends React.Component {
             return
         }
 
-        modelutils.doesModelHaveInstances(this.modelToDelete.id, yes => {
+        modelutils.doesModelHaveAssets(this.modelToDelete.id, yes => {
             if (yes) {
-                ToastsStore.info("Can't delete model with live instances", 3000, 'burntToast')
+                ToastsStore.info("Can't delete model with live assets", 3000, 'burntToast')
                 return
             }
 
@@ -226,36 +256,182 @@ class ModelsScreen extends React.Component {
         })
     }
 
-    render() {
+    getDatatable(){
         const adminColumns = userutils.isLoggedInUserAdmin() ? [{
             property: 'dummy',
             render: datum => (
-            <FormEdit style={{cursor: 'pointer'}} onClick={(e) => {
-                e.persist()
-                e.nativeEvent.stopImmediatePropagation()
-                e.stopPropagation()
-                 this.showEditDialog(datum.itemNo)
-            }} />
-        ),
+                <FormEdit style={{cursor: 'pointer'}} onClick={(e) => {
+                    e.persist()
+                    e.nativeEvent.stopImmediatePropagation()
+                    e.stopPropagation()
+                    this.showEditDialog(datum.itemNo)
+                }} />
+            ),
             align: 'center',
             header: <Text size='small'>Edit</Text>,
             sortable: false
         },
-        {
-            property: 'dummy2',
-            render: datum => (
-            <FormTrash style={{cursor: 'pointer'}} onClick={(e) => {
-                e.persist()
-                e.nativeEvent.stopImmediatePropagation()
-                e.stopPropagation()
-                this.showDeleteDialog(datum.itemNo)
-            }} />
-        ),
-            align: 'center',
-            header: <Text size='small'>Delete</Text>,
-            sortable: false
-        }] : []
+            {
+                property: 'dummy2',
+                render: datum => (
+                    <FormTrash style={{cursor: 'pointer'}} onClick={(e) => {
+                        e.persist()
+                        e.nativeEvent.stopImmediatePropagation()
+                        e.stopPropagation()
+                        this.showDeleteDialog(datum.itemNo)
+                    }} />
+                ),
+                align: 'center',
+                header: <Text size='small'>Delete</Text>,
+                sortable: false
+            }] : [];
 
+        if(!this.state.initialLoaded){
+            return (<Text>Please wait...</Text>);
+        } else {
+            return (<DataTable
+                step={25}
+                onMore={() => {
+                    console.log("eyyyyyyyyyyyyyyyyyyy")
+                    if (this.startAfter) {
+                        console.log("getting more models")
+
+                        if (this.state.sortField) {
+                            modelutils.getModels(this.itemNo, this.startAfter, (newItemNo, models, newStartAfter) => {
+                                this.startAfter = newStartAfter;
+                                this.itemNo = newItemNo;
+                                this.setState(oldState => (
+                                    {...oldState, models: [...oldState.models, ...models]}
+                                ))
+                            }, this.state.filters, this.state.sortField, this.state.sortAscending)
+                        } else {
+                            modelutils.getModels(this.itemNo, this.startAfter, (newItemNo, models, newStartAfter) => {
+                                this.startAfter = newStartAfter;
+                                this.itemNo = newItemNo;
+                                this.setState(oldState => (
+                                    {...oldState, models: [...oldState.models, ...models]}
+                                ))
+                            }, this.state.filters)
+                        }
+
+                    }
+                }}
+                columns={
+                    [
+                        {
+                            property: 'itemNo',
+                            header: <Text size='small'>#</Text>,
+                            render: datum => <Text size='small'>{datum.itemNo}</Text>,
+                            primary: true
+                        },
+                        {
+                            property: 'vendor',
+                            header: <Text size='small' onClick={() => {
+                                this.setSort("vendor")
+                            }} style={{cursor: "pointer"}}>Vendor</Text>,
+                            render: datum => <Text size='small'>{datum.vendor}</Text>
+                        },
+                        {
+                            property: 'modelNumber',
+                            header: <Text size='small' onClick={() => {
+                                this.setSort("modelNumber")
+                            }} style={{cursor: "pointer"}}>Model #</Text>,
+                            render: datum => <Text size='small'>{datum.modelNumber}</Text>
+                        },
+                        {
+                            property: 'cpu',
+                            header: <Text size='small' onClick={() => {
+                                this.setSort("cpu")
+                            }} style={{cursor: "pointer"}}>CPU</Text>,
+                            render: datum => <Text size='small'>{datum.cpu}</Text>
+                        },
+                        {
+                            property: 'cpu',
+                            header: <Text size='small' onClick={() => {
+                                this.setSort("storage")
+                            }} style={{cursor: "pointer"}}>Storage</Text>,
+                            render: datum => <Text size='small'>{datum.storage}</Text>
+                        },
+                        {
+                            property: 'height',
+                            header: <Text size='small' onClick={() => {
+                                this.setSort("height")
+                            }} style={{cursor: "pointer"}}>Height</Text>,
+                            render: datum => <Text size='small'>{datum.height}</Text>
+                        },
+                        {
+                            property: 'networkPorts',
+                            header: <Text size='small' onClick={() => {
+                                this.setSort("networkPortsCount")
+                            }} style={{cursor: "pointer"}}>Network ports #</Text>,
+                            render: datum => <Text size='small'>{datum.networkPortsCount}</Text>
+                        },
+                        {
+                            property: 'portPorts',
+                            header: <Text size='small' onClick={() => {
+                                this.setSort("powerPorts")
+                            }} style={{cursor: "pointer"}}>Power ports #</Text>,
+                            render: datum => <Text size='small'>{datum.powerPorts}</Text>
+                        },
+                        {
+                            property: 'memory',
+                            header: <Text size='small' onClick={() => {
+                                this.setSort("memory")
+                            }} style={{cursor: "pointer"}}>Memory</Text>,
+                            render: datum => <Text size='small'>{datum.memory}</Text>
+                        },
+                        ...adminColumns
+                    ]
+                }
+                data={this.state.models}
+                size="medium"
+                onClickRow={({datum}) => {
+                    this.props.history.push('/models/'+datum.vendor+'/'+datum.modelNumber)
+                }}
+            />);
+        }
+    }
+
+    setSort(field) {
+        let newSort;
+        if (this.state.sortField && this.state.sortField === field) {
+            //reverse direction
+            this.setState({
+                sortAscending: !this.state.sortAscending,
+                initialLoaded: false,
+            });
+            newSort = !this.state.sortAscending;
+        } else {
+            //start with ascending
+            this.setState({
+                sortField: field,
+                sortAscending: true,
+                initialLoaded: false,
+            });
+            newSort = true;
+        }
+
+        this.startAfter = null;
+        this.setState({
+            models: [],
+            initialLoaded: false,
+        });
+
+        console.log("111")
+        this.itemNo = 1;
+        modelutils.getModels(this.itemNo, null,(newItemNo, newModels, newStartAfter) => {
+            console.log(newModels)
+            console.log(newStartAfter)
+            if (newStartAfter && newModels) {
+                console.log("222")
+                this.itemNo = newItemNo;
+                this.startAfter = newStartAfter;
+                this.setState({models: newModels, initialLoaded: true})
+            }
+        }, this.state.filters, field, newSort)
+    }
+
+    render() {
         if (localStorage.getItem('tipShown') !== 'yes') {
             ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
             localStorage.setItem('tipShown', 'yes')
@@ -308,78 +484,19 @@ class ModelsScreen extends React.Component {
                                            <Box margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}} direction='column'
                                                justify='start' alignSelf='stretch' flex>
                                                <Box align="center">
-                                                    <DataTable
-                                                        step={25}
-                                                        onMore={() => {
-                                                            if (this.startAfter) {
-                                                                modelutils.getModels(this.startAfter, (models, newStartAfter) => {
-                                                                    this.startAfter = newStartAfter
-                                                                    this.setState(oldState => (
-                                                                        {...oldState, models: [...oldState.userse, ...models]}
-                                                                    ))
-                                                                }, this.state.filters)
-                                                            }
-                                                        }}
-                                                        columns={
-                                                            [
-                                                                {
-                                                                    property: 'itemNo',
-                                                                    header: <Text size='small'>#</Text>,
-                                                                    render: datum => <Text size='small'>{datum.itemNo}</Text>,
-                                                                    primary: true,
-                                                                    sortable: true,
-                                                                },
-                                                                {
-                                                                    property: 'vendor',
-                                                                    header: <Text size='small'>Vendor</Text>,
-                                                                    render: datum => <Text size='small'>{datum.vendor}</Text>,
-                                                                    sortable: true,
-                                                                },
-                                                                {
-                                                                    property: 'modelNumber',
-                                                                    header: <Text size='small'>Model #</Text>,
-                                                                    render: datum => <Text size='small'>{datum.modelNumber}</Text>,
-                                                                    sortable: true,
-                                                                },
-                                                                {
-                                                                    property: 'height',
-                                                                    header: <Text size='small'>Height</Text>,
-                                                                    render: datum => <Text size='small'>{datum.height}</Text>,
-                                                                    sortable: true,
-                                                                },
-                                                                {
-                                                                    property: 'ethernetPorts',
-                                                                    header: <Text size='small'>Ethernet ports #</Text>,
-                                                                    render: datum => <Text size='small'>{datum.ethernetPorts}</Text>,
-                                                                    sortable: true,
-                                                                },
-                                                                {
-                                                                    property: 'portPorts',
-                                                                    header: <Text size='small'>Power ports #</Text>,
-                                                                    render: datum => <Text size='small'>{datum.powerPorts}</Text>,
-                                                                    sortable: true,
-                                                                },
-                                                                {
-                                                                    property: 'memory',
-                                                                    header: <Text size='small'>Memory</Text>,
-                                                                    render: datum => <Text size='small'>{datum.memory}</Text>,
-                                                                    sortable: true,
-                                                                },
-                                                                ...adminColumns
-                                                            ]
-                                                        }
-                                                        data={this.state.models}
-                                                        sortable={true}
-                                                        size="medium"
-                                                        onClickRow={({datum}) => {
-                                                            this.props.history.push('/models/'+datum.vendor+'/'+datum.modelNumber)
-                                                        }}
-                                                    />
+                                                   {this.getDatatable()}
                                                 </Box>
                                            </Box>
                                        </Box>
                                        {userutils.isLoggedInUserAdmin() && (
-                                            <Button primary icon={<Add />} label="Add model" alignSelf='center' onClick={this.showAddModelDialog} />
+                                           <Box
+                                            direction='row'
+                                            alignSelf='stretch'
+                                            justify='center'
+                                            gap='small' >
+                                                <Button primary icon={<Add />} label="Add model" alignSelf='center' onClick={this.showAddModelDialog} />
+                                                <Button label="Export currently filtered entries" alignSelf='center' onClick={() => {modelutils.exportFilteredModels(this.state.models)}} />
+                                            </Box>
                                        )}
                                    </Box>
                                    <Box
@@ -409,15 +526,15 @@ class ModelsScreen extends React.Component {
                                                      round="large"
                                                      values={[this.state.heightFilterStart,this.state.heightFilterEnd]}
                                                      onChange={nextRange => {
-                                                         var newMax = this.state.heightFilterMax
+/*                                                         var newMax = this.state.heightFilterMax
                                                          if (nextRange[1] === this.state.heightFilterMax) {
                                                              newMax = parseInt(newMax*1.1)
-                                                         }
+                                                         }*/
 
                                                          this.setState(oldState => ({
                                                              ...oldState, heightFilterStart: nextRange[0],
                                                              heightFilterEnd: nextRange[1],
-                                                             heightFilterMax: newMax,
+                                                             //heightFilterMax: newMax,
                                                              filters: {...oldState.filters, heightStart: nextRange[0], heightEnd: nextRange[1]}
                                                          }))
                                                      }}
@@ -439,33 +556,33 @@ class ModelsScreen extends React.Component {
                                              margin={{top: 'medium', left: 'medium', right: 'medium'}}
                                              pad='small' >
                                              <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}} direction='column' justify='start'>
-                                                 <Text size='small'><b>Ethernet ports range</b></Text>
+                                                 <Text size='small'><b>Network ports range</b></Text>
                                                  <Stack margin={{top: 'small'}}>
                                                     <Box background="light-4" height="10px" direction="row" round="large" />
                                                     <RangeSelector
                                                       direction="horizontal"
                                                       min={0}
-                                                      max={this.state.ethernetPortsFilterMax}
+                                                      max={this.state.networkPortsFilterMax}
                                                       step={1}
                                                       round="large"
-                                                      values={[this.state.ethernetPortsFilterStart,this.state.ethernetPortsFilterEnd]}
+                                                      values={[this.state.networkPortsFilterStart,this.state.networkPortsFilterEnd]}
                                                       onChange={nextRange => {
-                                                          var newMax = this.state.ethernetPortsFilterMax
-                                                          if (nextRange[1] === this.state.ethernetPortsFilterMax) {
+/*                                                          var newMax = this.state.networkPortsFilterMax
+                                                          if (nextRange[1] === this.state.networkPortsFilterMax) {
                                                               newMax = parseInt(newMax*1.1)
-                                                          }
+                                                          }*/
 
                                                           this.setState(oldState => ({
-                                                              ...oldState, ethernetPortsFilterStart: nextRange[0],
-                                                              ethernetPortsFilterEnd: nextRange[1],
-                                                              ethernetPortsFilterMax: newMax,
-                                                              filters: {...oldState.filters, ethernetPortsStart: nextRange[0], ethernetPortsEnd: nextRange[1]}
+                                                              ...oldState, networkPortsFilterStart: nextRange[0],
+                                                              networkPortsFilterEnd: nextRange[1],
+                                                              // networkPortsFilterMax: newMax,
+                                                              filters: {...oldState.filters, networkPortsStart: nextRange[0], networkPortsEnd: nextRange[1]}
                                                           }))
                                                       }}
                                                     />
                                                 </Stack>
                                                 <Box align="center">
-                                                    <Text size="xsmall" margin={{top: 'xsmall'}}>{this.state.ethernetPortsFilterStart} - {this.state.ethernetPortsFilterEnd} ports</Text>
+                                                    <Text size="xsmall" margin={{top: 'xsmall'}}>{this.state.networkPortsFilterStart} - {this.state.networkPortsFilterEnd} ports</Text>
                                                 </Box>
                                              </Box>
                                          </Box>
@@ -491,15 +608,15 @@ class ModelsScreen extends React.Component {
                                                        round="large"
                                                        values={[this.state.powerFilterStart,this.state.powerFilterEnd]}
                                                        onChange={nextRange => {
-                                                           var newMax = this.state.powerFilterMax
+/*                                                           var newMax = this.state.powerFilterMax
                                                            if (nextRange[1] === this.state.powerFilterMax) {
                                                                newMax = parseInt(newMax*1.1)
-                                                           }
+                                                           }*/
 
                                                            this.setState(oldState => ({
                                                                ...oldState, powerFilterStart: nextRange[0],
                                                                powerFilterEnd: nextRange[1],
-                                                               powerFilterMax: newMax,
+                                                               // powerFilterMax: newMax,
                                                                filters: {...oldState.filters, powerPortsStart: nextRange[0], powerPortsEnd: nextRange[1]}
                                                            }))
                                                        }}
@@ -532,15 +649,15 @@ class ModelsScreen extends React.Component {
                                                         round="large"
                                                         values={[this.state.memoryFilterStart,this.state.memoryFilterEnd]}
                                                         onChange={nextRange => {
-                                                            var newMax = this.state.memoryFilterMax
+/*                                                            var newMax = this.state.memoryFilterMax
                                                             if (nextRange[1] === this.state.memoryFilterMax) {
                                                                 newMax = parseInt(newMax*1.1)
-                                                            }
+                                                            }*/
 
                                                             this.setState(oldState => ({
                                                                 ...oldState, memoryFilterStart: nextRange[0],
                                                                 memoryFilterEnd: nextRange[1],
-                                                                memoryFilterMax: newMax,
+                                                                // memoryFilterMax: newMax,
                                                                 filters: {...oldState.filters, memoryStart: nextRange[0], memoryEnd: nextRange[1]}
                                                             }))
                                                         }}
@@ -560,9 +677,9 @@ class ModelsScreen extends React.Component {
                                              <Button primary label="Apply filters" onClick={() => {this.init()}}
                                                 />
                                             <Button label="Clear filters" onClick={() => {
-                                                this.setState(oldState => ({
-                                                    ...oldState, ...this.defaultFilters
-                                                }), () => this.init())
+                                                this.setState({
+                                                    ...this.prefilterState
+                                                })
                                             }} margin={{left: 'small'}}
                                                />
                                         </Box>

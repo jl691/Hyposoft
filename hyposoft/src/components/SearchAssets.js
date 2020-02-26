@@ -3,7 +3,7 @@ import { Form, FormField, Button, TextInput, Box } from 'grommet'
 import * as userutils from "../utils/userutils";
 import { Redirect } from "react-router-dom";
 
-export default class SearchInstances extends Component {
+export default class SearchAssets extends Component {
 
 
     render() {
@@ -14,7 +14,7 @@ export default class SearchInstances extends Component {
         return (
             <Box width="200px" gap="small">
                 <Form margin='small' onSubmit={() => this.props.parent.handleSearch()}>
-                    <FormField name="Search Instances">
+                    <FormField name="Search Assets">
                         <TextInput placeholder="Type here" size="xsmall" value={this.props.parent.state.searchQuery} onChange={e=>{
                             const value = e.target.value
                             this.props.parent.setState(oldState => ({

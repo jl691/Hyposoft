@@ -1,26 +1,34 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box } from 'grommet'
+import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Accordion, AccordionPanel } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
-import * as instutils from '../utils/instanceutils'
+import * as assetutils from '../utils/assetutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
 import {Redirect} from "react-router-dom";
 import theme from "../theme";
 
+import AssetPowerPortsForm from './AssetPowerPortsForm'
+import AssetNetworkPortsForm from './AssetNetworkPortsForm';
+import AssetMACForm from './AssetMACForm';
+
 
 //Instance table has a layer, that holds the button to add instance and the form
 
-export default class EditInstanceForm extends Component {
+export default class EditAssetForm extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            asset_id: this.props.updateAssetIDFromParent,
             model: this.props.updateModelFromParent,
             hostname: this.props.updateHostnameFromParent,
             rack: this.props.updateRackFromParent,
             rackU: this.props.updateRackUFromParent,
             owner: this.props.updateOwnerFromParent,
             comment: this.props.updateCommentFromParent,
-            
+            datacenter: this.props.updateDatacenterFromParent,
+            macAddresses: this.props.updateMacAddressesFromParent,
+            networkConnections: this.props.updatePowerConnectionsFromParent,
+            powerConnections: this.props.updateNetworkConnectionsFromParent,
 
         }
         this.handleUpdate = this.handleUpdate.bind(this);
@@ -37,8 +45,9 @@ export default class EditInstanceForm extends Component {
     }
 
     handleUpdate(event) {
+
         if (event.target.name === "updateInst") {
-            //this is where you pass in props updateData from InstanceScreen . Want to keep old unchanged data, ow
+            //this is where you pass in props updateData from AssetScreen . Want to keep old unchanged data, ow
 
             if(!this.state.model || !this.state.hostname || !this.state.rack || !this.state.rackU){
                 //not all required fields filled out
@@ -55,7 +64,7 @@ export default class EditInstanceForm extends Component {
             } else if(!formvalidationutils.checkPositive(this.state.rackU)){
                 ToastsStore.error("Rack elevation must be positive.");
             } else {
-                instutils.updateInstance(
+                assetutils.updateAsset(
                     this.props.updateIDFromParent,
                     this.state.model,
                     this.state.hostname,
@@ -63,19 +72,20 @@ export default class EditInstanceForm extends Component {
                     parseInt(this.state.rackU),
                     this.state.owner,
                     this.state.comment,
+                    this.state.datacenter,
 
-                
+
                     status => {
                         console.log(status)
                         //returned a null in instanceutils updateInstance function. Means no errormessage
                         if (!status) {
                             console.log(this.state)
-                            ToastsStore.success('Successfully updated instance!');
+                            ToastsStore.success('Successfully updated asset!');
                             this.props.parentCallback(true);
-                 
+
                         }
                         else {
-                            ToastsStore.error('Error updating instance: ' + status);
+                            ToastsStore.error('Error updating asset: ' + status);
                         }
 
                     });
@@ -97,7 +107,7 @@ export default class EditInstanceForm extends Component {
                         size="small"
                         margin="small"
                         level="4"
-                    >Edit Instance</Heading>
+                    >Edit Asset</Heading>
 
                     <Form onSubmit={this.handleUpdate} name="updateInst" >
 
@@ -107,14 +117,14 @@ export default class EditInstanceForm extends Component {
                                 onChange={e => {
                                     const value = e.target.value
                                     this.setState(oldState => ({...oldState, model: value}))
-                                    instutils.getSuggestedModels(value, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))
+                                    assetutils.getSuggestedModels(value, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))
                                 }}
                                 onSelect={e => {
                                   this.setState(oldState => ({...oldState, model: e.suggestion}))
                                 }}
                                 value={this.state.model}
                                 suggestions={this.state.modelSuggestions}
-                                onClick={() => instutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))}
+                                onClick={() => assetutils.getSuggestedModels(this.state.model, results => this.setState(oldState => ({...oldState, modelSuggestions: results})))}
                                 title='Model'
                               />
                                 {/* or value can be */}
@@ -127,6 +137,31 @@ export default class EditInstanceForm extends Component {
                                 value={this.state.hostname} required="true"/>
                         </FormField>
 
+                        <FormField name="datacenter" label="Datacenter">
+                            <TextInput name="datacenter"
+                                       placeholder="Update Datacenter"
+                                       onChange={e => {
+                                           const value = e.target.value
+                                           this.setState(oldState => ({...oldState, datacenter: value}))
+                                           assetutils.getSuggestedDatacenters(value, results => this.setState(oldState => ({
+                                               ...oldState,
+                                               datacenterSuggestions: results
+                                           })))
+                                       }}
+                                       onSelect={e => {
+                                           this.setState(oldState => ({...oldState, datacenter: e.suggestion}))
+                                       }}
+                                       value={this.state.datacenter}
+                                       suggestions={this.state.datacenterSuggestions}
+                                       onClick={() => assetutils.getSuggestedDatacenters(this.state.datacenter, results => this.setState(oldState => ({
+                                           ...oldState,
+                                           datacenterSuggestions: results
+                                       })))}
+                                       title='Datacenter'
+                                       required="true"
+                            />
+                        </FormField>
+
                         <FormField name="rack" label="Rack" >
 
                             <TextInput name="rack"
@@ -134,14 +169,14 @@ export default class EditInstanceForm extends Component {
                                 onChange={e => {
                                     const value = e.target.value
                                     this.setState(oldState => ({...oldState, rack: value}))
-                                    instutils.getSuggestedRacks(value, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))
+                                    assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))
                                 }}
                                 onSelect={e => {
                                     this.setState(oldState => ({...oldState, rack: e.suggestion}))
                                 }}
                                 value={this.state.rack}
                                 suggestions={this.state.rackSuggestions}
-                                onClick={() => instutils.getSuggestedRacks(this.state.rack, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))}
+                                onClick={() => assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({...oldState, rackSuggestions: results})))}
                                 title='Rack'
                               />
                         </FormField>
@@ -159,17 +194,94 @@ export default class EditInstanceForm extends Component {
                                 onChange={e => {
                                     const value = e.target.value
                                     this.setState(oldState => ({...oldState, owner: value}))
-                                    instutils.getSuggestedOwners(value, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))
+                                    assetutils.getSuggestedOwners(value, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))
                                 }}
                                 onSelect={e => {
                                     this.setState(oldState => ({...oldState, owner: e.suggestion}))
                                 }}
                                 value={this.state.owner}
                                 suggestions={this.state.ownerSuggestions}
-                                onClick={() => instutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))}
+                                onClick={() => assetutils.getSuggestedOwners(this.state.owner, results => this.setState(oldState => ({...oldState, ownerSuggestions: results})))}
                                 title='Owner'
                               />
                         </FormField>
+
+                        {/* <Accordion >
+                                <AccordionPanel label="MAC Addresses">
+                                    <AssetMACForm
+
+                                        addMACAddrCallback={this.addMACAddress}
+                                        fieldCallback={this.handleDisplayMACFields}
+                                        model={this.state.model}
+                                        macAddresses={this.state.macAddresses}
+
+
+                                    />
+
+                                    <Button
+                                        onClick={this.addMACAddress}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+
+                                        label="Add a MAC Address" />
+
+                                </AccordionPanel>
+
+                            </Accordion> */}
+
+                            <Accordion>
+                                <AccordionPanel label="Power Port Connections">
+                                    <AssetPowerPortsForm
+                            
+                                        powerConnections={this.state.powerConnections}
+
+                                    />
+
+                                    <Button
+                                        onClick={this.addPowerConnection}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+
+                                        label="Add a power connection" />
+
+
+                                </AccordionPanel>
+
+                            </Accordion>
+
+                            <Accordion>
+                                <AccordionPanel label="Network Port Connections">
+                                    <AssetNetworkPortsForm
+
+                                        model={this.state.model}
+                                        datacenter={this.state.datacenter}
+                                        currentId={this.state.asset_id}
+                                        networkConnections={this.state.networkConnections}
+
+                                    />
+
+                                    <Button
+                                        onClick={this.addNetworkConnection}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+
+                                        label="Add a network connection" />
+
+                                    {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
+                                    {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
+                                    {/* <Button onClick={this.handleConnect}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+                                        label="Validate Connections" /> */}
+
+                                </AccordionPanel>
+
+                            </Accordion>
+
+
+
+                            <FormField name="asset_id" label="Override Asset ID">
+                                <TextInput name="asset_id" placeholder="If left blank, will auto-generate" onChange={this.handleChange}
+                                    value={this.state.asset_id}
+                                />
+                            </FormField>
+
 
                         <FormField name="comment" label="Comment" >
 

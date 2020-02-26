@@ -1,22 +1,31 @@
 import * as firebaseutils from './firebaseutils'
+import * as logutils from './logutils'
+
+const USER_ROLE = 'USER_ROLE'
+const ADMIN_ROLE = 'ADMIN_ROLE'
 
 function isUserLoggedIn() {
     var loginCheck = localStorage.getItem('userLoginCheck')
     var displayName = localStorage.getItem('displayName')
     var username = localStorage.getItem('username')
     var email = localStorage.getItem('email')
+    var role = localStorage.getItem('role')
 
-    return firebaseutils.hashAndSalt(displayName+username+email) === loginCheck
+    return firebaseutils.hashAndSalt(displayName+username+email+role) === loginCheck
 }
 
 function validEmail(email) {
-    var re = /^([a-zA-Z0-9._-]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    var re = /^([a-zA-Z0-9.+_-]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     return re.test(String(email).toLowerCase());
 }
 
 //probably need to switch this over to a role-based check at some point for multiple admins
 function isLoggedInUserAdmin() {
-    return isUserLoggedIn() && (localStorage.getItem('username') === 'admin')
+    return isUserLoggedIn() && ((localStorage.getItem('username') === 'admin') || (localStorage.getItem('role') === ADMIN_ROLE))
+}
+
+function isLoggedInUserNetID() {
+    return (localStorage.getItem('isNetIDAccount') === 'yes')
 }
 
 function packageUser(displayName, username, email, password) {
@@ -24,7 +33,8 @@ function packageUser(displayName, username, email, password) {
         displayName: displayName.trim(),
         username: username.trim(),
         email: email.trim(),
-        password: firebaseutils.hashAndSalt(password)
+        password: (password !== null ? firebaseutils.hashAndSalt2(password) : ''),
+        role: USER_ROLE
     }
 
     return user
@@ -36,7 +46,8 @@ function packageUser(displayName, username, email, password) {
 */
 function createUser(displayName, username, email, password, callback) {
     firebaseutils.usersRef.doc(email).set(packageUser(displayName, username, email, password))
-    callback(packageUser(displayName, username, email, password))
+    logutils.addLog(email,logutils.USER(),logutils.CREATE())
+    callback({...packageUser(displayName, username, email, password), docId: email})
 }
 
 /**
@@ -44,15 +55,38 @@ function createUser(displayName, username, email, password, callback) {
 * It also assumes that we've already validated that the logged in user is the user
 */
 function modifyUser(displayName, username, email) {
-    firebaseutils.usersRef.doc(email).update(packageUser(displayName, username, email))
+    logutils.getObjectData(email,logutils.USER(),data => {
+      firebaseutils.usersRef.doc(email).update(packageUser(displayName, username, email))
+      logutils.addLog(email,logutils.USER(),logutils.MODIFY(),data)
+    })
 }
 
 function updateUsername(oldUsername, newUsername, callback) {
     firebaseutils.usersRef.where('username', '==', oldUsername).get().then(qs => {
         if (!qs.empty) {
-            qs.docs[0].ref.update({
-                username: newUsername
-            }).then(() => callback())
+            logutils.getObjectData(qs.docs[0].id,logutils.USER(),data => {
+              qs.docs[0].ref.update({
+                  username: newUsername
+              }).then(() => {
+                logutils.addLog(qs.docs[0].id,logutils.USER(),logutils.MODIFY(),data)
+                callback()
+              })
+            })
+        }
+    })
+}
+
+function updateUserRole(username, newRole, callback) {
+    firebaseutils.usersRef.where('username', '==', username).get().then(qs => {
+        if (!qs.empty) {
+            logutils.getObjectData(qs.docs[0].id,logutils.USER(),data => {
+              qs.docs[0].ref.update({
+                  role: newRole
+              }).then(() => {
+                logutils.addLog(qs.docs[0].id,logutils.USER(),logutils.MODIFY(),data)
+                callback()
+              })
+            })
         }
     })
 }
@@ -60,19 +94,40 @@ function updateUsername(oldUsername, newUsername, callback) {
 function deleteUser(username, callback) {
     firebaseutils.usersRef.where('username', '==', username).get().then(qs => {
         if (!qs.empty) {
+            const docId = qs.docs[0].id
+            const docData = qs.docs[0].data()
             qs.docs[0].ref.delete().then(() => {
-                callback()
+                logutils.addLog(docId,logutils.USER(),logutils.DELETE(),docData);
+
+                firebaseutils.assetRef.where("owner", "==", docData.username).get().then(function (querySnapshot) {
+                    let count = 0;
+                    querySnapshot.forEach(asset => {
+                        asset.ref.update({
+                            owner: ""
+                        }).then(function () {
+                            count++;
+                            if(count === querySnapshot.size){
+                                callback()
+                            }
+                        })
+                    })
+                });
             })
         }
     })
 }
 
 function isLoginValid(username, password, callback) {
-    firebaseutils.usersRef.where('username', '==', username)
-    .where('password', '==', firebaseutils.hashAndSalt(password.trim())).get()
+    firebaseutils.usersRef.where('username', '==', username).get()
     .then(querySnapshot => {
         if (!querySnapshot.empty) {
-            callback(querySnapshot.docs[0].data())
+            console.log(password.trim())
+            console.log(firebaseutils.hashAndSalt2(password.trim(), querySnapshot.docs[0].data().password.split('|')[1]))
+            if (querySnapshot.docs[0].data().password === firebaseutils.hashAndSalt2(password.trim(), querySnapshot.docs[0].data().password.split('|')[1])) {
+                callback({...querySnapshot.docs[0].data(), docId: querySnapshot.docs[0].id})
+            } else {
+                callback(null)
+            }
         } else {
             callback(null)
         }
@@ -80,10 +135,22 @@ function isLoginValid(username, password, callback) {
 }
 
 function logUserIn(userObject) {
-    localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(userObject.displayName+userObject.username+userObject.email))
+    localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(
+        userObject.displayName+userObject.username+userObject.email+userObject.role))
     localStorage.setItem('displayName', userObject.displayName)
     localStorage.setItem('username', userObject.username)
     localStorage.setItem('email', userObject.email)
+    localStorage.setItem('userDocId', userObject.docId)
+    localStorage.setItem('isNetIDAccount', userObject.password.trim() === '' ? 'yes' : 'no')
+    localStorage.setItem('role', userObject.role)
+}
+
+function getLoggedInUser() {
+    return localStorage.getItem('userDocId')
+}
+
+function getLoggedInUserUsername() {
+    return localStorage.getItem('username')
 }
 
 function logout() {
@@ -91,7 +158,7 @@ function logout() {
 }
 
 function getUser(email, callback) {
-    firebaseutils.usersRef.doc(email).get().then(doc => callback(doc.exists ? doc.data() : null))
+    firebaseutils.usersRef.doc(email).get().then(doc => callback(doc.exists ? {...doc.data(), docId: doc.id} : null))
 }
 
 function usernameTaken(username, callback) {
@@ -101,13 +168,13 @@ function usernameTaken(username, callback) {
 }
 
 function changePassword(newPass) {
-    firebaseutils.usersRef.doc(localStorage.getItem('email')).update({password: firebaseutils.hashAndSalt(newPass)})
+    firebaseutils.usersRef.doc(localStorage.getItem('email')).update({password: firebaseutils.hashAndSalt2(newPass)})
 }
 
 function changePasswordByEmail(email, newPass, callback) {
     firebaseutils.usersRef.where('email', '==', email).get().then(qs => {
         if (!qs.empty) {
-            qs.docs[0].ref.update({password: firebaseutils.hashAndSalt(newPass)}).then(() => callback())
+            qs.docs[0].ref.update({password: firebaseutils.hashAndSalt2(newPass)}).then(() => callback())
         }
     })
 }
@@ -213,4 +280,5 @@ function getAllUsers (callback) {
 export { isUserLoggedIn, createUser, modifyUser, deleteUser, isLoggedInUserAdmin,
 isLoginValid, logUserIn, logout, getUser, changePassword, loadUsers, addClaim,
 fetchClaim, usernameTaken, validEmail, removeClaim, updateUsername, sendRecoveryEmail,
-fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers }
+fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers, getLoggedInUser,
+USER_ROLE, ADMIN_ROLE, isLoggedInUserNetID, updateUserRole, getLoggedInUserUsername }

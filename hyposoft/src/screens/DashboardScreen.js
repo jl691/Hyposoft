@@ -6,6 +6,7 @@ import ItemCard from '../components/ItemCard'
 import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import * as userutils from '../utils/userutils'
+import * as powerutils from '../utils/powerutils'
 
 import {
     Box,
@@ -24,9 +25,11 @@ class DashboardScreen extends Component {
     actions = [
         {id: 0, title: 'Users', desc: 'View and manage users'},
         {id: 1, title: 'Models', desc: 'View and manage models'},
-        {id: 2, title: 'Instances', desc: 'View and manage instances of models'},
+        {id: 2, title: 'Assets', desc: 'View and manage assets'},
         {id: 3, title: 'Racks', desc: 'View and manage racks'},
-        {id: 4, title: 'Import / Export', desc: 'Import and export models and instances'},
+        {id: 4, title: 'Import / Export', desc: 'Import and export models and assets'},
+        {id: 5, title: 'Datacenters', desc: 'View and manage datacenters'},
+        {id: 6, title: 'Logs', desc: 'View global logs'},
         //{id: 5, title: 'Reports', desc: 'Generate rack usage reports'}
     ]
 
@@ -39,7 +42,7 @@ class DashboardScreen extends Component {
                 this.setState({redirect: '/models'})
                 break
             case 2:
-                this.setState({redirect: '/instances'})
+                this.setState({redirect: '/assets'})
                 break
             case 3:
                 this.setState({redirect: '/racks'})
@@ -47,12 +50,19 @@ class DashboardScreen extends Component {
             case 4:
                 this.setState({redirect: '/port'})
                 break
+            case 5:
+                this.setState({redirect: '/datacenters'})
+                break
+            case 6:
+                this.setState({redirect: '/logs'})
+                break
             default:
                 alert(action)
         }
     }
 
     render() {
+        powerutils.powerPortOff('hpdu-rtp1-A01L', 4, () => {})
         if (this.state.redirect !== '') {
             return <Redirect to={this.state.redirect} />
         }
