@@ -69,9 +69,6 @@ class RackView extends React.Component {
     }
 
     componentDidMount() {
-        assetnetworkportutils.symmetricDeleteNetworkConnection("148839", "en", result => {
-            console.log(result)
-        })
         this.fetchDatacenters();
     }
 
