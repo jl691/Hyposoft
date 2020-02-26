@@ -46,7 +46,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
 
                         modelsRef.where("modelName", "==", otherModel).get().then(function (querySnapshot) {
 
-                            let numOtherModelPorts = 2//querySnapshot.data().networkPorts.length
+                            let numOtherModelPorts = querySnapshot.docs[0].data().networkPorts.length
                             console.log(numThisModelPorts)
                             console.log(numOtherModelPorts)
                             //Math.min with a null, null is treated as 0
@@ -278,6 +278,9 @@ function symmetricNetworkConnectionsDelete(deleteID, callback) {
     //deleteID refers to asset you are deleting
     console.log("fucking kms")
     assetRef.doc(deleteID).get().then(function (docRef) {
+        if(!(docRef.data().networkConnections && Object.keys(docRef.data().networkConnections).length)){
+            callback(true);
+        }
         let networkConnections = Object.keys(docRef.data().networkConnections);
         console.log(networkConnections)
         let count = 0;
@@ -300,7 +303,9 @@ function symmetricNetworkConnectionsDelete(deleteID, callback) {
                         }).then(function () {
                             console.log("update worked for " + otherConnectedAsset)
                             count++;
-                            if(count === networkConnections.size){
+                            //console.log("count is " + count + " and networkconnections size is " + networkConnections.length)
+                            if(count === networkConnections.length){
+                                console.log("calling back")
                                 callback(true);
                             }
                         }).catch(function (error) {
@@ -414,10 +419,11 @@ function addPortsByAsset(assetID, level, callback) {
         }
         let count = 0;
         console.log(docSnap.data())
-        if (docSnap.data().networkConnections && docSnap.data().networkConnections.length) {
+        if (docSnap.data().networkConnections && Object.keys(docSnap.data().networkConnections).length) {
             Object.keys(docSnap.data().networkConnections).forEach(function (connection) {
                 assetRef.doc(docSnap.data().networkConnections[connection].otherAssetID.toString()).get().then(otherDocSnap => {
                     assetSecondLevel.push(docSnap.data().networkConnections[connection].otherAssetID.toString());
+                    console.log("here 2")
                     //let otherAssetModel = otherDocSnap.data().model;
                     let innerNodeClass = (level === 1) ? "second" : "third";
                     let innerNodeLevel = (level === 1) ? 2 : 3;
@@ -446,6 +452,7 @@ function addPortsByAsset(assetID, level, callback) {
                 })
             })
         } else {
+            console.log("here 3")
             callback([], []);
         }
     }).catch(function (error) {

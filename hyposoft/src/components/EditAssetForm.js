@@ -206,29 +206,10 @@ export default class EditAssetForm extends Component {
                               />
                         </FormField>
 
-                        {/* <Accordion >
-                                <AccordionPanel label="MAC Addresses">
-                                    <AssetMACForm
-
-                                        addMACAddrCallback={this.addMACAddress}
-                                        fieldCallback={this.handleDisplayMACFields}
-                                        model={this.state.model}
-                                        macAddresses={this.state.macAddresses}
+                        <Accordion >
 
 
-                                    />
-
-                                    <Button
-                                        onClick={this.addMACAddress}
-                                        margin={{ horizontal: 'medium', vertical: 'small' }}
-
-                                        label="Add a MAC Address" />
-
-                                </AccordionPanel>
-
-                            </Accordion> */}
-
-                            <Accordion>
+                          {/*  <Accordion>
                                 <AccordionPanel label="Power Port Connections">
                                     <AssetPowerPortsForm
 
@@ -245,9 +226,21 @@ export default class EditAssetForm extends Component {
 
                                 </AccordionPanel>
 
-                            </Accordion>
+                            </Accordion> */}
 
-                            <Accordion>
+                            <AccordionPanel label="MAC Addresses">
+                                <AssetMACForm
+
+                                    fieldCallback={this.handleDisplayMACFields}
+                                    model={this.state.model}
+                                    macAddresses={this.state.macAddresses}
+
+
+                                />
+
+                            </AccordionPanel>
+
+
                                 <AccordionPanel label="Network Port Connections">
                                     <AssetNetworkPortsForm
 

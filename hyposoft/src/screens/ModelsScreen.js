@@ -243,6 +243,7 @@ class ModelsScreen extends React.Component {
         modelutils.doesModelHaveAssets(this.modelToDelete.id, yes => {
             if (yes) {
                 ToastsStore.info("Can't delete model with live assets", 3000, 'burntToast')
+                this.hideDeleteDialog()
                 return
             }
 

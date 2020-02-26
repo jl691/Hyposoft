@@ -15,7 +15,7 @@ import {
     Menu,
     Select
 } from 'grommet'
-import {Add, Filter} from 'grommet-icons'
+import {Add, Filter, Share} from 'grommet-icons'
 import AddAssetForm from '../components/AddAssetForm'
 import DeleteAssetPopup from '../components/DeleteAssetPopup'
 import EditAssetForm from '../components/EditAssetForm'
@@ -29,6 +29,8 @@ import * as userutils from "../utils/userutils";
 import * as assetutils from "../utils/assetutils";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as datacenterutils from "../utils/datacenterutils";
+import * as bulkassetutils from "../utils/bulkassetsutils";
+import * as bulkconnectionstutils from "../utils/bulkconnectionsutils";
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
@@ -57,7 +59,6 @@ class AssetScreen extends Component {
             updateRackU: "",
             updateOwner: "",
             updateComment: "",
-            updateDatacenter: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
             rackSortChoice: "asc",//by default, will be ascending
@@ -535,6 +536,28 @@ class AssetScreen extends Component {
                                             popupType: ""
                                         })
                                     }}/>
+                                {/*</Box>*/}
+                            </Box>
+                        </Box>
+                        <Box style={{
+                            borderRadius: 10,
+                            borderColor: '#EDEDED'
+                        }}
+                             direction='row'
+                             alignSelf='stretch'
+                             background='#FFFFFF'
+                             width={"medium"}
+                             margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                             pad='small' >
+                            <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
+                                {/*<Box direction="column" width={"medium"} margin={{top: 'small'}}>*/}
+                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} onClick={() => {
+                                    bulkassetutils.exportFilteredAssets(this.state.searchResults || this.assetTable.current.state.assets);
+                                }} style={{marginBottom: "10px"}}/>
+                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} onClick={() => {
+                                    bulkconnectionstutils.exportFilteredConnections(this.state.searchResults || this.assetTable.current.state.assets);
+                                }}/>
+                                {/*this.assetTable.current.state*/}
                                 {/*</Box>*/}
                             </Box>
                         </Box>
