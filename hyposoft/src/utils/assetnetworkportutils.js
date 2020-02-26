@@ -295,6 +295,8 @@ function symmetricNetworkConnectionsDelete(deleteID, callback) {
                 console.log(conns)
                 conns.forEach(function (conn) {
                     console.log("in the innerforeach for ", conn)
+                    console.log(otherAssetDoc.data().networkConnections[conn].otherAssetID)
+                    console.log(deleteID)
                     if (otherAssetDoc.data().networkConnections[conn].otherAssetID === deleteID) {
                         console.log("matched")
                         //then call firld delete frecase code
