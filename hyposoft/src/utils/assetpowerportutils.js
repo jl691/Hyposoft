@@ -10,14 +10,14 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
     //How to handle when the rack does not have a network managed port?? How does this affect the detailed view? Getting the status?
     let success = 0;
     for (let i = 0; i < powerConnections.length; i++) {
-        
+
         let pduSide = powerConnections[i].pduSide;
         let port = powerConnections[i].port;
 
         if (pduSide.trim() === "" && port.trim() === "") {
             console.log("incrementing successes for pduside " + pduSide + " and port " + port)
             success++;
-            
+
             if (success == powerConnections.length) {
                 console.log("Returning successfully")
                 console.log(powerConnections.length)
@@ -26,15 +26,13 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
             //TODO: need to signify to store a null in the DB. That way, can do a .length check to know to dispplay "no connection" in the asset detail view
         }
 
+        //take out else and try with jsut if???
         else if (pduSide.trim() !== "" && port.trim() !== "") {
 
 
             modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
                 let numPowerPorts = querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : 0;
                 console.log("Num powerPorts for this model: " + numPowerPorts)
-
-                //FOR TESTING
-                numPowerPorts=4
 
                 if (parseInt(port) >= 1 && parseInt(port) <= 24) {
 
@@ -58,7 +56,9 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
                         })
 
                     }
-                    else if (numPowerPorts!=null){
+                    else if (numPowerPorts != null) {
+
+                        //THIS SHOWS UP TOO MANY TIMES
                         callback("To make power connections for this model " + model + ", you need to make " + numPowerPorts + " connections.")
 
                     }
@@ -69,7 +69,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
 
                 }
 
-            }).catch(function (error) {console.log("Could not find the model: " + error)})
+            }).catch(function (error) { console.log("Could not find the model: " + error) })
 
 
         }
@@ -105,7 +105,7 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
 
                 racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", id).get().then(function (querySnapshot) {
 
-                    rackPowerConns =  querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : [];
+                    rackPowerConns = querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : [];
 
                     for (let i = 0; i < rackPowerConns.length; i++) {
 
@@ -192,7 +192,7 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
             console.log(rackConnectionsDoc)
             console.log(rackPowerConns)
 
-            if(rackPowerConns.length){
+            if (rackPowerConns.length) {
                 let count = 0;
                 rackPowerConns.forEach(function (powerConn) {
                     console.log(powerConn);
@@ -203,15 +203,16 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
                     }
                     else {
                         count++;
-                        if(count === rackPowerConns.length){
+                        if (count === rackPowerConns.length) {
                             callback(null)
                         }
                     }
                 })
-            } else {
-                callback(null);
             }
-
+            else {
+                //There are no occupied ports on the rack
+                callback(null)
+            }
 
         }).catch(error => console.log(error))
 
@@ -224,7 +225,7 @@ function formatPowerConnections(powerPorts) {
     //need to return null if no power port conections have been made
     if (powerPorts[0].pduSide === "") {
         //TODO:didn't fill out anything. But what if first is empty but second is not?
-        powerPorts=[];
+        powerPorts = [];
         return powerPorts;
     }
     else {
@@ -238,5 +239,5 @@ export {
     checkConflicts,
     getFirstFreePort,
     formatPowerConnections,
-    
+
 }

@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { Grommet, Box, Text, FormField, TextInput } from 'grommet'
 import * as assetmacutils from '../utils/assetmacutils'
+import * as modelutils from '../utils/modelutils'
 import theme from "../theme";
 
 //Instead of validate connections, upon all fields for one set of inputs, have a toast that pops up with error message
@@ -104,6 +105,7 @@ export default class AssetMACForm extends Component {
 
     render() {
         //let { macAddresses } = this.props.macAddresses
+        console.log(this.props.macAddresses)
 
         //this.createForm(this.props.model)
         console.log(this.props);

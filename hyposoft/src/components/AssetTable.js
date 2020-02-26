@@ -5,6 +5,7 @@ import {FormEdit, FormTrash, Power, Clear, PowerCycle} from "grommet-icons"
 import * as assetutils from '../utils/assetutils'
 import * as powerutils from '../utils/powerutils'
 import * as userutils from "../utils/userutils";
+import * as assetnetworkportutils from '../utils/assetnetworkportutils'
 
 export default class AssetTable extends Component {
 
@@ -345,10 +346,10 @@ export default class AssetTable extends Component {
                                 data.comment,
                                 data.datacenter,
                                 data.macAddresses,
-                                data.networkConnections,
+                                assetnetworkportutils.networkConnectionsToArray( data.networkConnections),
                                 data.powerConnections
                             )
-                            console.log(data)
+                            console.log(data.macAddresses)
 
                         }} onMouseOver={e => this.colors[data.asset_id+'_edit_color']='#dddddd'}
                         onMouseLeave={e => this.colors[data.asset_id+'_edit_color']=''}/>
@@ -426,7 +427,7 @@ export default class AssetTable extends Component {
             return <Redirect to='/'/>
         }
 
-        if (!this.state.initialLoaded) {
+        if (!this.state.initialLoaded && this.state.assets.length !== 0) {
             return (<Text>Please wait...</Text>);
         }
 
