@@ -489,7 +489,14 @@ class ModelsScreen extends React.Component {
                                            </Box>
                                        </Box>
                                        {userutils.isLoggedInUserAdmin() && (
-                                            <Button primary icon={<Add />} label="Add model" alignSelf='center' onClick={this.showAddModelDialog} />
+                                           <Box
+                                            direction='row'
+                                            alignSelf='stretch'
+                                            justify='center'
+                                            gap='small' >
+                                                <Button primary icon={<Add />} label="Add model" alignSelf='center' onClick={this.showAddModelDialog} />
+                                                <Button label="Export currently filtered entries" alignSelf='center' onClick={() => {modelutils.exportFilteredModels(this.state.models)}} />
+                                            </Box>
                                        )}
                                    </Box>
                                    <Box

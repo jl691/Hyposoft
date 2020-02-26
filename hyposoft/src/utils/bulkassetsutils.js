@@ -1,4 +1,5 @@
 import * as firebaseutils from './firebaseutils'
+import { saveAs } from 'file-saver'
 
 function validateImportedAssets (data, callback) {
     var tasksPending = 4 // Assets, users, datacenters+racks, models
@@ -208,14 +209,14 @@ function validateImportedAssets (data, callback) {
                 const ppC1 = (assetFromDb.powerConnections && assetFromDb.powerConnections[0] && ((assetFromDb.powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[0].port)) || ''
                 const ppC2 = (assetFromDb.powerConnections && assetFromDb.powerConnections[1] && ((assetFromDb.powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[1].port)) || ''
 
-                if (assetFromDb.hostname.toLowerCase().trim() === datum.hostname.toLowerCase().trim() &&
-                    assetFromDb.datacenterAbbrev.toLowerCase().trim() === datum.datacenter.toLowerCase().trim() &&
-                    assetFromDb.rack.toUpperCase().trim() === datum.rack &&
-                    ''+assetFromDb.rackU === datum.rack_position.trim() &&
-                    assetFromDb.owner.toLowerCase().trim() === datum.owner.toLowerCase().trim() &&
-                    assetFromDb.comment.trim() === datum.comment.trim() &&
-                    ppC1 === datum.power_port_connection_1.trim().toUpperCase() &&
-                    ppC2 === datum.power_port_connection_2.trim().toUpperCase()) {
+                if (assetFromDb.hostname.toLowerCase().trim() == datum.hostname.toLowerCase().trim() &&
+                    assetFromDb.datacenterAbbrev.toLowerCase().trim() == datum.datacenter.toLowerCase().trim() &&
+                    assetFromDb.rack.toUpperCase().trim() == datum.rack &&
+                    ''+assetFromDb.rackU == datum.rack_position.trim() &&
+                    assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim() &&
+                    assetFromDb.comment.trim() == datum.comment.trim() &&
+                    ppC1 == datum.power_port_connection_1.trim().toUpperCase() &&
+                    ppC2 == datum.power_port_connection_2.trim().toUpperCase()) {
                     toBeIgnored.push(datum)
                 } else {
                     toBeModified.push(datum)
@@ -392,6 +393,41 @@ function escapeStringForCSV(string) {
     }
 }
 
+function exportFilteredAssets (assets) {
+    var rows = [
+        ["asset_number", "hostname", "datacenter", "rack", "rack_position",
+        "vendor", "model_number", "owner", "comment", "power_port_connection_1", "power_port_connection_2"]
+    ]
+
+    for (var i = 0; i < assets.length; i++) {
+        const ppC1 = (assets[i].powerConnections && assets[i].powerConnections.length >= 1 && assets[i].powerConnections[0].pduSide && assets[i].powerConnections[0].port ? (
+            (assets[i].powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+assets[i].powerConnections[0].port
+        ) : '')
+        const ppC2 = (assets[i].powerConnections && assets[i].powerConnections.length >= 2 && assets[i].powerConnections[1].pduSide && assets[i].powerConnections[1].port ? (
+            (assets[i].powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+assets[i].powerConnections[1].port
+        ) : '')
+
+        rows = [...rows, [
+            escapeStringForCSV(assets[i].assetId),
+            escapeStringForCSV(assets[i].hostname),
+            escapeStringForCSV(assets[i].datacenterAbbrev),
+            escapeStringForCSV(assets[i].rack),
+            ''+assets[i].rackU,
+            escapeStringForCSV(assets[i].vendor),
+            escapeStringForCSV(assets[i].modelNumber),
+            escapeStringForCSV(assets[i].owner),
+            escapeStringForCSV(assets[i].comment),
+            ppC1,
+            ppC2
+        ]]
+    }
+
+    var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
+        type: "data:text/csv;charset=utf-8;",
+    })
+    saveAs(blob, "hyposoft_assets_filtered.csv")
+}
+
 function getAssetsForExport (callback) {
     firebaseutils.assetRef.orderBy('assetId').get().then(qs => {
         var rows = [
@@ -428,4 +464,5 @@ function getAssetsForExport (callback) {
     })
 }
 
-export { validateImportedAssets, bulkAddAssets, bulkModifyAssets, getAssetsForExport }
+export { validateImportedAssets, bulkAddAssets, bulkModifyAssets, getAssetsForExport,
+exportFilteredAssets }

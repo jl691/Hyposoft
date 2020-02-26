@@ -1,5 +1,8 @@
 import * as firebaseutils from './firebaseutils'
 import * as logutils from './logutils'
+import {firebase} from "./firebaseutils";
+import {assetRef} from "./firebaseutils";
+import { saveAs } from 'file-saver'
 
 function packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment) {
     displayColor = displayColor.trim()
@@ -226,6 +229,64 @@ function escapeStringForCSV(string) {
     } else {
         return '"'+string.split('"').join('""')+'"'
     }
+}
+
+function exportFilteredModels(models) {
+    var rows = [
+        ["vendor", "model_number", "height", "display_color", "network_ports",
+        "power_ports", "cpu", "memory", "storage", "comment", "network_port_name_1",
+        "network_port_name_2", "network_port_name_3", "network_port_name_4"]
+    ]
+
+    for (var i = 0; i < models.length; i++) {
+        var network_port_name_1 = ''
+        var network_port_name_2 = ''
+        var network_port_name_3 = ''
+        var network_port_name_4 = ''
+
+        if (models[i].networkPortsCount >=1 ){
+            network_port_name_1 = models[i].networkPorts[0]
+        }
+
+        if (models[i].networkPortsCount >=2 ){
+            network_port_name_2 = models[i].networkPorts[1]
+        }
+
+        if (models[i].networkPortsCount >=3 ){
+            network_port_name_3 = models[i].networkPorts[2]
+        }
+
+        if (models[i].networkPortsCount >=4 ){
+            network_port_name_4 = models[i].networkPorts[3]
+        }
+
+        var displayColor = models[i].displayColor.trim()
+        if (!displayColor.startsWith('#')) {
+            displayColor = '#'+displayColor
+        }
+
+        rows = [...rows, [
+            escapeStringForCSV(models[i].vendor),
+            escapeStringForCSV(models[i].modelNumber),
+            ''+models[i].height,
+            displayColor.toUpperCase(),
+            ''+(models[i].networkPortsCount || ''),
+            ''+(models[i].powerPorts || ''),
+            escapeStringForCSV(models[i].cpu),
+            ''+(models[i].memory || ''),
+            escapeStringForCSV(models[i].storage),
+            escapeStringForCSV(models[i].comment),
+            network_port_name_1,
+            network_port_name_2,
+            network_port_name_3,
+            network_port_name_4,
+        ]]
+    }
+
+    var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
+        type: "data:text/csv;charset=utf-8;",
+    })
+    saveAs(blob, "hyposoft_models_filtered.csv")
 }
 
 function getModelsForExport(callback) {
@@ -516,4 +577,4 @@ function getAllModels (callback) {
 export { createModel, modifyModel, deleteModel, getModel, doesModelDocExist, getSuggestedVendors, getModels,
 getModelByModelname, doesModelHaveAssets, matchesFilters, getAssetsByModel,
 getModelsForExport, escapeStringForCSV, validateImportedModels, getVendorAndNumberFromModel,
-getModelIdFromModelName, getAllModels, combineVendorAndModelNumber, bulkAddModels, bulkModifyModels }
+getModelIdFromModelName, getAllModels, combineVendorAndModelNumber, bulkAddModels, bulkModifyModels, exportFilteredModels }
