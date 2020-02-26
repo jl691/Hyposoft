@@ -25,15 +25,13 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
             //TODO: need to signify to store a null in the DB. That way, can do a .length check to know to dispplay "no connection" in the asset detail view
         }
 
+        //take out else and try with jsut if???
         else if (pduSide.trim() !== "" && port.trim() !== "") {
 
 
             modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
                 let numPowerPorts = querySnapshot.docs[0].data().powerPorts;
                 console.log("Num powerPorts for this model: " + numPowerPorts)
-
-                //FOR TESTING
-                numPowerPorts=4
 
                 if (parseInt(port) >= 1 && parseInt(port) <= 24) {
 
@@ -193,7 +191,7 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
             if(rackPowerConns.length){
                 //So the rack already has occupied power ports
                 rackPowerConns.forEach(function (powerConn) {
-
+                    //checking all the occupied ports against a single port, port, which you are passing in
                     //NEED TO COUNT TO CALLBACK  
                     if (powerConn.pduSide === pduSide && powerConn.port === port) {
                         callback("Trying to make a conflicting power connection at " + pduSide + " " + port)

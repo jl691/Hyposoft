@@ -219,12 +219,6 @@ export default class EditAssetForm extends Component {
 
                                     />
 
-                                    <Button
-                                        onClick={this.addMACAddress}
-                                        margin={{ horizontal: 'medium', vertical: 'small' }}
-
-                                        label="Add a MAC Address" />
-
                                 </AccordionPanel>
 
                             </Accordion>

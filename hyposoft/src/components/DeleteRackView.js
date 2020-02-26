@@ -31,7 +31,7 @@ class DeleteRackView extends React.Component {
                 console.log("not impossible")
                 ToastsStore.success('Successfully deleted racks!');
                 if(skipped.length){
-                    ToastsStore.info('Skipped the following racks because they contained instances or did not exist: ' + skipped.join(', '));
+                    ToastsStore.info('Skipped the following racks because they contained assets or did not exist: ' + skipped.join(', '));
                 }
                 this.props.parentCallback(true);
             } else {

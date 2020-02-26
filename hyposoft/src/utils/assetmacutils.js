@@ -45,6 +45,11 @@ function handleMacAddressFixAndSet(addresses, callback) {
     let macAddresses = {};
     console.log(addresses)
     let count = 0;
+
+    if(addresses.length==0){
+
+        callback(macAddresses);
+    }
     addresses.forEach(obj => {
         
         let address = obj.macAddress
