@@ -133,7 +133,6 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
                                 assetnetworkportutils.validateNetworkConnections(model, networkConnectionsArray, ncStatus => {
 
-                                    //WHAT IS HAPPENING
                                     let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
                                     let powerConnections = assetpowerportutils.formatPowerConnections(powerConnectionsInput)
 
