@@ -107,12 +107,12 @@ class RackView extends React.Component {
         datacenterutils.getAllDatacenterNames(names => {
             if (names.length) {
                 names.forEach(name => {
+                    console.log(names)
                     this.datacenters.push(name);
                     this.itemCounts.set(name, 1)
                     count++;
                     if (count === names.length) {
-                        this.datacenters.push(name);
-                        console.log(items)
+                        //this.datacenters.push(name);
                         this.setState({
                             datacentersLoaded: true
                         });

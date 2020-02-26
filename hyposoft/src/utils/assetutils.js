@@ -37,7 +37,7 @@ function getAsset(callback, field = null, direction = null) {
                 comment: doc.data().comment,
                 datacenter: doc.data().datacenter,
                 datacenterAbbreviation: doc.data().datacenterAbbrev,
-                macAddress: doc.data().macAddress,
+                macAddresses: doc.data().macAddresses,
                 powerConnections: doc.data().powerConnections,
                 networkConnections: doc.data().networkConnections
             });
@@ -611,48 +611,59 @@ function deleteAsset(assetID, callback) {
                             //Can you do this??
                             powerPorts: firebase.firestore.FieldValue.arrayRemove(...deleteAssetConnections)
 
-                        }).then(
-                            assetRef.doc(assetID).delete().then(function () {
-                                racksRef.doc(String(rackID)).update({
-                                    assets: firebase.firestore.FieldValue.arrayRemove(assetID)
+                        }).then(function () {
+                            assetnetworkportutils.symmetricNetworkConnectionsDelete(assetID, result => {
+                                console.log(result)
+                                if(result){
+                                    assetRef.doc(assetID).delete().then(function () {
+                                        racksRef.doc(String(rackID)).update({
+                                            assets: firebase.firestore.FieldValue.arrayRemove(assetID)
 
-                                })
-                                    .then(function () {
-                                        console.log("Document successfully deleted!");
-                                        logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
-                                        index.deleteObject(assetID)
-                                        callback(assetID);
+                                        })
+                                            .then(function () {
+                                                console.log("Document successfully deleted!");
+                                                logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
+                                                index.deleteObject(assetID)
+                                                callback(assetID);
+                                            })
                                     })
-                            })
-                                .catch(function (error) {
-                                    console.log(error)
+                                        .catch(function (error) {
+                                            console.log(error)
+                                            callback(null);
+                                        })
+                                } else {
                                     callback(null);
-                                })
-
-                        )
+                                }
+                            })
+                        })
 
                     }
                     else {
                         //MY b, duplicated code again
                         //There were no powerConnections made in the asset in the first place
-                        assetRef.doc(assetID).delete().then(function () {
-                            racksRef.doc(String(rackID)).update({
-                                assets: firebase.firestore.FieldValue.arrayRemove(assetID)
 
-                            })
-                                .then(function () {
-                                    console.log("Document successfully deleted!");
-                                    logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
-                                    index.deleteObject(assetID)
-                                    callback(assetID);
-                                })
-                        })
-                            .catch(function (error) {
-                                console.log(error)
-                                callback(null);
-                            })
+                        assetnetworkportutils.symmetricNetworkConnectionsDelete(assetID, result => {
+                           if(result){
+                               assetRef.doc(assetID).delete().then(function () {
+                                   racksRef.doc(String(rackID)).update({
+                                       assets: firebase.firestore.FieldValue.arrayRemove(assetID)
 
-
+                                   })
+                                       .then(function () {
+                                           console.log("Document successfully deleted!");
+                                           logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
+                                           index.deleteObject(assetID)
+                                           callback(assetID);
+                                       })
+                               })
+                                   .catch(function (error) {
+                                       console.log(error)
+                                       callback(null);
+                                   })
+                           } else {
+                               callback(null);
+                           }
+                        });
                     }
 
 
