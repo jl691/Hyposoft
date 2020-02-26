@@ -2,15 +2,15 @@ import * as firebase from 'firebase/app'
 import 'firebase/firestore'
 import { sha256 } from 'js-sha256'
 
-const firebaseConfig = {
-    apiKey: "AIzaSyBE772y7XqZWwG5Q6Un0lu3zJsM12l-EDg",
-    authDomain: "hyposoft-dev.firebaseapp.com",
-    databaseURL: "https://hyposoft-dev.firebaseio.com",
-    projectId: "hyposoft-dev",
-    storageBucket: "hyposoft-dev.appspot.com",
-    messagingSenderId: "324524941581",
-    appId: "1:324524941581:web:ea302b22697fc9cc9ad044",
-    measurementId: "G-ZCSSY548ED"
+var firebaseConfig = {
+    apiKey: "AIzaSyAxa-EP7hIwf1msxa4kGcyneWoOt7f3wR8",
+    authDomain: "hyposoft-53c70.firebaseapp.com",
+    databaseURL: "https://hyposoft-53c70.firebaseio.com",
+    projectId: "hyposoft-53c70",
+    storageBucket: "hyposoft-53c70.appspot.com",
+    messagingSenderId: "290973758418",
+    appId: "1:290973758418:web:0281f7a921152d805fce0b",
+    measurementId: "G-713VLDN9N0"
 };
 
 // Initialize Firebase
