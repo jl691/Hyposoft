@@ -144,7 +144,13 @@ export default class DetailedAssetScreen extends Component {
                     formattedNum = this.state.asset.rackNum;
                 }
                 powerutils.getPortStatus("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0), this.state.asset.powerConnections[pduConnections].port, (result) => {
-                    let toggle = result === "ON" ? true : false;
+                    let toggle;
+                    if(result === null){
+                        ToastsStore.info("PDU power status is currently unavailable due to network issues.")
+                        toggle = false;
+                    } else {
+                        toggle = result === "ON" ? true : false;
+                    }
                     this.powerPorts.push({
                         name: "hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0),
                         port: this.state.asset.powerConnections[pduConnections].port
@@ -181,6 +187,8 @@ export default class DetailedAssetScreen extends Component {
                     if (count === Object.keys(this.state.asset.powerConnections).length) {
                         ToastsStore.success("Successfully turned on the asset!")
                     }
+                } else {
+                    ToastsStore.info("Could not power on due to network connectivity issues.")
                 }
             })
         })
@@ -204,6 +212,8 @@ export default class DetailedAssetScreen extends Component {
                     if (count === Object.keys(this.state.asset.powerConnections).length) {
                         ToastsStore.success("Successfully turned off the asset!")
                     }
+                } else {
+                    ToastsStore.error("Could not power off the asset due to network connectivity issues.")
                 }
             })
         })
@@ -243,11 +253,15 @@ export default class DetailedAssetScreen extends Component {
                                         if (count === Object.keys(this.state.asset.powerConnections).length) {
                                             ToastsStore.success("Successfully power cycled the asset!")
                                         }
+                                    } else {
+                                        ToastsStore.error("Could not power cycle due to network connectivity issues.")
                                     }
                                 })
                             })
                         }, 2000);
                     }
+                } else {
+                    ToastsStore.error("Could not power cycle due to network connectivity issues.")
                 }
             })
         })
@@ -272,6 +286,8 @@ export default class DetailedAssetScreen extends Component {
                                                       [connection.name + ":" + connection.port]: false
                                                   });
                                                   ToastsStore.success("Turned " + connection.name + ":" + connection.port + " off successfully!");
+                                              } else {
+                                                  ToastsStore.error("Could not power off due to network connectivity issues.")
                                               }
                                           })
                                       } else {
@@ -284,6 +300,8 @@ export default class DetailedAssetScreen extends Component {
                                                       [connection.name + ":" + connection.port]: true
                                                   });
                                                   ToastsStore.success("Turned " + connection.name + ":" + connection.port + " on successfully!");
+                                              } else {
+                                                  ToastsStore.error("Could not power on due to network connectivity issues.")
                                               }
                                           })
                                       }
@@ -302,9 +320,13 @@ export default class DetailedAssetScreen extends Component {
                                                 [connection.name + ":" + connection.port]: true
                                             });
                                             ToastsStore.success("Power cycled " + connection.name + ":" + connection.port + " successfully!");
+                                        } else {
+                                            ToastsStore.error("Could not power cycle due to network connectivity issues.")
                                         }
                                     })
                                 }, 2000)
+                            } else {
+                                ToastsStore.error("Could not power cycle due to network connectivity issues.")
                             }
                         })
                     }}/></Box></td>

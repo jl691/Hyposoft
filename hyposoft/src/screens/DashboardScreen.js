@@ -62,7 +62,6 @@ class DashboardScreen extends Component {
     }
 
     render() {
-        powerutils.powerPortOff('hpdu-rtp1-A01L', 4, () => {})
         if (this.state.redirect !== '') {
             return <Redirect to={this.state.redirect} />
         }
