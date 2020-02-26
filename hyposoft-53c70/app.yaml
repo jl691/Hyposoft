@@ -9,6 +9,10 @@ handlers:
   static_files: favicon.ico
   upload: favicon\.ico
 
+- url: /spec\.pdf
+  static_files: spec.pdf
+  upload: spec\.pdf
+
 - url: .*
   script: main.app
 

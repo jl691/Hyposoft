@@ -16,7 +16,8 @@ import {
     Layer,
     Text,
     TextInput,
-    Form } from 'grommet'
+    Form,
+    Select } from 'grommet'
 
 import { Add, FormEdit, FormTrash } from "grommet-icons"
 import theme from '../theme'
@@ -52,7 +53,7 @@ class UsersScreen extends Component {
             }
             this.setState({users: docSnaps.docs.map(doc => (
                 {dummy: true, username: doc.data().username, name: doc.data().displayName,
-                     role: (doc.data().username === 'admin' ? 'Admin' : 'User')}
+                     role: (doc.data.username === 'admin' ? 'Admin' : (doc.data().role === 'ADMIN_ROLE' ? 'Admin' : 'User'))}
             ))})
         })
     }
@@ -131,10 +132,10 @@ class UsersScreen extends Component {
         ))
     }
 
-    showEditDialog(username) {
+    showEditDialog(username, role) {
         if (userutils.isLoggedInUserAdmin()) {
             this.setState(currState => (
-                {...currState, showEditDialog: true, editUsername: username}
+                {...currState, showEditDialog: true, editUsername: username, editRole: role}
             ))
         } else {
             ToastsStore.info('Only admins can do that', 3000, 'burntToast')
@@ -155,13 +156,17 @@ class UsersScreen extends Component {
         }
 
         if (this.state.deleteUsername === 'admin') {
-            ToastsStore.info("Can't delete an admin", 3000, 'burntToast')
+            ToastsStore.info("Can't delete the special admin account", 3000, 'burntToast')
             this.onCloseDelete()
             return
         }
 
-        userutils.deleteUser(this.state.deleteUsername, () => {
-            ToastsStore.info("Deleted @"+this.state.deleteUsername, 3000, 'burntToast')
+        userutils.deleteUser(this.state.deleteUsername, isLocalUser => {
+            if (isLocalUser) {
+                ToastsStore.info("Deleted @"+this.state.deleteUsername, 3000, 'burntToast')
+            } else {
+                ToastsStore.info("Can't delete NetID user", 3000, 'burntToast')
+            }
             this.onCloseDelete()
 
             this.init()
@@ -176,32 +181,40 @@ class UsersScreen extends Component {
         }
 
         if (this.state.editUsername === 'admin') {
-            ToastsStore.info("Can't change admin's username", 3000, 'burntToast')
+            ToastsStore.info("Can't edit the special admin's settings", 3000, 'burntToast')
             return
         }
 
         var newUsername = this.state.editUserNewUsername
-        while (newUsername.startsWith('@')) {
-            newUsername = newUsername.substring(1)
-        }
 
-        if (newUsername === '') {
-            ToastsStore.info('New username required', 3000, 'burntToast')
-            return
-        }
-
-        userutils.usernameTaken(newUsername, taken => {
-            if (taken) {
-                ToastsStore.info('Username taken', 3000, 'burntToast')
-            } else {
-                userutils.updateUsername(this.state.editUsername, newUsername, () => {
-                    ToastsStore.info("Changes saved", 3000, 'burntToast')
-                    this.onCloseEdit()
-
-                    this.init()
-                })
+        if (newUsername && newUsername.trim() !== '') {
+            while (newUsername.startsWith('@')) {
+                newUsername = newUsername.substring(1)
             }
-        })
+
+            userutils.usernameTaken(newUsername, taken => {
+                if (taken) {
+                    ToastsStore.info('Username taken', 3000, 'burntToast')
+                } else {
+                    userutils.updateUsername(this.state.editUsername, newUsername, () => {
+                        userutils.updateUserRole(this.state.editUsername, (this.state.editRole === 'User' ? userutils.USER_ROLE : userutils.ADMIN_ROLE), () => {
+                            ToastsStore.info("Changes saved", 3000, 'burntToast')
+                            this.onCloseEdit()
+
+                            this.init()
+                        })
+                    })
+                }
+            })
+        } else {
+            userutils.updateUserRole(this.state.editUsername, (this.state.editRole === 'User' ? userutils.USER_ROLE : userutils.ADMIN_ROLE), () => {
+                ToastsStore.info("Changes saved", 3000, 'burntToast')
+                this.onCloseEdit()
+
+                this.init()
+            })
+        }
+
     }
 
     componentDidMount() {
@@ -224,7 +237,7 @@ class UsersScreen extends Component {
             {
                 property: 'dummy',
                 render: datum => (
-                <FormEdit style={{cursor: 'pointer'}} onClick={() => this.showEditDialog(datum.username)} />
+                <FormEdit style={{cursor: 'pointer'}} onClick={() => this.showEditDialog(datum.username, datum.role)} />
             ),
                 align: 'center',
                 header: <Text>Edit</Text>,
@@ -363,11 +376,12 @@ class UsersScreen extends Component {
 
                             <Form>
                                 <Box direction="column" gap="small">
+                                    <Text size={"small"} style={{marginLeft: "20px"}}>Username</Text>
                                     <TextInput style={{
                                             borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                             width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal'
                                         }}
-                                        placeholder="Username"
+                                        placeholder="eg. admin, tkb13"
                                         onChange={e => {
                                             const value = e.target.value
                                             this.setState(oldState => ({...oldState, newUserUsername: value}))
@@ -375,11 +389,12 @@ class UsersScreen extends Component {
                                         value={this.state.newUserUsername}
                                         title='Username'
                                         />
+                                    <Text size={"small"} style={{marginLeft: "20px"}}>Email</Text>
                                     <TextInput style={{
                                             borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                             width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                         }}
-                                        placeholder="Email"
+                                        placeholder="eg. example@example.com"
                                         onChange={e => {
                                             const value = e.target.value
                                             this.setState(oldState => ({...oldState, newUserEmail: value}))
@@ -436,20 +451,14 @@ class UsersScreen extends Component {
                             <Heading level={4} margin="none">
                                 Edit user
                             </Heading>
-                            <p>You can only change users' usernames, as they can't do that. All other profile details must be changed by the user themselves.</p>
                             <Form>
                                 <Box direction="column" gap="small" margin={{top: 'small'}}>
-                                    <TextInput style={{
-                                            borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                            width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
+                                    <Select
+                                        options={['User', 'Admin']}
+                                        value={this.state.editRole}
+                                        onChange={({ option }) => {
+                                            this.setState(oldState => ({...oldState, editRole: option}))
                                         }}
-                                        placeholder="New username"
-                                        onChange={e => {
-                                            const value = e.target.value
-                                            this.setState(oldState => ({...oldState, editUserNewUsername: value}))
-                                        }}
-                                        value={this.state.editUserNewUsername}
-                                        title='Email'
                                         />
                                 </Box>
                                 <Box
