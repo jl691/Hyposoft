@@ -39,7 +39,9 @@ function getAsset(callback, field = null, direction = null) {
                 datacenterAbbreviation: doc.data().datacenterAbbrev,
                 macAddresses: doc.data().macAddresses,
                 powerConnections: doc.data().powerConnections,
-                networkConnections: doc.data().networkConnections
+                networkConnections: doc.data().networkConnections,
+                vendor: doc.data().vendor,
+                modelNumber: doc.data().modelNumber
             });
             count++;
             if (count === docSnaps.docs.length) {
@@ -73,11 +75,18 @@ function getAssetAt(start, callback, field = null, direction = null) {
                 model: doc.data().model,
                 hostname: doc.data().hostname,
                 rack: doc.data().rack,
+                rackRow: doc.data().rackRow,
+                rackNum: doc.data().rackNum,
                 rackU: doc.data().rackU,
                 owner: doc.data().owner,
                 comment: doc.data().comment,
                 datacenter: doc.data().datacenter,
-                datacenterAbbreviation: doc.data().datacenterAbbrev
+                datacenterAbbreviation: doc.data().datacenterAbbrev,
+                macAddresses: doc.data().macAddresses,
+                powerConnections: doc.data().powerConnections,
+                networkConnections: doc.data().networkConnections,
+                vendor: doc.data().vendor,
+                modelNumber: doc.data().modelNumber
             });
             count++;
             if (count === docSnaps.docs.length) {
@@ -227,7 +236,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                     else {
 
                                         assetpowerportutils.validatePowerConnections(datacenter, rack, racku, powerConnectionsInput, model, ppStatus => {
+                                            console.log(ppStatus)
                                             if (ppStatus) {
+                                                console.log("breakpoint")
                                                 callback(ppStatus)
                                             }
                                             else {
@@ -611,48 +622,59 @@ function deleteAsset(assetID, callback) {
                             //Can you do this??
                             powerPorts: firebase.firestore.FieldValue.arrayRemove(...deleteAssetConnections)
 
-                        }).then(
-                            assetRef.doc(assetID).delete().then(function () {
-                                racksRef.doc(String(rackID)).update({
-                                    assets: firebase.firestore.FieldValue.arrayRemove(assetID)
+                        }).then(function () {
+                            assetnetworkportutils.symmetricNetworkConnectionsDelete(assetID, result => {
+                                console.log(result)
+                                if(result){
+                                    assetRef.doc(assetID).delete().then(function () {
+                                        racksRef.doc(String(rackID)).update({
+                                            assets: firebase.firestore.FieldValue.arrayRemove(assetID)
 
-                                })
-                                    .then(function () {
-                                        console.log("Document successfully deleted!");
-                                        logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
-                                        index.deleteObject(assetID)
-                                        callback(assetID);
+                                        })
+                                            .then(function () {
+                                                console.log("Document successfully deleted!");
+                                                logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
+                                                index.deleteObject(assetID)
+                                                callback(assetID);
+                                            })
                                     })
-                            })
-                                .catch(function (error) {
-                                    console.log(error)
+                                        .catch(function (error) {
+                                            console.log(error)
+                                            callback(null);
+                                        })
+                                } else {
                                     callback(null);
-                                })
-
-                        )
+                                }
+                            })
+                        })
 
                     }
                     else {
                         //MY b, duplicated code again
                         //There were no powerConnections made in the asset in the first place
-                        assetRef.doc(assetID).delete().then(function () {
-                            racksRef.doc(String(rackID)).update({
-                                assets: firebase.firestore.FieldValue.arrayRemove(assetID)
 
-                            })
-                                .then(function () {
-                                    console.log("Document successfully deleted!");
-                                    logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
-                                    index.deleteObject(assetID)
-                                    callback(assetID);
-                                })
-                        })
-                            .catch(function (error) {
-                                console.log(error)
-                                callback(null);
-                            })
+                        assetnetworkportutils.symmetricNetworkConnectionsDelete(assetID, result => {
+                           if(result){
+                               assetRef.doc(assetID).delete().then(function () {
+                                   racksRef.doc(String(rackID)).update({
+                                       assets: firebase.firestore.FieldValue.arrayRemove(assetID)
 
-
+                                   })
+                                       .then(function () {
+                                           console.log("Document successfully deleted!");
+                                           logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
+                                           index.deleteObject(assetID)
+                                           callback(assetID);
+                                       })
+                               })
+                                   .catch(function (error) {
+                                       console.log(error)
+                                       callback(null);
+                                   })
+                           } else {
+                               callback(null);
+                           }
+                        });
                     }
 
 
@@ -880,13 +902,13 @@ function getNetworkPorts(model, userInput, callback) {
 }
 
 // need to change logic here for editing asset, don't allow to pick own name
-function getSuggestedAssetIds(userInput, callback) {
+function getSuggestedAssetIds(datacenter, userInput, callback, self = '') {
     var modelArray = []
     // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
-    assetRef.orderBy('assetId').get().then(querySnapshot => {
+    assetRef.where('datacenter','==',datacenter ? datacenter : '').get().then(querySnapshot => {
         querySnapshot.forEach(doc => {
             const data = doc.data().assetId;
-            if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
+            if (data !== self && shouldAddToSuggestedItems(modelArray, data, userInput)) {
                 modelArray.push(data + ' - ' + doc.data().model + ' ' + doc.data().hostname)
             }
         })
@@ -978,7 +1000,7 @@ function getAssetDetails(assetID, callback) {
 function validateAssetForm(assetID, model, hostname, rack, racku, owner, datacenter) {
     return new Promise((resolve, reject) => {
         assetRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
-            if (!docSnaps.empty && assetID !== docSnaps.docs[0].id) {
+            if (!docSnaps.empty && assetID !== docSnaps.docs[0].id && hostname !== "") {
                 console.log("Made it here")
                 reject("Hostname already exists")
             }

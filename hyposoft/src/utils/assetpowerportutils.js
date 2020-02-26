@@ -10,13 +10,14 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
     //How to handle when the rack does not have a network managed port?? How does this affect the detailed view? Getting the status?
     let success = 0;
     for (let i = 0; i < powerConnections.length; i++) {
-        
+
         let pduSide = powerConnections[i].pduSide;
         let port = powerConnections[i].port;
 
         if (pduSide.trim() === "" && port.trim() === "") {
+            console.log("incrementing successes for pduside " + pduSide + " and port " + port)
             success++;
-            
+
             if (success == powerConnections.length) {
                 console.log("Returning successfully")
                 console.log(powerConnections.length)
@@ -30,7 +31,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
 
 
             modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
-                let numPowerPorts = querySnapshot.docs[0].data().powerPorts;
+                let numPowerPorts = querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : 0;
                 console.log("Num powerPorts for this model: " + numPowerPorts)
 
                 if (parseInt(port) >= 1 && parseInt(port) <= 24) {
@@ -39,10 +40,12 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
                     if (powerConnections.length === numPowerPorts) {
                         //check for conflicts
                         checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, status => {
+                            console.log(status)
                             if (status) {
                                 callback(status)
                             }
                             else {
+                                console.log("incrementing successes for pduside " + pduSide + " and port " + port)
                                 success++;
                                 if (success == powerConnections.length) {
                                     console.log("Returning successfully")
@@ -53,7 +56,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
                         })
 
                     }
-                    else if (numPowerPorts!=null){
+                    else if (numPowerPorts != null) {
 
                         //THIS SHOWS UP TOO MANY TIMES
                         callback("To make power connections for this model " + model + ", you need to make " + numPowerPorts + " connections.")
@@ -66,7 +69,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
 
                 }
 
-            }).catch(function (error) {console.log("Could not find the model: " + error)})
+            }).catch(function (error) { console.log("Could not find the model: " + error) })
 
 
         }
@@ -102,7 +105,7 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
 
                 racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", id).get().then(function (querySnapshot) {
 
-                    rackPowerConns = querySnapshot.docs[0].data().powerPorts
+                    rackPowerConns = querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : [];
 
                     for (let i = 0; i < rackPowerConns.length; i++) {
 
@@ -184,30 +187,33 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
         let rackNum = parseInt(splitRackArray[1])
 
         racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", id).get().then(function (rackConnectionsDoc) {
-            let rackPowerConns = rackConnectionsDoc.docs[0].data().powerPorts
+            console.log(rackConnectionsDoc.docs[0].data())
+            let rackPowerConns = rackConnectionsDoc.docs[0].data().powerPorts ? rackConnectionsDoc.docs[0].data().powerPorts : [];
             console.log(rackConnectionsDoc)
             console.log(rackPowerConns)
 
-            if(rackPowerConns.length){
-                //So the rack already has occupied power ports
+            if (rackPowerConns.length) {
+                let count = 0;
                 rackPowerConns.forEach(function (powerConn) {
-                    //checking all the occupied ports against a single port, port, which you are passing in
-                    //NEED TO COUNT TO CALLBACK  
-                    if (powerConn.pduSide === pduSide && powerConn.port === port) {
+                    console.log(powerConn);
+                    console.log(powerConn.pduSide, pduSide)
+                    console.log(powerConn.port, port)
+                    if (powerConn.pduSide === pduSide && parseInt(powerConn.port) === parseInt(port)) {
                         callback("Trying to make a conflicting power connection at " + pduSide + " " + port)
                     }
                     else {
-                        callback(null)
+                        count++;
+                        if (count === rackPowerConns.length) {
+                            callback(null)
+                        }
                     }
                 })
-
-
             }
-            else{
+            else {
                 //There are no occupied ports on the rack
                 callback(null)
             }
-            
+
         }).catch(error => console.log(error))
 
     })
@@ -219,7 +225,7 @@ function formatPowerConnections(powerPorts) {
     //need to return null if no power port conections have been made
     if (powerPorts[0].pduSide === "") {
         //TODO:didn't fill out anything. But what if first is empty but second is not?
-        powerPorts=[];
+        powerPorts = [];
         return powerPorts;
     }
     else {
@@ -233,5 +239,5 @@ export {
     checkConflicts,
     getFirstFreePort,
     formatPowerConnections,
-    
+
 }

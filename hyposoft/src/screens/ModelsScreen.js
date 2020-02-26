@@ -31,43 +31,43 @@ const index = client.initIndex('models')
 
 class ModelsScreen extends React.Component {
     defaultFilters = {
-        networkPortsFilterEnd: 48,
+        networkPortsFilterEnd: 100,
         networkPortsFilterStart: 0,
         heightFilterEnd: 42,
         heightFilterStart: 0,
-        powerFilterEnd: 8,
+        powerFilterEnd: 10,
         powerFilterStart: 0,
-        networkPortsFilterMax: 48,
-        powerFilterMax: 8,
-        memoryFilterMax: 200,
+        networkPortsFilterMax: 100,
+        powerFilterMax: 10,
+        memoryFilterMax: 1000,
         memoryFilterStart: 0,
-        memoryFilterEnd: 200,
+        memoryFilterEnd: 1000,
         filters: {
             heightStart: 0, heightEnd: 42,
-            networkPortsStart: 0, networkPortsEnd: 48,
-            memoryStart: 0, memoryEnd: 200,
-            powerPortsStart: 0, powerPortsEnd: 8
+            networkPortsStart: 0, networkPortsEnd: 100,
+            memoryStart: 0, memoryEnd: 1000,
+            powerPortsStart: 0, powerPortsEnd: 10
         }
     }
     state = {
         searchQuery: '',
-        networkPortsFilterEnd: 48,
+        networkPortsFilterEnd: 100,
         networkPortsFilterStart: 0,
         heightFilterEnd: 42,
         heightFilterStart: 0,
-        powerFilterEnd: 8,
+        powerFilterEnd: 10,
         powerFilterStart: 0,
-        networkPortsFilterMax: 48,
-        powerFilterMax: 8,
-        memoryFilterMax: 200,
+        networkPortsFilterMax: 100,
+        powerFilterMax: 10,
+        memoryFilterMax: 1000,
         memoryFilterStart: 0,
-        memoryFilterEnd: 200,
+        memoryFilterEnd: 1000,
         heightFilterMax: 42,
         filters: {
             heightStart: 0, heightEnd: 42,
-            networkPortsStart: 0, networkPortsEnd: 48,
-            memoryStart: 0, memoryEnd: 200,
-            powerPortsStart: 0, powerPortsEnd: 8
+            networkPortsStart: 0, networkPortsEnd: 100,
+            memoryStart: 0, memoryEnd: 1000,
+            powerPortsStart: 0, powerPortsEnd: 10
         },
         initialLoaded: false,
         sortField: "",
@@ -243,6 +243,7 @@ class ModelsScreen extends React.Component {
         modelutils.doesModelHaveAssets(this.modelToDelete.id, yes => {
             if (yes) {
                 ToastsStore.info("Can't delete model with live assets", 3000, 'burntToast')
+                this.hideDeleteDialog()
                 return
             }
 
@@ -256,16 +257,19 @@ class ModelsScreen extends React.Component {
         })
     }
 
+    colors={}
+
     getDatatable(){
         const adminColumns = userutils.isLoggedInUserAdmin() ? [{
             property: 'dummy',
             render: datum => (
-                <FormEdit style={{cursor: 'pointer'}} onClick={(e) => {
+                <FormEdit style={{cursor: 'pointer', backgroundColor: this.colors[datum.itemNo+'_edit_color']}} onClick={(e) => {
                     e.persist()
                     e.nativeEvent.stopImmediatePropagation()
                     e.stopPropagation()
                     this.showEditDialog(datum.itemNo)
-                }} />
+                }} onMouseOver={e => this.colors[datum.itemNo+'_edit_color']='#dddddd'}
+                 onMouseLeave={e => this.colors[datum.itemNo+'_edit_color']=''} />
             ),
             align: 'center',
             header: <Text size='small'>Edit</Text>,
@@ -274,12 +278,13 @@ class ModelsScreen extends React.Component {
             {
                 property: 'dummy2',
                 render: datum => (
-                    <FormTrash style={{cursor: 'pointer'}} onClick={(e) => {
+                    <FormTrash style={{cursor: 'pointer', backgroundColor: this.colors[datum.itemNo+'_delete_color']}} onClick={(e) => {
                         e.persist()
                         e.nativeEvent.stopImmediatePropagation()
                         e.stopPropagation()
                         this.showDeleteDialog(datum.itemNo)
-                    }} />
+                    }} onMouseOver={e => this.colors[datum.itemNo+'_delete_color']='#dddddd'}
+                     onMouseLeave={e => this.colors[datum.itemNo+'_delete_color']=''} />
                 ),
                 align: 'center',
                 header: <Text size='small'>Delete</Text>,
@@ -346,7 +351,7 @@ class ModelsScreen extends React.Component {
                             render: datum => <Text size='small'>{datum.cpu}</Text>
                         },
                         {
-                            property: 'cpu',
+                            property: 'storage',
                             header: <Text size='small' onClick={() => {
                                 this.setSort("storage")
                             }} style={{cursor: "pointer"}}>Storage</Text>,
@@ -489,7 +494,14 @@ class ModelsScreen extends React.Component {
                                            </Box>
                                        </Box>
                                        {userutils.isLoggedInUserAdmin() && (
-                                            <Button primary icon={<Add />} label="Add model" alignSelf='center' onClick={this.showAddModelDialog} />
+                                           <Box
+                                            direction='row'
+                                            alignSelf='stretch'
+                                            justify='center'
+                                            gap='small' >
+                                                <Button primary icon={<Add />} label="Add model" alignSelf='center' onClick={this.showAddModelDialog} />
+                                                <Button label="Export currently filtered entries" alignSelf='center' onClick={() => {modelutils.exportFilteredModels(this.state.models)}} />
+                                            </Box>
                                        )}
                                    </Box>
                                    <Box

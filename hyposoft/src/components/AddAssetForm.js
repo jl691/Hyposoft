@@ -484,6 +484,7 @@ export default class AddAssetForm extends Component {
                                     <AssetNetworkPortsForm
 
                                         model={this.state.model}
+                                        datacenter={this.state.datacenter}
                                         networkConnections={this.state.networkConnections}
 
                                     />

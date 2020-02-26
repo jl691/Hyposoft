@@ -287,6 +287,7 @@ export default class AssetTable extends Component {
     componentDidMount() {
         assetutils.getAsset((newStartAfter, assetdb) => {
             if (!(newStartAfter === null) && !(assetdb === null)) {
+                console.log(assetdb)
                 this.startAfter = newStartAfter;
                 this.defaultAssets = assetdb;
                 this.setState({assets: assetdb, initialLoaded: true})
