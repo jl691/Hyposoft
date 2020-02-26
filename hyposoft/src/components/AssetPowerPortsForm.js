@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { Grommet, FormField, TextInput, Box, Select, Text } from 'grommet'
 import theme from "../theme";
+import {FormTrash} from "grommet-icons";
 
 
 export default class AssetPowerPortsForm extends Component {
@@ -57,7 +58,15 @@ export default class AssetPowerPortsForm extends Component {
                     <Grommet key={idx} theme={theme}>
 
                         <Box direction="column" gap="small" overflow="auto" background="light-2">
-                            <Text margin ="small">Power Port { idx + 1} Connection</Text>
+                            <Box direction={"row"}>
+                                <Text margin ="small">Power Port { idx + 1} Connection</Text>
+                                <FormTrash
+                                    style={{ cursor: 'pointer' }}
+                                    onClick={(e) => {
+
+                                        this.props.deletePowerConnectionCallbackFromParent(e,idx)
+                                    }} />
+                            </Box>
 
 
                             <Select

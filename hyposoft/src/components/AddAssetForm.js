@@ -66,6 +66,7 @@ export default class AddAssetForm extends Component {
         this.handleMacAddressFixAndSet = this.handleMacAddressFixAndSet.bind(this)
         this.fixMACAddress = this.fixMACAddress.bind(this)
         this.deleteNetworkConnection=this.deleteNetworkConnection.bind(this)
+        this.deletePowerConnection = this.deletePowerConnection.bind(this);
     }
 
 
@@ -144,24 +145,27 @@ export default class AddAssetForm extends Component {
     addNetworkConnection(event) {
         this.setState(prevState => ({
             networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort: "" }]
-        }));
+        }), function () {
+            console.log(this.state.networkConnections)
+        });
     }
 
     deleteNetworkConnection(event, idx){
+        console.log("removing element " + idx)
+        let networkConnectionsCopy = [...this.state.networkConnections];
+        networkConnectionsCopy.splice(idx, 1);
         this.setState(prevState => ({
-            networkConnections: [...this.state.networkConnections].splice(idx,1)
+            networkConnections: networkConnectionsCopy
         }));
-        // console.log([...this.state.networkConnections])
-        // console.log(idx)
+    }
 
-        // let test=[0 , 1, 2, 3, 4, 5]
-        // test.splice(1,1)
-        // console.log(test) //expect[0 , 1, 3, 4, 5]
-
-        //actual{ [0, 2, 3, 4, 5]}. So confirmed, splice should remove itself at idx if given (idx, 1)
-        
-
-
+    deletePowerConnection(event, idx){
+        console.log("removing element " + idx)
+        let powerConnectionsCopy = [...this.state.powerConnections];
+        powerConnectionsCopy.splice(idx, 1);
+        this.setState(prevState => ({
+            powerConnections: powerConnectionsCopy
+        }));
     }
 
     addPowerConnection(event) {
@@ -522,6 +526,7 @@ export default class AddAssetForm extends Component {
                                         <AssetPowerPortsForm
 
                                             powerConnections={this.state.powerConnections}
+                                            deletePowerConnectionCallbackFromParent={this.deletePowerConnection}
 
                                         />
 
