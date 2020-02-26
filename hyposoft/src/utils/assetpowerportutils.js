@@ -9,6 +9,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
 
     //How to handle when the rack does not have a network managed port?? How does this affect the detailed view? Getting the status?
     let success = 0;
+    let allOrNothingCount=0;
     for (let i = 0; i < powerConnections.length; i++) {
 
         let pduSide = powerConnections[i].pduSide;
@@ -33,6 +34,8 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
             modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
                 let numPowerPorts = querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : 0;
                 console.log("Num powerPorts for this model: " + numPowerPorts)
+             
+                allOrNothingCount++;
 
                 if (parseInt(port) >= 1 && parseInt(port) <= 24) {
 
@@ -56,11 +59,19 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
                         })
 
                     }
-                    else if (numPowerPorts != null) {
+                   
+                    else if (numPowerPorts != null && allOrNothingCount === 1) {
 
-                        //THIS SHOWS UP TOO MANY TIMES
-                        callback("To make power connections for this model " + model + ", you need to make " + numPowerPorts + " connections.")
+                        if(numPowerPorts > 0){
+                            callback("To make power connections for this model " + model + ", you need to make " + numPowerPorts + " connections.")
 
+                        }
+                        else{
+                            //the model has 0 powerPorts on it
+                            callback("Cannot make power connections. The model " + model + " has " + numPowerPorts + " power ports.")
+
+                        }
+                        
                     }
 
                 } else {

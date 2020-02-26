@@ -39,7 +39,7 @@ export default class AssetTable extends Component {
                 this.setSort("hostname")
             }} style={{cursor: "pointer"}}>Hostname</Text>,
             // align:"start",
-            render: datum => <Text size='small'>{datum.hostname}</Text>,
+            render: datum => <Text wordBreak="break-all"size='small'>{datum.hostname}</Text>,
         },
         {
             property: 'rack',
@@ -431,7 +431,7 @@ export default class AssetTable extends Component {
             return <Redirect to='/'/>
         }
 
-        if (!this.state.initialLoaded) {
+        if (!this.state.initialLoaded ) {
             return (<Text>Please wait...</Text>);
         }
 
@@ -481,7 +481,7 @@ export default class AssetTable extends Component {
                 }}
 
                 columns={this.columns}
-                size="large"
+                size="medium"
                 //pad={{ horizontal: "medium", vertical: "xsmall" }}
 
                 onClickRow={({datum}) => {

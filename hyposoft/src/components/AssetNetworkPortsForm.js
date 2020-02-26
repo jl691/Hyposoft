@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import {FormTrash} from "grommet-icons"
 import { Grommet, Box, Text, FormField, TextInput } from 'grommet'
 import theme from "../theme";
 import * as assetutils from '../utils/assetutils'
@@ -25,7 +26,7 @@ export default class AssetNetworkPortsForm extends Component {
         if (e.target.name === "otherAssetID" || e.target.name === "otherPort" || e.target.name === "thisPort") {
 
             let networkConnections = [...this.props.networkConnections]
-            const value = e.target.name === "otherAssetID" ? e.target.value.split(' ',1).join(' ') : e.target.value
+            const value = e.target.name === "otherAssetID" ? e.target.value.split(' ', 1).join(' ') : e.target.value
             networkConnections[idx][e.target.name] = value
             this.setState({ port: value })
 
@@ -40,7 +41,7 @@ export default class AssetNetworkPortsForm extends Component {
         if (e.target.name === "otherAssetID" || e.target.name === "otherPort" || e.target.name === "thisPort") {
 
             let networkConnections = [...this.props.networkConnections]
-            const suggestion = e.target.name === "otherAssetID" ? e.suggestion.split(' ',1).join(' ') : e.suggestion
+            const suggestion = e.target.name === "otherAssetID" ? e.suggestion.split(' ', 1).join(' ') : e.suggestion
             networkConnections[idx][e.target.name] = suggestion
             this.setState({ port: suggestion })
 
@@ -54,7 +55,7 @@ export default class AssetNetworkPortsForm extends Component {
     //TODO: Can have up to 48 network connections made. For each thing, collapse with labels 1, 2, .... within the accordion attop lvle
     render() {
         let { networkConnections } = this.props
-         //console.log(networkConnections)
+        //console.log(networkConnections)
         return (
             networkConnections.map((val, idx) => {
                 return (
@@ -62,7 +63,16 @@ export default class AssetNetworkPortsForm extends Component {
 
                         <Box direction="column" gap="small" overflow="auto" background="light-2">
 
-                            <Text>{idx + 1}</Text>
+                            <Box direction="row">
+                                <Text>{idx + 1}</Text>
+                                <FormTrash
+                                    style={{ cursor: 'pointer' }}
+                                    onClick={(e) => {
+                                        
+                                        this.props.deleteNetworkConnectionCallbackFromParent(e,idx)
+                                    }} />
+                            </Box>
+
 
                             {/* TODO: AUTOCOMPLETE/PICKLIST */}
 
@@ -88,10 +98,11 @@ export default class AssetNetworkPortsForm extends Component {
                                     value={this.props.networkConnections[idx]['thisPort']}
                                     suggestions={this.state.networkPortSuggestions}
                                     onClick={() => {
-                                      assetutils.getNetworkPorts(this.props.model, this.props.networkConnections[idx]['thisPort'], results => this.setState(oldState => ({
-                                        ...oldState,
-                                        networkPortSuggestions: results
-                                    })))}}
+                                        assetutils.getNetworkPorts(this.props.model, this.props.networkConnections[idx]['thisPort'], results => this.setState(oldState => ({
+                                            ...oldState,
+                                            networkPortSuggestions: results
+                                        })))
+                                    }}
 
                                 />
 
@@ -110,10 +121,10 @@ export default class AssetNetworkPortsForm extends Component {
 
                                     onChange={e => {
                                         this.handleChange(e, idx)
-                                        assetutils.getSuggestedAssetIds(this.props.datacenter,e.target.value, results => this.setState(oldState => ({
+                                        assetutils.getSuggestedAssetIds(this.props.datacenter, e.target.value, results => this.setState(oldState => ({
                                             ...oldState,
                                             assetIdSuggestions: results
-                                        })),this.props.currentId ? this.props.currentId : '')
+                                        })), this.props.currentId ? this.props.currentId : '')
                                     }}
                                     onSelect={e => {
                                         this.handleSuggestion(e, idx)
@@ -121,10 +132,11 @@ export default class AssetNetworkPortsForm extends Component {
                                     value={this.props.networkConnections[idx]['otherAssetID']}
                                     suggestions={this.state.assetIdSuggestions}
                                     onClick={() => {
-                                      assetutils.getSuggestedAssetIds(this.props.datacenter,this.props.networkConnections[idx]['otherAssetID'], results => this.setState(oldState => ({
-                                        ...oldState,
-                                        assetIdSuggestions: results
-                                    })),this.props.currentId ? this.props.currentId : '')}}
+                                        assetutils.getSuggestedAssetIds(this.props.datacenter, this.props.networkConnections[idx]['otherAssetID'], results => this.setState(oldState => ({
+                                            ...oldState,
+                                            assetIdSuggestions: results
+                                        })), this.props.currentId ? this.props.currentId : '')
+                                    }}
                                 />
                             </FormField>
 
@@ -139,7 +151,7 @@ export default class AssetNetworkPortsForm extends Component {
 
                                     onChange={e => {
                                         this.handleChange(e, idx)
-                                        assetutils.getSuggestedOtherAssetPorts(this.props.networkConnections[idx]['otherAssetID'],e.target.value, results => this.setState(oldState => ({
+                                        assetutils.getSuggestedOtherAssetPorts(this.props.networkConnections[idx]['otherAssetID'], e.target.value, results => this.setState(oldState => ({
                                             ...oldState,
                                             otherAssetPortSuggestions: results
                                         })))
@@ -150,10 +162,11 @@ export default class AssetNetworkPortsForm extends Component {
                                     value={this.props.networkConnections[idx]['otherPort']}
                                     suggestions={this.state.otherAssetPortSuggestions}
                                     onClick={() => {
-                                      assetutils.getSuggestedOtherAssetPorts(this.props.networkConnections[idx]['otherAssetID'],this.props.networkConnections[idx]['otherPort'], results => this.setState(oldState => ({
-                                        ...oldState,
-                                        otherAssetPortSuggestions: results
-                                    })))}}
+                                        assetutils.getSuggestedOtherAssetPorts(this.props.networkConnections[idx]['otherAssetID'], this.props.networkConnections[idx]['otherPort'], results => this.setState(oldState => ({
+                                            ...oldState,
+                                            otherAssetPortSuggestions: results
+                                        })))
+                                    }}
                                 />
 
                             </FormField>
