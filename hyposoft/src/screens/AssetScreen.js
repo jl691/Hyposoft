@@ -27,6 +27,7 @@ import UserMenu from '../components/UserMenu'
 import AssetTable from '../components/AssetTable'
 import * as userutils from "../utils/userutils";
 import * as assetutils from "../utils/assetutils";
+import * as assetmacutils from "../utils/assetmacutils";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as datacenterutils from "../utils/datacenterutils";
 import * as bulkassetutils from "../utils/bulkassetsutils";
@@ -66,12 +67,8 @@ class AssetScreen extends Component {
             searchQuery: "",
             updateDatacenter: "",
             updateAsset_id:"",
-            updateMacAddresses: [
-                {
-                    networkPort: "",
-                    macAddress: ""
-                }
-            ],
+            updateMacAddresses:
+                [],
             updateNetworkConnections: [
                 {
                     otherAssetID: "",
@@ -219,7 +216,6 @@ class AssetScreen extends Component {
     }
     handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter, datumMACAddresses, datumNetworkConnections, datumPowerConnections) => {
 
-        
         this.setState({
             popupType: 'Update',
             updateID: datumID,
@@ -378,6 +374,7 @@ class AssetScreen extends Component {
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
 
+                        popupMode={this.state.popupType}
                         updateIDFromParent={this.state.updateID}
                         updateModelFromParent={this.state.updateModel}
                         updateHostnameFromParent={this.state.updateHostname}

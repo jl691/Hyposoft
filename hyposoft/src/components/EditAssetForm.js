@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Accordion, AccordionPanel } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
+import * as assetmacutils from '../utils/assetmacutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
 import { Redirect } from "react-router-dom";
@@ -64,6 +65,7 @@ export default class EditAssetForm extends Component {
             } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
                 ToastsStore.error("Rack elevation must be positive.");
             } else {
+              assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
                 assetutils.updateAsset(
                     this.props.updateIDFromParent,
                     this.state.model,
@@ -88,6 +90,7 @@ export default class EditAssetForm extends Component {
                             ToastsStore.error('Error updating asset: ' + status);
                         }
 
+                    });
                     });
             }
         }
@@ -215,6 +218,7 @@ export default class EditAssetForm extends Component {
 
                                     fieldCallback={this.handleDisplayMACFields}
                                     model={this.state.model}
+                                    popupMode={this.props.popupMode}
                                     macAddresses={this.state.macAddresses}
 
 
