@@ -23,6 +23,7 @@ export default class AssetMACForm extends Component {
         this.handleChange = this.handleChange.bind(this);
         // this.createForm = this.createForm.bind(this);
         //This was an anonymous function, but this.setState was not working. Give name to anon function, move out of the method it was in (so it gets a class scope) and htne bind
+        this.createForm = this.createForm.bind(this);
         this.createFormCallback = this.createFormCallback.bind(this);
 
 
@@ -42,16 +43,20 @@ export default class AssetMACForm extends Component {
             // //or it's something already 'submitted'
             //this.props.fieldCallback(this.state.macTextFields)
             console.log(macAddresses);
+            var status = []
+            for (var index in macAddresses) {
+              status.push(macAddresses[index]['networkPort'])
+            }
+            this.createFormCallback(status)
 
         } else {
             this.setState({ [e.target.name]: e.target.value })
         }
     }
 
-    createFormCallback(model) {
+    createFormCallback(status) {
 
         //create a bunch of new macAddress objects {}
-        assetmacutils.getNetworkPortLabels(this.props.model, status => {
         if (this.props.macAddresses.length === 0) {
           var index = 0
           status.forEach(() => {
@@ -75,10 +80,7 @@ export default class AssetMACForm extends Component {
                 />
             </FormField >
         ))
-        if (!this.state.initialLoaded) {
-          this.setState(oldState => ({macTextFields: fields, initialLoaded: true}))
-        }
-      })
+        this.setState(oldState => ({macTextFields: fields, initialLoaded: true}))
         // console.log(this.props.macAddresses);
         // return fields
         //console.log(this.props.macAddresses);
@@ -89,13 +91,11 @@ export default class AssetMACForm extends Component {
         //this.props.fieldCallback(fields)
     }
 
-    // createForm(model) {
-    //
-    //     assetmacutils.getNetworkPortLabels(model, status => {
-    //       return this.createFormCallback(status));
-    //     }
-    //
-    // }
+    createForm(model) {
+        assetmacutils.getNetworkPortLabels(this.props.model, status => {
+          this.createFormCallback(status)
+        })
+    }
 
     render() {
         //let { macAddresses } = this.props.macAddresses
@@ -114,7 +114,7 @@ export default class AssetMACForm extends Component {
         }
         if (!this.state.initialLoaded) {
 
-            this.createFormCallback(this.state.model)
+            this.createForm(this.state.model)
             return (
                 <Text>Please select valid model</Text>
             )
