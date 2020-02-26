@@ -96,7 +96,7 @@ export default class AssetTable extends Component {
 
 
                     if ((userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === datum.owner) && datum.datacenterAbbrev.toUpperCase() === "RTP1" && datum.rackRow.charCodeAt(0) >= 65 && datum.rackRow.charCodeAt(0) <= 69 && parseInt(datum.rackNum) >= 1 && parseInt(datum.rackNum) <=19 && datum.powerConnections && datum.powerConnections.length) {
-                    return (<Box direction={"row"}>
+                    return (<Box direction={"row"} justify={"center"}>
                         <Power style={{backgroundColor: this.colors[datum.asset_id+'_on_color']}} onClick={(e) => {
                             e.persist()
                             e.nativeEvent.stopImmediatePropagation()
