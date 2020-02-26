@@ -93,17 +93,13 @@ class ModelPermaScreen extends Component {
         if (!userutils.isLoggedInUserAdmin()) {
             ToastsStore.info('Only admins can do this', 3000, 'burntToast')
             return
-        }
-
-        if (this.state.assets.length > 0) {
-            ToastsStore.info("Can't delete model with live assets", 3000, 'burntToast')
-            this.hideDeleteDialog()
         } else {
             modelutils.deleteModel(this.state.id, () => {
                 ToastsStore.info("Model deleted", 3000, 'burntToast')
                 this.init()
                 this.hideDeleteDialog()
                 index.deleteObject(this.state.id)
+                window.location.href = "/models/";
             })
         }
     }
