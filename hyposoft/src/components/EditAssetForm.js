@@ -4,8 +4,9 @@ import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as assetmacutils from '../utils/assetmacutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
+import * as assetpowerportutils from '../utils/assetpowerportutils'
+import * as modelutils from '../utils/modelutils'
 import * as userutils from "../utils/userutils";
-import * as assetmacutils from '../utils/assetmacutils'
 import { Redirect } from "react-router-dom";
 import theme from "../theme";
 
@@ -39,15 +40,70 @@ export default class EditAssetForm extends Component {
         this.handleChange = this.handleChange.bind(this);
         this.addNetworkConnection = this.addNetworkConnection.bind(this);
         this.addPowerConnection = this.addPowerConnection.bind(this);
+        this.defaultPDUFields = this.defaultPDUFields.bind(this);
+        this.deleteNetworkConnection=this.deleteNetworkConnection.bind(this)
+        this.deletePowerConnection = this.deletePowerConnection.bind(this);
     }
 
     //TODO: use this method properly
     handleChange(event) {
         this.setState({
             [event.target.name]: event.target.value
-
-
         });
+        if (event.target.name === "rackU") {
+            //console.log(this.state)
+            // console.log(this.state.datacenter)
+            this.defaultPDUFields(this.state.model, this.state.rack, this.state.datacenter)
+        }
+    }
+
+    defaultPDUFields(model, rack, datacenter) {
+        //if the model has 2 or more ports, need to do these default fields
+        //find the first available spot
+        let numPorts = 0;
+        //instead of going into modelsRef, use a backend method
+        try {
+            modelutils.getModelByModelname(model, status => {
+
+                if (status) {
+                    //test with model lenovo foobar
+                    numPorts = status.data().powerPorts
+
+                    if (numPorts >= 2) {
+                        assetpowerportutils.getFirstFreePort(rack, datacenter, returnedPort => {
+                            console.log("In AddAssetForm. returned power port: " + returnedPort)
+                            if (returnedPort) {
+
+                                this.setState(oldState => ({
+                                    ...oldState,
+                                    powerConnections: [{
+                                        pduSide: "Left",
+                                        port: returnedPort.toString()
+                                    },
+                                    {
+                                        pduSide: "Right",
+                                        port: returnedPort.toString()
+                                    },
+
+                                    ]
+                                }))
+
+                                console.log(this.state.powerConnections)
+                            }
+
+
+                        });
+
+
+                    }
+                }
+            })
+
+
+        } catch (error) {
+            console.log(error)
+        }
+
     }
 
 
@@ -65,6 +121,24 @@ export default class EditAssetForm extends Component {
         }));
 
 
+    }
+
+    deleteNetworkConnection(event, idx){
+        console.log("removing element " + idx)
+        let networkConnectionsCopy = [...this.state.networkConnections];
+        networkConnectionsCopy.splice(idx, 1);
+        this.setState(prevState => ({
+            networkConnections: networkConnectionsCopy
+        }));
+    }
+
+    deletePowerConnection(event, idx){
+        console.log("removing element " + idx)
+        let powerConnectionsCopy = [...this.state.powerConnections];
+        powerConnectionsCopy.splice(idx, 1);
+        this.setState(prevState => ({
+            powerConnections: powerConnectionsCopy
+        }));
     }
 
     handleUpdate(event) {
@@ -332,6 +406,8 @@ export default class EditAssetForm extends Component {
 
                                     powerConnections={this.state.powerConnections}
 
+                                    deletePowerConnectionCallbackFromParent={this.deletePowerConnection}
+
                                 />
 
                                 <Button
@@ -363,6 +439,8 @@ export default class EditAssetForm extends Component {
                                     datacenter={this.state.datacenter}
                                     currentId={this.state.asset_id}
                                     networkConnections={this.state.networkConnections}
+
+                                    deleteNetworkConnectionCallbackFromParent={this.deleteNetworkConnection}
 
                                 />
 

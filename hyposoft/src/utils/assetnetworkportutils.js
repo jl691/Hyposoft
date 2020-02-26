@@ -16,6 +16,13 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
 
     let numConnectionsMade = networkPortConnections.length
     let mostPossibleConnections = 0;
+
+    //This was added for updating assets. seemed to be stuck, if no network connectios
+    if(networkPortConnections.length == 0){
+
+        callback(null)
+    }
+
     for (let i = 0; i < numConnectionsMade; i++) {
         let otherAssetID = networkPortConnections[i].otherAssetID;
         let otherPort = networkPortConnections[i].otherPort;
@@ -402,6 +409,8 @@ function networkConnectionsToArray(networkMap) {
 
     if (Object.keys(networkMap)) {
         let count = 0;
+        console.log(networkMap)
+        console.log(Object.keys(networkMap))
         Object.keys(networkMap).forEach(key => {
             console.log(key)
             let connObject = {}

@@ -612,6 +612,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                             callback(errMessage)
                         } else {
 
+                            console.log(rack, rackU, model, datacenter)
                             assetFitsOnRack(rack, rackU, model, datacenter, stat => {
                                 //returned an error message
                                 if (stat) {
@@ -622,6 +623,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                 }
                                 //returns null if no issues/conflicts.
                                 else {
+                                    console.log("No conflictss updates")
                                     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
                                     let rackRow = splitRackArray[0]
                                     let rackNum = parseInt(splitRackArray[1])
@@ -642,18 +644,24 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                 var modelId = ''
                                                 modelutils.getModelIdFromModelName(model, name => modelId = name)
                                                 rackutils.getRackID(oldRackRow, oldRackNum, oldDatacenter, oldResult => {
+                                                    console.log(oldRackRow, oldRackNum, oldDatacenter, oldResult)
                                                     if (oldResult) {
+                                                        console.log("up in this bitch")
                                                         //get new rack document
                                                         //get instance id
                                                         replaceAssetRack(oldResult, result, assetID, result => {
                                                             logutils.getObjectData(String(assetID), logutils.ASSET(), assetData => {
-
+                                                                console.log("We really up in this bitch")
+                                                                console.log(networkConnections)
+                                                                //console.log(assetnetworkportutils.networkConnectionsToArray(networkConnections))
                                                                 //the reason why we have networkConnections to array is because validateNetworkConnections expects an array. networkConnections is a JSON object because we got in from the db, and to send connectiosn to the db, it must be transformed into a JSON obj first
-                                                                assetnetworkportutils.validateNetworkConnections(model, assetnetworkportutils.networkConnectionsToArray(networkConnections), ncStatus => {
-                                                            
+                                                                assetnetworkportutils.validateNetworkConnections(model, networkConnections, ncStatus => {
+                                                                   
                                                                     let powerConnections = assetpowerportutils.formatPowerConnections(powerConnectionsInput)
+                                                                   console.log(ncStatus)
 
                                                                     if (ncStatus) {
+                                                                        console.log("Couldn't hang")
                                                                         callback(ncStatus)
                                                                     }
                                                                     else {
@@ -936,7 +944,7 @@ function validateAssetForm(assetID, model, hostname, rack, racku, owner, datacen
     return new Promise((resolve, reject) => {
         assetRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
             if (!docSnaps.empty && assetID !== docSnaps.docs[0].id && hostname !== "") {
-                console.log("Made it here")
+                console.log("Made it here "+ assetID +" "+docSnaps.docs[0].id )
                 reject("Hostname already exists")
             }
             if (owner !== "") {
