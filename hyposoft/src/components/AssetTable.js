@@ -8,6 +8,7 @@ import * as userutils from "../utils/userutils";
 
 export default class AssetTable extends Component {
 
+    colors={};
     defaultAssets = [];
     startAfter = null;
     columns = [
@@ -94,7 +95,7 @@ export default class AssetTable extends Component {
 
                     if ((userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === datum.owner) && datum.datacenterAbbreviation.toUpperCase() === "RTP1" && datum.rackRow.charCodeAt(0) >= 65 && datum.rackRow.charCodeAt(0) <= 69 && parseInt(datum.rackNum) >= 1 && parseInt(datum.rackNum) <=19 && datum.powerConnections && datum.powerConnections.length) {
                     return (<Box direction={"row"}>
-                        <Power onClick={(e) => {
+                        <Power style={{backgroundColor: this.colors[datum.asset_id+'_on_color']}} onClick={(e) => {
                             e.persist()
                             e.nativeEvent.stopImmediatePropagation()
                             e.stopPropagation()
@@ -126,8 +127,10 @@ export default class AssetTable extends Component {
                                 })
                             })
                         }
-                        }/>
-                        <Clear onClick={(e) => {
+                        }
+                               onMouseOver={e => this.colors[datum.asset_id+'_on_color']='#dddddd'}
+                               onMouseLeave={e => this.colors[datum.asset_id+'_on_color']=''}/>
+                        <Clear style={{backgroundColor: this.colors[datum.asset_id+'_off_color']}} onClick={(e) => {
                             e.persist()
                             e.nativeEvent.stopImmediatePropagation()
                             e.stopPropagation()
@@ -159,8 +162,10 @@ export default class AssetTable extends Component {
                                 })
                             })
                         }
-                        }/>
-                        <PowerCycle onClick={(e) => {
+                        }
+                               onMouseOver={e => this.colors[datum.asset_id+'_off_color']='#dddddd'}
+                               onMouseLeave={e => this.colors[datum.asset_id+'_off_color']=''}/>
+                        <PowerCycle style={{backgroundColor: this.colors[datum.asset_id+'_cycle_color']}} onClick={(e) => {
                             e.persist()
                             e.nativeEvent.stopImmediatePropagation()
                             e.stopPropagation()
@@ -221,7 +226,9 @@ export default class AssetTable extends Component {
                                 })
                             })
                         }
-                        }/>
+                        }
+                                    onMouseOver={e => this.colors[datum.asset_id+'_cycle_color']='#dddddd'}
+                                    onMouseLeave={e => this.colors[datum.asset_id+'_cycle_color']=''}/>
                     </Box>)
                 } else {
                     return (<Text size={"small"}>No options available.</Text>)
@@ -305,14 +312,15 @@ export default class AssetTable extends Component {
 
                 render: datum => (
                     <FormTrash
-                        style={{cursor: 'pointer'}}
+                        style={{cursor: 'pointer', backgroundColor: this.colors[datum.asset_id+'_delete_color']}}
                         onClick={(e) => {
                             console.log(datum)
                             e.persist()
                             e.nativeEvent.stopImmediatePropagation()
                             e.stopPropagation()
                             this.props.deleteButtonCallbackFromParent(datum)
-                        }}/>
+                        }} onMouseOver={e => this.colors[datum.asset_id+'_delete_color']='#dddddd'}
+                        onMouseLeave={e => this.colors[datum.asset_id+'_delete_color']=''}/>
                 )
             });
             this.columns.push({
@@ -322,7 +330,7 @@ export default class AssetTable extends Component {
                 align: 'center',
                 render: data => (
                     <FormEdit
-                        style={{cursor: 'pointer'}}
+                        style={{cursor: 'pointer', backgroundColor: this.colors[data.asset_id+'_edit_color']}}
                         onClick={(e) => {
                             e.persist()
                             e.nativeEvent.stopImmediatePropagation()
@@ -342,7 +350,8 @@ export default class AssetTable extends Component {
                             )
                             console.log(data)
 
-                        }}/>
+                        }} onMouseOver={e => this.colors[data.asset_id+'_edit_color']='#dddddd'}
+                        onMouseLeave={e => this.colors[data.asset_id+'_edit_color']=''}/>
                 )
             })
         }
