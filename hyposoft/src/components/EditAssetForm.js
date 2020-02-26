@@ -424,6 +424,7 @@ export default class EditAssetForm extends Component {
                                 <AssetMACForm
 
                                     fieldCallback={this.handleDisplayMACFields}
+                                    popupMode={this.props.popupMode}
                                     model={this.state.model}
                                     macAddresses={this.state.macAddresses}
 
