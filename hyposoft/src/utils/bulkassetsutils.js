@@ -157,7 +157,7 @@ function validateImportedAssets (data, callback) {
                     rackNamesToIdsForOurDC[rackIdsToNames[rackId]] = rackId
                 }
                 for (var j = parseInt(datum.rack_position); j < parseInt(datum.rack_position) + parseInt(existingModels[datum.vendor][datum.model_number].height); j++) {
-                    if ((j in usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]] && usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]][j] !== datum.asset_number) || j > 42) {
+                    if ((rackNamesToIdsForOurDC[datum.rack] in usedRackUsInRack && j in usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]] && usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]][j] !== datum.asset_number) || j > 42) {
                         errors = [...errors, [i + 1, 'Asset will not fit on the rack at this position']]
                     }
                 }

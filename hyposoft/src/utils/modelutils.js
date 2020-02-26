@@ -636,7 +636,7 @@ function bulkModifyModels (models, callback) {
         }
 
         modifyModel(model.id, ''+model.vendor, ''+model.model_number, parseInt(model.height), ''+model.display_color,
-         network_ports, parseInt(model.power_ports), ''+model.cpu, ''+model.memory, ''+model.storage,
+         network_ports, model.power_ports&&parseInt(model.power_ports), ''+model.cpu, ''+model.memory, ''+model.storage,
          ''+model.comment, (modelDoc, modelDocid) => {
              let suffixes_list = []
              let cpu = modelDoc.cpu

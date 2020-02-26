@@ -96,23 +96,27 @@ function deleteUser(username, callback) {
         if (!qs.empty) {
             const docId = qs.docs[0].id
             const docData = qs.docs[0].data()
-            qs.docs[0].ref.delete().then(() => {
-                logutils.addLog(docId,logutils.USER(),logutils.DELETE(),docData);
+            if (docData.password === '') {
+                callback(false)
+            } else {
+                qs.docs[0].ref.delete().then(() => {
+                    logutils.addLog(docId,logutils.USER(),logutils.DELETE(),docData);
 
-                firebaseutils.assetRef.where("owner", "==", docData.username).get().then(function (querySnapshot) {
-                    let count = 0;
-                    querySnapshot.forEach(asset => {
-                        asset.ref.update({
-                            owner: ""
-                        }).then(function () {
-                            count++;
-                            if(count === querySnapshot.size){
-                                callback()
-                            }
+                    firebaseutils.assetRef.where("owner", "==", docData.username).get().then(function (querySnapshot) {
+                        let count = 0;
+                        querySnapshot.forEach(asset => {
+                            asset.ref.update({
+                                owner: ""
+                            }).then(function () {
+                                count++;
+                                if(count === querySnapshot.size){
+                                    callback(true)
+                                }
+                            })
                         })
-                    })
-                });
-            })
+                    });
+                })
+            }
         }
     })
 }
