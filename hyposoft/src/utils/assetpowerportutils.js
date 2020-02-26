@@ -15,6 +15,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
         let port = powerConnections[i].port;
 
         if (pduSide.trim() === "" && port.trim() === "") {
+            console.log("incrementing successes for pduside " + pduSide + " and port " + port)
             success++;
             
             if (success == powerConnections.length) {
@@ -29,7 +30,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
 
 
             modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
-                let numPowerPorts = querySnapshot.docs[0].data().powerPorts;
+                let numPowerPorts = querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : 0;
                 console.log("Num powerPorts for this model: " + numPowerPorts)
 
                 //FOR TESTING
@@ -41,10 +42,12 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
                     if (powerConnections.length === numPowerPorts) {
                         //check for conflicts
                         checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, status => {
+                            console.log(status)
                             if (status) {
                                 callback(status)
                             }
                             else {
+                                console.log("incrementing successes for pduside " + pduSide + " and port " + port)
                                 success++;
                                 if (success == powerConnections.length) {
                                     console.log("Returning successfully")
@@ -102,7 +105,7 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
 
                 racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", id).get().then(function (querySnapshot) {
 
-                    rackPowerConns = querySnapshot.docs[0].data().powerPorts
+                    rackPowerConns =  querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : [];
 
                     for (let i = 0; i < rackPowerConns.length; i++) {
 
@@ -184,18 +187,30 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
         let rackNum = parseInt(splitRackArray[1])
 
         racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", id).get().then(function (rackConnectionsDoc) {
-            let rackPowerConns = rackConnectionsDoc.docs[0].data().powerPorts
+            console.log(rackConnectionsDoc.docs[0].data())
+            let rackPowerConns = rackConnectionsDoc.docs[0].data().powerPorts ? rackConnectionsDoc.docs[0].data().powerPorts : [];
             console.log(rackConnectionsDoc)
             console.log(rackPowerConns)
 
-            rackPowerConns.forEach(function (powerConn) {
-                if (powerConn.pduSide === pduSide && powerConn.port === port) {
-                    callback("Trying to make a conflicting power connection at " + pduSide + " " + port)
-                }
-                else {
-                    callback(null)
-                }
-            })
+            if(rackPowerConns.length){
+                let count = 0;
+                rackPowerConns.forEach(function (powerConn) {
+                    console.log(powerConn);
+                    console.log(powerConn.pduSide, pduSide)
+                    console.log(powerConn.port, port)
+                    if (powerConn.pduSide === pduSide && parseInt(powerConn.port) === parseInt(port)) {
+                        callback("Trying to make a conflicting power connection at " + pduSide + " " + port)
+                    }
+                    else {
+                        count++;
+                        if(count === rackPowerConns.length){
+                            callback(null)
+                        }
+                    }
+                })
+            } else {
+                callback(null);
+            }
 
 
         }).catch(error => console.log(error))
