@@ -22,7 +22,7 @@ import {
     RangeSelector,
     Stack } from 'grommet'
 
-import { Add, FormEdit, FormTrash } from "grommet-icons"
+import { Add, FormEdit, FormTrash, FormUp, FormDown } from "grommet-icons"
 import theme from '../theme'
 
 const algoliasearch = require('algoliasearch')
@@ -334,56 +334,56 @@ class ModelsScreen extends React.Component {
                             property: 'vendor',
                             header: <Text size='small' onClick={() => {
                                 this.setSort("vendor")
-                            }} style={{cursor: "pointer"}}>Vendor</Text>,
+                            }} style={{cursor: "pointer"}}>Vendor  {this.state.sortField === 'vendor' && (this.state.sortAscending ? <FormDown /> : <FormUp />)}</Text>,
                             render: datum => <Text size='small'>{datum.vendor}</Text>
                         },
                         {
                             property: 'modelNumber',
                             header: <Text size='small' onClick={() => {
                                 this.setSort("modelNumber")
-                            }} style={{cursor: "pointer"}}>Model #</Text>,
+                            }} style={{cursor: "pointer"}}>Model #  {this.state.sortField === 'modelNumber' && (this.state.sortAscending ? <FormDown /> : <FormUp />)}</Text>,
                             render: datum => <Text size='small'>{datum.modelNumber}</Text>
                         },
                         {
                             property: 'cpu',
                             header: <Text size='small' onClick={() => {
                                 this.setSort("cpu")
-                            }} style={{cursor: "pointer"}}>CPU</Text>,
+                            }} style={{cursor: "pointer"}}>CPU  {this.state.sortField === 'cpu' && (this.state.sortAscending ? <FormDown /> : <FormUp />)}</Text>,
                             render: datum => <Text size='small'>{datum.cpu}</Text>
                         },
                         {
                             property: 'storage',
                             header: <Text size='small' onClick={() => {
                                 this.setSort("storage")
-                            }} style={{cursor: "pointer"}}>Storage</Text>,
+                            }} style={{cursor: "pointer"}}>Storage   {this.state.sortField === 'storage' && (this.state.sortAscending ? <FormDown /> : <FormUp />)}</Text>,
                             render: datum => <Text size='small'>{datum.storage}</Text>
                         },
                         {
                             property: 'height',
                             header: <Text size='small' onClick={() => {
                                 this.setSort("height")
-                            }} style={{cursor: "pointer"}}>Height</Text>,
+                            }} style={{cursor: "pointer"}}>Height   {this.state.sortField === 'height' && (this.state.sortAscending ? <FormDown /> : <FormUp />)}</Text>,
                             render: datum => <Text size='small'>{datum.height}</Text>
                         },
                         {
                             property: 'networkPorts',
                             header: <Text size='small' onClick={() => {
                                 this.setSort("networkPortsCount")
-                            }} style={{cursor: "pointer"}}>Network ports #</Text>,
+                            }} style={{cursor: "pointer"}}>Network ports #   {this.state.sortField === 'networkPortsCount' && (this.state.sortAscending ? <FormDown /> : <FormUp />)}</Text>,
                             render: datum => <Text size='small'>{datum.networkPortsCount}</Text>
                         },
                         {
                             property: 'portPorts',
                             header: <Text size='small' onClick={() => {
                                 this.setSort("powerPorts")
-                            }} style={{cursor: "pointer"}}>Power ports #</Text>,
+                            }} style={{cursor: "pointer"}}>Power ports #   {this.state.sortField === 'powerPorts' && (this.state.sortAscending ? <FormDown /> : <FormUp />)}</Text>,
                             render: datum => <Text size='small'>{datum.powerPorts}</Text>
                         },
                         {
                             property: 'memory',
                             header: <Text size='small' onClick={() => {
                                 this.setSort("memory")
-                            }} style={{cursor: "pointer"}}>Memory</Text>,
+                            }} style={{cursor: "pointer"}}>Memory  {this.state.sortField === 'memory' && (this.state.sortAscending ? <FormDown /> : <FormUp />)}</Text>,
                             render: datum => <Text size='small'>{datum.memory}</Text>
                         },
                         ...adminColumns
