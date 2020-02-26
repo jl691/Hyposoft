@@ -504,11 +504,6 @@ class AssetScreen extends Component {
                                         </Box>
                                         <Box direction="column" justify="center" margin={{top: 'small', bottom: 'medium'}}>
                                             <Button label={<Text size="small"> Apply</Text>} onClick={this.handleCombinedSort}/>
-                                            <Button label={<Text size="small">Close</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
-                                                this.setState({
-                                                    popupType: ""
-                                                })
-                                            }}/>
                                         </Box>
 
 
@@ -533,6 +528,11 @@ class AssetScreen extends Component {
                              pad='small' >
                             <Box flex margin={{ left: 'medium', top: 'small', right: 'medium' }} direction='column' justify='start'>
                                 {/*<Box direction="column" width={"medium"} margin={{top: 'small'}}>*/}
+                                <Button label={<Text size="small">Close</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
+                                    this.setState({
+                                        popupType: ""
+                                    })
+                                }}/>
                                 <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} onClick={() => {
                                     bulkassetutils.exportFilteredAssets(this.state.searchResults || this.assetTable.current.state.assets);
                                 }} style={{marginBottom: "10px"}}/>

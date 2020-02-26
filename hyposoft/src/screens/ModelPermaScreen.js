@@ -131,7 +131,7 @@ class ModelPermaScreen extends Component {
                         ...doc.data(),
                         id: doc.id,
                         itemNo: i++,
-                        datacenterAbbreviation: datacenterAbbrev
+                        datacenterAbbrev: datacenterAbbrev
                     });
                     count++;
                     if (count === docSnaps.docs.length) {
@@ -196,9 +196,9 @@ class ModelPermaScreen extends Component {
                             sortable: true,
                         },
                         {
-                            property: 'datacenterAbbreviation',
+                            property: 'datacenterAbbrev',
                             header: <Text size='small'>Datacenter</Text>,
-                            render: datum => <Text size='small'>{datum.datacenterAbbreviation}</Text>,
+                            render: datum => <Text size='small'>{datum.datacenterAbbrev}</Text>,
                             sortable: true
                         },
                         {
