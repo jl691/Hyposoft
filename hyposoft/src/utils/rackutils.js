@@ -555,10 +555,11 @@ function generateAllRackUsageReports(callback) {
                         }
 
                         //then owner
-                        if (ownerCounts.has(doc.data().owner)) {
-                            ownerCounts.set(doc.data().owner, ownerCounts.get(doc.data().owner) + height);
+                        let owner = doc.data().owner ? doc.data().owner : "No owner";
+                        if (ownerCounts.has(owner)) {
+                            ownerCounts.set(owner, ownerCounts.get(owner) + height);
                         } else {
-                            ownerCounts.set(doc.data().owner, height);
+                            ownerCounts.set(owner, height);
                         }
 
                         usedCount += height;
