@@ -39,7 +39,9 @@ function getAsset(callback, field = null, direction = null) {
                 datacenterAbbreviation: doc.data().datacenterAbbrev,
                 macAddresses: doc.data().macAddresses,
                 powerConnections: doc.data().powerConnections,
-                networkConnections: doc.data().networkConnections
+                networkConnections: doc.data().networkConnections,
+                vendor: doc.data().vendor,
+                modelNumber: doc.data().modelNumber
             });
             count++;
             if (count === docSnaps.docs.length) {
@@ -73,11 +75,18 @@ function getAssetAt(start, callback, field = null, direction = null) {
                 model: doc.data().model,
                 hostname: doc.data().hostname,
                 rack: doc.data().rack,
+                rackRow: doc.data().rackRow,
+                rackNum: doc.data().rackNum,
                 rackU: doc.data().rackU,
                 owner: doc.data().owner,
                 comment: doc.data().comment,
                 datacenter: doc.data().datacenter,
-                datacenterAbbreviation: doc.data().datacenterAbbrev
+                datacenterAbbreviation: doc.data().datacenterAbbrev,
+                macAddresses: doc.data().macAddresses,
+                powerConnections: doc.data().powerConnections,
+                networkConnections: doc.data().networkConnections,
+                vendor: doc.data().vendor,
+                modelNumber: doc.data().modelNumber
             });
             count++;
             if (count === docSnaps.docs.length) {
