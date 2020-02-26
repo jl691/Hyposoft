@@ -144,13 +144,20 @@ export default class AddAssetForm extends Component {
     addNetworkConnection(event) {
         this.setState(prevState => ({
             networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort: "" }]
-        }));
+        }), function () {
+            console.log(this.state.networkConnections)
+        });
     }
 
     deleteNetworkConnection(event, idx){
+        console.log("removing element " + idx)
+        let networkConnectionsCopy = [...this.state.networkConnections];
+        networkConnectionsCopy.splice(idx, 1);
         this.setState(prevState => ({
-            networkConnections: [...this.state.networkConnections].splice(idx,1)
-        }));
+            networkConnections: networkConnectionsCopy
+        }), function () {
+            console.log(this.state.networkConnections)
+        });
         // console.log([...this.state.networkConnections])
         // console.log(idx)
 
