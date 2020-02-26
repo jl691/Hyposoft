@@ -384,15 +384,6 @@ console.log(connObject)
 
         })
         return networkArray
-
-        // if (count === Object.keys(networkMap)){
-        //     console.log("returning")
-        //     console.log(networkArray)
-        //     return networkArray
-        // }
-
-
-
     }
     else {
         return networkArray;

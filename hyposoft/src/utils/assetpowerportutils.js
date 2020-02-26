@@ -190,18 +190,26 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
             console.log(rackConnectionsDoc)
             console.log(rackPowerConns)
 
-            rackPowerConns.forEach(function (powerConn) {
+            if(rackPowerConns.length){
+                //So the rack already has occupied power ports
+                rackPowerConns.forEach(function (powerConn) {
 
-                //NEED TO COUNT TO CALLBACK  
-                if (powerConn.pduSide === pduSide && powerConn.port === port) {
-                    callback("Trying to make a conflicting power connection at " + pduSide + " " + port)
-                }
-                else {
-                    callback(null)
-                }
-            })
+                    //NEED TO COUNT TO CALLBACK  
+                    if (powerConn.pduSide === pduSide && powerConn.port === port) {
+                        callback("Trying to make a conflicting power connection at " + pduSide + " " + port)
+                    }
+                    else {
+                        callback(null)
+                    }
+                })
 
 
+            }
+            else{
+                //There are no occupied ports on the rack
+                callback(null)
+            }
+            
         }).catch(error => console.log(error))
 
     })
