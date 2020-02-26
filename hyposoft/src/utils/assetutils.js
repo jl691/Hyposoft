@@ -1000,7 +1000,7 @@ function getAssetDetails(assetID, callback) {
 function validateAssetForm(assetID, model, hostname, rack, racku, owner, datacenter) {
     return new Promise((resolve, reject) => {
         assetRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
-            if (!docSnaps.empty && assetID !== docSnaps.docs[0].id) {
+            if (!docSnaps.empty && assetID !== docSnaps.docs[0].id && hostname !== "") {
                 console.log("Made it here")
                 reject("Hostname already exists")
             }
