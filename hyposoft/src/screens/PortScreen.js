@@ -10,7 +10,7 @@ import * as modelutils from '../utils/modelutils'
 import * as assetutils from '../utils/assetutils'
 import * as bulkutils from '../utils/bulkutils'
 import * as bulkconnectionsutils from '../utils/bulkconnectionsutils'
-import * as assetimportutils from '../utils/assetimportutils'
+import * as bulkassetsutils from '../utils/bulkassetsutils'
 import CSVReader from 'react-csv-reader'
 
 import {
@@ -65,7 +65,7 @@ class PortScreen extends Component {
 
     exportAssets () {
         this.setState(oldState => ({...oldState, showLoadingDialog: true}))
-        assetimportutils.getAssetsForExport(rows => {
+        bulkassetsutils.getAssetsForExport(rows => {
             var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
                 type: "data:text/csv;charset=utf-8;",
             })
@@ -194,7 +194,7 @@ class PortScreen extends Component {
                 return
             }
             this.setState(oldState => ({...oldState, showLoadingDialog: true}))
-            assetimportutils.validateImportedAssets(data, ({ errors, toBeIgnored, toBeModified, toBeAdded }) => {
+            bulkassetsutils.validateImportedAssets(data, ({ errors, toBeIgnored, toBeModified, toBeAdded }) => {
                 if (errors.length > 0) {
                     this.setState(oldState => ({
                         ...oldState, showLoadingDialog: false, errors: errors.map(error => <div><b>Row {error[0]}:</b> {error[1]}</div>)
@@ -203,7 +203,7 @@ class PortScreen extends Component {
                     this.setState(oldState => ({...oldState, showLoadingDialog: false, errors: undefined}))
                     if (toBeModified.length === 0) {
                         if (toBeAdded.length > 0) {
-                            assetimportutils.bulkAddAssets(toBeAdded, () => {
+                            bulkassetsutils.bulkAddAssets(toBeAdded, () => {
                                 this.setState(oldState => ({...oldState, modificationsInfoAssets: undefined, showStatsForAssets: true, ignoredAssets: toBeIgnored, modifiedAssets: [], createdAssets: toBeAdded}))
                             })
                         } else {
@@ -219,7 +219,7 @@ class PortScreen extends Component {
                         }))
 
                         if (toBeAdded.length > 0) {
-                            assetimportutils.bulkAddAssets(toBeAdded, () => {})
+                            bulkassetsutils.bulkAddAssets(toBeAdded, () => {})
                         }
                     }
                 }
@@ -475,7 +475,7 @@ class PortScreen extends Component {
                                 <Button
                                     label="Update"
                                     onClick={() => {
-                                        assetimportutils.bulkModifyAssets(this.state.modifiedAssets, () => {
+                                        bulkassetsutils.bulkModifyAssets(this.state.modifiedAssets, () => {
                                             this.setState(oldState => ({...oldState, modificationsInfoAssets: undefined, showStatsForAssets: true}))
                                         })
                                     }}
