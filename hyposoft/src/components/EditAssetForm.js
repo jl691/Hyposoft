@@ -1,9 +1,11 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Accordion, AccordionPanel } from 'grommet'
+import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Accordion, AccordionPanel, CheckBox } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as assetmacutils from '../utils/assetmacutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
+import * as assetpowerportutils from '../utils/assetpowerportutils'
+import * as modelutils from '../utils/modelutils'
 import * as userutils from "../utils/userutils";
 import { Redirect } from "react-router-dom";
 import theme from "../theme";
@@ -31,20 +33,77 @@ export default class EditAssetForm extends Component {
             powerConnections: this.props.updatePowerConnectionsFromParent,
             networkConnections: this.props.updateNetworkConnectionsFromParent,
 
+            showPowerConnections: false,
+
         }
         this.handleUpdate = this.handleUpdate.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.addNetworkConnection = this.addNetworkConnection.bind(this);
         this.addPowerConnection = this.addPowerConnection.bind(this);
+        this.defaultPDUFields = this.defaultPDUFields.bind(this);
+        this.deleteNetworkConnection=this.deleteNetworkConnection.bind(this)
+        this.deletePowerConnection = this.deletePowerConnection.bind(this);
     }
 
     //TODO: use this method properly
     handleChange(event) {
         this.setState({
             [event.target.name]: event.target.value
-
-
         });
+        if (event.target.name === "rackU") {
+            //console.log(this.state)
+            // console.log(this.state.datacenter)
+            this.defaultPDUFields(this.state.model, this.state.rack, this.state.datacenter)
+        }
+    }
+
+    defaultPDUFields(model, rack, datacenter) {
+        //if the model has 2 or more ports, need to do these default fields
+        //find the first available spot
+        let numPorts = 0;
+        //instead of going into modelsRef, use a backend method
+        try {
+            modelutils.getModelByModelname(model, status => {
+
+                if (status) {
+                    //test with model lenovo foobar
+                    numPorts = status.data().powerPorts
+
+                    if (numPorts >= 2) {
+                        assetpowerportutils.getFirstFreePort(rack, datacenter, returnedPort => {
+                            console.log("In AddAssetForm. returned power port: " + returnedPort)
+                            if (returnedPort) {
+
+                                this.setState(oldState => ({
+                                    ...oldState,
+                                    powerConnections: [{
+                                        pduSide: "Left",
+                                        port: returnedPort.toString()
+                                    },
+                                    {
+                                        pduSide: "Right",
+                                        port: returnedPort.toString()
+                                    },
+
+                                    ]
+                                }))
+
+                                console.log(this.state.powerConnections)
+                            }
+
+
+                        });
+
+
+                    }
+                }
+            })
+
+
+        } catch (error) {
+            console.log(error)
+        }
+
     }
 
 
@@ -64,56 +123,144 @@ export default class EditAssetForm extends Component {
 
     }
 
+    deleteNetworkConnection(event, idx){
+        console.log("removing element " + idx)
+        let networkConnectionsCopy = [...this.state.networkConnections];
+        networkConnectionsCopy.splice(idx, 1);
+        this.setState(prevState => ({
+            networkConnections: networkConnectionsCopy
+        }));
+    }
+
+    deletePowerConnection(event, idx){
+        console.log("removing element " + idx)
+        let powerConnectionsCopy = [...this.state.powerConnections];
+        powerConnectionsCopy.splice(idx, 1);
+        this.setState(prevState => ({
+            powerConnections: powerConnectionsCopy
+        }));
+    }
+
     handleUpdate(event) {
 
         if (event.target.name === "updateInst") {
             //this is where you pass in props updateData from AssetScreen . Want to keep old unchanged data, ow
 
-            if (!this.state.model || !this.state.hostname || !this.state.rack || !this.state.rackU) {
+            if (!this.state.model || !this.state.rack || !this.state.rackU || !this.state.datacenter) {
                 //not all required fields filled out
                 ToastsStore.error("Please fill out all required fields.");
-            } else if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)) {
+            } else if (this.state.hostname && !/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)) {
                 //not a valid hostname
-                ToastsStore.error("Invalid hostname.");
+                ToastsStore.error("Invalid hostname. It must start with a letter or number, contain only letters, numbers, or hyphens, and end with a letter or number. It must be 63 characters or less.");
             } else if (!/[A-Z]\d+/.test(this.state.rack)) {
                 //not a valid rack
                 ToastsStore.error("Invalid rack.");
             } else if (!parseInt(this.state.rackU)) {
                 //invalid number
-                ToastsStore.error("Rack elevation must be a number.");
+                ToastsStore.error("Rack U must be a number.");
             } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
-                ToastsStore.error("Rack elevation must be positive.");
-            } else {
-              assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
-                assetutils.updateAsset(
-                    this.props.updateIDFromParent,
-                    this.state.model,
-                    this.state.hostname,
-                    this.state.rack,
-                    parseInt(this.state.rackU),
-                    this.state.owner,
-                    this.state.comment,
-                    this.state.datacenter,
+                ToastsStore.error("Rack U must be positive.");
+            }
+            else {
+                if (this.state.showPowerConnections) {
+                    let existingConnections = [];
+                    Object.keys(this.state.powerConnections).forEach(connection => {
+                        let thisKey = this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port;
+                        if (existingConnections.includes(thisKey)) {
+                            ToastsStore.error("Power connections must be unique.");
+                        } else {
+                            existingConnections.push(this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port);
+                            if (existingConnections.length === Object.keys(this.state.powerConnections).length) {
+                                //TODO: fix this in assetmacutils
+                                assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
+                                    if (fixedAddr) {
+                                        console.log(fixedAddr)
+                                        assetutils.updateAsset(
+                                            this.state.asset_id,
+                                            this.state.model,
+                                            this.state.hostname,
+                                            this.state.rack,
+                                            parseInt(this.state.rackU),
+                                            this.state.owner,
+                                            this.state.comment,
+                                            this.state.datacenter,
+                                            fixedAddr,
+                                            this.state.networkConnections,
+                                            this.state.showPowerConnections ? this.state.powerConnections : [{
 
-                    status => {
-                        console.log(status)
-                        //returned a null in instanceutils updateInstance function. Means no errormessage
-                        if (!status) {
-                            console.log(this.state)
-                            ToastsStore.success('Successfully updated asset!');
-                            this.props.parentCallback(true);
+                                                pduSide: "",
+                                                port: ""
+                                            }],
+                                            errorMessage => {
+                                                if (errorMessage) {
+                                                    ToastsStore.error(errorMessage, 10000)
+                                                } else {
+                                                    this.props.parentCallback(true);
+                                                    ToastsStore.success('Successfully updated asset!');
+                                                }
+                                            }
+                                        );
+                                    }
+                                    else {
+                                        ToastsStore.error(macError)
+                                    }
+                                });
+                            }
+                        }
+                    })
+                } else {
+                    assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
+
+                        if (fixedAddr) {
+                            console.log(fixedAddr)
+                            assetutils.updateAsset(
+                                this.state.asset_id,
+                                this.state.model,
+                                this.state.hostname,
+                                this.state.rack,
+                                parseInt(this.state.rackU),
+                                this.state.owner,
+                                this.state.comment,
+                                this.state.datacenter,
+                                fixedAddr,
+                                this.state.networkConnections,
+                                this.state.showPowerConnections ? this.state.powerConnections : [{
+
+                                    pduSide: "",
+                                    port: ""
+                                }],
+
+                                errorMessage => {
+                                    if (errorMessage) {
+                                        ToastsStore.error(errorMessage, 10000)
+                                    } else {
+                                        this.props.parentCallback(true);
+                                        ToastsStore.success('Successfully updated asset!');
+                                    }
+                                }
+                            );
+
 
                         }
                         else {
-                            ToastsStore.error('Error updating asset: ' + status);
+                            ToastsStore.error(macError)
                         }
 
+
+
                     });
-                    });
+                }
+
             }
         }
 
+    }
+
+    addNetworkConnection(event) {
+        this.setState(prevState => ({
+            networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort: "" }]
+        }));
     }
 
     addPowerConnection(event) {
@@ -140,7 +287,7 @@ export default class EditAssetForm extends Component {
                         size="small"
                         margin="small"
                         level="4"
-                    >Edit Asset</Heading>
+                    >Update Asset</Heading>
 
                     <Form onSubmit={this.handleUpdate} name="updateInst" >
 
@@ -166,8 +313,8 @@ export default class EditAssetForm extends Component {
 
                         <FormField name="hostname" label="Hostname" >
 
-                            <TextInput padding="medium" name="hostname" placeholder="Update Server" onChange={this.handleChange}
-                                value={this.state.hostname} required="true" />
+                            <TextInput padding="medium" name="hostname" placeholder="Update Hostname" onChange={this.handleChange}
+                                value={this.state.hostname} />
                         </FormField>
 
                         <FormField name="datacenter" label="Datacenter">
@@ -239,27 +386,27 @@ export default class EditAssetForm extends Component {
                             />
                         </FormField>
 
+                        <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"}
+                                toggle={true} onChange={(e) => {
+                                    let panel = document.getElementById("powerPortConnectionsPanel");
+                                    let display = !this.state.showPowerConnections;
+                                    this.setState({
+                                        showPowerConnections: display
+                                    }, function () {
+                                        panel.style.display = display ? "block" : "none";
+                                    })
+                                }} />
+
+
                         <Accordion >
 
-
-                        <AccordionPanel label="MAC Addresses">
-                                <AssetMACForm
-
-                                    fieldCallback={this.handleDisplayMACFields}
-                                    model={this.state.model}
-                                    popupMode={this.props.popupMode}
-                                    macAddresses={this.state.macAddresses}
-
-
-                                />
-
-                            </AccordionPanel>
-
-
+                            <div id={"powerPortConnectionsPanel"} style={{ display: "none" }}>
                             <AccordionPanel label="Power Port Connections">
                                 <AssetPowerPortsForm
 
                                     powerConnections={this.state.powerConnections}
+
+                                    deletePowerConnectionCallbackFromParent={this.deletePowerConnection}
 
                                 />
 
@@ -271,6 +418,20 @@ export default class EditAssetForm extends Component {
 
 
                             </AccordionPanel>
+                            </div>
+
+                            <AccordionPanel label="MAC Addresses">
+                                <AssetMACForm
+
+                                    fieldCallback={this.handleDisplayMACFields}
+                                    popupMode={this.props.popupMode}
+                                    model={this.state.model}
+                                    macAddresses={this.state.macAddresses}
+
+
+                                />
+
+                            </AccordionPanel>
 
                             <AccordionPanel label="Network Port Connections">
                                 <AssetNetworkPortsForm
@@ -279,6 +440,8 @@ export default class EditAssetForm extends Component {
                                     datacenter={this.state.datacenter}
                                     currentId={this.state.asset_id}
                                     networkConnections={this.state.networkConnections}
+
+                                    deleteNetworkConnectionCallbackFromParent={this.deleteNetworkConnection}
 
                                 />
 
@@ -301,7 +464,7 @@ export default class EditAssetForm extends Component {
 
 
                         <FormField name="asset_id" label="Override Asset ID">
-                            <TextInput name="asset_id" placeholder="If left blank, will auto-generate" onChange={this.handleChange}
+                            <TextInput name="asset_id" placeholder="Update Asset ID" onChange={this.handleChange}
                                 value={this.state.asset_id}
                             />
                         </FormField>
