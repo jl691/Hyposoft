@@ -572,9 +572,11 @@ class AssetScreen extends Component {
                                     }}>Assets</Heading>
                                     <UserMenu alignSelf='end' this={this}/>
                                 </AppBar>
-                                <Button primary icon={<Filter size={"large"}/>}
+                                <Button primary icon={<Filter size={"medium"}/>}
                                         onClick={() => this.setState({popupType: "Filters"})}
                                 style={{
+                                    borderRadius: '100%',
+                                    padding: '12px',
                                     position: "absolute",
                                     right: "2%",
                                     bottom: "2%"
@@ -587,8 +589,8 @@ class AssetScreen extends Component {
                                 >
                                     <Box direction='row' justify='center'>
                                         <Box direction='row' justify='center'>
-                                            <Box width='xxlarge' direction='column' align='stretch' justify='start'>
-                                                <Box margin={{top: 'medium'}}>
+                                            <Box pad='medium' width='xxlarge' direction='column' align='stretch' justify='start'>
+                                                <Box>
                                                     <Form onSubmit={() => this.handleSearch()}>
                                                         <TextInput style={styles.TIStyle}
                                                                    placeholder="Search for assets (type your query and press enter)"
