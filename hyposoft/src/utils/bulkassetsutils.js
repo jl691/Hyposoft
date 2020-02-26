@@ -77,7 +77,7 @@ function validateImportedAssets (data, callback) {
                 errors = [...errors, [i + 1, 'Invalid hostname (does not follow RFC-1034 specs)']]
             }
 
-            if (datum.hostname in hostnamesToId && hostnamesToId[datum.hostname] !== datum.asset_number) {
+            if (datum.hostname && datum.hostname in hostnamesToId && hostnamesToId[datum.hostname] !== datum.asset_number) {
                 errors = [...errors, [i + 1, 'Hostname taken by another asset']]
             }
 
