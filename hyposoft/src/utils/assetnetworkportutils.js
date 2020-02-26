@@ -529,7 +529,7 @@ function addPortsByAsset(assetID, level, callback) {
 }
 
 //note this only deletes a single connection, not to be confused with the other function that deletes all
-function symmetricDeleteNetworkConnection(assetID, connectionName, callback){
+function symmetricDeleteSingleNetworkConnection(assetID, connectionName, callback){
     assetRef.doc(assetID).get().then(function (docSnap) {
         let networkConnections = docSnap.data().networkConnections;
         if(networkConnections[connectionName] && Object.keys(networkConnections[connectionName]).length){
@@ -579,5 +579,5 @@ export {
     networkConnectionsToMap,
     symmetricNetworkConnectionsDelete,
     networkConnectionsToArray,
-    symmetricDeleteNetworkConnection
+    symmetricDeleteSingleNetworkConnection
 }
