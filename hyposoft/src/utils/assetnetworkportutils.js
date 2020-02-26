@@ -278,6 +278,9 @@ function symmetricNetworkConnectionsDelete(deleteID, callback) {
     //deleteID refers to asset you are deleting
     console.log("fucking kms")
     assetRef.doc(deleteID).get().then(function (docRef) {
+        if(!(docRef.data().networkConnections && Object.keys(docRef.data().networkConnections).length)){
+            callback(true);
+        }
         let networkConnections = Object.keys(docRef.data().networkConnections);
         console.log(networkConnections)
         let count = 0;
@@ -300,7 +303,9 @@ function symmetricNetworkConnectionsDelete(deleteID, callback) {
                         }).then(function () {
                             console.log("update worked for " + otherConnectedAsset)
                             count++;
-                            if(count === networkConnections.size){
+                            //console.log("count is " + count + " and networkconnections size is " + networkConnections.length)
+                            if(count === networkConnections.length){
+                                console.log("calling back")
                                 callback(true);
                             }
                         }).catch(function (error) {
