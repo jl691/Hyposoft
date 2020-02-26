@@ -81,7 +81,7 @@ export default class AssetTable extends Component {
                 this.setSort("datacenterAbbrev")
             }} style={{cursor: "pointer"}}> Datacenter Abbrev.</Text>,
             render: datum => <Text size='small'>
-                {datum.datacenterAbbreviation}
+                {datum.datacenterAbbrev}
             </Text>,
 
         },
@@ -95,7 +95,7 @@ export default class AssetTable extends Component {
                //if(docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1" && docSnapshot.data().rackRow.charCodeAt(0) >= 65 && docSnapshot.data().rackRow.charCodeAt(0) <= 69 && parseInt(docSnapshot.data().rackNum) >= 1 && parseInt(docSnapshot.data().rackNum) <= 19 && docSnapshot.data().powerConnections && docSnapshot.data().powerConnections.length){
 
 
-                    if ((userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === datum.owner) && datum.datacenterAbbreviation.toUpperCase() === "RTP1" && datum.rackRow.charCodeAt(0) >= 65 && datum.rackRow.charCodeAt(0) <= 69 && parseInt(datum.rackNum) >= 1 && parseInt(datum.rackNum) <=19 && datum.powerConnections && datum.powerConnections.length) {
+                    if ((userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === datum.owner) && datum.datacenterAbbrev.toUpperCase() === "RTP1" && datum.rackRow.charCodeAt(0) >= 65 && datum.rackRow.charCodeAt(0) <= 69 && parseInt(datum.rackNum) >= 1 && parseInt(datum.rackNum) <=19 && datum.powerConnections && datum.powerConnections.length) {
                     return (<Box direction={"row"}>
                         <Power style={{backgroundColor: this.colors[datum.asset_id+'_on_color']}} onClick={(e) => {
                             e.persist()
