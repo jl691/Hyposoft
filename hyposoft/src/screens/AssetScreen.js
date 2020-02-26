@@ -236,8 +236,8 @@ class AssetScreen extends Component {
 
         });
 
-        console.log(datumNetworkConnections)
-        console.log(datumPowerConnections)
+        // console.log(datumNetworkConnections)
+        // console.log(datumPowerConnections)
 
     }
 

@@ -37,7 +37,7 @@ function getAsset(callback, field = null, direction = null) {
                 comment: doc.data().comment,
                 datacenter: doc.data().datacenter,
                 datacenterAbbreviation: doc.data().datacenterAbbrev,
-                macAddress: doc.data().macAddress,
+                macAddresses: doc.data().macAddresses,
                 powerConnections: doc.data().powerConnections,
                 networkConnections: doc.data().networkConnections
             });

@@ -340,7 +340,7 @@ export default class AssetTable extends Component {
                                 assetnetworkportutils.networkConnectionsToArray( data.networkConnections),
                                 data.powerConnections
                             )
-                            console.log(data.networkConnections)
+                            console.log(data.macAddresses)
 
                         }}/>
                 )

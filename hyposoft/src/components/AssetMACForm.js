@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { Grommet, Box, Text, FormField, TextInput } from 'grommet'
 import * as assetmacutils from '../utils/assetmacutils'
+import * as modelutils from '../utils/modelutils'
 import theme from "../theme";
 
 //Instead of validate connections, upon all fields for one set of inputs, have a toast that pops up with error message
@@ -9,9 +10,9 @@ import theme from "../theme";
 
 export default class AssetMACForm extends Component {
     state = {
-        macTextFields: [],
-        initialLoaded: false,
-        model: ""
+      macTextFields: [],
+      initialLoaded: false,
+      model: ""
     }
 
 
@@ -28,10 +29,10 @@ export default class AssetMACForm extends Component {
     }
 
     componentDidMount() {
-        // assetmacutils.getNetworkPortLabels(this.props.model, status => {
-        //   this.createFormCallback(status)
-        //   return
-        // })
+      // assetmacutils.getNetworkPortLabels(this.props.model, status => {
+      //   this.createFormCallback(status)
+      //   return
+      // })
     }
     //Form validation/error catching: ???
 
@@ -57,32 +58,32 @@ export default class AssetMACForm extends Component {
 
         //create a bunch of new macAddress objects {}
         assetmacutils.getNetworkPortLabels(this.props.model, status => {
-            const fields = status.map((port, idx) => (
+        const fields = status.map((port, idx) => (
 
-                // TODO Masked input grommet component
-                <FormField
-                    margin={{ horizontal: 'medium', vertical: 'xsmall' }}
-                    size="small" name="macAddress" label={`Network Port Name: ${port}`} >
-                    <TextInput name="macAddress"
-                        //value={this.props.macAddresses.port}
-                        size="small"
+            // TODO Masked input grommet component
+            <FormField
+                margin={{ horizontal: 'medium', vertical: 'xsmall' }}
+                size="small" name="macAddress" label={`Network Port Name: ${port}`} >
+                <TextInput name="macAddress"
+                    //value={this.props.macAddresses.port}
+                    size="small"
 
-                        onChange={e => {
-                            this.handleChange(e, idx)
-                        }}
-                    />
-                </FormField >
-            ))
-            this.props.macAddresses.length = 0
-            var index = 0
-            fields.forEach(() => {
-                this.props.macAddresses.push({ networkPort: status[index].trim(), macAddress: "" })
-                index++
-            });
-            if (!this.state.initialLoaded) {
-                this.setState(oldState => ({ macTextFields: fields, initialLoaded: true }))
-            }
-        })
+                    onChange={e => {
+                        this.handleChange(e, idx)
+                    }}
+                />
+            </FormField >
+        ))
+        this.props.macAddresses.length = 0
+        var index = 0
+        fields.forEach(() => {
+          this.props.macAddresses.push({networkPort: status[index].trim(),macAddress: ""})
+          index++
+        });
+        if (!this.state.initialLoaded) {
+          this.setState(oldState => ({macTextFields: fields, initialLoaded: true}))
+        }
+      })
         // console.log(this.props.macAddresses);
         // return fields
         //console.log(this.props.macAddresses);
@@ -102,13 +103,12 @@ export default class AssetMACForm extends Component {
     // }
 
     render() {
-        console.log(this.props)
+        //let { macAddresses } = this.props.macAddresses
 
         //this.createForm(this.props.model)
         if (this.props.model !== this.state.model) {
-
-            this.state.initialLoaded = false
-            this.state.model = this.props.model
+          this.state.initialLoaded = false
+          this.state.model = this.props.model
         }
         if (!this.state.initialLoaded) {
             this.createFormCallback(this.state.model)
@@ -116,20 +116,20 @@ export default class AssetMACForm extends Component {
                 <Text>Please select valid model</Text>
             )
         }
-        return (
+            return (
 
-            <Grommet theme={theme}>
+                <Grommet theme={theme}>
 
-                <Box direction="column" gap="small" overflow="auto" background="light-2">
+                    <Box direction="column" gap="small" overflow="auto" background="light-2">
 
 
                     {this.state.macTextFields}
 
-                </Box>
+                    </Box>
 
-            </Grommet >
+                </Grommet >
 
 
-        )
+            )
     }
 }

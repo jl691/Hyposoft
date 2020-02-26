@@ -9,7 +9,6 @@ export default class AssetPowerPortsForm extends Component {
 
         super(props);
         this.state={
-            updatePowerConnections:this.props
         }
 
 
@@ -49,7 +48,7 @@ export default class AssetPowerPortsForm extends Component {
 
     render() {
         let { powerConnections } = this.props
-        console.log(this.props)
+       // console.log(this.props)
 
         return (
 

@@ -26,7 +26,7 @@ export default class EditAssetForm extends Component {
             owner: this.props.updateOwnerFromParent,
             comment: this.props.updateCommentFromParent,
             datacenter: this.props.updateDatacenterFromParent,
-            macAddresses: this.props.updateMacAddressesFromParent,
+            macAddresses: this.props.updateMacAddressesFromParent, //trace back up to see where it starts to be undefined
             powerConnections: this.props.updatePowerConnectionsFromParent, 
             networkConnections: this.props.updateNetworkConnectionsFromParent,
             
@@ -98,6 +98,7 @@ export default class EditAssetForm extends Component {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
         }
+        //console.log(this.state.macAddresses)
 
         return (
 
@@ -206,7 +207,7 @@ export default class EditAssetForm extends Component {
                               />
                         </FormField>
 
-                        {/* <Accordion >
+                        <Accordion >
                                 <AccordionPanel label="MAC Addresses">
                                     <AssetMACForm
 
@@ -226,7 +227,7 @@ export default class EditAssetForm extends Component {
 
                                 </AccordionPanel>
 
-                            </Accordion> */}
+                            </Accordion>
 
                             <Accordion>
                                 <AccordionPanel label="Power Port Connections">
