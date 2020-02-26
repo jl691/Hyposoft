@@ -341,7 +341,7 @@ function bulkAddAssets (assets, callback) {
         }
 
         firebaseutils.racksRef.doc(asset.rackID).update({
-            regions: firebaseutils.firebase.firestore.FieldValue.arrayUnion(asset.asset_number+'')
+            assets: firebaseutils.firebase.firestore.FieldValue.arrayUnion(asset.asset_number+'')
         })
 
         firebaseutils.assetRef.doc(asset.asset_number).set(assetObject)
