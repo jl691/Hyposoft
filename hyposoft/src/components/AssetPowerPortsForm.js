@@ -8,6 +8,9 @@ export default class AssetPowerPortsForm extends Component {
     constructor(props) {
 
         super(props);
+        this.state={
+            updatePowerConnections:this.props
+        }
 
 
         this.handleChange = this.handleChange.bind(this);

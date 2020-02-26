@@ -54,7 +54,8 @@ export default class AssetNetworkPortsForm extends Component {
     //TODO: Can have up to 48 network connections made. For each thing, collapse with labels 1, 2, .... within the accordion attop lvle
     render() {
         let { networkConnections } = this.props
-        // console.log(networkConnections)
+         console.log(this.props)
+         console.log(networkConnections)
         return (
             networkConnections.map((val, idx) => {
                 return (

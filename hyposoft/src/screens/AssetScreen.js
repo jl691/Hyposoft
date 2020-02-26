@@ -217,6 +217,8 @@ class AssetScreen extends Component {
         });
     }
     handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter, datumMACAddresses, datumNetworkConnections, datumPowerConnections) => {
+
+        
         this.setState({
             popupType: 'Update',
             updateID: datumID,

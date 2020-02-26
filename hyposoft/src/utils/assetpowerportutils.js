@@ -56,6 +56,8 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
 
                     }
                     else if (numPowerPorts!=null){
+
+                        //THIS SHOWS UP TOO MANY TIMES
                         callback("To make power connections for this model " + model + ", you need to make " + numPowerPorts + " connections.")
 
                     }
@@ -189,6 +191,8 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
             console.log(rackPowerConns)
 
             rackPowerConns.forEach(function (powerConn) {
+
+                //NEED TO COUNT TO CALLBACK  
                 if (powerConn.pduSide === pduSide && powerConn.port === port) {
                     callback("Trying to make a conflicting power connection at " + pduSide + " " + port)
                 }

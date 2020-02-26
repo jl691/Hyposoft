@@ -46,7 +46,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
 
                         modelsRef.where("modelName", "==", otherModel).get().then(function (querySnapshot) {
 
-                            let numOtherModelPorts = 2//querySnapshot.data().networkPorts.length
+                            let numOtherModelPorts = querySnapshot.docs[0].data().networkPortsCount
                             console.log(numThisModelPorts)
                             console.log(numOtherModelPorts)
                             //Math.min with a null, null is treated as 0
@@ -55,6 +55,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
 
                             if (numConnectionsMade > mostPossibleConnections) {
                                 if (mostPossibleConnections) {
+                                    //THIS PRINTS MULTIPLE TIMES
                                     callback("Making too many network connections. The most connections you can make between existing hardware is " + mostPossibleConnections)
 
                                 }
@@ -196,40 +197,50 @@ function checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, callback) 
         errHost = querySnapshot.data().hostname
         otherAssetsMap = querySnapshot.data().networkConnections
         let otherPortString = otherPort.toString()
-        console.log(otherPortString)
-        let keys = Object.keys(otherAssetsMap)
-        console.log(keys.includes(otherPortString))
-        console.log(keys)
+
+        if (Object.keys(otherAssetsMap).length !== 0) {
+            let keys = Object.keys(otherAssetsMap)
+            console.log(keys.includes(otherPortString))
+            console.log(keys)
 
 
 
-        if (seenThisPorts.includes(thisPort)) {
-            callback("Can’t connect a port " + thisPort + " on this instance. It's already being used in a previous network connection you are trying to add.")
+            if (seenThisPorts.includes(thisPort)) {
+                callback("Can’t connect a port " + thisPort + " on this instance. It's already being used in a previous network connection you are trying to add.")
+            }
+
+            else if (seenOtherPorts.has(otherAssetID) && seenOtherPorts.get(otherAssetID).includes(otherPort)) {
+
+
+                callback("Can’t connect to" + errHost + otherAssetID + otherPort + ". It's already being used in a previous network connection you are trying to add.")
+
+            }
+            else if (Object.keys(otherAssetsMap).includes(otherPort)) {//otherPort is already a key in otherAssetID's Map: so it's already connected
+
+                //NEED SYMMETRIC ADD FOR THIS TO WORK
+                console.log("up in this bitch")
+                callback("Can’t connect a port " + thisPort + " on this instance to " + errHost + otherAssetID + otherPort + ". That port is already connected to host5 port e1")
+
+
+            }
+
+            else {
+                //the last else should be a callback(null). For the current connection, it has run through the gauntlet of validation checks
+                console.log(seenThisPorts)
+                seenThisPorts.push(thisPort)
+                seenOtherPorts.set(otherAssetID, otherPort)
+                callback(null)
+
+            }
+
+
+
         }
-
-        else if (seenOtherPorts.has(otherAssetID) && seenOtherPorts.get(otherAssetID).includes(otherPort)) {
-
-
-            callback("Can’t connect to" + errHost + otherAssetID + otherPort + ". It's already being used in a previous network connection you are trying to add.")
-
-        }
-        else if (Object.keys(otherAssetsMap).includes(otherPort)) {//otherPort is already a key in otherAssetID's Map: so it's already connected
-
-            //NEED SYMMETRIC ADD FOR THIS TO WORK
-            console.log("up in this bitch")
-            callback("Can’t connect a port " + thisPort + " on this instance to " + errHost + otherAssetID + otherPort + ". That port is already connected to host5 port e1")
-
-
-        }
-
         else {
-            //the last else should be a callback(null). For the current connection, it has run through the gauntlet of validation checks
-            console.log(seenThisPorts)
-            seenThisPorts.push(thisPort)
-            seenOtherPorts.set(otherAssetID, otherPort)
+            //since no network connections have been
             callback(null)
-
         }
+
     }).catch("Error: could not get other model from database")
 }
 
@@ -245,26 +256,26 @@ function symmetricNetworkConnectionsAdd(networkConnectionsArray, newID) {
         //TODO:didn't fill out any fields?? But what if first one was left blank
         return;
     }
-    else{
+    else {
 
-    //Only add once everything has been validated. Go up into assetutils and call this method there
-    for (let i = 0; i < networkConnectionsArray.length; i++) {
-        thisPort = networkConnectionsArray[i].thisPort
-        otherAssetID = networkConnectionsArray[i].otherAssetID
-        otherPort = networkConnectionsArray[i].otherPort
-        //add a connection where otherPort : {otherAssetID: newID; otherPort: thisPort}
+        //Only add once everything has been validated. Go up into assetutils and call this method there
+        for (let i = 0; i < networkConnectionsArray.length; i++) {
+            thisPort = networkConnectionsArray[i].thisPort
+            otherAssetID = networkConnectionsArray[i].otherAssetID
+            otherPort = networkConnectionsArray[i].otherPort
+            //add a connection where otherPort : {otherAssetID: newID; otherPort: thisPort}
 
-        //go into the other assetID, do update
-        console.log(otherAssetID)
-        assetRef.doc(otherAssetID).set({
-            networkConnections: { [otherPort]: { otherAssetID: newID, otherPort: thisPort } }
+            //go into the other assetID, do update
+            console.log(otherAssetID)
+            assetRef.doc(otherAssetID).set({
+                networkConnections: { [otherPort]: { otherAssetID: newID, otherPort: thisPort } }
 
 
-        }, { merge: true }).then(function () {
-            console.log("Successfully made a symmetric network connection")
-        }).catch(error => console.log(error))
+            }, { merge: true }).then(function () {
+                console.log("Successfully made a symmetric network connection")
+            }).catch(error => console.log(error))
 
-    }
+        }
 
 
     }
@@ -300,7 +311,7 @@ function symmetricNetworkConnectionsDelete(deleteID, callback) {
                         }).then(function () {
                             console.log("update worked for " + otherConnectedAsset)
                             count++;
-                            if(count === networkConnections.size){
+                            if (count === networkConnections.size) {
                                 callback(true);
                             }
                         }).catch(function (error) {
@@ -334,7 +345,7 @@ function networkConnectionsToMap(networkConnectionsArray) {
 
     if (networkConnectionsArray[0].otherAssetID === "") {
         //TODO:didn't fill out anything. But what if first is empty but second is not?
-        let emptyConns=[];
+        let emptyConns = [];
         return emptyConns;
     } else {
         for (let i = 0; i < networkConnectionsArray.length; i++) {
@@ -352,6 +363,43 @@ function networkConnectionsToMap(networkConnectionsArray) {
         return JSONConnections;
 
     }
+
+}
+function networkConnectionsToArray(networkMap) {
+    let networkArray = []
+
+    if (Object.keys(networkMap)) {
+        let count = 0;
+        Object.keys(networkMap).forEach(key => {
+            console.log(key)
+            let connObject = {}
+            connObject["thisPort"] = key
+            connObject["otherAssetID"] = networkMap[key].otherAssetID
+            connObject["otherPort"] = networkMap[key].otherPort
+console.log(connObject)
+
+            networkArray.push(connObject)
+            console.log(networkArray)
+            count++;
+
+        })
+        return networkArray
+
+        // if (count === Object.keys(networkMap)){
+        //     console.log("returning")
+        //     console.log(networkArray)
+        //     return networkArray
+        // }
+
+
+
+    }
+    else {
+        return networkArray;
+    }
+
+
+
 
 }
 
@@ -463,4 +511,5 @@ export {
     symmetricNetworkConnectionsAdd,
     networkConnectionsToMap,
     symmetricNetworkConnectionsDelete,
+    networkConnectionsToArray
 }
