@@ -163,7 +163,7 @@ function validateImportedAssets (data, callback) {
                     }
                 }
 
-                datum.rackID = rackId
+                datum.rackID = rackNamesToIdsForOurDC[datum.rack]
                 datum.modelID = existingModels[datum.vendor][datum.model_number].id
                 datum.dcID = existingDCs[datum.datacenter].id
                 datum.dcFN = existingDCs[datum.datacenter].name
@@ -340,6 +340,10 @@ function bulkAddAssets (assets, callback) {
             datacenterAbbrev:  asset.datacenter
         }
 
+        firebaseutils.racksRef.doc(asset.rackID).update({
+            regions: firebaseutils.firebase.firestore.FieldValue.arrayUnion(asset.asset_number+'')
+        })
+
         firebaseutils.assetRef.doc(asset.asset_number).set(assetObject)
         logutils.addLog(asset.asset_number, logutils.ASSET(), logutils.CREATE())
 
@@ -384,6 +388,7 @@ function bulkAddAssets (assets, callback) {
 }
 
 function bulkModifyAssets (assets, callback) {
+    const updatesss = {}
     assets.forEach((asset, i) => {
         const updates = {}
         if (asset.hostname) {
@@ -431,49 +436,61 @@ function bulkModifyAssets (assets, callback) {
             updates.datacenterAbbrev = asset.datacenter
         }
 
-        firebaseutils.assetRef.doc(asset.asset_number).update(updates)
+        updatesss[asset.asset_number] = updates
 
-        // Add to algolia index
         firebaseutils.assetRef.doc(asset.asset_number).get().then(ds => {
-            var assetObject = Object.assign({}, ds.data(), updates)
-            let suffixes_list = []
-            let _model = assetObject.model
+            firebaseutils.racksRef.doc(ds.data().rackID).update({
+                assets: firebaseutils.firebase.firestore.FieldValue.arrayRemove(ds.data().assetId+'')
+            })
 
-            while (_model.length > 1) {
-                _model = _model.substr(1)
-                suffixes_list.push(_model)
-            }
+            firebaseutils.racksRef.doc(updatesss[ds.id].rackID).update({
+                assets: firebaseutils.firebase.firestore.FieldValue.arrayUnion(ds.data().assetId+'')
+            })
 
-            let _hostname = assetObject.hostname
+            const updates = updatesss[ds.data().assetId]
 
-            while (_hostname.length > 1) {
-                _hostname = _hostname.substr(1)
-                suffixes_list.push(_hostname)
-            }
+            firebaseutils.assetRef.doc(ds.data().assetId).update(updates).then(() => {
+                // Add to algolia index
+                var assetObject = Object.assign({}, ds.data(), updates)
+                let suffixes_list = []
+                let _model = assetObject.model
 
-            let _datacenter = assetObject.datacenter
+                while (_model.length > 1) {
+                    _model = _model.substr(1)
+                    suffixes_list.push(_model)
+                }
 
-            while (_datacenter.length > 1) {
-                _datacenter = _datacenter.substr(1)
-                suffixes_list.push(_datacenter)
-            }
+                let _hostname = assetObject.hostname
 
-            let _datacenterAbbrev = assetObject.datacenterAbbrev
+                while (_hostname.length > 1) {
+                    _hostname = _hostname.substr(1)
+                    suffixes_list.push(_hostname)
+                }
 
-            while (_datacenterAbbrev.length > 1) {
-                _datacenterAbbrev = _datacenterAbbrev.substr(1)
-                suffixes_list.push(_datacenterAbbrev)
-            }
-            let _owner = assetObject.owner
+                let _datacenter = assetObject.datacenter
 
-            while (_owner.length > 1) {
-                _owner = _owner.substr(1)
-                suffixes_list.push(_owner)
-            }
+                while (_datacenter.length > 1) {
+                    _datacenter = _datacenter.substr(1)
+                    suffixes_list.push(_datacenter)
+                }
 
-            index.saveObject({ ...assetObject, objectID: ds.id, suffixes: suffixes_list.join(' ') })
+                let _datacenterAbbrev = assetObject.datacenterAbbrev
 
-            logutils.addLog(String(asset.asset_number), logutils.ASSET(), logutils.MODIFY(), assetObject)
+                while (_datacenterAbbrev.length > 1) {
+                    _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                    suffixes_list.push(_datacenterAbbrev)
+                }
+                let _owner = assetObject.owner
+
+                while (_owner.length > 1) {
+                    _owner = _owner.substr(1)
+                    suffixes_list.push(_owner)
+                }
+
+                index.saveObject({ ...assetObject, objectID: ds.id, suffixes: suffixes_list.join(' ') })
+
+                logutils.addLog(String(asset.asset_number), logutils.ASSET(), logutils.MODIFY(), assetObject)
+            })
         })
     })
     callback()
