@@ -262,7 +262,6 @@ export default class AddAssetForm extends Component {
                                                 pduSide: "",
                                                 port: ""
                                             }],
-
                                             errorMessage => {
                                                 if (errorMessage) {
                                                     ToastsStore.error(errorMessage, 10000)
@@ -272,19 +271,55 @@ export default class AddAssetForm extends Component {
                                                 }
                                             }
                                         );
-
-
                                     }
                                     else{
                                         ToastsStore.error(macError)
                                     }
-
-
-
                                 });
                             }
                         }
                     })
+                } else {
+                    assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
+
+                        if(fixedAddr){
+                            console.log(fixedAddr)
+                            assetutils.addAsset(
+                                this.state.asset_id,
+                                this.state.model,
+                                this.state.hostname,
+                                this.state.rack,
+                                parseInt(this.state.rackU),
+                                this.state.owner,
+                                this.state.comment,
+                                this.state.datacenter,
+                                fixedAddr,
+                                this.state.networkConnections,
+                                this.state.showPowerConnections ? this.state.powerConnections : [{
+
+                                    pduSide: "",
+                                    port: ""
+                                }],
+
+                                errorMessage => {
+                                    if (errorMessage) {
+                                        ToastsStore.error(errorMessage, 10000)
+                                    } else {
+                                        this.props.parentCallback(true);
+                                        ToastsStore.success('Successfully added asset!');
+                                    }
+                                }
+                            );
+
+
+                        }
+                        else{
+                            ToastsStore.error(macError)
+                        }
+
+
+
+                    });
                 }
 
 
