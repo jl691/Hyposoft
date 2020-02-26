@@ -171,7 +171,30 @@ class ModelSettingsLayer extends React.Component {
                         }
                         this.hideFunction()
                         this.props.parent.componentDidMount()
-                        index.saveObject({...model, objectID: id})
+
+                        let suffixes_list = []
+                        let cpu = model.cpu
+
+                        while (cpu.length > 1) {
+                            cpu = cpu.substr(1)
+                            suffixes_list.push(cpu)
+                        }
+
+                        let storage = model.storage
+
+                        while (storage.length > 1) {
+                            storage = storage.substr(1)
+                            suffixes_list.push(storage)
+                        }
+
+                        let modelName = model.vendor+model.modelNumber
+
+                        while (modelName.length > 1) {
+                            modelName = modelName.substr(1)
+                            suffixes_list.push(modelName)
+                        }
+
+                        index.saveObject({...model, objectID: id, suffixes: suffixes_list.join(' ')})
                     })
             }
         })

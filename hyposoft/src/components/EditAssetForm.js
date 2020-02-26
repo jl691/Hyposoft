@@ -113,6 +113,16 @@ export default class EditAssetForm extends Component {
 
     }
 
+    addPowerConnection(event) {
+        //Bletsch said to expect no more than 8 power ports on an asset
+
+        this.setState((prevState) => ({
+            powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
+        }));
+
+
+    }
+
     render() {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />

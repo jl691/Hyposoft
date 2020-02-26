@@ -250,49 +250,97 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Rack U must be positive.");
 
                 //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
-            }  else {
+            }
+            else {
+                if (this.state.showPowerConnections) {
+                    let existingConnections = [];
+                    Object.keys(this.state.powerConnections).forEach(connection => {
+                        let thisKey = this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port;
+                        if(existingConnections.includes(thisKey)){
+                            ToastsStore.error("Power connections must be unique.");
+                        } else {
+                            existingConnections.push(this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port);
+                            if(existingConnections.length === Object.keys(this.state.powerConnections).length){
+                                //TODO: fix this in assetmacutils
+                                assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
-                //TODO: fix this in assetmacutils
-                assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
+                                    if(fixedAddr){
+                                        console.log(fixedAddr)
+                                        assetutils.addAsset(
+                                            this.state.asset_id,
+                                            this.state.model,
+                                            this.state.hostname,
+                                            this.state.rack,
+                                            parseInt(this.state.rackU),
+                                            this.state.owner,
+                                            this.state.comment,
+                                            this.state.datacenter,
+                                            fixedAddr,
+                                            this.state.networkConnections,
+                                            this.state.showPowerConnections ? this.state.powerConnections : [{
 
-                    if(fixedAddr){
-                        console.log(fixedAddr)
-                        assetutils.addAsset(
-                            this.state.asset_id,
-                            this.state.model,
-                            this.state.hostname,
-                            this.state.rack,
-                            parseInt(this.state.rackU),
-                            this.state.owner,
-                            this.state.comment,
-                            this.state.datacenter,
-                            fixedAddr,
-                            this.state.networkConnections,
-                            this.state.showPowerConnections ? this.state.powerConnections : [{
-    
-                                pduSide: "",
-                                port: ""
-                            }],
-    
-                            errorMessage => {
-                                if (errorMessage) {
-                                    ToastsStore.error(errorMessage, 10000)
-                                } else {
-                                    this.props.parentCallback(true);
-                                    ToastsStore.success('Successfully added asset!');
-                                }
+                                                pduSide: "",
+                                                port: ""
+                                            }],
+                                            errorMessage => {
+                                                if (errorMessage) {
+                                                    ToastsStore.error(errorMessage, 10000)
+                                                } else {
+                                                    this.props.parentCallback(true);
+                                                    ToastsStore.success('Successfully added asset!');
+                                                }
+                                            }
+                                        );
+                                    }
+                                    else{
+                                        ToastsStore.error(macError)
+                                    }
+                                });
                             }
-                        );
+                        }
+                    })
+                } else {
+                    assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
+
+                        if(fixedAddr){
+                            console.log(fixedAddr)
+                            assetutils.addAsset(
+                                this.state.asset_id,
+                                this.state.model,
+                                this.state.hostname,
+                                this.state.rack,
+                                parseInt(this.state.rackU),
+                                this.state.owner,
+                                this.state.comment,
+                                this.state.datacenter,
+                                fixedAddr,
+                                this.state.networkConnections,
+                                this.state.showPowerConnections ? this.state.powerConnections : [{
+
+                                    pduSide: "",
+                                    port: ""
+                                }],
+
+                                errorMessage => {
+                                    if (errorMessage) {
+                                        ToastsStore.error(errorMessage, 10000)
+                                    } else {
+                                        this.props.parentCallback(true);
+                                        ToastsStore.success('Successfully added asset!');
+                                    }
+                                }
+                            );
 
 
-                    }
-                    else{
-                        ToastsStore.error(macError)
-                    }
-                
+                        }
+                        else{
+                            ToastsStore.error(macError)
+                        }
 
 
-                });
+
+                    });
+                }
 
 
             }

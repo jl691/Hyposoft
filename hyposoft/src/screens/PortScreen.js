@@ -35,7 +35,6 @@ class PortScreen extends Component {
         this.exportAssets = this.exportAssets.bind(this)
         this.importModels = this.importModels.bind(this)
         this.importAssets = this.importAssets.bind(this)
-        this.addAssetsToDb = this.addAssetsToDb.bind(this)
         this.showFormatDocumentation = this.showFormatDocumentation.bind(this)
         this.importConnections = this.importConnections.bind(this)
         this.exportConnections = this.exportConnections.bind(this)
@@ -225,14 +224,6 @@ class PortScreen extends Component {
                 }
             })
         })
-    }
-
-    addAssetsToDb(toBeAdded) {
-        assetutils.forceAddAssetsToDb(toBeAdded)
-    }
-
-    modifyAssetsInDb(toBeModified) {
-        assetutils.forceModifyAssetsInDb(toBeModified)
     }
 
     showFormatDocumentation() {

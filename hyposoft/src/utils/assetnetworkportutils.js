@@ -527,6 +527,47 @@ function addPortsByAsset(assetID, level, callback) {
     })
 }
 
+//note this only deletes a single connection, not to be confused with the other function that deletes all
+function symmetricDeleteSingleNetworkConnection(assetID, connectionName, callback){
+    assetRef.doc(assetID).get().then(function (docSnap) {
+        let networkConnections = docSnap.data().networkConnections;
+        if(networkConnections[connectionName] && Object.keys(networkConnections[connectionName]).length){
+            let otherAssetID = networkConnections[connectionName].otherAssetID;
+            let otherPort = networkConnections[connectionName].otherPort;
+            assetRef.doc(otherAssetID).get().then(function (otherDocSnap) {
+                let otherNetworkConnections = otherDocSnap.data().networkConnections;
+                if(otherNetworkConnections[otherPort] && Object.keys(otherNetworkConnections[otherPort]).length){
+                    assetRef.doc(otherAssetID).update({
+                        [`networkConnections.${otherPort}`]: firebase.firestore.FieldValue.delete()
+                    }).then(function () {
+                        assetRef.doc(assetID).update({
+                            [`networkConnections.${connectionName}`]: firebase.firestore.FieldValue.delete()
+                        }).then(function () {
+                            callback(true);
+                        }).catch(function (error) {
+                            console.log(error);
+                            callback(null);
+                        })
+                    }).catch(function (error) {
+                        console.log(error);
+                        callback(null);
+                    })
+                } else {
+                    callback(null);
+                }
+            }).catch(function (error) {
+                console.log(error);
+                callback(null);
+            })
+        } else {
+            callback(null);
+        }
+    }).catch(function (error) {
+        console.log(error);
+        callback(null);
+    })
+}
+
 export {
     validateNetworkConnections,
     checkNetworkPortConflicts,
@@ -536,5 +577,6 @@ export {
     symmetricNetworkConnectionsAdd,
     networkConnectionsToMap,
     symmetricNetworkConnectionsDelete,
-    networkConnectionsToArray
+    networkConnectionsToArray,
+    symmetricDeleteSingleNetworkConnection
 }
