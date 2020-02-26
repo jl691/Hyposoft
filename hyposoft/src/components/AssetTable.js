@@ -123,7 +123,7 @@ export default class AssetTable extends Component {
                                     } else {
                                         this.props.handleToast({
                                             type: "error",
-                                            message: "Something went wrong. Please try again later."
+                                            message: "Could not power on the asset due to network connectivity issues. Please try again later."
                                         })
                                     }
                                 })
@@ -158,7 +158,7 @@ export default class AssetTable extends Component {
                                     } else {
                                         this.props.handleToast({
                                             type: "error",
-                                            message: "Something went wrong. Please try again later."
+                                            message: "Could not power off the asset due to network connectivity issues. Please try again later."
                                         })
                                     }
                                 })
@@ -212,7 +212,7 @@ export default class AssetTable extends Component {
                                                         } else {
                                                             this.props.handleToast({
                                                                 type: "error",
-                                                                message: "Something went wrong. Please try again later."
+                                                                message: "Could not power cycle due to network connectivity issues. Please try again later."
                                                             })
                                                         }
                                                     })
@@ -222,7 +222,7 @@ export default class AssetTable extends Component {
                                     } else {
                                         this.props.handleToast({
                                             type: "error",
-                                            message: "Something went wrong. Please try again later."
+                                            message: "Could not power cycle due to network connectivity issues. Please try again later."
                                         })
                                     }
                                 })
