@@ -166,7 +166,7 @@ class ModelSettingsLayer extends React.Component {
                     memory, this.state.storage,
                     this.state.comment, (model, id) => {
                         ToastsStore.info('Model saved', 3000, 'burntToast')
-                        if(this.props.model.vendor !== this.state.vendor || this.props.model.modelNumber !== this.state.modelNumber){
+                        if(this.props.type === 'edit' && (this.props.model.vendor !== this.state.vendor || this.props.model.modelNumber !== this.state.modelNumber)){
                             window.location.href = "/models/" + this.state.vendor + "/" + this.state.modelNumber;
                         }
                         this.hideFunction()

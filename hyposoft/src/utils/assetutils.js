@@ -39,7 +39,7 @@ function getAsset(callback, field = null, direction = null) {
                     owner: doc.data().owner,
                     comment: doc.data().comment,
                     datacenter: doc.data().datacenter,
-                    datacenterAbbreviation: doc.data().datacenterAbbrev,
+                    datacenterAbbrev: doc.data().datacenterAbbrev,
                     macAddresses: doc.data().macAddresses,
                     powerConnections: doc.data().powerConnections,
                     networkConnections: doc.data().networkConnections,
@@ -85,7 +85,7 @@ function getAssetAt(start, callback, field = null, direction = null) {
                 owner: doc.data().owner,
                 comment: doc.data().comment,
                 datacenter: doc.data().datacenter,
-                datacenterAbbreviation: doc.data().datacenterAbbrev,
+                datacenterAbbrev: doc.data().datacenterAbbrev,
                 macAddresses: doc.data().macAddresses,
                 powerConnections: doc.data().powerConnections,
                 networkConnections: doc.data().networkConnections,
@@ -154,7 +154,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
                                                     assetIDutils.overrideAssetID(overrideAssetID).then(
                                                         _ => {
-                                                            assetRef.doc(overrideAssetID).set({
+                                                            const assetObject = {
                                                                 assetId: overrideAssetID,
                                                                 modelId: doc.id,
                                                                 model: model,
@@ -179,7 +179,44 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                 datacenterAbbrev: datacenterAbbrev
 
 
-                                                            }).then(function (docRef) {
+                                                            }
+                                                            let suffixes_list = []
+                                                            let _model = assetObject.model
+
+                                                            while (_model.length > 1) {
+                                                                _model = _model.substr(1)
+                                                                suffixes_list.push(_model)
+                                                            }
+
+                                                            let _hostname = assetObject.hostname
+
+                                                            while (_hostname.length > 1) {
+                                                                _hostname = _hostname.substr(1)
+                                                                suffixes_list.push(_hostname)
+                                                            }
+
+                                                            let _datacenter = assetObject.datacenter
+
+                                                            while (_datacenter.length > 1) {
+                                                                _datacenter = _datacenter.substr(1)
+                                                                suffixes_list.push(_datacenter)
+                                                            }
+
+                                                            let _datacenterAbbrev = assetObject.datacenterAbbrev
+
+                                                            while (_datacenterAbbrev.length > 1) {
+                                                                _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                                                                suffixes_list.push(_datacenterAbbrev)
+                                                            }
+                                                            let _owner = assetObject.owner
+
+                                                            while (_owner.length > 1) {
+                                                                _owner = _owner.substr(1)
+                                                                suffixes_list.push(_owner)
+                                                            }
+
+                                                            index.saveObject({ ...assetObject, objectID: overrideAssetID, suffixes: suffixes_list.join(' ') })
+                                                            assetRef.doc(overrideAssetID).set(assetObject).then(function (docRef) {
                                                                 assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, overrideAssetID);
 
                                                                 if (powerConnections.length != 0) {
@@ -207,9 +244,6 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
 
                                                                 }
-                                                                docRef.get().then(ds => {
-                                                                    index.saveObject({ ...ds.data(), objectID: ds.id })
-                                                                })
                                                             }).catch(function (error) {
                                                                 // callback("Error");
                                                                 console.log(error)
@@ -222,33 +256,70 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 }
                                                 else {
 
-                                                    assetIDutils.generateAssetID().then(newID =>
+                                                    assetIDutils.generateAssetID().then(newID => {
+                                                        const assetObject = {
+                                                            assetId: newID,
+                                                            modelId: doc.id,
+                                                            model: model,
+                                                            hostname: hostname,
+                                                            rack: rack,
+                                                            rackU: racku,
+                                                            owner: owner,
+                                                            comment: comment,
+                                                            rackID: rackID,
+                                                            macAddresses,
+                                                            networkConnections,
+                                                            powerConnections,
+
+                                                            // This is for rack usage reports
+                                                            modelNumber: modelNum,
+                                                            vendor: modelVendor,
+                                                            //This is for sorting
+                                                            rackRow: rackRow,
+                                                            rackNum: rackNum,
+                                                            datacenter: datacenter,
+                                                            datacenterID: datacenterID,
+                                                            datacenterAbbrev: datacenterAbbrev
+                                                        }
+                                                        let suffixes_list = []
+                                                        let _model = assetObject.model
+
+                                                        while (_model.length > 1) {
+                                                            _model = _model.substr(1)
+                                                            suffixes_list.push(_model)
+                                                        }
+
+                                                        let _hostname = assetObject.hostname
+
+                                                        while (_hostname.length > 1) {
+                                                            _hostname = _hostname.substr(1)
+                                                            suffixes_list.push(_hostname)
+                                                        }
+
+                                                        let _datacenter = assetObject.datacenter
+
+                                                        while (_datacenter.length > 1) {
+                                                            _datacenter = _datacenter.substr(1)
+                                                            suffixes_list.push(_datacenter)
+                                                        }
+
+                                                        let _datacenterAbbrev = assetObject.datacenterAbbrev
+
+                                                        while (_datacenterAbbrev.length > 1) {
+                                                            _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                                                            suffixes_list.push(_datacenterAbbrev)
+                                                        }
+                                                        let _owner = assetObject.owner
+
+                                                        while (_owner.length > 1) {
+                                                            _owner = _owner.substr(1)
+                                                            suffixes_list.push(_owner)
+                                                        }
+
+                                                        index.saveObject({ ...assetObject, objectID: newID, suffixes: suffixes_list.join(' ') })
 
                                                         assetRef.doc(newID)
-                                                            .set({
-                                                                assetId: newID,
-                                                                modelId: doc.id,
-                                                                model: model,
-                                                                hostname: hostname,
-                                                                rack: rack,
-                                                                rackU: racku,
-                                                                owner: owner,
-                                                                comment: comment,
-                                                                rackID: rackID,
-                                                                macAddresses,
-                                                                networkConnections,
-                                                                powerConnections,
-
-                                                                // This is for rack usage reports
-                                                                modelNumber: modelNum,
-                                                                vendor: modelVendor,
-                                                                //This is for sorting
-                                                                rackRow: rackRow,
-                                                                rackNum: rackNum,
-                                                                datacenter: datacenter,
-                                                                datacenterID: datacenterID,
-                                                                datacenterAbbrev: datacenterAbbrev
-                                                            }).then(function (docRef) {
+                                                            .set(assetObject).then(function (docRef) {
 
                                                                 assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, newID);
 
@@ -277,15 +348,12 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
 
                                                                 }
-                                                                docRef.get().then(ds => {
-                                                                    index.saveObject({ ...ds.data(), objectID: ds.id })
-                                                                })
 
                                                             }).catch(function (error) {
                                                                 // callback("Error");
                                                                 console.log(error)
                                                             })
-                                                    ).catch("Ran out of tries to generate unique ID")
+                                                    }).catch("Ran out of tries to generate unique ID")
 
                                                 }
 
@@ -343,7 +411,7 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback) {
                         rack: doc.data().rack,
                         rackU: doc.data().rackU,
                         owner: doc.data().owner,
-                        datacenterAbbreviation: datacenterAbbrev
+                        datacenterAbbrev: datacenterAbbrev
                     });
                     count++;
                     if (count === querySnapshot.size) {
@@ -651,14 +719,15 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                         //get instance id
                                                         replaceAssetRack(oldResult, result, assetID, result => {
                                                             logutils.getObjectData(String(assetID), logutils.ASSET(), assetData => {
+
                                                                 console.log("We really up in this bitch")
                                                                 console.log(networkConnections)
                                                                 //console.log(assetnetworkportutils.networkConnectionsToArray(networkConnections))
                                                                 //the reason why we have networkConnections to array is because validateNetworkConnections expects an array. networkConnections is a JSON object because we got in from the db, and to send connectiosn to the db, it must be transformed into a JSON obj first
                                                                 assetnetworkportutils.validateNetworkConnections(model, networkConnections, ncStatus => {
-                                                                   
+
                                                                     let powerConnections = assetpowerportutils.formatPowerConnections(powerConnectionsInput)
-                                                                   console.log(ncStatus)
+                                                                    console.log(ncStatus)
 
                                                                     if (ncStatus) {
                                                                         console.log("Couldn't hang")
@@ -673,10 +742,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                 callback(ppStatus)
                                                                             }
                                                                             else {
-                                                                                assetRef.doc(String(assetID)).update({
-                                                                                    
-                                                                                    //symmetric connection shit
-                                                                               
+                                                                                const assetObject = {
                                                                                     assetId: assetID,
                                                                                     model: model,
                                                                                     modelId: modelId,
@@ -698,22 +764,57 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                     powerConnections,
                                                                                     //these are the fields in the document to update
 
-                                                                                }).then(function () {
+
+                                                                                }
+                                                                                let suffixes_list = []
+                                                                                let _model = assetObject.model
+
+                                                                                while (_model.length > 1) {
+                                                                                    _model = _model.substr(1)
+                                                                                    suffixes_list.push(_model)
+                                                                                }
+
+                                                                                let _hostname = assetObject.hostname
+
+                                                                                while (_hostname.length > 1) {
+                                                                                    _hostname = _hostname.substr(1)
+                                                                                    suffixes_list.push(_hostname)
+                                                                                }
+
+                                                                                let _datacenter = assetObject.datacenter
+
+                                                                                while (_datacenter.length > 1) {
+                                                                                    _datacenter = _datacenter.substr(1)
+                                                                                    suffixes_list.push(_datacenter)
+                                                                                }
+
+                                                                                let _datacenterAbbrev = assetObject.datacenterAbbrev
+
+                                                                                while (_datacenterAbbrev.length > 1) {
+                                                                                    _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                                                                                    suffixes_list.push(_datacenterAbbrev)
+                                                                                }
+                                                                                let _owner = assetObject.owner
+
+                                                                                while (_owner.length > 1) {
+                                                                                    _owner = _owner.substr(1)
+                                                                                    suffixes_list.push(_owner)
+                                                                                }
+
+                                                                                index.saveObject({ ...assetObject, objectID: assetID, suffixes: suffixes_list.join(' ') })
+                                                                                assetRef.doc(String(assetID)).update(assetObject).then(function () {
                                                                                     console.log("Updated model successfully")
-                                                                                    assetRef.doc(String(assetID)).get().then(docRef => {
-                                                                                        index.saveObject({
-                                                                                            ...docRef.data(),
-                                                                                            objectID: docRef.id
-                                                                                        })
-                                                                                    })
                                                                                     logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData)
                                                                                     callback(null);
                                                                                 }).catch(function (error) {
                                                                                     callback(error);
+
                                                                                 })
                                                                             }
                                                                         })
                                                                     }
+
+
                                                                 })
                                                             })
                                                         })
@@ -944,7 +1045,7 @@ function validateAssetForm(assetID, model, hostname, rack, racku, owner, datacen
     return new Promise((resolve, reject) => {
         assetRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
             if (!docSnaps.empty && assetID !== docSnaps.docs[0].id && hostname !== "") {
-                console.log("Made it here "+ assetID +" "+docSnaps.docs[0].id )
+                console.log("Made it here " + assetID + " " + docSnaps.docs[0].id)
                 reject("Hostname already exists")
             }
             if (owner !== "") {
