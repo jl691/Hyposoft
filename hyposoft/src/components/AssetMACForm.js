@@ -72,7 +72,7 @@ export default class AssetMACForm extends Component {
                 margin={{ horizontal: 'medium', vertical: 'xsmall' }}
                 size="small" name="macAddress" label={`Network Port Name: ${port}`} >
                 <TextInput name="macAddress"
-                    value={this.props.macAddresses[idx][port]}
+                    value={this.props.macAddresses[port]}
                     size="small"
 
                     onChange={e => {
@@ -109,12 +109,17 @@ export default class AssetMACForm extends Component {
 
         //this.createForm(this.props.model)
         console.log(this.props);
+        console.log(this.state.model)
         if (this.props.model !== this.state.model) {
+            console.log("First")
           this.props.macAddresses.length = 0
           this.state.initialLoaded = false
           this.state.model = this.props.model
+          console.log("First end")
         }
         if (!this.state.initialLoaded) {
+            console.log("Second")
+            console.log(this.state.model)
             this.createFormCallback(this.state.model)
             return (
                 <Text>Please select valid model</Text>

@@ -418,7 +418,7 @@ export default class AssetTable extends Component {
             return <Redirect to='/'/>
         }
 
-        if (!this.state.initialLoaded && this.state.assets.length !== 0) {
+        if (!this.state.initialLoaded ) {
             return (<Text>Please wait...</Text>);
         }
 
