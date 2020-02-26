@@ -57,7 +57,6 @@ class AssetScreen extends Component {
             updateRackU: "",
             updateOwner: "",
             updateComment: "",
-            updateDatacenter: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
             rackSortChoice: "asc",//by default, will be ascending

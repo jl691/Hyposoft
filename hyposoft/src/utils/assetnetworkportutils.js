@@ -414,10 +414,11 @@ function addPortsByAsset(assetID, level, callback) {
         }
         let count = 0;
         console.log(docSnap.data())
-        if (docSnap.data().networkConnections && docSnap.data().networkConnections.length) {
+        if (docSnap.data().networkConnections && Object.keys(docSnap.data().networkConnections).length) {
             Object.keys(docSnap.data().networkConnections).forEach(function (connection) {
                 assetRef.doc(docSnap.data().networkConnections[connection].otherAssetID.toString()).get().then(otherDocSnap => {
                     assetSecondLevel.push(docSnap.data().networkConnections[connection].otherAssetID.toString());
+                    console.log("here 2")
                     //let otherAssetModel = otherDocSnap.data().model;
                     let innerNodeClass = (level === 1) ? "second" : "third";
                     let innerNodeLevel = (level === 1) ? 2 : 3;
@@ -446,6 +447,7 @@ function addPortsByAsset(assetID, level, callback) {
                 })
             })
         } else {
+            console.log("here 3")
             callback([], []);
         }
     }).catch(function (error) {
