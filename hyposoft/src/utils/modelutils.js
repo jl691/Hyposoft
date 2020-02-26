@@ -432,8 +432,8 @@ function validateImportedModels (data, callback) {
         // if (!datum.height || String(datum.height).trim() === '') {
         //     errors = [...errors, [i+1, 'Height not found']]
         // } else
-        if (datum.height && (isNaN(String(datum.height).trim()) || !Number.isInteger(parseFloat(String(datum.height).trim())) || parseInt(String(datum.height).trim()) <= 0)) {
-            errors = [...errors, [i+1, 'Height is not a positive integer']]
+        if (datum.height && (isNaN(String(datum.height).trim()) || !Number.isInteger(parseFloat(String(datum.height).trim())) || parseInt(String(datum.height).trim()) <= 0|| parseInt(String(datum.height).trim()) > 42)) {
+            errors = [...errors, [i+1, 'Height should be a positive integer not greater than 42U']]
         }
         if (!datum.display_color || String(datum.display_color).trim() === '') {
             datum.display_color = '#000000'
@@ -441,16 +441,16 @@ function validateImportedModels (data, callback) {
             errors = [...errors, [i+1, 'Invalid display color']]
         }
         if (datum.network_ports && String(datum.network_ports).trim() !== '' &&
-         (isNaN(String(datum.network_ports).trim()) || !Number.isInteger(parseFloat(String(datum.network_ports).trim())) || parseInt(String(datum.network_ports).trim()) < 0)) {
-             errors = [...errors, [i+1, 'Network ports is not a non-negative integer']]
+         (isNaN(String(datum.network_ports).trim()) || !Number.isInteger(parseFloat(String(datum.network_ports).trim())) || parseInt(String(datum.network_ports).trim()) < 0|| parseInt(String(datum.network_ports).trim()) > 100)) {
+             errors = [...errors, [i+1, 'Network ports should be a non-negative integer not greater than 100']]
         }
         if (datum.power_ports && String(datum.power_ports).trim() !== '' &&
-         (isNaN(String(datum.power_ports).trim()) || !Number.isInteger(parseFloat(String(datum.power_ports).trim())) || parseInt(String(datum.power_ports).trim()) < 0)) {
-             errors = [...errors, [i+1, 'Power ports is not a non-negative integer']]
+         (isNaN(String(datum.power_ports).trim()) || !Number.isInteger(parseFloat(String(datum.power_ports).trim())) || parseInt(String(datum.power_ports).trim()) < 0 || parseInt(String(datum.power_ports).trim()) > 10)) {
+             errors = [...errors, [i+1, 'Power ports should be a non-negative integer not greater than 10']]
         }
         if (datum.memory && String(datum.memory).trim() !== '' &&
-         (isNaN(String(datum.memory).trim()) || !Number.isInteger(parseFloat(String(datum.memory).trim())) || parseInt(String(datum.memory).trim()) < 0)) {
-             errors = [...errors, [i+1, 'Memory is not a non-negative integer']]
+         (isNaN(String(datum.memory).trim()) || !Number.isInteger(parseFloat(String(datum.memory).trim())) || parseInt(String(datum.memory).trim()) < 0 || parseInt(String(datum.memory).trim()) > 1000)) {
+             errors = [...errors, [i+1, 'Memory should be a non-negative integer not greater than 1000']]
         }
 
         // If all is good, just get the model and whether it has any assets

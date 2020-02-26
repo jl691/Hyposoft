@@ -408,7 +408,7 @@ function exportFilteredAssets (assets) {
         ) : '')
 
         rows = [...rows, [
-            escapeStringForCSV(assets[i].assetId),
+            escapeStringForCSV(assets[i].asset_id),
             escapeStringForCSV(assets[i].hostname),
             escapeStringForCSV(assets[i].datacenterAbbrev),
             escapeStringForCSV(assets[i].rack),
