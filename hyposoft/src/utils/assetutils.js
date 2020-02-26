@@ -23,35 +23,39 @@ function getAsset(callback, field = null, direction = null) {
     let count = 0;
 
     query.get().then(docSnaps => {
-        const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
-        docSnaps.docs.forEach(doc => {
-            assets.push({
-                asset_id: doc.id,
-                model: doc.data().model,
-                hostname: doc.data().hostname,
-                rack: doc.data().rack,
-                rackRow: doc.data().rackRow,
-                rackNum: doc.data().rackNum,
-                rackU: doc.data().rackU,
-                owner: doc.data().owner,
-                comment: doc.data().comment,
-                datacenter: doc.data().datacenter,
-                datacenterAbbreviation: doc.data().datacenterAbbrev,
-                macAddresses: doc.data().macAddresses,
-                powerConnections: doc.data().powerConnections,
-                networkConnections: doc.data().networkConnections,
-                vendor: doc.data().vendor,
-                modelNumber: doc.data().modelNumber
-            });
-            count++;
-            if (count === docSnaps.docs.length) {
-                callback(startAfter, assets);
-            }
+        if(docSnaps.empty){
+            callback(null, null, true);
+        } else {
+            const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
+            docSnaps.docs.forEach(doc => {
+                assets.push({
+                    asset_id: doc.id,
+                    model: doc.data().model,
+                    hostname: doc.data().hostname,
+                    rack: doc.data().rack,
+                    rackRow: doc.data().rackRow,
+                    rackNum: doc.data().rackNum,
+                    rackU: doc.data().rackU,
+                    owner: doc.data().owner,
+                    comment: doc.data().comment,
+                    datacenter: doc.data().datacenter,
+                    datacenterAbbreviation: doc.data().datacenterAbbrev,
+                    macAddresses: doc.data().macAddresses,
+                    powerConnections: doc.data().powerConnections,
+                    networkConnections: doc.data().networkConnections,
+                    vendor: doc.data().vendor,
+                    modelNumber: doc.data().modelNumber
+                });
+                count++;
+                if (count === docSnaps.docs.length) {
+                    callback(startAfter, assets, false);
+                }
 
-        })
+            })
+        }
     }).catch(function (error) {
         console.log(error);
-        callback(null, null)
+        callback(null, null, null)
     })
 }
 
@@ -903,7 +907,7 @@ function getAssetDetails(assetID, callback) {
 function validateAssetForm(assetID, model, hostname, rack, racku, owner, datacenter) {
     return new Promise((resolve, reject) => {
         assetRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
-            if (!docSnaps.empty && assetID !== docSnaps.docs[0].id) {
+            if (!docSnaps.empty && assetID !== docSnaps.docs[0].id && hostname !== "") {
                 console.log("Made it here")
                 reject("Hostname already exists")
             }

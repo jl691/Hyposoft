@@ -116,6 +116,7 @@ function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, datacent
                                 number: j,
                                 height: height,
                                 assets: [],
+                                powerPorts:[],
                                 datacenter: datacenterID
                             }).then(function (docRef) {
                                 datacenterutils.addRackToDatacenter(docRef.id, datacenter, result => {

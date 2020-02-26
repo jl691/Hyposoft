@@ -8,6 +8,8 @@ export default class AssetPowerPortsForm extends Component {
     constructor(props) {
 
         super(props);
+        this.state={
+        }
 
 
         this.handleChange = this.handleChange.bind(this);
@@ -46,7 +48,7 @@ export default class AssetPowerPortsForm extends Component {
 
     render() {
         let { powerConnections } = this.props
-        console.log(this.props)
+       // console.log(this.props)
 
         return (
 
