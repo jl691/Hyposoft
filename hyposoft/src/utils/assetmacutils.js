@@ -76,7 +76,6 @@ function handleMacAddressFixAndSet(addresses, callback) {
 
 
             if (address) {
-                console.log(address)
                 fixedMAC = fixMACAddress(address);
                 let fixedObj = { networkPort: port, macAddress: fixedMAC }
                 macAddresses[port]=fixedMAC
