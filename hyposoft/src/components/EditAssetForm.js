@@ -27,7 +27,7 @@ export default class EditAssetForm extends Component {
             comment: this.props.updateCommentFromParent,
             datacenter: this.props.updateDatacenterFromParent,
             macAddresses: this.props.updateMacAddressesFromParent,
-            networkConnections: this.props.updatePowerConnectionsFromParent, 
+            networkConnections: this.props.updatePowerConnectionsFromParent,
             powerConnections: this.props.updateNetworkConnectionsFromParent,
 
         }
@@ -45,7 +45,7 @@ export default class EditAssetForm extends Component {
     }
 
     handleUpdate(event) {
-        
+
         if (event.target.name === "updateInst") {
             //this is where you pass in props updateData from AssetScreen . Want to keep old unchanged data, ow
 
@@ -206,29 +206,10 @@ export default class EditAssetForm extends Component {
                               />
                         </FormField>
 
-                        {/* <Accordion >
-                                <AccordionPanel label="MAC Addresses">
-                                    <AssetMACForm
-
-                                        addMACAddrCallback={this.addMACAddress}
-                                        fieldCallback={this.handleDisplayMACFields}
-                                        model={this.state.model}
-                                        macAddresses={this.state.macAddresses}
+                        <Accordion >
 
 
-                                    />
-
-                                    <Button
-                                        onClick={this.addMACAddress}
-                                        margin={{ horizontal: 'medium', vertical: 'small' }}
-
-                                        label="Add a MAC Address" />
-
-                                </AccordionPanel>
-
-                            </Accordion> */}
-
-                            <Accordion>
+                          {/*  <Accordion>
                                 <AccordionPanel label="Power Port Connections">
                                     <AssetPowerPortsForm
 
@@ -245,13 +226,27 @@ export default class EditAssetForm extends Component {
 
                                 </AccordionPanel>
 
-                            </Accordion>
+                            </Accordion> */}
 
-                            <Accordion>
+                            <AccordionPanel label="MAC Addresses">
+                                <AssetMACForm
+
+                                    fieldCallback={this.handleDisplayMACFields}
+                                    model={this.state.model}
+                                    macAddresses={this.state.macAddresses}
+
+
+                                />
+
+                            </AccordionPanel>
+
+
                                 <AccordionPanel label="Network Port Connections">
                                     <AssetNetworkPortsForm
 
                                         model={this.state.model}
+                                        datacenter={this.state.datacenter}
+                                        currentId={this.state.asset_id}
                                         networkConnections={this.state.networkConnections}
 
                                     />

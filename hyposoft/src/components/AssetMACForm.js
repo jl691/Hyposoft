@@ -57,6 +57,13 @@ export default class AssetMACForm extends Component {
 
         //create a bunch of new macAddress objects {}
         assetmacutils.getNetworkPortLabels(this.props.model, status => {
+        if (this.props.macAddresses.length === 0) {
+          var index = 0
+          status.forEach(() => {
+            this.props.macAddresses.push({networkPort: status[index].trim(),macAddress: ""})
+            index++
+          });
+        }
         const fields = status.map((port, idx) => (
 
             // TODO Masked input grommet component
@@ -64,7 +71,7 @@ export default class AssetMACForm extends Component {
                 margin={{ horizontal: 'medium', vertical: 'xsmall' }}
                 size="small" name="macAddress" label={`Network Port Name: ${port}`} >
                 <TextInput name="macAddress"
-                    //value={this.props.macAddresses.port}
+                    value={this.props.macAddresses[idx][port]}
                     size="small"
 
                     onChange={e => {
@@ -73,12 +80,6 @@ export default class AssetMACForm extends Component {
                 />
             </FormField >
         ))
-        this.props.macAddresses.length = 0
-        var index = 0
-        fields.forEach(() => {
-          this.props.macAddresses.push({networkPort: status[index].trim(),macAddress: ""})
-          index++
-        });
         if (!this.state.initialLoaded) {
           this.setState(oldState => ({macTextFields: fields, initialLoaded: true}))
         }
@@ -105,8 +106,9 @@ export default class AssetMACForm extends Component {
         //let { macAddresses } = this.props.macAddresses
 
         //this.createForm(this.props.model)
+        console.log(this.props);
         if (this.props.model !== this.state.model) {
-
+          this.props.macAddresses.length = 0
           this.state.initialLoaded = false
           this.state.model = this.props.model
         }
