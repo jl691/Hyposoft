@@ -11,6 +11,8 @@ import {
     AccordionPanel,
     CheckBox
 } from 'grommet'
+
+
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as assetpowerportutils from '../utils/assetpowerportutils'
@@ -63,6 +65,7 @@ export default class AddAssetForm extends Component {
         this.defaultPDUFields = this.defaultPDUFields.bind(this)
         this.handleMacAddressFixAndSet = this.handleMacAddressFixAndSet.bind(this)
         this.fixMACAddress = this.fixMACAddress.bind(this)
+        this.deleteNetworkConnection=this.deleteNetworkConnection.bind(this)
     }
 
 
@@ -142,6 +145,23 @@ export default class AddAssetForm extends Component {
         this.setState(prevState => ({
             networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort: "" }]
         }));
+    }
+
+    deleteNetworkConnection(event, idx){
+        this.setState(prevState => ({
+            networkConnections: [...this.state.networkConnections].splice(idx,1)
+        }));
+        // console.log([...this.state.networkConnections])
+        // console.log(idx)
+
+        // let test=[0 , 1, 2, 3, 4, 5]
+        // test.splice(1,1)
+        // console.log(test) //expect[0 , 1, 3, 4, 5]
+
+        //actual{ [0, 2, 3, 4, 5]}. So confirmed, splice should remove itself at idx if given (idx, 1)
+        
+
+
     }
 
     addPowerConnection(event) {
@@ -352,9 +372,8 @@ export default class AddAssetForm extends Component {
                                     value={this.state.datacenter}
                                     suggestions={this.state.datacenterSuggestions}
                                     onClick={() => {
-                                        console.log("blah");
                                         assetutils.getSuggestedDatacenters(this.state.datacenter, results => {
-                                            console.log(results);
+                                            //console.log(results);
                                             this.setState(oldState => ({
                                                 ...oldState,
                                                 datacenterSuggestions: results
@@ -486,6 +505,7 @@ export default class AddAssetForm extends Component {
                                         model={this.state.model}
                                         datacenter={this.state.datacenter}
                                         networkConnections={this.state.networkConnections}
+                                        deleteNetworkConnectionCallbackFromParent={this.deleteNetworkConnection}
 
                                     />
 
