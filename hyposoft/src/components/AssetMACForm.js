@@ -12,7 +12,7 @@ export default class AssetMACForm extends Component {
     state = {
       macTextFields: [],
       initialLoaded: false,
-      model: ""
+      model: this.props.popupMode === "Update" ? this.props.model : ""
     }
 
 
@@ -28,12 +28,6 @@ export default class AssetMACForm extends Component {
 
     }
 
-    componentDidMount() {
-      // assetmacutils.getNetworkPortLabels(this.props.model, status => {
-      //   this.createFormCallback(status)
-      //   return
-      // })
-    }
     //Form validation/error catching: ???
 
     //Need to handle change: pass state back up
@@ -72,7 +66,7 @@ export default class AssetMACForm extends Component {
                 margin={{ horizontal: 'medium', vertical: 'xsmall' }}
                 size="small" name="macAddress" label={`Network Port Name: ${port}`} >
                 <TextInput name="macAddress"
-                    value={this.props.macAddresses[port]}
+                    value={this.props.macAddresses[idx]["macAddress"]}
                     size="small"
 
                     onChange={e => {
@@ -106,6 +100,7 @@ export default class AssetMACForm extends Component {
     render() {
         //let { macAddresses } = this.props.macAddresses
         //console.log(this.props.macAddresses)
+
 
         //this.createForm(this.props.model)
         // console.log(this.props);
