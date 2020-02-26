@@ -257,16 +257,19 @@ class ModelsScreen extends React.Component {
         })
     }
 
+    colors={}
+
     getDatatable(){
         const adminColumns = userutils.isLoggedInUserAdmin() ? [{
             property: 'dummy',
             render: datum => (
-                <FormEdit style={{cursor: 'pointer'}} onClick={(e) => {
+                <FormEdit style={{cursor: 'pointer', backgroundColor: this.colors[datum.itemNo+'_edit_color']}} onClick={(e) => {
                     e.persist()
                     e.nativeEvent.stopImmediatePropagation()
                     e.stopPropagation()
                     this.showEditDialog(datum.itemNo)
-                }} />
+                }} onMouseOver={e => this.colors[datum.itemNo+'_edit_color']='#dddddd'}
+                 onMouseLeave={e => this.colors[datum.itemNo+'_edit_color']=''} />
             ),
             align: 'center',
             header: <Text size='small'>Edit</Text>,
@@ -275,12 +278,13 @@ class ModelsScreen extends React.Component {
             {
                 property: 'dummy2',
                 render: datum => (
-                    <FormTrash style={{cursor: 'pointer'}} onClick={(e) => {
+                    <FormTrash style={{cursor: 'pointer', backgroundColor: this.colors[datum.itemNo+'_delete_color']}} onClick={(e) => {
                         e.persist()
                         e.nativeEvent.stopImmediatePropagation()
                         e.stopPropagation()
                         this.showDeleteDialog(datum.itemNo)
-                    }} />
+                    }} onMouseOver={e => this.colors[datum.itemNo+'_delete_color']='#dddddd'}
+                     onMouseLeave={e => this.colors[datum.itemNo+'_delete_color']=''} />
                 ),
                 align: 'center',
                 header: <Text size='small'>Delete</Text>,

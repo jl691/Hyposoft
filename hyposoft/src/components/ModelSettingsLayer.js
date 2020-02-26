@@ -50,6 +50,11 @@ class ModelSettingsLayer extends React.Component {
             this.dbFunction = modelutils.createModel
             console.log(this.layerTitle)
         } else {
+            modelutils.doesModelHaveAssets(this.props.model.id, yes => {
+                if (yes) {
+                    this.setState(oldState => ({...oldState, modelHasAssets: true}))
+                }
+            })
             this.hideFunction = this.props.parent.hideEditDialog
             this.dbFunction = modelutils.modifyModel
             this.setState({
@@ -160,9 +165,6 @@ class ModelSettingsLayer extends React.Component {
                     powerPorts, this.state.cpu,
                     memory, this.state.storage,
                     this.state.comment, (model, id) => {
-                        if (this.props.model.height !== this.state.height && this.props.assets && this.props.assets.length) {
-                            ToastsStore.info("Didn't update height because there are deployed assets of this model!")
-                        }
                         ToastsStore.info('Model saved', 3000, 'burntToast')
                         if(this.props.model.vendor !== this.state.vendor || this.props.model.modelNumber !== this.state.modelNumber){
                             window.location.href = "/models/" + this.state.vendor + "/" + this.state.modelNumber;
@@ -232,7 +234,7 @@ class ModelSettingsLayer extends React.Component {
                     <Heading level={4} margin="none">
                         {this.state.layerTitle}
                     </Heading>
-                    <p>Models are uniquely identified by a model number for each given Vendor.</p>
+                    <p>Models are uniquely identified by a model number for each given Vendor. {this.state.modelHasAssets && <b>Some fields are disabled because this model has live assets</b>}</p>
 
                     <Form>
                         <Box direction='row' justify='center' gap='medium'>
@@ -288,6 +290,7 @@ class ModelSettingsLayer extends React.Component {
                                            }}
                                            value={this.state.height}
                                            title='Height'
+                                           disabled={this.state.modelHasAssets}
                                 />
                                 <Text size={"small"} style={{marginLeft: "20px"}}>Network Ports (Optional)</Text>
                                 <TextInput style={{
@@ -302,13 +305,14 @@ class ModelSettingsLayer extends React.Component {
                                            onBlur={e => this.adjustNetworkPortsList()}
                                            value={this.state.networkPortsCount}
                                            title='Network ports'
+                                           disabled={this.state.modelHasAssets}
                                 />
                                 <Text size={"small"} style={{marginLeft: "20px"}}>Network Port Names (Optional)</Text>
                                 <TextInput style={{
                                     borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                     width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                 }}
-                                           disabled={this.state.networkPortsDisabled}
+                                           disabled={this.state.networkPortsDisabled || this.state.modelHasAssets}
                                            placeholder="eg. port1, port2"
                                            onChange={e => {
                                                const value = e.target.value
@@ -329,6 +333,7 @@ class ModelSettingsLayer extends React.Component {
                                                this.setState(oldState => ({...oldState, powerPorts: value}))
                                            }}
                                            value={this.state.powerPorts}
+                                           disabled={this.state.modelHasAssets}
                                            title='Power ports'
                                 />
                                 <Text size={"small"} style={{marginLeft: "20px"}}>CPU (Optional)</Text>
