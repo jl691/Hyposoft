@@ -230,7 +230,17 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Rack U must be positive.");
 
                 //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
-            }  else {
+            } else if (this.state.showPowerConnections) {
+                let existingConnections = [];
+                Object.keys(this.state.powerConnections).forEach(connection => {
+                    let thisKey = this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port;
+                    if(existingConnections.includes(thisKey)){
+                        ToastsStore.error("Power connections must be unique.");
+                    } else {
+                        existingConnections.push(this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port)
+                    }
+                })
+            } else {
 
                 //TODO: fix this in assetmacutils
                 assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
