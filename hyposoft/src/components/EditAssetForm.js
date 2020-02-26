@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Accordion, AccordionPanel } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
+import * as assetmacutils from '../utils/assetmacutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
 import { Redirect } from "react-router-dom";
@@ -33,6 +34,8 @@ export default class EditAssetForm extends Component {
         }
         this.handleUpdate = this.handleUpdate.bind(this);
         this.handleChange = this.handleChange.bind(this);
+        this.addNetworkConnection = this.addNetworkConnection.bind(this);
+        this.addPowerConnection = this.addPowerConnection.bind(this);
     }
 
     //TODO: use this method properly
@@ -42,6 +45,23 @@ export default class EditAssetForm extends Component {
 
 
         });
+    }
+
+
+    addNetworkConnection(event) {
+        this.setState(prevState => ({
+            networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort: "" }]
+        }));
+    }
+
+    addPowerConnection(event) {
+        //Bletsch said to expect no more than 8 power ports on an asset
+
+        this.setState((prevState) => ({
+            powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
+        }));
+
+
     }
 
     handleUpdate(event) {
@@ -64,6 +84,7 @@ export default class EditAssetForm extends Component {
             } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
                 ToastsStore.error("Rack elevation must be positive.");
             } else {
+              assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
                 assetutils.updateAsset(
                     this.props.updateIDFromParent,
                     this.state.model,
@@ -88,6 +109,7 @@ export default class EditAssetForm extends Component {
                             ToastsStore.error('Error updating asset: ' + status);
                         }
 
+                    });
                     });
             }
         }
@@ -225,6 +247,7 @@ export default class EditAssetForm extends Component {
 
                                     fieldCallback={this.handleDisplayMACFields}
                                     model={this.state.model}
+                                    popupMode={this.props.popupMode}
                                     macAddresses={this.state.macAddresses}
 
 

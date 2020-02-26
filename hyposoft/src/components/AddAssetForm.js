@@ -11,6 +11,8 @@ import {
     AccordionPanel,
     CheckBox
 } from 'grommet'
+
+
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as assetpowerportutils from '../utils/assetpowerportutils'
@@ -63,6 +65,8 @@ export default class AddAssetForm extends Component {
         this.defaultPDUFields = this.defaultPDUFields.bind(this)
         this.handleMacAddressFixAndSet = this.handleMacAddressFixAndSet.bind(this)
         this.fixMACAddress = this.fixMACAddress.bind(this)
+        this.deleteNetworkConnection=this.deleteNetworkConnection.bind(this)
+        this.deletePowerConnection = this.deletePowerConnection.bind(this);
     }
 
 
@@ -141,6 +145,26 @@ export default class AddAssetForm extends Component {
     addNetworkConnection(event) {
         this.setState(prevState => ({
             networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort: "" }]
+        }), function () {
+            console.log(this.state.networkConnections)
+        });
+    }
+
+    deleteNetworkConnection(event, idx){
+        console.log("removing element " + idx)
+        let networkConnectionsCopy = [...this.state.networkConnections];
+        networkConnectionsCopy.splice(idx, 1);
+        this.setState(prevState => ({
+            networkConnections: networkConnectionsCopy
+        }));
+    }
+
+    deletePowerConnection(event, idx){
+        console.log("removing element " + idx)
+        let powerConnectionsCopy = [...this.state.powerConnections];
+        powerConnectionsCopy.splice(idx, 1);
+        this.setState(prevState => ({
+            powerConnections: powerConnectionsCopy
         }));
     }
 
@@ -400,9 +424,8 @@ export default class AddAssetForm extends Component {
                                     value={this.state.datacenter}
                                     suggestions={this.state.datacenterSuggestions}
                                     onClick={() => {
-                                        console.log("blah");
                                         assetutils.getSuggestedDatacenters(this.state.datacenter, results => {
-                                            console.log(results);
+                                            //console.log(results);
                                             this.setState(oldState => ({
                                                 ...oldState,
                                                 datacenterSuggestions: results
@@ -503,6 +526,7 @@ export default class AddAssetForm extends Component {
                                         <AssetPowerPortsForm
 
                                             powerConnections={this.state.powerConnections}
+                                            deletePowerConnectionCallbackFromParent={this.deletePowerConnection}
 
                                         />
 
@@ -534,6 +558,7 @@ export default class AddAssetForm extends Component {
                                         model={this.state.model}
                                         datacenter={this.state.datacenter}
                                         networkConnections={this.state.networkConnections}
+                                        deleteNetworkConnectionCallbackFromParent={this.deleteNetworkConnection}
 
                                     />
 
