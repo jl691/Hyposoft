@@ -1,4 +1,5 @@
 import * as firebaseutils from './firebaseutils'
+import { saveAs } from 'file-saver'
 
 function validateImportedConnections (data, callback) {
     var fetchedAssets = {}
@@ -162,7 +163,7 @@ function exportFilteredConnections (assets) {
         // but until Janice fixes the schema of assets, I'll do this extra check to be safe.
         // Remove it afterwards! (Not necessary but it'll be cleaner)
         assets[i].numPorts = numPorts
-        hostnamesOfIds[assets[i].assetId] = assets[i].hostname
+        hostnamesOfIds[assets[i].asset_id] = assets[i].hostname
     }
 
     assets.sort(function(a, b){
@@ -173,7 +174,7 @@ function exportFilteredConnections (assets) {
         const asset = assets[i]
         if (asset.networkConnections) {
             for (var j = 0; j < Object.keys(asset.networkConnections).length; j++) {
-                if (!portsToIgnore.includes(asset.id+'.'+Object.keys(asset.networkConnections)[j])) {
+                if (!portsToIgnore.includes(asset.asset_id+'.'+Object.keys(asset.networkConnections)[j])) {
                     const portInfo = asset.networkConnections[Object.keys(asset.networkConnections)[j]]
                     const macAddress = (asset.macAddresses ? asset.macAddresses[Object.keys(asset.networkConnections)[j]] : '')
                     if (portInfo) {
@@ -186,6 +187,11 @@ function exportFilteredConnections (assets) {
             }
         }
     }
+
+    var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
+        type: "data:text/csv;charset=utf-8;",
+    })
+    saveAs(blob, "hyposoft_connections_filtered.csv")
 }
 
 function getConnectionsForExport (callback) {

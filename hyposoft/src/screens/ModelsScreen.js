@@ -31,43 +31,43 @@ const index = client.initIndex('models')
 
 class ModelsScreen extends React.Component {
     defaultFilters = {
-        networkPortsFilterEnd: 48,
+        networkPortsFilterEnd: 100,
         networkPortsFilterStart: 0,
         heightFilterEnd: 42,
         heightFilterStart: 0,
-        powerFilterEnd: 8,
+        powerFilterEnd: 10,
         powerFilterStart: 0,
-        networkPortsFilterMax: 48,
-        powerFilterMax: 8,
-        memoryFilterMax: 200,
+        networkPortsFilterMax: 100,
+        powerFilterMax: 10,
+        memoryFilterMax: 1000,
         memoryFilterStart: 0,
-        memoryFilterEnd: 200,
+        memoryFilterEnd: 1000,
         filters: {
             heightStart: 0, heightEnd: 42,
-            networkPortsStart: 0, networkPortsEnd: 48,
-            memoryStart: 0, memoryEnd: 200,
-            powerPortsStart: 0, powerPortsEnd: 8
+            networkPortsStart: 0, networkPortsEnd: 100,
+            memoryStart: 0, memoryEnd: 1000,
+            powerPortsStart: 0, powerPortsEnd: 10
         }
     }
     state = {
         searchQuery: '',
-        networkPortsFilterEnd: 48,
+        networkPortsFilterEnd: 100,
         networkPortsFilterStart: 0,
         heightFilterEnd: 42,
         heightFilterStart: 0,
-        powerFilterEnd: 8,
+        powerFilterEnd: 10,
         powerFilterStart: 0,
-        networkPortsFilterMax: 48,
-        powerFilterMax: 8,
-        memoryFilterMax: 200,
+        networkPortsFilterMax: 100,
+        powerFilterMax: 10,
+        memoryFilterMax: 1000,
         memoryFilterStart: 0,
-        memoryFilterEnd: 200,
+        memoryFilterEnd: 1000,
         heightFilterMax: 42,
         filters: {
             heightStart: 0, heightEnd: 42,
-            networkPortsStart: 0, networkPortsEnd: 48,
-            memoryStart: 0, memoryEnd: 200,
-            powerPortsStart: 0, powerPortsEnd: 8
+            networkPortsStart: 0, networkPortsEnd: 100,
+            memoryStart: 0, memoryEnd: 1000,
+            powerPortsStart: 0, powerPortsEnd: 10
         },
         initialLoaded: false,
         sortField: "",
