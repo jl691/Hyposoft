@@ -118,6 +118,13 @@ class ModelSettingsLayer extends React.Component {
             return
         }
 
+        for (var np = 0; np < networkPorts.length; np++) {
+            if (/\s/g.test(networkPorts[np].trim())) {
+                ToastsStore.info('Network ports cannot have whitespaces in their names', 3000, 'burntToast')
+                return
+            }
+        }
+
         if (networkPorts.length > 100) {
             ToastsStore.info('Models should not have more than 100 network ports', 3000, 'burntToast')
             return

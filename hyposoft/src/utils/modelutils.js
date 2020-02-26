@@ -503,12 +503,20 @@ function validateImportedModels (data, callback) {
             datum.network_port_name_1.trim() === datum.network_port_name_4.trim()) {
                 uniqueNP = false
             }
+
+            if (/\s/g.test(datum.network_port_name_1)) {
+                errors = [...errors, [i+1, 'Network port name 1 has whitespaces']]
+            }
         }
         if (datum.network_port_name_2) {
             if (datum.network_port_name_2.trim() === datum.network_port_name_1.trim() ||
             datum.network_port_name_2.trim() === datum.network_port_name_3.trim() ||
             datum.network_port_name_2.trim() === datum.network_port_name_4.trim()) {
                 uniqueNP = false
+            }
+
+            if (/\s/g.test(datum.network_port_name_2)) {
+                errors = [...errors, [i+1, 'Network port name 2 has whitespaces']]
             }
         }
         if (datum.network_port_name_3) {
@@ -517,12 +525,19 @@ function validateImportedModels (data, callback) {
             datum.network_port_name_3.trim() === datum.network_port_name_4.trim()) {
                 uniqueNP = false
             }
+
+            if (/\s/g.test(datum.network_port_name_3)) {
+                errors = [...errors, [i+1, 'Network port name 3 has whitespaces']]
+            }
         }
         if (datum.network_port_name_4) {
             if (datum.network_port_name_4.trim() === datum.network_port_name_2.trim() ||
             datum.network_port_name_4.trim() === datum.network_port_name_3.trim() ||
             datum.network_port_name_4.trim() === datum.network_port_name_1.trim()) {
                 uniqueNP = false
+            }
+            if (/\s/g.test(datum.network_port_name_4)) {
+                errors = [...errors, [i+1, 'Network port name 4 has whitespaces']]
             }
         }
 
