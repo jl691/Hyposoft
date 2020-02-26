@@ -308,6 +308,8 @@ function assetDiff(data,field) {
         return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       case 'powerConnections':
         return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+      case 'macAddresses':
+        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       default:
         return defaultDiff(data,field)
     }
@@ -373,7 +375,11 @@ var isEqual = function (value, other, name) {
 	var type = Object.prototype.toString.call(value);
 
 	// If the two objects are not the same type, return false
-	if (type !== Object.prototype.toString.call(other)) return false;
+	if (type !== Object.prototype.toString.call(other)) {
+    // TODO: Hopefully this fixes weird issue
+    complexDiffString = ''
+    return false;
+  }
 
 	// If items are not an object or array, return false
 	if (['[object Array]', '[object Object]'].indexOf(type) < 0) return false;
@@ -401,7 +407,11 @@ var isEqual = function (value, other, name) {
 		else {
 
 			// If the two items are not the same type, return false
-			if (itemType !== Object.prototype.toString.call(item2)) return false;
+			if (itemType !== Object.prototype.toString.call(item2)) {
+        // TODO: Shouldn't happen
+        complexDiffString = ''
+        return false;
+      }
 
 			// Else if it's a function, convert to a string and compare
 			// Otherwise, just compare
