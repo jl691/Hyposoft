@@ -46,7 +46,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
 
                         modelsRef.where("modelName", "==", otherModel).get().then(function (querySnapshot) {
 
-                            let numOtherModelPorts = 2//querySnapshot.data().networkPorts.length
+                            let numOtherModelPorts = querySnapshot.docs[0].data().networkPorts.length
                             console.log(numThisModelPorts)
                             console.log(numOtherModelPorts)
                             //Math.min with a null, null is treated as 0

@@ -231,7 +231,7 @@ export default class EditAssetForm extends Component {
                             <Accordion>
                                 <AccordionPanel label="Power Port Connections">
                                     <AssetPowerPortsForm
-
+                            
                                         powerConnections={this.state.powerConnections}
 
                                     />
