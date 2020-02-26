@@ -39,7 +39,7 @@ function getAsset(callback, field = null, direction = null) {
                     owner: doc.data().owner,
                     comment: doc.data().comment,
                     datacenter: doc.data().datacenter,
-                    datacenterAbbreviation: doc.data().datacenterAbbrev,
+                    datacenterAbbrev: doc.data().datacenterAbbrev,
                     macAddresses: doc.data().macAddresses,
                     powerConnections: doc.data().powerConnections,
                     networkConnections: doc.data().networkConnections,
@@ -85,7 +85,7 @@ function getAssetAt(start, callback, field = null, direction = null) {
                 owner: doc.data().owner,
                 comment: doc.data().comment,
                 datacenter: doc.data().datacenter,
-                datacenterAbbreviation: doc.data().datacenterAbbrev,
+                datacenterAbbrev: doc.data().datacenterAbbrev,
                 macAddresses: doc.data().macAddresses,
                 powerConnections: doc.data().powerConnections,
                 networkConnections: doc.data().networkConnections,
@@ -411,7 +411,7 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback) {
                         rack: doc.data().rack,
                         rackU: doc.data().rackU,
                         owner: doc.data().owner,
-                        datacenterAbbreviation: datacenterAbbrev
+                        datacenterAbbrev: datacenterAbbrev
                     });
                     count++;
                     if (count === querySnapshot.size) {
