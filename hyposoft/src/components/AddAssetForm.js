@@ -151,13 +151,12 @@ export default class AddAssetForm extends Component {
         this.setState(prevState => ({
             networkConnections: [...this.state.networkConnections].splice(idx,1)
         }));
-        // console.log([...this.state.networkConnections])
-        // console.log(idx)
+        console.log([...this.state.networkConnections])
+        console.log(idx)
 
-        // let test=[0 , 1, 2, 3, 4, 5]
-        // test.splice(1,1)
-        // console.log(test) //expect[0 , 1, 3, 4, 5]
-
+        let test=[0, 1, 2, 3, 4, 5]
+        test.splice(1,1)
+        console.log(test) 
         //actual{ [0, 2, 3, 4, 5]}. So confirmed, splice should remove itself at idx if given (idx, 1)
         
 
