@@ -34,6 +34,8 @@ export default class EditAssetForm extends Component {
         }
         this.handleUpdate = this.handleUpdate.bind(this);
         this.handleChange = this.handleChange.bind(this);
+        this.addNetworkConnection = this.addNetworkConnection.bind(this);
+        this.addPowerConnection = this.addPowerConnection.bind(this);
     }
 
     //TODO: use this method properly
@@ -43,6 +45,23 @@ export default class EditAssetForm extends Component {
 
 
         });
+    }
+
+
+    addNetworkConnection(event) {
+        this.setState(prevState => ({
+            networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort: "" }]
+        }));
+    }
+
+    addPowerConnection(event) {
+        //Bletsch said to expect no more than 8 power ports on an asset
+
+        this.setState((prevState) => ({
+            powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
+        }));
+
+
     }
 
     handleUpdate(event) {
@@ -94,6 +113,16 @@ export default class EditAssetForm extends Component {
                     });
             }
         }
+
+    }
+
+    addPowerConnection(event) {
+        //Bletsch said to expect no more than 8 power ports on an asset
+
+        this.setState((prevState) => ({
+            powerConnections: [...prevState.powerConnections, { pduSide: "", port: "" }],
+        }));
+
 
     }
 

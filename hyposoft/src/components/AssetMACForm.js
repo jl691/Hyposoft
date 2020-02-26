@@ -34,7 +34,7 @@ export default class AssetMACForm extends Component {
     handleChange(e, idx) {
         //You are either typing into an output
         if (e.target.name === "macAddress") {
-            console.log("tryna do this shit")
+           // console.log("tryna do this shit")
 
             let macAddresses = [...this.props.macAddresses]
             macAddresses[idx][e.target.name] = e.target.value
@@ -99,17 +99,21 @@ export default class AssetMACForm extends Component {
 
     render() {
         //let { macAddresses } = this.props.macAddresses
-        console.log(this.props.macAddresses)
+        //console.log(this.props.macAddresses)
 
 
         //this.createForm(this.props.model)
-        console.log(this.props);
+        // console.log(this.props);
+        // console.log(this.state.model)
         if (this.props.model !== this.state.model) {
+
           this.props.macAddresses.length = 0
           this.state.initialLoaded = false
           this.state.model = this.props.model
+
         }
         if (!this.state.initialLoaded) {
+
             this.createFormCallback(this.state.model)
             return (
                 <Text>Please select valid model</Text>
