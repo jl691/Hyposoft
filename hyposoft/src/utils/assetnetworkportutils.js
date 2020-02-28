@@ -7,7 +7,7 @@ let seenOtherPorts = new Map(); //Map of otherAssetID --> array of all otherPort
 
 //networkPortConnections is an array at this point. Gets transformed when passed into addAsset()  in AddAssetForm
 //this function is called in addAsset in assetutils.js (so when the user presses submit on the form)
-function validateNetworkConnections(thisModelName, networkPortConnections, callback) {
+function validateNetworkConnections(thisModelName, networkPortConnections, callback, oldNetworkConnections = null) {
     seenOtherPorts = new Map();
     seenThisPorts = [];
     console.log(networkPortConnections)
@@ -110,7 +110,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                                                 console.log("SeenOtherPorts: " + seenOtherPorts)
                                                 console.log("SeenThisPOrts: " + [...seenThisPorts])
 
-                                                checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, status => {
+                                                checkNetworkPortConflicts(oldNetworkConnections, thisPort, otherAssetID, otherPort, status => {
                                                     seenOtherPorts.set(otherAssetID, otherPort);
                                                     console.log("pushing " + otherAssetID + " : " + otherPort + " to seen otherports")
                                                     seenThisPorts.push(thisPort)
@@ -225,7 +225,7 @@ function checkOtherAssetPortsExist(otherAssetID, otherPort, callback) {
 
 
 }
-function checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, callback) {
+function checkNetworkPortConflicts(oldNetworkConnections, thisPort, otherAssetID, otherPort, callback) {
 
     let errHost = "";
     let case1ErrPrintCount = 0
@@ -251,11 +251,13 @@ function checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, callback) 
             case2ErrPrintCount++
             case3ErrPrintCount++
 
-            if (Object.keys(otherAssetsMap).includes(otherPort) && case3ErrPrintCount === 1) {//otherPort is already a key in otherAssetID's Map: so it's already connected
+            if(oldNetworkConnections && oldNetworkConnections[thisPort] && oldNetworkConnections[thisPort].otherAssetID === otherAssetID && oldNetworkConnections[thisPort].otherPort === otherPort){
+                callback(null);
+            }
+            else if (Object.keys(otherAssetsMap).includes(otherPort) && case3ErrPrintCount === 1) {//otherPort is already a key in otherAssetID's Map: so it's already connected
                 console.log("up in this bitch")
                 callback("Can’t connect port " + thisPort + " on this asset to " + errHost + " " + otherAssetID + " " + otherPort + ". The other asset's port has already been connected.")//+ 
                 //". That port is already connected to host5 port e1")
-
             }
             else if (seenOtherPorts.has(otherAssetID) && seenOtherPorts.get(otherAssetID).includes(otherPort) && case2ErrPrintCount === 1) {
                 console.log(seenOtherPorts);
