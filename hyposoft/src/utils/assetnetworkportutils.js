@@ -271,14 +271,12 @@ function checkNetworkPortConflicts(oldNetworkConnections, thisPort, otherAssetID
 
             else if (seenThisPorts.includes(thisPort) && case1ErrPrintCount === 1) {
                 console.log(seenThisPorts)
-                console.log(seenOtherPorts(thisPort));
                 console.log(case1ErrPrintCount);
                 callback("Can’t connect port " + thisPort + " on this asset. It's already being used in a previous network connection you are trying to add.")
             }
 
             else {
                 //the last else should be a callback(null). For the current connection, it has run through the gauntlet of validation checks
-
                 callback(null)
 
             }
