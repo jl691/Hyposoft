@@ -754,6 +754,9 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                     callback(ppStatus)
                                                                                 }
                                                                                 else {
+
+                                                                                    assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, assetID);
+                                                                                    
                                                                                     const assetObject = {
                                                                                         assetId: assetID,
                                                                                         model: model,
@@ -818,7 +821,8 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                         console.log("Updated model successfully")
                                                                                         logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData)
                                                                                         callback(null);
-                                                                                    }).then(function () {
+                                                                                    })
+                                                                                    .then(function () {
                                                                                         //all the network connections deleted in an array
                                                                                         deletedNCThisPort.forEach(function(conn ) {
                                                                                             //each conn is a a long ass string
