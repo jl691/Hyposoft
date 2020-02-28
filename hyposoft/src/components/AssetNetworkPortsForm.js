@@ -105,6 +105,7 @@ export default class AssetNetworkPortsForm extends Component {
                                             networkPortSuggestions: results
                                         })))
                                     }}
+                                           required={"true"}
 
                                 />
 
@@ -139,6 +140,7 @@ export default class AssetNetworkPortsForm extends Component {
                                             assetIdSuggestions: results
                                         })), this.props.currentId ? this.props.currentId : '')
                                     }}
+                                           required={"true"}
                                 />
                             </FormField>
 
@@ -169,6 +171,7 @@ export default class AssetNetworkPortsForm extends Component {
                                             otherAssetPortSuggestions: results
                                         })))
                                     }}
+                                           required={"true"}
                                 />
 
                             </FormField>
