@@ -328,6 +328,7 @@ function symmetricNetworkConnectionsDelete(deleteID, callback) {
         if (!(docRef.data().networkConnections && Object.keys(docRef.data().networkConnections).length)) {
             callback(true);
         }
+        //It's not the fault of symm, we are just not getting the networkConnections
         let networkConnections = Object.keys(docRef.data().networkConnections);
         console.log(networkConnections)
         let count = 0;
