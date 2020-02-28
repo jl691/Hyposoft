@@ -820,10 +820,24 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                         callback(null);
                                                                                     }).then(function () {
                                                                                         //all the network connections deleted in an array
-                                                                                        deletedNCThisPort.forEach(conn => {
-                                                                                            assetnetworkportutils.symmetricDeleteSingleNetworkConnection(assetID, conn, status => {
+                                                                                        deletedNCThisPort.forEach(function(conn ) {
+                                                                                            //each conn is a a long ass string
+
+                                                                                            //need to split value of conn
+                                                                                        
+                                                                                            let splitConnValue = conn.split(":").filter(Boolean)
+                                                                                            let thisPort=splitConnValue[0]
+                                                                                            let otherAssetID = splitConnValue[1]
+                                                                                            let otherPort = (splitConnValue[2])
+                                                                                          
+                                                                                            console.log(thisPort, otherAssetID, otherPort)
+                                                                                            assetnetworkportutils.symmetricDeleteSingleNetworkConnection(assetID, thisPort, otherAssetID, otherPort,
+                                                                                                 status => {
+                                                                                                    
                                                                                                 if (status) {
                                                                                                     console.log("Symm delete worked for this single connection.")
+                                                                                                }else{
+                                                                                                    console.log("Failure to do symm single delete for update assets")
                                                                                                 }
 
                                                                                             })
