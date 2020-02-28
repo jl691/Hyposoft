@@ -105,13 +105,13 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                                                 console.log("SeenThisPOrts: " + [...seenThisPorts])
 
                                                 checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, status => {
+                                                    seenOtherPorts.set(otherAssetID, otherPort);
+                                                    console.log("pushing " + otherAssetID + " : " + otherPort + " to seen otherports")
+                                                    seenThisPorts.push(thisPort)
                                                     if (status) {
                                                         callback(status)
                                                     }
                                                     else {
-                                                        seenOtherPorts.set(otherAssetID, otherPort);
-                                                        console.log("pushing " + otherAssetID + " : " + otherPort + " to seen otherports")
-                                                        seenThisPorts.push(thisPort)
                                                         success++;
                                                         if (success === networkPortConnections.length) {
                                                             callback(null)
@@ -286,9 +286,9 @@ function symmetricNetworkConnectionsAdd(networkConnectionsArray, newID) {
     let thisPort = "";
     let otherAssetID = ""
     let otherPort = "";
-    console.log("In symmetric network connections")
+    console.log("In symmetric network connections", networkConnectionsArray)
 
-    if (networkConnectionsArray[0].otherAssetID === "") {
+    if (!networkConnectionsArray.length) {
         //TODO:didn't fill out any fields?? But what if first one was left blank
         return;
     }
@@ -378,7 +378,8 @@ function symmetricNetworkConnectionsDelete(deleteID, callback) {
 
 
 }
-function networkConnectionsToMap(networkConnectionsArray) {
+async function networkConnectionsToMap(networkConnectionsArray, callback) {
+    console.log(networkConnectionsArray);
 
     var JSONConnections = {}
     var JSONValues = {}
@@ -387,11 +388,30 @@ function networkConnectionsToMap(networkConnectionsArray) {
     //     return JSONConnections
     // }
 
-    if (networkConnectionsArray[0].otherAssetID === "") {
+    if (!networkConnectionsArray.length) {
         //TODO:didn't fill out anything. But what if first is empty but second is not?
         let emptyConns = [];
-        return emptyConns;
+        callback(emptyConns);
     } else {
+        let count = 0;
+        networkConnectionsArray.forEach(networkConnection => {
+            JSONConnections = {
+                ...JSONConnections,
+                [networkConnection.thisPort]: {
+                    otherAssetID: networkConnection.otherAssetID,
+                    otherPort: networkConnection.otherPort
+                }
+            };
+            console.log(JSONConnections);
+            count++;
+            console.log(count);
+            if(count === networkConnectionsArray.length){
+                console.log("returning ", JSONConnections);
+                callback(JSONConnections);
+            }
+        })
+
+/*
         for (let i = 0; i < networkConnectionsArray.length; i++) {
 
             //var propertyName = 'thisPort';
@@ -405,6 +425,7 @@ function networkConnectionsToMap(networkConnectionsArray) {
         }
 
         return JSONConnections;
+*/
 
     }
 
