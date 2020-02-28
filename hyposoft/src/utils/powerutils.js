@@ -28,7 +28,15 @@ function powerPortOff(pdu, portNumber, callback) {
 function checkConnectedToPDU(assetID, callback){
     firebaseutils.assetRef.doc(assetID).get().then(function (docSnapshot) {
         if(docSnapshot.exists){
-            console.log(docSnapshot.data())
+            console.log(docSnapshot.data());
+            console.log(docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1");
+            console.log(docSnapshot.data().datacenterAbbrev.toUpperCase())
+            console.log(docSnapshot.data().rackRow.charCodeAt(0) >= 65);
+            console.log(docSnapshot.data().rackRow.charCodeAt(0) <= 69);
+            console.log(parseInt(docSnapshot.data().rackNum) >= 1);
+            console.log(parseInt(docSnapshot.data().rackNum) <= 19);
+            console.log(docSnapshot.data().powerConnections);
+            console.log(docSnapshot.data().powerConnections.length)
             if(docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1" && docSnapshot.data().rackRow.charCodeAt(0) >= 65 && docSnapshot.data().rackRow.charCodeAt(0) <= 69 && parseInt(docSnapshot.data().rackNum) >= 1 && parseInt(docSnapshot.data().rackNum) <= 19 && docSnapshot.data().powerConnections && docSnapshot.data().powerConnections.length){
                 console.log("Should be true")
                 callback(true);

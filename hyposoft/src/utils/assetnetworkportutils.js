@@ -8,6 +8,7 @@ let seenOtherPorts = new Map(); //Map of otherAssetID --> array of all otherPort
 //networkPortConnections is an array at this point. Gets transformed when passed into addAsset()  in AddAssetForm
 //this function is called in addAsset in assetutils.js (so when the user presses submit on the form)
 function validateNetworkConnections(thisModelName, networkPortConnections, callback) {
+    console.log("upppppp in this bitch", networkPortConnections)
 
     let success = 0;
 
@@ -105,11 +106,10 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                                                 console.log("SeenOtherPorts: " + seenOtherPorts)
                                                 console.log("SeenThisPOrts: " + [...seenThisPorts])
 
-                                                seenOtherPorts.set(otherAssetID, otherPort)
-                                                seenThisPorts.push(thisPort)
                                                 checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, status => {
-
-
+                                                    seenOtherPorts.set(otherAssetID, otherPort);
+                                                    console.log("pushing " + otherAssetID + " : " + otherPort + " to seen otherports")
+                                                    seenThisPorts.push(thisPort)
                                                     if (status) {
                                                         callback(status)
                                                     }
@@ -252,17 +252,19 @@ function checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, callback) 
                 //". That port is already connected to host5 port e1")
 
             }
-
-            // //This is always jenk af
-            // else if (seenOtherPorts.has(otherAssetID) && seenOtherPorts.get(otherAssetID).includes(otherPort) && case2ErrPrintCount === 1) {
+            else if (seenOtherPorts.has(otherAssetID) && seenOtherPorts.get(otherAssetID).includes(otherPort) && case2ErrPrintCount === 1) {
+                console.log(seenOtherPorts);
+                console.log(otherAssetID);
+                console.log(otherPort);
+                callback("Can’t connect to" + errHost + " " + otherAssetID + " " + otherPort + ". It's already being used in a previous network connection you are trying to add.")
 
             //     callback("Can’t connect to" + errHost + " " + otherAssetID + " " + otherPort + ". It's already being used in a previous network connection you are trying to add.")
 
-            // }
+             }
 
-            // else if (seenThisPorts.includes(thisPort) && case1ErrPrintCount === 1) {
-            //     callback("Can’t connect port " + thisPort + " on this asset. It's already being used in a previous network connection you are trying to add.")
-            // }
+            else if (seenThisPorts.includes(thisPort) && case1ErrPrintCount === 1) {
+                callback("Can’t connect port " + thisPort + " on this asset. It's already being used in a previous network connection you are trying to add.")
+            }
 
             else {
                 //the last else should be a callback(null). For the current connection, it has run through the gauntlet of validation checks
@@ -288,9 +290,9 @@ function symmetricNetworkConnectionsAdd(networkConnectionsArray, newID) {
     let thisPort = "";
     let otherAssetID = ""
     let otherPort = "";
-    console.log("In symmetric network connections")
+    console.log("In symmetric network connections", networkConnectionsArray)
 
-    if (networkConnectionsArray[0].otherAssetID === "") {
+    if (!networkConnectionsArray.length) {
         //TODO:didn't fill out any fields?? But what if first one was left blank
         return;
     }
@@ -380,7 +382,8 @@ function symmetricNetworkConnectionsDelete(deleteID, callback) {
 
 
 }
-function networkConnectionsToMap(networkConnectionsArray) {
+async function networkConnectionsToMap(networkConnectionsArray, callback) {
+    console.log(networkConnectionsArray);
 
     var JSONConnections = {}
     var JSONValues = {}
@@ -389,10 +392,30 @@ function networkConnectionsToMap(networkConnectionsArray) {
         return JSONConnections
     }
 
-    if (networkConnectionsArray[0].otherAssetID === "") { //need to change this to {}
+    if (!networkConnectionsArray.length) {
         //TODO:didn't fill out anything. But what if first is empty but second is not?
-        return JSONConnections;
+        let emptyConns = [];
+        callback(emptyConns);
     } else {
+        let count = 0;
+        networkConnectionsArray.forEach(networkConnection => {
+            JSONConnections = {
+                ...JSONConnections,
+                [networkConnection.thisPort]: {
+                    otherAssetID: networkConnection.otherAssetID,
+                    otherPort: networkConnection.otherPort
+                }
+            };
+            console.log(JSONConnections);
+            count++;
+            console.log(count);
+            if(count === networkConnectionsArray.length){
+                console.log("returning ", JSONConnections);
+                callback(JSONConnections);
+            }
+        })
+
+/*
         for (let i = 0; i < networkConnectionsArray.length; i++) {
 
             //var propertyName = 'thisPort';
@@ -406,6 +429,7 @@ function networkConnectionsToMap(networkConnectionsArray) {
         }
 
         return JSONConnections;
+*/
 
     }
 
