@@ -57,13 +57,20 @@ export default class AssetMACForm extends Component {
     createFormCallback(status) {
 
         //create a bunch of new macAddress objects {}
-        if (this.props.macAddresses.length === 0) {
-          var index = 0
+/*        if (this.props.macAddresses.length === 0 || this.props.macAddresses.length < status.length) {
+          var index = this.props.macAddresses.length
           status.forEach(() => {
             this.props.macAddresses.push({networkPort: status[index].trim(),macAddress: ""})
             index++
           });
         }
+        */
+        while(this.props.macAddresses.length !== status.length){
+            let index = this.props.macAddresses.length;
+            this.props.macAddresses.push({networkPort: status[index].trim(),macAddress: ""})
+            index++
+        }
+
         const fields = status.map((port, idx) => (
 
             // TODO Masked input grommet component
@@ -79,7 +86,8 @@ export default class AssetMACForm extends Component {
                     }}
                 />
             </FormField >
-        ))
+        ));
+        console.log(fields);
         this.setState(oldState => ({macTextFields: fields, initialLoaded: true}))
         // console.log(this.props.macAddresses);
         // return fields
@@ -93,6 +101,7 @@ export default class AssetMACForm extends Component {
 
     createForm(model) {
         assetmacutils.getNetworkPortLabels(this.props.model, status => {
+            console.log(status)
           this.createFormCallback(status)
         })
     }
@@ -112,8 +121,9 @@ export default class AssetMACForm extends Component {
           this.state.model = this.props.model
 
         }
-        if (!this.state.initialLoaded) {
-
+        if (!this.state.initialLoaded && this.props.macAddresses && this.state.model) {
+            console.log(this.state.model)
+            console.log(this.props.macAddresses)
             this.createForm(this.state.model)
             return (
                 <Text>Please select valid model</Text>

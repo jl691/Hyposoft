@@ -234,6 +234,7 @@ export default class EditAssetForm extends Component {
                                 this.state.datacenter,
                                 fixedAddr,
                                 this.state.networkConnections,
+                                this.state.editDeletedNetworkConnections,
                                 this.state.showPowerConnections ? this.state.powerConnections : [],
 
                                 errorMessage => {
