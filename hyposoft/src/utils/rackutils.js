@@ -393,15 +393,17 @@ function checkAssetFits(position, height, rack, callback, id = null) { //rackU, 
                                     if (height) {
                                         console.log("found the model height! " + height);
                                         let instPositions = [];
+                                        console.log(instPositions);
                                         console.log(docRefAsset.data())
-                                        for (let i = docRefAsset.data().rackU; i < docRefAsset.data().rackU + height; i++) {
+                                        for (let i = docRefAsset.data().rackU; i < parseInt(docRefAsset.data().rackU) + height; i++) {
                                             instPositions.push(i);
-                                            console.log("hi")
+                                            console.log(i)
                                         }
                                         //check for intersection
                                         console.log("out")
                                         let intersection = tentPositions.filter(value => instPositions.includes(value));
                                         if (intersection.length) {
+                                            console.log(intersection)
                                             console.log("conflicting!")
                                             conflicting.push(docRefAsset.id);
                                         }

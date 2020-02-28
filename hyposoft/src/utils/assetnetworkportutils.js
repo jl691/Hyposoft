@@ -7,6 +7,7 @@ let seenOtherPorts = new Map(); //Map of otherAssetID --> array of all otherPort
 
 //these fields come from the form being filled out
 function validateNetworkConnections(thisModelName, networkPortConnections, callback) {
+    console.log("upppppp in this bitch", networkPortConnections)
 
     let success = 0;
 
@@ -103,13 +104,14 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                                                 console.log("SeenOtherPorts: " + seenOtherPorts)
                                                 console.log("SeenThisPOrts: " + [...seenThisPorts])
 
-                                                seenOtherPorts.set(otherAssetID, otherPort)
-                                                seenThisPorts.push(thisPort)
                                                 checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, status => {
                                                     if (status) {
                                                         callback(status)
                                                     }
                                                     else {
+                                                        seenOtherPorts.set(otherAssetID, otherPort);
+                                                        console.log("pushing " + otherAssetID + " : " + otherPort + " to seen otherports")
+                                                        seenThisPorts.push(thisPort)
                                                         success++;
                                                         if (success === networkPortConnections.length) {
                                                             callback(null)
@@ -249,7 +251,9 @@ function checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, callback) 
 
             }
             else if (seenOtherPorts.has(otherAssetID) && seenOtherPorts.get(otherAssetID).includes(otherPort) && case2ErrPrintCount === 1) {
-
+                console.log(seenOtherPorts);
+                console.log(otherAssetID);
+                console.log(otherPort);
                 callback("Can’t connect to" + errHost + " " + otherAssetID + " " + otherPort + ". It's already being used in a previous network connection you are trying to add.")
 
             }
