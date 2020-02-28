@@ -599,6 +599,8 @@ function deleteAsset(assetID, callback) {
                             powerPorts: firebase.firestore.FieldValue.arrayRemove(...deleteAssetConnections)
 
                         }).then(function () {
+                            //THIS RETURNS A NULL
+                            //so if there are network connections, won't ever delete the asset
                             assetnetworkportutils.symmetricNetworkConnectionsDelete(assetID, result => {
                                 console.log(result)
                                 if (result) {
