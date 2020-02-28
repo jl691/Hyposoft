@@ -226,7 +226,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                     if (powerConnections.length != 0) {
                                                                         racksRef.doc(String(rackID)).update({
                                                                             assets: firebase.firestore.FieldValue.arrayUnion(overrideAssetID),
-                                                                            powerPorts: firebase.firestore.FieldValue.arrayUnion(...powerConnections)
+                                                                            powerPorts: firebase.firestore.FieldValue.arrayUnion(...powerConnections.map(obj=> ({ ...obj, assetID: overrideAssetID })))
                                                                         }).then(function () {
 
                                                                             console.log("Document successfully updated in racks");
@@ -328,9 +328,10 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                 assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, newID);
 
                                                                 if (powerConnections.length != 0) {
+
                                                                     racksRef.doc(String(rackID)).update({
                                                                         assets: firebase.firestore.FieldValue.arrayUnion(newID),
-                                                                        powerPorts: firebase.firestore.FieldValue.arrayUnion(...powerConnections)
+                                                                        powerPorts: firebase.firestore.FieldValue.arrayUnion(...powerConnections.map(obj=> ({ ...obj, assetID: newID })))
                                                                     }).then(function () {
 
                                                                         console.log("Document successfully updated in racks");
@@ -713,6 +714,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                 let oldRackRow = oldSplitRackArray[0]
                                                 let oldRackNum = parseInt(oldSplitRackArray[1])
                                                 let oldDatacenter = docSnap.data().datacenter
+                                                let oldPowerConnections = docSnap.data().powerConnections;
                                                 var modelStuff = []
                                                 modelutils.getVendorAndNumberFromModel(model, name => modelStuff = name)
                                                 var rackId = ''
@@ -725,7 +727,8 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                         console.log("up in this bitch")
                                                         //get new rack document
                                                         //get instance id
-                                                        replaceAssetRack(oldResult, result, assetID, result => {
+                                                        console.log(powerConnections);
+                                                        replaceAssetRack(oldResult, result, oldPowerConnections, powerConnections, assetID, result => {
                                                             logutils.getObjectData(String(assetID), logutils.ASSET(), assetData => {
 
                                                                 //console.log(assetnetworkportutils.networkConnectionsToArray(networkConnections))
@@ -836,7 +839,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
 
                                                                                     })
                                                                                 }
-                                                                            })
+                                                                            }, assetID)
                                                                         }
                                                                     })
 
@@ -1106,20 +1109,65 @@ function validateAssetForm(assetID, model, hostname, rack, racku, owner, datacen
     })
 }
 
-function replaceAssetRack(oldRack, newRack, id, callback) {
-    racksRef.doc(String(oldRack)).update({
-        assets: firebase.firestore.FieldValue.arrayRemove(id)
-    }).then(() => {
-        racksRef.doc(String(newRack)).update({
-            assets: firebase.firestore.FieldValue.arrayUnion(id)
-        }).then(() => {
+function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, callback) {
+    if(String(oldRack) === String(newRack)){
+
+        console.log(oldPowerPorts);
+        console.log(newPowerPorts);
+
+        if(!oldPowerPorts.length && !newPowerPorts.length){
             callback(true);
+        }
+        else if(!oldPowerPorts.length && newPowerPorts.length){
+            //old is empty
+            racksRef.doc(String(oldRack)).update({
+                powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj=> ({ ...obj, assetID: id })))
+            }).then(function () {
+                callback(true);
+            }).catch(function () {
+                callback(null);
+            })
+        } else if(!newPowerPorts.length && !oldPowerPorts.length){
+            racksRef.doc(String(oldRack)).update({
+                powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj=> ({ ...obj, assetID: id })))
+            }).then(function () {
+                callback(true);
+            }).catch(function () {
+                callback(null);
+            })
+        } else {
+            racksRef.doc(String(oldRack)).update({
+                powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj=> ({ ...obj, assetID: id })))
+            }).then(function () {
+                racksRef.doc(String(oldRack)).update({
+                    powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj=> ({ ...obj, assetID: id })))
+                }).then(function () {
+                    callback(true);
+                }).catch(function () {
+                    callback(null);
+                })
+            }).catch(function () {
+                callback(null);
+            })
+        }
+
+    } else {
+        racksRef.doc(String(oldRack)).update({
+            assets: firebase.firestore.FieldValue.arrayRemove(id),
+            powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj=> ({ ...obj, assetID: id })))
+        }).then(() => {
+            racksRef.doc(String(newRack)).update({
+                assets: firebase.firestore.FieldValue.arrayUnion(id),
+                powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj=> ({ ...obj, assetID: id })))
+            }).then(() => {
+                callback(true);
+            }).catch(function (error) {
+                callback(false);
+            })
         }).catch(function (error) {
             callback(false);
         })
-    }).catch(function (error) {
-        callback(false);
-    })
+    }
 }
 
 /*
