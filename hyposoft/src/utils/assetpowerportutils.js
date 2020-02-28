@@ -6,12 +6,15 @@ import * as datacenterutils from './datacenterutils'
 
 function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerConnections, model, callback) {
     // assuming all or nothing. If an asset has 2 power ports, can't just plug one in
-
+    console.log(powerConnections);
     //How to handle when the rack does not have a network managed port?? How does this affect the detailed view? Getting the status?
     let success = 0;
     let allOrNothingCount=0;
+    if(!powerConnections.length){
+        callback(null);
+    }
     for (let i = 0; i < powerConnections.length; i++) {
-
+        console.log("in the for loop");
         let pduSide = powerConnections[i].pduSide;
         let port = powerConnections[i].port;
 

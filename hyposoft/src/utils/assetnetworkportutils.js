@@ -8,6 +8,10 @@ let seenOtherPorts = new Map(); //Map of otherAssetID --> array of all otherPort
 //networkPortConnections is an array at this point. Gets transformed when passed into addAsset()  in AddAssetForm
 //this function is called in addAsset in assetutils.js (so when the user presses submit on the form)
 function validateNetworkConnections(thisModelName, networkPortConnections, callback) {
+    seenOtherPorts = new Map();
+    seenThisPorts = [];
+    console.log(networkPortConnections)
+    console.log(seenOtherPorts.size)
     console.log("upppppp in this bitch", networkPortConnections)
 
     let success = 0;
@@ -116,6 +120,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                                                     else {
                                                         success++;
                                                         if (success === networkPortConnections.length) {
+                                                            console.log("okay but made it here forreal")
                                                             callback(null)
                                                         }
                                                         console.log("Congrats, you made it here.")
@@ -263,6 +268,9 @@ function checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, callback) 
              }
 
             else if (seenThisPorts.includes(thisPort) && case1ErrPrintCount === 1) {
+                console.log(seenThisPorts)
+                console.log(seenOtherPorts(thisPort));
+                console.log(case1ErrPrintCount);
                 callback("Can’t connect port " + thisPort + " on this asset. It's already being used in a previous network connection you are trying to add.")
             }
 
@@ -382,15 +390,11 @@ function symmetricNetworkConnectionsDelete(deleteID, callback) {
 
 
 }
-async function networkConnectionsToMap(networkConnectionsArray, callback) {
+function networkConnectionsToMap(networkConnectionsArray, callback) {
     console.log(networkConnectionsArray);
 
     var JSONConnections = {}
     var JSONValues = {}
-
-    if (!networkConnectionsArray.length) {
-        return JSONConnections
-    }
 
     if (!networkConnectionsArray.length) {
         //TODO:didn't fill out anything. But what if first is empty but second is not?

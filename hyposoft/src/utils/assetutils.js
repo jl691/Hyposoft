@@ -132,7 +132,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                 // let assetID = overrideAssetID.trim()==="" ? generateAssetID() : overrideAssetID()
 
                                 assetnetworkportutils.validateNetworkConnections(model, networkConnectionsArray, ncStatus => {
-
+                                    console.log(ncStatus)
                                     assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray, result => {
                                         let networkConnections = result;
                                         console.log(networkConnections);
@@ -144,8 +144,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                             callback(ncStatus)
                                         }
                                         else {
-
+                                            console.log("big booty bitch")
                                             assetpowerportutils.validatePowerConnections(datacenter, rack, racku, powerConnections, model, ppStatus => {
+                                                console.log("big booty bitch back")
                                                 console.log(ppStatus)
                                                 if (ppStatus) {
                                                     console.log("breakpoint")
