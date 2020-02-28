@@ -162,6 +162,29 @@ export default class EditAssetForm extends Component {
         }));
     }
 
+    checkNetworkPortUniqueness(networkPorts, callback){
+        if(!networkPorts.length){
+            callback(true);
+        } else {
+            let thisPortArray = [];
+            let otherIDPortArray = [];
+            let count = 0;
+            networkPorts.forEach(networkConnection =>{
+                let otherIDPortTemp = networkConnection.otherAssetID + networkConnection.otherPort;
+                if(thisPortArray.includes(networkConnection.thisPort) || otherIDPortArray.includes(otherIDPortTemp)){
+                    callback(null);
+                } else {
+                    thisPortArray.push(networkConnection.thisPort);
+                    otherIDPortArray.push(otherIDPortTemp);
+                    count++;
+                    if(count === networkPorts.length){
+                        callback(true);
+                    }
+                }
+            })
+        }
+    }
+
     handleUpdate(event) {
 
         if (event.target.name === "updateInst") {
@@ -193,78 +216,92 @@ export default class EditAssetForm extends Component {
                             existingConnections.push(this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port);
                             if (existingConnections.length === Object.keys(this.state.powerConnections).length) {
                                 //TODO: fix this in assetmacutils
-                                assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
+
+                                this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
+                                    if(result) {
+                                        assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
 
-                                    if (fixedAddr) {
-                                        console.log(fixedAddr)
-                                        assetutils.updateAsset(
-                                            this.state.asset_id,
-                                            this.state.model,
-                                            this.state.hostname,
-                                            this.state.rack,
-                                            parseInt(this.state.rackU),
-                                            this.state.owner,
-                                            this.state.comment,
-                                            this.state.datacenter,
-                                            fixedAddr,
-                                            this.state.networkConnections,
-                                            this.state.editDeletedNetworkConnections,
-                                            this.state.showPowerConnections ? this.state.powerConnections : [],
+                                            if (fixedAddr) {
+                                                console.log(fixedAddr)
+                                                assetutils.updateAsset(
+                                                    this.state.asset_id,
+                                                    this.state.model,
+                                                    this.state.hostname,
+                                                    this.state.rack,
+                                                    parseInt(this.state.rackU),
+                                                    this.state.owner,
+                                                    this.state.comment,
+                                                    this.state.datacenter,
+                                                    fixedAddr,
+                                                    this.state.networkConnections,
+                                                    this.state.editDeletedNetworkConnections,
+                                                    this.state.showPowerConnections ? this.state.powerConnections : [],
 
-                                            errorMsg => {
-                                                if (errorMsg) {
-                                                    ToastsStore.error(errorMsg, 10000)
-                                                } else {
-                                                    this.props.parentCallback(true);
-                                                    ToastsStore.success('Successfully updated asset!');
-                                                }
+                                                    errorMsg => {
+                                                        if (errorMsg) {
+                                                            ToastsStore.error(errorMsg, 10000)
+                                                        } else {
+                                                            this.props.parentCallback(true);
+                                                            ToastsStore.success('Successfully updated asset!');
+                                                        }
+                                                    }
+                                                );
                                             }
-                                        );
+                                            else {
+                                                ToastsStore.error(macError)
+                                            }
+                                        });
+                                    } else {
+                                        ToastsStore.error("Network connections must be unique");
                                     }
-                                    else {
-                                        ToastsStore.error(macError)
-                                    }
-                                });
+                                })
                             }
                         }
                     })
                 } else {
-                    assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
-                        if (fixedAddr) {
-                            console.log(fixedAddr)
-                            assetutils.updateAsset(
-                                this.state.asset_id,
-                                this.state.model,
-                                this.state.hostname,
-                                this.state.rack,
-                                parseInt(this.state.rackU),
-                                this.state.owner,
-                                this.state.comment,
-                                this.state.datacenter,
-                                fixedAddr,
-                                this.state.networkConnections,
-                                this.state.editDeletedNetworkConnections,
-                                this.state.showPowerConnections ? this.state.powerConnections : [],
+                    this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
+                        if(result) {
+                            assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
-                                errorMessage => {
-                                    if (errorMessage) {
-                                        ToastsStore.error(errorMessage, 10000)
-                                    } else {
-                                        this.props.parentCallback(true);
-                                        ToastsStore.success('Successfully updated asset!');
-                                    }
+                                if (fixedAddr) {
+                                    console.log(fixedAddr)
+                                    assetutils.updateAsset(
+                                        this.state.asset_id,
+                                        this.state.model,
+                                        this.state.hostname,
+                                        this.state.rack,
+                                        parseInt(this.state.rackU),
+                                        this.state.owner,
+                                        this.state.comment,
+                                        this.state.datacenter,
+                                        fixedAddr,
+                                        this.state.networkConnections,
+                                        this.state.editDeletedNetworkConnections,
+                                        this.state.showPowerConnections ? this.state.powerConnections : [],
+
+                                        errorMessage => {
+                                            if (errorMessage) {
+                                                ToastsStore.error(errorMessage, 10000)
+                                            } else {
+                                                this.props.parentCallback(true);
+                                                ToastsStore.success('Successfully updated asset!');
+                                            }
+                                        }
+                                    );
+
+
                                 }
-                            );
+                                else {
+                                    ToastsStore.error(macError)
+                                }
 
-
+                            });
+                        } else {
+                            ToastsStore.error("Network connections must be unique");
                         }
-                        else {
-                            ToastsStore.error(macError)
-                        }
-
-                    });
+                    })
                 }
 
             }
