@@ -32,9 +32,8 @@ export default class EditAssetForm extends Component {
             macAddresses: this.props.updateMacAddressesFromParent, //trace back up to see where it starts to be undefined
             powerConnections: this.props.updatePowerConnectionsFromParent,
             networkConnections: this.props.updateNetworkConnectionsFromParent,
-
-            showPowerConnections: false,
             editDeletedNetworkConnections: [],
+            showPowerConnections: this.props.updatePowerConnectionsFromParent.length ? true : false
 
         }
         this.handleUpdate = this.handleUpdate.bind(this);
@@ -44,6 +43,12 @@ export default class EditAssetForm extends Component {
         this.defaultPDUFields = this.defaultPDUFields.bind(this);
         this.deleteNetworkConnection=this.deleteNetworkConnection.bind(this)
         this.deletePowerConnection = this.deletePowerConnection.bind(this);
+    }
+
+    componentDidMount() {
+        console.log(this.props.updatePowerConnectionsFromParent ? "block" : "none");
+        let panel = document.getElementById("powerPortConnectionsPanel");
+        panel.style.display = this.props.updatePowerConnectionsFromParent.length ? "block" : "none";
     }
 
     //TODO: use this method properly

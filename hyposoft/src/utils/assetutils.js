@@ -733,8 +733,8 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                 //the reason why we have networkConnections to array is because validateNetworkConnections expects an array. networkConnections is a JSON object because we got in from the db, and to send connectiosn to the db, it must be transformed into a JSON obj first
 
                                                                 assetnetworkportutils.validateNetworkConnections(model, networkConnectionsArray, ncStatus => {
-                                                                    assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray, result => {
-                                                                        let networkConnections = result;
+                                                                    assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray, mapResult => {
+                                                                        let networkConnections = mapResult;
 
                                                                         //console.log("In updateAsset: " + powerConnectionsInput)
                                                                         // let powerConnections = assetpowerportutils.formatPowerConnections(powerConnectionsInput)
