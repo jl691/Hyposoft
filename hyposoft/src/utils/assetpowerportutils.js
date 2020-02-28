@@ -6,12 +6,15 @@ import * as datacenterutils from './datacenterutils'
 
 function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerConnections, model, callback) {
     // assuming all or nothing. If an asset has 2 power ports, can't just plug one in
-
+    console.log(powerConnections);
     //How to handle when the rack does not have a network managed port?? How does this affect the detailed view? Getting the status?
     let success = 0;
     let allOrNothingCount=0;
+    if(!powerConnections.length){
+        callback(null);
+    }
     for (let i = 0; i < powerConnections.length; i++) {
-
+        console.log("in the for loop");
         let pduSide = powerConnections[i].pduSide;
         let port = powerConnections[i].port;
 
@@ -232,23 +235,23 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
 }
 
 //This is so the db in assets collection will store null instead of "" if no power connections are made
-function formatPowerConnections(powerPorts) {
-    //need to return null if no power port conections have been made
-    if (powerPorts[0].pduSide === "") {
-        //TODO:didn't fill out anything. But what if first is empty but second is not?
-        powerPorts = [];
-        return powerPorts;
-    }
-    else {
-        return powerPorts;
-    }
+// function formatPowerConnections(powerPorts) {
+//     //need to return null if no power port conections have been made
+//     if (powerPorts[0].pduSide === "") {
+//         //TODO:didn't fill out anything. But what if first is empty but second is not?
+//         powerPorts = [];
+//         return powerPorts;
+//     }
+//     else {
+//         return powerPorts;
+//     }
 
-}
+// }
 
 export {
     validatePowerConnections,
     checkConflicts,
     getFirstFreePort,
-    formatPowerConnections,
+   // formatPowerConnections,
 
 }
