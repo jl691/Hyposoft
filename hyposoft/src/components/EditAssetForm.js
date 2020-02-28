@@ -195,11 +195,7 @@ export default class EditAssetForm extends Component {
                                             fixedAddr,
                                             this.state.networkConnections,
                                             this.state.editDeletedNetworkConnections,
-                                            this.state.showPowerConnections ? this.state.powerConnections : [{
-
-                                                pduSide: "",
-                                                port: ""
-                                            }],
+                                            this.state.showPowerConnections ? this.state.powerConnections : [],
                                             errorMessage => {
                                                 if (errorMessage) {
                                                     ToastsStore.error(errorMessage, 10000)
@@ -233,11 +229,7 @@ export default class EditAssetForm extends Component {
                                 this.state.datacenter,
                                 fixedAddr,
                                 this.state.networkConnections,
-                                this.state.showPowerConnections ? this.state.powerConnections : [{
-
-                                    pduSide: "",
-                                    port: ""
-                                }],
+                                this.state.showPowerConnections ? this.state.powerConnections : [],
 
                                 errorMessage => {
                                     if (errorMessage) {
