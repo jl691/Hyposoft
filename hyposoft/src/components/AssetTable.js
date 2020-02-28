@@ -121,7 +121,7 @@ export default class AssetTable extends Component {
                                 assetnetworkportutils.networkConnectionsToArray( data.networkConnections),
                                 data.powerConnections
                             )
-                            console.log(data.macAddresses)
+                            console.log("Getting data from AssetTable: " +data.powerConnections)
 
                         }} onMouseOver={e => this.colors[data.asset_id+'_edit_color']='#dddddd'}
                         onMouseLeave={e => this.colors[data.asset_id+'_edit_color']=''}/>

@@ -11,7 +11,9 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
     //How to handle when the rack does not have a network managed port?? How does this affect the detailed view? Getting the status?
     let success = 0;
     let allOrNothingCount=0;
+  console.log("Validating power ports, this is power ports : "+ powerConnections)
     if(!powerConnections.length){
+        console.log("Calling back cause no power connections")
         callback(null);
     }
     for (let i = 0; i < powerConnections.length; i++) {

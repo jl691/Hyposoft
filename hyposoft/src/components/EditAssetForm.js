@@ -5,6 +5,7 @@ import * as assetutils from '../utils/assetutils'
 import * as assetmacutils from '../utils/assetmacutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as assetpowerportutils from '../utils/assetpowerportutils'
+import * as assetnetworkportutils from '../utils/assetnetworkportutils'
 import * as modelutils from '../utils/modelutils'
 import * as userutils from "../utils/userutils";
 import { Redirect } from "react-router-dom";
@@ -41,11 +42,12 @@ export default class EditAssetForm extends Component {
         this.addNetworkConnection = this.addNetworkConnection.bind(this);
         this.addPowerConnection = this.addPowerConnection.bind(this);
         this.defaultPDUFields = this.defaultPDUFields.bind(this);
-        this.deleteNetworkConnection=this.deleteNetworkConnection.bind(this)
+        this.deleteNetworkConnection = this.deleteNetworkConnection.bind(this)
         this.deletePowerConnection = this.deletePowerConnection.bind(this);
     }
 
     componentDidMount() {
+        console.log(this.state.powerConnections)
         console.log(this.props.updatePowerConnectionsFromParent ? "block" : "none");
         let panel = document.getElementById("powerPortConnectionsPanel");
         panel.style.display = this.props.updatePowerConnectionsFromParent.length ? "block" : "none";
@@ -129,22 +131,29 @@ export default class EditAssetForm extends Component {
 
     }
 
-    deleteNetworkConnection(event, idx){
+    deleteNetworkConnection(event, idx) {
+
+        //this is so we can call symmetricSingleDelete in assetutils updateAsset()
+        let packedVals=this.state.networkConnections[idx]['thisPort']+ ":"+this.state.networkConnections[idx]['otherAssetID']+ ":"+this.state.networkConnections[idx]['otherPort']
+        this.state.editDeletedNetworkConnections.push(packedVals)
+        this.setState(prevState => ({
+
+            editDeletedNetworkConnections: [...prevState.editDeletedNetworkConnections]
+
+        }));
+        console.log(this.state.editDeletedNetworkConnections)
+
+
         console.log("removing element " + idx)
         let networkConnectionsCopy = [...this.state.networkConnections];
         networkConnectionsCopy.splice(idx, 1);
         this.setState(prevState => ({
             networkConnections: networkConnectionsCopy
         }));
-        //this is so we can call symmetricSingleDelete in assetutils updateAsset()
-        this.setState(prevState => ({
-            editDeletedNetworkConnections: this.state.networkConnections[idx]['thisPort']
 
-        }));
-        console.log(this.state.networkConnections[idx]['thisPort'])
     }
 
-    deletePowerConnection(event, idx){
+    deletePowerConnection(event, idx) {
         console.log("removing element " + idx)
         let powerConnectionsCopy = [...this.state.powerConnections];
         powerConnectionsCopy.splice(idx, 1);
@@ -186,6 +195,7 @@ export default class EditAssetForm extends Component {
                                 //TODO: fix this in assetmacutils
                                 assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
+
                                     if (fixedAddr) {
                                         console.log(fixedAddr)
                                         assetutils.updateAsset(
@@ -201,9 +211,10 @@ export default class EditAssetForm extends Component {
                                             this.state.networkConnections,
                                             this.state.editDeletedNetworkConnections,
                                             this.state.showPowerConnections ? this.state.powerConnections : [],
-                                            errorMessage => {
-                                                if (errorMessage) {
-                                                    ToastsStore.error(errorMessage, 10000)
+
+                                            errorMsg => {
+                                                if (errorMsg) {
+                                                    ToastsStore.error(errorMsg, 10000)
                                                 } else {
                                                     this.props.parentCallback(true);
                                                     ToastsStore.success('Successfully updated asset!');
@@ -252,8 +263,6 @@ export default class EditAssetForm extends Component {
                         else {
                             ToastsStore.error(macError)
                         }
-
-
 
                     });
                 }
@@ -393,37 +402,37 @@ export default class EditAssetForm extends Component {
                         </FormField>
 
                         <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"}
-                                toggle={true} onChange={(e) => {
-                                    let panel = document.getElementById("powerPortConnectionsPanel");
-                                    let display = !this.state.showPowerConnections;
-                                    this.setState({
-                                        showPowerConnections: display
-                                    }, function () {
-                                        panel.style.display = display ? "block" : "none";
-                                    })
-                                }} />
+                            toggle={true} onChange={(e) => {
+                                let panel = document.getElementById("powerPortConnectionsPanel");
+                                let display = !this.state.showPowerConnections;
+                                this.setState({
+                                    showPowerConnections: display
+                                }, function () {
+                                    panel.style.display = display ? "block" : "none";
+                                })
+                            }} />
 
 
                         <Accordion >
 
                             <div id={"powerPortConnectionsPanel"} style={{ display: "none" }}>
-                            <AccordionPanel label="Power Port Connections">
-                                <AssetPowerPortsForm
+                                <AccordionPanel label="Power Port Connections">
+                                    <AssetPowerPortsForm
 
-                                    powerConnections={this.state.powerConnections}
+                                        powerConnections={this.state.powerConnections}
 
-                                    deletePowerConnectionCallbackFromParent={this.deletePowerConnection}
+                                        deletePowerConnectionCallbackFromParent={this.deletePowerConnection}
 
-                                />
+                                    />
 
-                                <Button
-                                    onClick={this.addPowerConnection}
-                                    margin={{ horizontal: 'medium', vertical: 'small' }}
+                                    <Button
+                                        onClick={this.addPowerConnection}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
 
-                                    label="Add a power connection" />
+                                        label="Add a power connection" />
 
 
-                            </AccordionPanel>
+                                </AccordionPanel>
                             </div>
 
                             <AccordionPanel label="MAC Addresses">

@@ -254,8 +254,8 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                 })
 
                                                             }).catch(errMessage => {
-                                                            callback(errMessage)
-                                                        })
+                                                                callback(errMessage)
+                                                            })
 
                                                     }
                                                     else {
@@ -325,7 +325,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                             assetRef.doc(newID)
                                                                 .set(assetObject).then(function (docRef) {
 
-                                                                assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, newID);
+                                                                    assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, newID);
 
                                                                 if (powerConnections.length != 0) {
 
@@ -334,30 +334,30 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                         powerPorts: firebase.firestore.FieldValue.arrayUnion(...powerConnections.map(obj=> ({ ...obj, assetID: newID })))
                                                                     }).then(function () {
 
-                                                                        console.log("Document successfully updated in racks");
-                                                                        logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
-                                                                        callback(null);
-                                                                    })
+                                                                            console.log("Document successfully updated in racks");
+                                                                            logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                            callback(null);
+                                                                        })
 
 
-                                                                }
-                                                                else {
-                                                                    racksRef.doc(String(rackID)).update({
-                                                                        assets: firebase.firestore.FieldValue.arrayUnion(newID)
-                                                                    }).then(function () {
+                                                                    }
+                                                                    else {
+                                                                        racksRef.doc(String(rackID)).update({
+                                                                            assets: firebase.firestore.FieldValue.arrayUnion(newID)
+                                                                        }).then(function () {
 
-                                                                        console.log("Document successfully updated in racks");
-                                                                        logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
-                                                                        callback(null);
-                                                                    })
+                                                                            console.log("Document successfully updated in racks");
+                                                                            logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                            callback(null);
+                                                                        })
 
 
-                                                                }
+                                                                    }
 
-                                                            }).catch(function (error) {
-                                                                // callback("Error");
-                                                                console.log(error)
-                                                            })
+                                                                }).catch(function (error) {
+                                                                    // callback("Error");
+                                                                    console.log(error)
+                                                                })
                                                         }).catch("Ran out of tries to generate unique ID")
 
                                                     }
@@ -677,7 +677,8 @@ function deleteAsset(assetID, callback) {
 //TODO: double check this still works:
 //hostname updating works, owner updating works, conflicts, etc.
 
-function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses, networkConnectionsArray, deletedNCThisPort, powerConnections, callback) {
+function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses, 
+    networkConnectionsArray, deletedNCThisPort, powerConnections, callback) {
 
     validateAssetForm(assetID, model, hostname, rack, rackU, owner, datacenter).then(
         _ => {
@@ -748,7 +749,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                         }
                                                                         else {
 
-
+                                                                            console.log(powerConnections)
                                                                             assetpowerportutils.validatePowerConnections(datacenter, rack, rackU, powerConnections, model, ppStatus => {
                                                                                 console.log(ppStatus)
                                                                                 if (ppStatus) {
@@ -756,6 +757,9 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                     callback(ppStatus)
                                                                                 }
                                                                                 else {
+
+                                                                                    assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, assetID);
+                                                                                    
                                                                                     const assetObject = {
                                                                                         assetId: assetID,
                                                                                         model: model,
@@ -820,12 +824,27 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                         console.log("Updated model successfully")
                                                                                         logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData)
                                                                                         callback(null);
-                                                                                    }).then(function () {
+                                                                                    })
+                                                                                    .then(function () {
                                                                                         //all the network connections deleted in an array
-                                                                                        deletedNCThisPort.forEach(conn => {
-                                                                                            assetnetworkportutils.symmetricDeleteSingleNetworkConnection(assetID, conn, status => {
-                                                                                                if(status){
+                                                                                        deletedNCThisPort.forEach(function(conn ) {
+                                                                                            //each conn is a a long ass string
+
+                                                                                            //need to split value of conn
+                                                                                        
+                                                                                            let splitConnValue = conn.split(":").filter(Boolean)
+                                                                                            let thisPort=splitConnValue[0]
+                                                                                            let otherAssetID = splitConnValue[1]
+                                                                                            let otherPort = (splitConnValue[2])
+                                                                                          
+                                                                                            console.log(thisPort, otherAssetID, otherPort)
+                                                                                            assetnetworkportutils.symmetricDeleteSingleNetworkConnection(assetID, thisPort, otherAssetID, otherPort,
+                                                                                                 status => {
+                                                                                                    
+                                                                                                if (status) {
                                                                                                     console.log("Symm delete worked for this single connection.")
+                                                                                                }else{
+                                                                                                    console.log("Failure to do symm single delete for update assets")
                                                                                                 }
 
                                                                                             })
@@ -841,9 +860,9 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                 }
                                                                             }, assetID)
                                                                         }
+
+
                                                                     })
-
-
                                                                 })
                                                             })
                                                         })

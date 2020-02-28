@@ -24,7 +24,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
     let mostPossibleConnections = 0;
 
     //This was added for updating assets. seemed to be stuck, if no network connectios
-    if(numConnectionsMade == 0){
+    if (numConnectionsMade == 0) {
         callback(null)
     }
 
@@ -263,9 +263,9 @@ function checkNetworkPortConflicts(thisPort, otherAssetID, otherPort, callback) 
                 console.log(otherPort);
                 callback("Can’t connect to" + errHost + " " + otherAssetID + " " + otherPort + ". It's already being used in a previous network connection you are trying to add.")
 
-            //     callback("Can’t connect to" + errHost + " " + otherAssetID + " " + otherPort + ". It's already being used in a previous network connection you are trying to add.")
+                //     callback("Can’t connect to" + errHost + " " + otherAssetID + " " + otherPort + ". It's already being used in a previous network connection you are trying to add.")
 
-             }
+            }
 
             else if (seenThisPorts.includes(thisPort) && case1ErrPrintCount === 1) {
                 console.log(seenThisPorts)
@@ -398,8 +398,7 @@ function networkConnectionsToMap(networkConnectionsArray, callback) {
 
     if (!networkConnectionsArray.length) {
         //TODO:didn't fill out anything. But what if first is empty but second is not?
-        let emptyConns = [];
-        callback(emptyConns);
+        callback(JSONConnections);
     } else {
         let count = 0;
         networkConnectionsArray.forEach(networkConnection => {
@@ -413,27 +412,27 @@ function networkConnectionsToMap(networkConnectionsArray, callback) {
             console.log(JSONConnections);
             count++;
             console.log(count);
-            if(count === networkConnectionsArray.length){
+            if (count === networkConnectionsArray.length) {
                 console.log("returning ", JSONConnections);
                 callback(JSONConnections);
             }
         })
 
-/*
-        for (let i = 0; i < networkConnectionsArray.length; i++) {
-
-            //var propertyName = 'thisPort';
-            let key = networkConnectionsArray[i].thisPort;
-            let value1 = networkConnectionsArray[i].otherAssetID;
-            let value2 = networkConnectionsArray[i].otherPort;
-            JSONValues["otherAssetID"] = value1
-            JSONValues["otherPort"] = value2
-            JSONConnections[key] = JSONValues;
-
-        }
-
-        return JSONConnections;
-*/
+        /*
+                for (let i = 0; i < networkConnectionsArray.length; i++) {
+        
+                    //var propertyName = 'thisPort';
+                    let key = networkConnectionsArray[i].thisPort;
+                    let value1 = networkConnectionsArray[i].otherAssetID;
+                    let value2 = networkConnectionsArray[i].otherPort;
+                    JSONValues["otherAssetID"] = value1
+                    JSONValues["otherPort"] = value2
+                    JSONConnections[key] = JSONValues;
+        
+                }
+        
+                return JSONConnections;
+        */
 
     }
 
@@ -574,40 +573,56 @@ function addPortsByAsset(assetID, level, callback) {
 //When you edit and delete a single network connection, 
 //assetID is the asset you're editing
 //connectionName is name of networkPort, thisPort, you want to delete
-function symmetricDeleteSingleNetworkConnection(assetID, connectionName, callback){
+function symmetricDeleteSingleNetworkConnection(assetID, connectionName, otherAssetID, otherPort, callback) {
     assetRef.doc(assetID).get().then(function (docSnap) {
         let networkConnections = docSnap.data().networkConnections;
-        if(networkConnections[connectionName] && Object.keys(networkConnections[connectionName]).length){
-            let otherAssetID = networkConnections[connectionName].otherAssetID;
-            let otherPort = networkConnections[connectionName].otherPort;
-            assetRef.doc(otherAssetID).get().then(function (otherDocSnap) {
-                let otherNetworkConnections = otherDocSnap.data().networkConnections;
-                if(otherNetworkConnections[otherPort] && Object.keys(otherNetworkConnections[otherPort]).length){
-                    assetRef.doc(otherAssetID).update({
-                        [`networkConnections.${otherPort}`]: firebase.firestore.FieldValue.delete()
-                    }).then(function () {
-                        assetRef.doc(assetID).update({
-                            [`networkConnections.${connectionName}`]: firebase.firestore.FieldValue.delete()
-                        }).then(function () {
-                            callback(true);
-                        }).catch(function (error) {
-                            console.log(error);
-                            callback(null);
-                        })
-                    }).catch(function (error) {
-                        console.log(error);
-                        callback(null);
-                    })
-                } else {
-                    callback(null);
-                }
-            }).catch(function (error) {
-                console.log(error);
-                callback(null);
+
+        //checks if the asset you are currently updating has thisPort and it is connected
+        //  if(networkConnections[connectionName] && Object.keys(networkConnections[connectionName]).length){
+        //   console.log("Symm single delete 1")
+        //let otherAssetID = networkConnections[connectionName].otherAssetID;
+        //let otherPort = networkConnections[connectionName].otherPort;
+        assetRef.doc(otherAssetID).get().then(function (otherDocSnap) {
+            //let otherNetworkConnections = otherDocSnap.data().networkConnections
+            //other asset Id needs to have the connection that current updating asset is trying to delete
+
+            //BUG: trying to add an network connection in an update, and it doesn't seem to add properly?
+            //Not adding to the otherAsset's networkConnections
+
+            // if(otherNetworkConnections[otherPort] && Object.keys(otherNetworkConnections[otherPort]).length){
+            console.log("Symm single delete 2")
+            assetRef.doc(otherAssetID).update({
+                [`networkConnections.${otherPort}`]: firebase.firestore.FieldValue.delete()
             })
-        } else {
+            // .then(function () {
+            //     assetRef.doc(assetID).update({
+            //         [`networkConnections.${connectionName}`]: firebase.firestore.FieldValue.delete()
+
+            //     })
+                .then(function () {
+                    console.log("Symm single delete 3")
+                    callback(true);
+                }).catch(function (error) {
+                    console.log(error);
+                    callback(null);
+                })
+           // })
+            // .catch(function (error) {
+            //     console.log(error);
+            //     callback(null);
+            // })
+            // } else {
+            //     console.log("Symm single delete 4")
+            //     callback(null);
+            // }
+        }).catch(function (error) {
+            console.log(error);
             callback(null);
-        }
+        })
+        // } else {
+        //     console.log("Symm single delete 5")
+        //     callback(null);
+        // }
     }).catch(function (error) {
         console.log(error);
         callback(null);
