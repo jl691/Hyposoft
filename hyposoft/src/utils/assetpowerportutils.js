@@ -1,10 +1,11 @@
 import { racksRef, modelsRef } from './firebaseutils'
 import * as datacenterutils from './datacenterutils'
+import * as firebaseutils from './firebaseutils'
 
 //Toast message at the front end level
 
 
-function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerConnections, model, callback) {
+function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerConnections, model, callback, assetID = null) {
     // assuming all or nothing. If an asset has 2 power ports, can't just plug one in
     console.log(powerConnections);
     //How to handle when the rack does not have a network managed port?? How does this affect the detailed view? Getting the status?
@@ -61,7 +62,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
                                 }
                             }
 
-                        })
+                        }, assetID)
 
                     }
                    
@@ -189,7 +190,7 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
 
 }
 
-function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, callback) {
+function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, callback, assetID = null) {
     //No 'double connections': no PDU has more than one power port associated with it: conflicts/availability
 
     if (parseInt(inputRackU) < 10) {
@@ -211,10 +212,13 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
             if (rackPowerConns.length) {
                 let count = 0;
                 rackPowerConns.forEach(function (powerConn) {
+                    console.log(assetID)
                     console.log(powerConn);
                     console.log(powerConn.pduSide, pduSide)
                     console.log(powerConn.port, port)
-                    if (powerConn.pduSide === pduSide && parseInt(powerConn.port) === parseInt(port)) {
+                    if (assetID && assetID != powerConn.assetID && powerConn.pduSide === pduSide && parseInt(powerConn.port) === parseInt(port)) {
+                        callback("Trying to make a conflicting power connection at " + pduSide + " " + port)
+                    } else if(!assetID && powerConn.pduSide === pduSide && parseInt(powerConn.port) === parseInt(port)){
                         callback("Trying to make a conflicting power connection at " + pduSide + " " + port)
                     }
                     else {
@@ -235,6 +239,7 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
     })
 
 }
+
 
 //This is so the db in assets collection will store null instead of "" if no power connections are made
 // function formatPowerConnections(powerPorts) {

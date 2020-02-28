@@ -65,8 +65,8 @@ export default class AssetTable extends Component {
     }
 
     componentDidMount() {
-        assetutils.getAsset((newStartAfter, assetdb) => {
-            if (!(newStartAfter === null) && !(assetdb === null)) {
+        assetutils.getAsset((newStartAfter, assetdb, empty) => {
+            if ((!(newStartAfter === null) && !(assetdb === null)) || empty) {
                 console.log(assetdb)
                 this.startAfter = newStartAfter;
                 this.defaultAssets = assetdb;
@@ -136,8 +136,8 @@ export default class AssetTable extends Component {
             assets: [],
             initialLoaded: false
         });
-        assetutils.getAsset((newStartAfter, assetdb) => {
-            if (newStartAfter && assetdb) {
+        assetutils.getAsset((newStartAfter, assetdb, empty) => {
+            if ((newStartAfter && assetdb) || empty) {
                 this.startAfter = newStartAfter;
                 this.setState({assets: assetdb, initialLoaded: true})
             }
