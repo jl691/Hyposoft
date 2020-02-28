@@ -232,23 +232,23 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
 }
 
 //This is so the db in assets collection will store null instead of "" if no power connections are made
-function formatPowerConnections(powerPorts) {
-    //need to return null if no power port conections have been made
-    if (powerPorts[0].pduSide === "") {
-        //TODO:didn't fill out anything. But what if first is empty but second is not?
-        powerPorts = [];
-        return powerPorts;
-    }
-    else {
-        return powerPorts;
-    }
+// function formatPowerConnections(powerPorts) {
+//     //need to return null if no power port conections have been made
+//     if (powerPorts[0].pduSide === "") {
+//         //TODO:didn't fill out anything. But what if first is empty but second is not?
+//         powerPorts = [];
+//         return powerPorts;
+//     }
+//     else {
+//         return powerPorts;
+//     }
 
-}
+// }
 
 export {
     validatePowerConnections,
     checkConflicts,
     getFirstFreePort,
-    formatPowerConnections,
+   // formatPowerConnections,
 
 }

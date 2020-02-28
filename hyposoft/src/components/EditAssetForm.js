@@ -34,6 +34,7 @@ export default class EditAssetForm extends Component {
             networkConnections: this.props.updateNetworkConnectionsFromParent,
 
             showPowerConnections: false,
+            editDeletedNetworkConnections: [],
 
         }
         this.handleUpdate = this.handleUpdate.bind(this);
@@ -130,6 +131,12 @@ export default class EditAssetForm extends Component {
         this.setState(prevState => ({
             networkConnections: networkConnectionsCopy
         }));
+        //this is so we can call symmetricSingleDelete in assetutils updateAsset()
+        this.setState(prevState => ({
+            editDeletedNetworkConnections: this.state.networkConnections[idx]['thisPort']
+
+        }));
+        console.log(this.state.networkConnections[idx]['thisPort'])
     }
 
     deletePowerConnection(event, idx){
@@ -187,6 +194,7 @@ export default class EditAssetForm extends Component {
                                             this.state.datacenter,
                                             fixedAddr,
                                             this.state.networkConnections,
+                                            this.state.editDeletedNetworkConnections,
                                             this.state.showPowerConnections ? this.state.powerConnections : [{
 
                                                 pduSide: "",

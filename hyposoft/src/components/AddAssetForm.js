@@ -53,10 +53,14 @@ export default class AddAssetForm extends Component {
                     thisPort: ""
                 }
             ],
-            powerConnections: [{
-                pduSide: "",
-                port: ""
-            }],
+            powerConnections: [
+            //     {
+            //     pduSide: "",
+            //     port: ""
+            // }
+        ],
+           
+
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
@@ -65,7 +69,7 @@ export default class AddAssetForm extends Component {
         this.defaultPDUFields = this.defaultPDUFields.bind(this)
         this.handleMacAddressFixAndSet = this.handleMacAddressFixAndSet.bind(this)
         this.fixMACAddress = this.fixMACAddress.bind(this)
-        this.deleteNetworkConnection=this.deleteNetworkConnection.bind(this)
+        this.deleteNetworkConnection = this.deleteNetworkConnection.bind(this)
         this.deletePowerConnection = this.deletePowerConnection.bind(this);
     }
 
@@ -150,16 +154,18 @@ export default class AddAssetForm extends Component {
         });
     }
 
-    deleteNetworkConnection(event, idx){
+    deleteNetworkConnection(event, idx) {
         console.log("removing element " + idx)
         let networkConnectionsCopy = [...this.state.networkConnections];
         networkConnectionsCopy.splice(idx, 1);
         this.setState(prevState => ({
             networkConnections: networkConnectionsCopy
         }));
+       
+
     }
 
-    deletePowerConnection(event, idx){
+    deletePowerConnection(event, idx) {
         console.log("removing element " + idx)
         let powerConnectionsCopy = [...this.state.powerConnections];
         powerConnectionsCopy.splice(idx, 1);
@@ -260,15 +266,15 @@ export default class AddAssetForm extends Component {
                     let existingConnections = [];
                     Object.keys(this.state.powerConnections).forEach(connection => {
                         let thisKey = this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port;
-                        if(existingConnections.includes(thisKey)){
+                        if (existingConnections.includes(thisKey)) {
                             ToastsStore.error("Power connections must be unique.");
                         } else {
                             existingConnections.push(this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port);
-                            if(existingConnections.length === Object.keys(this.state.powerConnections).length){
+                            if (existingConnections.length === Object.keys(this.state.powerConnections).length) {
                                 //TODO: fix this in assetmacutils
                                 assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
-                                    if(fixedAddr){
+                                    if (fixedAddr) {
                                         console.log(fixedAddr)
                                         assetutils.addAsset(
                                             this.state.asset_id,
@@ -281,11 +287,7 @@ export default class AddAssetForm extends Component {
                                             this.state.datacenter,
                                             fixedAddr,
                                             this.state.networkConnections,
-                                            this.state.showPowerConnections ? this.state.powerConnections : [{
-
-                                                pduSide: "",
-                                                port: ""
-                                            }],
+                                            this.state.showPowerConnections ? this.state.powerConnections : [],
                                             errorMessage => {
                                                 if (errorMessage) {
                                                     ToastsStore.error(errorMessage, 10000)
@@ -296,7 +298,7 @@ export default class AddAssetForm extends Component {
                                             }
                                         );
                                     }
-                                    else{
+                                    else {
                                         ToastsStore.error(macError)
                                     }
                                 });
@@ -306,7 +308,7 @@ export default class AddAssetForm extends Component {
                 } else {
                     assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
-                        if(fixedAddr){
+                        if (fixedAddr) {
                             console.log(fixedAddr)
                             assetutils.addAsset(
                                 this.state.asset_id,
@@ -319,11 +321,7 @@ export default class AddAssetForm extends Component {
                                 this.state.datacenter,
                                 fixedAddr,
                                 this.state.networkConnections,
-                                this.state.showPowerConnections ? this.state.powerConnections : [{
-
-                                    pduSide: "",
-                                    port: ""
-                                }],
+                                this.state.showPowerConnections ? this.state.powerConnections : [],
 
                                 errorMessage => {
                                     if (errorMessage) {
@@ -337,7 +335,7 @@ export default class AddAssetForm extends Component {
 
 
                         }
-                        else{
+                        else {
                             ToastsStore.error(macError)
                         }
 

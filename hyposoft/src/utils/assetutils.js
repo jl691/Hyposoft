@@ -103,7 +103,7 @@ function getAssetAt(start, callback, field = null, direction = null) {
     })
 }
 
-function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnectionsInput, callback) {
+function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, callback) {
 
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
@@ -134,16 +134,17 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                 assetnetworkportutils.validateNetworkConnections(model, networkConnectionsArray, ncStatus => {
 
                                     let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
-                                    let powerConnections = assetpowerportutils.formatPowerConnections(powerConnectionsInput)
+                                    //let powerConnections = assetpowerportutils.formatPowerConnections(powerConnectionsInput)
 
                                     console.log(powerConnections)
 
                                     if (ncStatus) {
+                                        console.log("Didn't make it")
                                         callback(ncStatus)
                                     }
                                     else {
 
-                                        assetpowerportutils.validatePowerConnections(datacenter, rack, racku, powerConnectionsInput, model, ppStatus => {
+                                        assetpowerportutils.validatePowerConnections(datacenter, rack, racku, powerConnections, model, ppStatus => {
                                             console.log(ppStatus)
                                             if (ppStatus) {
                                                 console.log("breakpoint")
@@ -671,7 +672,7 @@ function deleteAsset(assetID, callback) {
 //TODO: double check this still works:
 //hostname updating works, owner updating works, conflicts, etc.
 
-function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses, networkConnections, powerConnectionsInput, callback) {
+function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses, networkConnectionsArray, deletedNCThisPort, powerConnections, callback) {
 
     validateAssetForm(assetID, model, hostname, rack, rackU, owner, datacenter).then(
         _ => {
@@ -723,13 +724,14 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                         replaceAssetRack(oldResult, result, assetID, result => {
                                                             logutils.getObjectData(String(assetID), logutils.ASSET(), assetData => {
 
-                                                                console.log("We really up in this bitch")
-                                                                console.log(networkConnections)
                                                                 //console.log(assetnetworkportutils.networkConnectionsToArray(networkConnections))
                                                                 //the reason why we have networkConnections to array is because validateNetworkConnections expects an array. networkConnections is a JSON object because we got in from the db, and to send connectiosn to the db, it must be transformed into a JSON obj first
-                                                                assetnetworkportutils.validateNetworkConnections(model, networkConnections, ncStatus => {
 
-                                                                    let powerConnections = assetpowerportutils.formatPowerConnections(powerConnectionsInput)
+                                                                assetnetworkportutils.validateNetworkConnections(model, networkConnectionsArray, ncStatus => {
+                                                                    let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
+                                                                    
+                                                                    //console.log("In updateAsset: " + powerConnectionsInput)
+                                                                   // let powerConnections = assetpowerportutils.formatPowerConnections(powerConnectionsInput)
                                                                     console.log(ncStatus)
 
                                                                     if (ncStatus) {
@@ -738,7 +740,8 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                     }
                                                                     else {
 
-                                                                        assetpowerportutils.validatePowerConnections(datacenter, rack, rackU, powerConnectionsInput, model, ppStatus => {
+                                                                        
+                                                                        assetpowerportutils.validatePowerConnections(datacenter, rack, rackU, powerConnections, model, ppStatus => {
                                                                             console.log(ppStatus)
                                                                             if (ppStatus) {
                                                                                 console.log("breakpoint")
@@ -809,6 +812,20 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                     console.log("Updated model successfully")
                                                                                     logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData)
                                                                                     callback(null);
+                                                                                }).then(function () {
+                                                                                    //all the network connections deleted in an array
+                                                                                    deletedNCThisPort.forEach(conn => {
+                                                                                        assetnetworkportutils.symmetricDeleteSingleNetworkConnection(assetID, conn, status => {
+                                                                                            if(status){
+                                                                                                console.log("Symm delete worked for this single connection.")
+                                                                                            }
+
+                                                                                        })
+
+
+                                                                                    })
+
+
                                                                                 }).catch(function (error) {
                                                                                     callback(error);
 

@@ -57,6 +57,8 @@ export default class AssetNetworkPortsForm extends Component {
         let { networkConnections } = this.props
         //console.log(networkConnections)
         return (
+               // Object.keys(networkConnections).map((key, idx) => {
+            //     console.log(networkConnections[key])
             networkConnections.map((val, idx) => {
                 return (
                     <Grommet key={idx} theme={theme}>
