@@ -254,8 +254,8 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                 })
 
                                                             }).catch(errMessage => {
-                                                            callback(errMessage)
-                                                        })
+                                                                callback(errMessage)
+                                                            })
 
                                                     }
                                                     else {
@@ -325,38 +325,38 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                             assetRef.doc(newID)
                                                                 .set(assetObject).then(function (docRef) {
 
-                                                                assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, newID);
+                                                                    assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, newID);
 
-                                                                if (powerConnections.length != 0) {
-                                                                    racksRef.doc(String(rackID)).update({
-                                                                        assets: firebase.firestore.FieldValue.arrayUnion(newID),
-                                                                        powerPorts: firebase.firestore.FieldValue.arrayUnion(...powerConnections)
-                                                                    }).then(function () {
+                                                                    if (powerConnections.length != 0) {
+                                                                        racksRef.doc(String(rackID)).update({
+                                                                            assets: firebase.firestore.FieldValue.arrayUnion(newID),
+                                                                            powerPorts: firebase.firestore.FieldValue.arrayUnion(...powerConnections)
+                                                                        }).then(function () {
 
-                                                                        console.log("Document successfully updated in racks");
-                                                                        logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
-                                                                        callback(null);
-                                                                    })
-
-
-                                                                }
-                                                                else {
-                                                                    racksRef.doc(String(rackID)).update({
-                                                                        assets: firebase.firestore.FieldValue.arrayUnion(newID)
-                                                                    }).then(function () {
-
-                                                                        console.log("Document successfully updated in racks");
-                                                                        logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
-                                                                        callback(null);
-                                                                    })
+                                                                            console.log("Document successfully updated in racks");
+                                                                            logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                            callback(null);
+                                                                        })
 
 
-                                                                }
+                                                                    }
+                                                                    else {
+                                                                        racksRef.doc(String(rackID)).update({
+                                                                            assets: firebase.firestore.FieldValue.arrayUnion(newID)
+                                                                        }).then(function () {
 
-                                                            }).catch(function (error) {
-                                                                // callback("Error");
-                                                                console.log(error)
-                                                            })
+                                                                            console.log("Document successfully updated in racks");
+                                                                            logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                            callback(null);
+                                                                        })
+
+
+                                                                    }
+
+                                                                }).catch(function (error) {
+                                                                    // callback("Error");
+                                                                    console.log(error)
+                                                                })
                                                         }).catch("Ran out of tries to generate unique ID")
 
                                                     }
@@ -676,7 +676,8 @@ function deleteAsset(assetID, callback) {
 //TODO: double check this still works:
 //hostname updating works, owner updating works, conflicts, etc.
 
-function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses, networkConnectionsArray, deletedNCThisPort, powerConnections, callback) {
+function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses, 
+    networkConnectionsArray, deletedNCThisPort, powerConnections, callback) {
 
     validateAssetForm(assetID, model, hostname, rack, rackU, owner, datacenter).then(
         _ => {
@@ -732,113 +733,115 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                 //the reason why we have networkConnections to array is because validateNetworkConnections expects an array. networkConnections is a JSON object because we got in from the db, and to send connectiosn to the db, it must be transformed into a JSON obj first
 
                                                                 assetnetworkportutils.validateNetworkConnections(model, networkConnectionsArray, ncStatus => {
-                                                                    let networkConnections = assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray)
-                                                                    
-                                                                    //console.log("In updateAsset: " + powerConnectionsInput)
-                                                                   // let powerConnections = assetpowerportutils.formatPowerConnections(powerConnectionsInput)
-                                                                    console.log(ncStatus)
+                                                                    assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray, result => {
+                                                                        let networkConnections = result;
 
-                                                                    if (ncStatus) {
-                                                                        console.log("Couldn't hang")
-                                                                        callback(ncStatus)
-                                                                    }
-                                                                    else {
+                                                                        //console.log("In updateAsset: " + powerConnectionsInput)
+                                                                        // let powerConnections = assetpowerportutils.formatPowerConnections(powerConnectionsInput)
+                                                                        console.log(ncStatus)
 
-                                                                        
-                                                                        assetpowerportutils.validatePowerConnections(datacenter, rack, rackU, powerConnections, model, ppStatus => {
-                                                                            console.log(ppStatus)
-                                                                            if (ppStatus) {
-                                                                                console.log("breakpoint")
-                                                                                callback(ppStatus)
-                                                                            }
-                                                                            else {
-                                                                                const assetObject = {
-                                                                                    assetId: assetID,
-                                                                                    model: model,
-                                                                                    modelId: modelId,
-                                                                                    vendor: modelStuff[0],
-                                                                                    modelNumber: modelStuff[1],
-                                                                                    hostname: hostname,
-                                                                                    rack: rack,
-                                                                                    rackU: rackU,
-                                                                                    rackID: rackId,
-                                                                                    owner: owner,
-                                                                                    comment: comment,
-                                                                                    rackRow: rackRow,
-                                                                                    rackNum: rackNum,
-                                                                                    datacenter: datacenter,
-                                                                                    datacenterID: datacenterID,
-                                                                                    datacenterAbbrev: datacenterAbbrev,
-                                                                                    macAddresses,
-                                                                                    networkConnections,
-                                                                                    powerConnections,
-                                                                                    //these are the fields in the document to update
+                                                                        if (ncStatus) {
+                                                                            console.log("Couldn't hang")
+                                                                            callback(ncStatus)
+                                                                        }
+                                                                        else {
 
-
+                                                                            console.log(powerConnections)
+                                                                            assetpowerportutils.validatePowerConnections(datacenter, rack, rackU, powerConnections, model, ppStatus => {
+                                                                                console.log(ppStatus)
+                                                                                if (ppStatus) {
+                                                                                    console.log("breakpoint")
+                                                                                    callback(ppStatus)
                                                                                 }
-                                                                                let suffixes_list = []
-                                                                                let _model = assetObject.model
+                                                                                else {
+                                                                                    const assetObject = {
+                                                                                        assetId: assetID,
+                                                                                        model: model,
+                                                                                        modelId: modelId,
+                                                                                        vendor: modelStuff[0],
+                                                                                        modelNumber: modelStuff[1],
+                                                                                        hostname: hostname,
+                                                                                        rack: rack,
+                                                                                        rackU: rackU,
+                                                                                        rackID: rackId,
+                                                                                        owner: owner,
+                                                                                        comment: comment,
+                                                                                        rackRow: rackRow,
+                                                                                        rackNum: rackNum,
+                                                                                        datacenter: datacenter,
+                                                                                        datacenterID: datacenterID,
+                                                                                        datacenterAbbrev: datacenterAbbrev,
+                                                                                        macAddresses,
+                                                                                        networkConnections,
+                                                                                        powerConnections,
+                                                                                        //these are the fields in the document to update
 
-                                                                                while (_model.length > 1) {
-                                                                                    _model = _model.substr(1)
-                                                                                    suffixes_list.push(_model)
-                                                                                }
 
-                                                                                let _hostname = assetObject.hostname
+                                                                                    }
+                                                                                    let suffixes_list = []
+                                                                                    let _model = assetObject.model
 
-                                                                                while (_hostname.length > 1) {
-                                                                                    _hostname = _hostname.substr(1)
-                                                                                    suffixes_list.push(_hostname)
-                                                                                }
+                                                                                    while (_model.length > 1) {
+                                                                                        _model = _model.substr(1)
+                                                                                        suffixes_list.push(_model)
+                                                                                    }
 
-                                                                                let _datacenter = assetObject.datacenter
+                                                                                    let _hostname = assetObject.hostname
 
-                                                                                while (_datacenter.length > 1) {
-                                                                                    _datacenter = _datacenter.substr(1)
-                                                                                    suffixes_list.push(_datacenter)
-                                                                                }
+                                                                                    while (_hostname.length > 1) {
+                                                                                        _hostname = _hostname.substr(1)
+                                                                                        suffixes_list.push(_hostname)
+                                                                                    }
 
-                                                                                let _datacenterAbbrev = assetObject.datacenterAbbrev
+                                                                                    let _datacenter = assetObject.datacenter
 
-                                                                                while (_datacenterAbbrev.length > 1) {
-                                                                                    _datacenterAbbrev = _datacenterAbbrev.substr(1)
-                                                                                    suffixes_list.push(_datacenterAbbrev)
-                                                                                }
-                                                                                let _owner = assetObject.owner
+                                                                                    while (_datacenter.length > 1) {
+                                                                                        _datacenter = _datacenter.substr(1)
+                                                                                        suffixes_list.push(_datacenter)
+                                                                                    }
 
-                                                                                while (_owner.length > 1) {
-                                                                                    _owner = _owner.substr(1)
-                                                                                    suffixes_list.push(_owner)
-                                                                                }
+                                                                                    let _datacenterAbbrev = assetObject.datacenterAbbrev
 
-                                                                                index.saveObject({ ...assetObject, objectID: assetID, suffixes: suffixes_list.join(' ') })
-                                                                                assetRef.doc(String(assetID)).update(assetObject).then(function () {
-                                                                                    console.log("Updated model successfully")
-                                                                                    logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData)
-                                                                                    callback(null);
-                                                                                }).then(function () {
-                                                                                    //all the network connections deleted in an array
-                                                                                    deletedNCThisPort.forEach(conn => {
-                                                                                        assetnetworkportutils.symmetricDeleteSingleNetworkConnection(assetID, conn, status => {
-                                                                                            if(status){
-                                                                                                console.log("Symm delete worked for this single connection.")
-                                                                                            }
+                                                                                    while (_datacenterAbbrev.length > 1) {
+                                                                                        _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                                                                                        suffixes_list.push(_datacenterAbbrev)
+                                                                                    }
+                                                                                    let _owner = assetObject.owner
+
+                                                                                    while (_owner.length > 1) {
+                                                                                        _owner = _owner.substr(1)
+                                                                                        suffixes_list.push(_owner)
+                                                                                    }
+
+                                                                                    index.saveObject({ ...assetObject, objectID: assetID, suffixes: suffixes_list.join(' ') })
+                                                                                    assetRef.doc(String(assetID)).update(assetObject).then(function () {
+                                                                                        console.log("Updated model successfully")
+                                                                                        logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData)
+                                                                                        callback(null);
+                                                                                    }).then(function () {
+                                                                                        //all the network connections deleted in an array
+                                                                                        deletedNCThisPort.forEach(conn => {
+                                                                                            assetnetworkportutils.symmetricDeleteSingleNetworkConnection(assetID, conn, status => {
+                                                                                                if (status) {
+                                                                                                    console.log("Symm delete worked for this single connection.")
+                                                                                                }
+
+                                                                                            })
+
 
                                                                                         })
 
 
+                                                                                    }).catch(function (error) {
+                                                                                        callback(error);
+
                                                                                     })
+                                                                                }
+                                                                            })
+                                                                        }
 
 
-                                                                                }).catch(function (error) {
-                                                                                    callback(error);
-
-                                                                                })
-                                                                            }
-                                                                        })
-                                                                    }
-
-
+                                                                    })
                                                                 })
                                                             })
                                                         })

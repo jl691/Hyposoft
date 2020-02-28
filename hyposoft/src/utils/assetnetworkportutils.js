@@ -398,8 +398,7 @@ function networkConnectionsToMap(networkConnectionsArray, callback) {
 
     if (!networkConnectionsArray.length) {
         //TODO:didn't fill out anything. But what if first is empty but second is not?
-        let emptyConns = [];
-        callback(emptyConns);
+        callback(JSONConnections);
     } else {
         let count = 0;
         networkConnectionsArray.forEach(networkConnection => {

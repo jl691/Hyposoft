@@ -181,6 +181,7 @@ export default class EditAssetForm extends Component {
                                 //TODO: fix this in assetmacutils
                                 assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
+
                                     if (fixedAddr) {
                                         console.log(fixedAddr)
                                         assetutils.updateAsset(
@@ -196,6 +197,7 @@ export default class EditAssetForm extends Component {
                                             this.state.networkConnections,
                                             this.state.editDeletedNetworkConnections,
                                             this.state.showPowerConnections ? this.state.powerConnections : [],
+                                            
                                             errorMessage => {
                                                 if (errorMessage) {
                                                     ToastsStore.error(errorMessage, 10000)
