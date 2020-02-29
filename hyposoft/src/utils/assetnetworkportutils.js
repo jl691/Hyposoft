@@ -20,7 +20,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
     let mostConnsPrintCount = 0
     let noConnsPrintCount = 0;
 
-    let numConnectionsMade = Object.keys(networkPortConnections).length
+    let numConnectionsMade = networkPortConnections.length
     let mostPossibleConnections = 0;
 
     //This was added for updating assets. seemed to be stuck, if no network connectios
