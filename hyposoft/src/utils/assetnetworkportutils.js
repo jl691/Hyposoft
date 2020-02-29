@@ -25,9 +25,14 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
 
     //This was added for updating assets. seemed to be stuck, if no network connectios
     if (numConnectionsMade == 0) {
-        callback(null)
+        return(callback(null))
     }
 
+    let uniqueThisPorts = networkPortConnections.map(conn => conn.thisPort)
+    let allUniqueThisPorts = new Set(uniqueThisPorts)
+    if (allUniqueThisPorts.size < numConnectionsMade) {
+        return(callback("Duplicate thisPorts found"))
+    }
 
     for (let i = 0; i < numConnectionsMade; i++) {
         let otherAssetID = networkPortConnections[i].otherAssetID;
