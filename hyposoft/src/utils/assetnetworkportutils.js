@@ -46,7 +46,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
         if (otherAssetID.toString() === "" && otherPort.trim() === "" && thisPort.trim() === "") {
             success++;
             if (success === networkPortConnections.length) {
-                callback(null)
+                return(callback(null))
             }
 
         }
@@ -67,7 +67,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                 console.log(otherAssetID)
                 assetRef.doc(otherAssetID).get().then(function (otherAssetModelDoc) {
                     if (!otherAssetModelDoc.exists) {
-                        callback("To make a network connection to another asset, please enter a valid asset ID")
+                        return(callback("To make a network connection to another asset, please enter a valid asset ID"))
                     }
                     else {
                         let otherModel = otherAssetModelDoc.data().model
@@ -89,11 +89,11 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                                 noConnsPrintCount++;
                                 if (mostPossibleConnections && mostConnsPrintCount === 1) {
                                     //THIS PRINTS MULTIPLE TIMES
-                                    callback("Making too many network connections. The most connections you can make between existing hardware is " + mostPossibleConnections)
+                                    return(callback("Making too many network connections. The most connections you can make between existing hardware is " + mostPossibleConnections))
 
                                 }
                                 else if (noConnsPrintCount === 1) {
-                                    callback("Cannot make network connections. There are no network ports on model(s): " + [...errModels] + " that you are trying to connect.")
+                                    return(callback("Cannot make network connections. There are no network ports on model(s): " + [...errModels] + " that you are trying to connect."))
 
                                 }
                             } else {
@@ -101,14 +101,14 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                                 //Now need to check that the ports exist
                                 checkThisModelPortsExist(thisModelName, thisPort, nonThisExist => {
                                     if (nonThisExist) {//means there's an error message
-                                        callback(nonThisExist)
+                                        return(callback(nonThisExist))
                                     }
                                     else {
                                         checkOtherAssetPortsExist(otherAssetID, otherPort, otherNonexist => {
 
                                             if (otherNonexist) {
 
-                                                callback(otherNonexist)
+                                                return(callback(otherNonexist))
                                             }
                                             else {
                                                 //Move these lines into checkNetworkPortConflicts but not inside the if or else. that's because of the for loop
@@ -120,13 +120,13 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                                                     console.log("pushing " + otherAssetID + " : " + otherPort + " to seen otherports")
                                                     seenThisPorts.push(thisPort)
                                                     if (status) {
-                                                        callback(status)
+                                                        return(callback(status))
                                                     }
                                                     else {
                                                         success++;
                                                         if (success === networkPortConnections.length) {
                                                             console.log("okay but made it here forreal")
-                                                            callback(null)
+                                                            return(callback(null))
                                                         }
                                                         console.log("Congrats, you made it here.")
 
@@ -147,7 +147,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
         }
         else {
             //has been partially filled out
-            callback("To make a network connection, must fill out all fields.")
+            return(callback("To make a network connection, must fill out all fields."))
         }
     }
 
@@ -175,11 +175,11 @@ function checkThisModelPortsExist(thisModelName, thisPort, callback) {
 
 
             //TODO: multiple ports could not exist if user adds multiple wrong connections. Need to change erro msg
-            callback("Trying to connect a nonexistent network port " + errPort + " on this model: " + errModel)
+            return(callback("Trying to connect a nonexistent network port " + errPort + " on this model: " + errModel))
 
         }
         else {
-            callback(null)
+            return(callback(null))
         }
 
     }).catch(error => console.log(error))
@@ -218,10 +218,10 @@ function checkOtherAssetPortsExist(otherAssetID, otherPort, callback) {
                 errMessageFinal = errHostname.trim() === "" ? errMessage1 : errMessage2;
 
 
-                callback(errMessageFinal)
+                return(callback(errMessageFinal))
             }
             else {
-                callback(null)
+                return(callback(null))
             }
         }).catch(error => console.log(error))
 
@@ -257,32 +257,33 @@ function checkNetworkPortConflicts(oldNetworkConnections, thisPort, otherAssetID
             case3ErrPrintCount++
 
             if(oldNetworkConnections && oldNetworkConnections[thisPort] && oldNetworkConnections[thisPort].otherAssetID === otherAssetID && oldNetworkConnections[thisPort].otherPort === otherPort){
-                callback(null);
+                return(callback(null))
             }
             else if (Object.keys(otherAssetsMap).includes(otherPort) && case3ErrPrintCount === 1) {//otherPort is already a key in otherAssetID's Map: so it's already connected
                 console.log("up in this bitch")
-                callback("Can’t connect port " + thisPort + " on this asset to " + errHost + " " + otherAssetID + " " + otherPort + ". The other asset's port has already been connected.")//+ 
+                return(callback("Can’t connect port " + thisPort + " on this asset to " + errHost + " " + otherAssetID + " " + otherPort + ". The other asset's port has already been connected.") )
                 //". That port is already connected to host5 port e1")
             }
             else if (seenOtherPorts.has(otherAssetID) && seenOtherPorts.get(otherAssetID).includes(otherPort) && case2ErrPrintCount === 1) {
                 console.log(seenOtherPorts);
                 console.log(otherAssetID);
                 console.log(otherPort);
-                callback("Can’t connect to" + errHost + " " + otherAssetID + " " + otherPort + ". It's already being used in a previous network connection you are trying to add.")
+                return(callback("Can’t connect to" + errHost + " " + otherAssetID + " " + otherPort + ". It's already being used in a previous network connection you are trying to add."))
 
-                //     callback("Can’t connect to" + errHost + " " + otherAssetID + " " + otherPort + ". It's already being used in a previous network connection you are trying to add.")
+                //     return(callback("Can’t connect to" + errHost + " " + otherAssetID + " " + otherPort + ". It's already being used in a previous network connection you are trying to add."))
 
             }
 
             else if (seenThisPorts.includes(thisPort) && case1ErrPrintCount === 1) {
                 console.log(seenThisPorts)
                 console.log(case1ErrPrintCount);
-                callback("Can’t connect port " + thisPort + " on this asset. It's already being used in a previous network connection you are trying to add.")
+                return(callback("Can’t connect port " + thisPort + " on this asset. It's already being used in a previous network connection you are trying to add."))
             }
 
             else {
                 //the last else should be a callback(null). For the current connection, it has run through the gauntlet of validation checks
-                callback(null)
+
+                return(callback(null))
 
             }
 
@@ -291,7 +292,7 @@ function checkNetworkPortConflicts(oldNetworkConnections, thisPort, otherAssetID
         }
         else {
             //since no network connections have been
-            callback(null)
+            return(callback(null))
         }
 
     }).catch(error => console.log(error))
@@ -343,7 +344,7 @@ function symmetricNetworkConnectionsDelete(deleteID, callback) {
     console.log("fucking kms")
     assetRef.doc(deleteID).get().then(function (docRef) {
         if (!(docRef.data().networkConnections && Object.keys(docRef.data().networkConnections).length)) {
-            callback(true);
+            return(callback(true))
         }
         //It's not the fault of symm, we are just not getting the networkConnections
         let networkConnections = Object.keys(docRef.data().networkConnections);
@@ -373,24 +374,24 @@ function symmetricNetworkConnectionsDelete(deleteID, callback) {
                             //console.log("count is " + count + " and networkconnections size is " + networkConnections.length)
                             if (count === networkConnections.length) {
                                 console.log("calling back")
-                                callback(true);
+                                return(callback(true))
                             }
                         }).catch(function (error) {
                             console.log("not quite")
                             console.log(error);
-                            callback(null);
+                            return(callback(null))
                         });
                         console.log("after the update")
                     }
                 })
             }).catch(function (error) {
                 console.log(error);
-                callback(null);
+                return(callback(null))
             })
         })
     }).catch(function (error) {
         console.log(error);
-        callback(null);
+        return(callback(null))
     })
 
 
@@ -403,7 +404,7 @@ function networkConnectionsToMap(networkConnectionsArray, callback) {
 
     if (!networkConnectionsArray.length) {
         //TODO:didn't fill out anything. But what if first is empty but second is not?
-        callback(JSONConnections);
+        return(callback(JSONConnections))
     } else {
         let count = 0;
         networkConnectionsArray.forEach(networkConnection => {
@@ -419,7 +420,7 @@ function networkConnectionsToMap(networkConnectionsArray, callback) {
             console.log(count);
             if (count === networkConnectionsArray.length) {
                 console.log("returning ", JSONConnections);
-                callback(JSONConnections);
+                return(callback(JSONConnections))
             }
         })
 
@@ -490,24 +491,24 @@ function getNetworkPortConnections(assetID, callback) {
                         if (count === secondLevel.length) {
                             console.log("yeeeet")
                             console.log(assets)
-                            callback(assets);
+                            return(callback(assets))
                         }
                     } else if (secondLevelNodes) {
                         count++;
                         if (count === secondLevel.length) {
                             console.log("yeeeet")
                             console.log(assets)
-                            callback(assets);
+                            return(callback(assets))
                         }
                     }
                     else {
                         console.log("fail")
-                        callback(null);
+                        return(callback(null))
                     }
                 });
             })
         } else {
-            callback(null);
+            return(callback(null))
         }
     })
 }
@@ -557,20 +558,20 @@ function addPortsByAsset(assetID, level, callback) {
                     });
                     count++;
                     if (count === Object.keys(docSnap.data().networkConnections).length) {
-                        callback(assets, assetSecondLevel);
+                        return(callback(assets, assetSecondLevel))
                     }
                 }).catch(function (error) {
                     console.log(error);
-                    callback(null, null)
+                    return(callback(null, null))
                 })
             })
         } else {
             console.log("here 3")
-            callback([], []);
+            return(callback([], []))
         }
     }).catch(function (error) {
         console.log(error);
-        callback(null, null);
+        return(callback(null, null))
     })
 }
 
@@ -606,31 +607,31 @@ function symmetricDeleteSingleNetworkConnection(assetID, connectionName, otherAs
             //     })
                 .then(function () {
                     console.log("Symm single delete 3")
-                    callback(true);
+                    return(callback(true))
                 }).catch(function (error) {
                     console.log(error);
-                    callback(null);
+                    return(callback(null))
                 })
            // })
             // .catch(function (error) {
             //     console.log(error);
-            //     callback(null);
+            //     return(callback(null))
             // })
             // } else {
             //     console.log("Symm single delete 4")
-            //     callback(null);
+            //     return(callback(null))
             // }
         }).catch(function (error) {
             console.log(error);
-            callback(null);
+            return(callback(null))
         })
         // } else {
         //     console.log("Symm single delete 5")
-        //     callback(null);
+        //     return(callback(null))
         // }
     }).catch(function (error) {
         console.log(error);
-        callback(null);
+        return(callback(null))
     })
 }
 
