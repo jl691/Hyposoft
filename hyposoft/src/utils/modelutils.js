@@ -4,6 +4,10 @@ import {firebase} from "./firebaseutils";
 import {assetRef} from "./firebaseutils";
 import { saveAs } from 'file-saver'
 
+const algoliasearch = require('algoliasearch')
+const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
+const index = client.initIndex('models')
+
 function packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment) {
     displayColor = displayColor.trim()
     if (!displayColor.startsWith('#')) {
@@ -375,29 +379,56 @@ function validateImportedModels (data, callback) {
                 }
             }
 
+            if (datum.power_ports) {
+                if (fetchedModels[i].found && fetchedModels[i].hasAssets && parseInt(datum.power_ports) !== fetchedModels[i].powerPorts) {
+                    errors = [...errors, [i+1, "Can't change number of power ports for a model with deployed instances"]]
+                }
+            }
+
+            if (datum.network_ports) {
+                if (fetchedModels[i].found && fetchedModels[i].hasAssets && parseInt(datum.network_ports) !== fetchedModels[i].networkPortsCount) {
+                    errors = [...errors, [i+1, "Can't change number of network ports for a model with deployed instances"]]
+                }
+            }
+
+            if (fetchedModels[i].found && fetchedModels[i].hasAssets) {
+                for (var np = 0; np < fetchedModels[i].networkPorts.length; np++) {
+                    if (np < 4) {
+                        if (datum['network_port_name_'+(i+1)] && datum['network_port_name_'+(i+1)].trim() !== fetchedModels[i].networkPorts[i]) {
+                            errors = [...errors, [i+1, "Can't change names of network ports for a model with deployed instances"]]
+                            break
+                        }
+                    } else {
+                        break
+                    }
+                }
+            }
+
             const model = datum // redundancy for legacy and lazy and timecrunch reasons
             const height = parseInt(model.height)
-            const network_ports = (model.network_ports !== null ? parseInt(model.network_ports) : null)
-            const power_ports = (model.power_ports !== null ? parseInt(model.power_ports) : null)
-            const memory = (model.memory !== null ? parseInt(model.memory) : null)
-            const storage = (model.storage !== null ? model.storage.trim() : "")
-            const cpu = (model.cpu !== null ? model.cpu.trim() : "")
-            const comment = (model.comment !== null ? model.comment.trim() : "")
+            const network_ports = (model.network_ports ? parseInt(model.network_ports) : null)
+            const power_ports = (model.power_ports  ? parseInt(model.power_ports) : null)
+            const memory = (model.memory ? (''+model.memory).trim() : null)
+            const storage = (model.storage ? model.storage.trim() : "")
+            const cpu = (model.cpu ? model.cpu.trim() : "")
+            const comment = (model.comment ? model.comment.trim() : "")
+            const color = (model.display_color.toLowerCase().startsWith('#') ? model.display_color.toLowerCase() : '#'+model.display_color.toLowerCase())
 
             const modelFromDb = fetchedModels[i]
-            const modelMemory = (modelFromDb.memory > 0 ? modelFromDb.memory : null)
-            const networkPorts = (modelFromDb.networkPortsCount > 0 ? modelFromDb.networkPortsCount : null)
-            const powerPorts = (modelFromDb.powerPorts > 0 ? modelFromDb.powerPorts : null)
-            const modelStorage = (modelFromDb.storage !== undefined ? modelFromDb.storage.trim() : "")
-            const modelCpu = (modelFromDb.cpu !== undefined ? modelFromDb.cpu.trim() : "")
-            const modelComment = (modelFromDb.comment !== undefined ? modelFromDb.comment.trim() : "")
+            const modelMemory = (modelFromDb.memory ? (''+modelFromDb.memory).trim() : null)
+            const networkPorts = (modelFromDb.networkPortsCount ? modelFromDb.networkPortsCount : null)
+            const powerPorts = (modelFromDb.powerPorts ? modelFromDb.powerPorts : null)
+            const modelStorage = (modelFromDb.storage ? modelFromDb.storage.trim() : "")
+            const modelCpu = (modelFromDb.cpu ? modelFromDb.cpu.trim() : "")
+            const modelComment = (modelFromDb.comment ? modelFromDb.comment.trim() : "")
+            const modelColor = modelFromDb.displayColor && (modelFromDb.displayColor.toLowerCase().startsWith('#') ? modelFromDb.displayColor.toLowerCase() : '#'+modelFromDb.displayColor.toLowerCase())
 
             if (!modelFromDb.found) {
                 toBeAdded.push(datum)
-            } else if (!(modelFromDb.height === height && modelFromDb.displayColor.toLowerCase() === model.display_color.toLowerCase()
-                    && networkPorts === network_ports && powerPorts === power_ports
-                    &&  cpu === modelCpu && storage === modelStorage && modelMemory === memory
-                    && comment === modelComment)) {
+            } else if (!(modelFromDb.height == height && modelColor == color
+                    && networkPorts == network_ports && powerPorts == power_ports
+                    &&  cpu == modelCpu && storage == modelStorage && modelMemory == memory
+                    && comment == modelComment)) {
                 datum.id = modelFromDb.id
                 toBeModified.push(datum)
             } else {
@@ -414,10 +445,14 @@ function validateImportedModels (data, callback) {
         if (!datum.vendor || String(datum.vendor).trim() === '') {
             errors = [...errors, [i+1, 'Vendor not found']]
             modelAndVendorFound = false
+        } else if (datum.vendor.trim().length > 50) {
+            errors = [...errors, [i+1, 'Vendor name should not be longer than 50 characters']]
         }
         if (!datum.model_number || String(datum.model_number).trim() === '') {
             errors = [...errors, [i+1, 'Model number not found']]
             modelAndVendorFound = false
+        } else if (datum.model_number.trim().length > 50) {
+            errors = [...errors, [i+1, 'Model number should not be longer than 50 characters']]
         }
         if (modelAndVendorFound) {
             if (!(datum.vendor in modelsSeen)) {
@@ -432,25 +467,82 @@ function validateImportedModels (data, callback) {
         // if (!datum.height || String(datum.height).trim() === '') {
         //     errors = [...errors, [i+1, 'Height not found']]
         // } else
-        if (datum.height && (isNaN(String(datum.height).trim()) || !Number.isInteger(parseFloat(String(datum.height).trim())) || parseInt(String(datum.height).trim()) <= 0)) {
-            errors = [...errors, [i+1, 'Height is not a positive integer']]
+        if (datum.height && (isNaN(String(datum.height).trim()) || !Number.isInteger(parseFloat(String(datum.height).trim())) || parseInt(String(datum.height).trim()) <= 0|| parseInt(String(datum.height).trim()) > 42)) {
+            errors = [...errors, [i+1, 'Height should be a positive integer not greater than 42U']]
         }
         if (!datum.display_color || String(datum.display_color).trim() === '') {
             datum.display_color = '#000000'
-        } else if (datum.displayColor && !/^#[0-9A-F]{6}$/i.test(String(datum.display_color))) {
+        } else if (datum.display_color && !/^#[0-9A-F]{6}$/i.test(String(datum.display_color))) {
             errors = [...errors, [i+1, 'Invalid display color']]
         }
         if (datum.network_ports && String(datum.network_ports).trim() !== '' &&
-         (isNaN(String(datum.network_ports).trim()) || !Number.isInteger(parseFloat(String(datum.network_ports).trim())) || parseInt(String(datum.network_ports).trim()) < 0)) {
-             errors = [...errors, [i+1, 'Network ports is not a non-negative integer']]
+         (isNaN(String(datum.network_ports).trim()) || !Number.isInteger(parseFloat(String(datum.network_ports).trim())) || parseInt(String(datum.network_ports).trim()) < 0|| parseInt(String(datum.network_ports).trim()) > 100)) {
+             errors = [...errors, [i+1, 'Network ports should be a non-negative integer not greater than 100']]
         }
         if (datum.power_ports && String(datum.power_ports).trim() !== '' &&
-         (isNaN(String(datum.power_ports).trim()) || !Number.isInteger(parseFloat(String(datum.power_ports).trim())) || parseInt(String(datum.power_ports).trim()) < 0)) {
-             errors = [...errors, [i+1, 'Power ports is not a non-negative integer']]
+         (isNaN(String(datum.power_ports).trim()) || !Number.isInteger(parseFloat(String(datum.power_ports).trim())) || parseInt(String(datum.power_ports).trim()) < 0 || parseInt(String(datum.power_ports).trim()) > 10)) {
+             errors = [...errors, [i+1, 'Power ports should be a non-negative integer not greater than 10']]
         }
         if (datum.memory && String(datum.memory).trim() !== '' &&
-         (isNaN(String(datum.memory).trim()) || !Number.isInteger(parseFloat(String(datum.memory).trim())) || parseInt(String(datum.memory).trim()) < 0)) {
-             errors = [...errors, [i+1, 'Memory is not a non-negative integer']]
+         (isNaN(String(datum.memory).trim()) || !Number.isInteger(parseFloat(String(datum.memory).trim())) || parseInt(String(datum.memory).trim()) < 0 || parseInt(String(datum.memory).trim()) > 1000)) {
+             errors = [...errors, [i+1, 'Memory should be a non-negative integer not greater than 1000']]
+        }
+
+        if (datum.storage.trim() && datum.storage.trim().length > 50) {
+            errors = [...errors, [i+1, 'Storage should be less than 50 characters long']]
+        }
+
+        if (datum.cpu.trim() && datum.cpu.trim().length > 50) {
+            errors = [...errors, [i+1, 'CPU should be less than 50 characters long']]
+        }
+
+        var uniqueNP = true
+        if (datum.network_port_name_1) {
+            if (datum.network_port_name_1.trim() === datum.network_port_name_2.trim() ||
+            datum.network_port_name_1.trim() === datum.network_port_name_3.trim() ||
+            datum.network_port_name_1.trim() === datum.network_port_name_4.trim()) {
+                uniqueNP = false
+            }
+
+            if (/\s/g.test(datum.network_port_name_1)) {
+                errors = [...errors, [i+1, 'Network port name 1 has whitespaces']]
+            }
+        }
+        if (datum.network_port_name_2) {
+            if (datum.network_port_name_2.trim() === datum.network_port_name_1.trim() ||
+            datum.network_port_name_2.trim() === datum.network_port_name_3.trim() ||
+            datum.network_port_name_2.trim() === datum.network_port_name_4.trim()) {
+                uniqueNP = false
+            }
+
+            if (/\s/g.test(datum.network_port_name_2)) {
+                errors = [...errors, [i+1, 'Network port name 2 has whitespaces']]
+            }
+        }
+        if (datum.network_port_name_3) {
+            if (datum.network_port_name_3.trim() === datum.network_port_name_2.trim() ||
+            datum.network_port_name_3.trim() === datum.network_port_name_1.trim() ||
+            datum.network_port_name_3.trim() === datum.network_port_name_4.trim()) {
+                uniqueNP = false
+            }
+
+            if (/\s/g.test(datum.network_port_name_3)) {
+                errors = [...errors, [i+1, 'Network port name 3 has whitespaces']]
+            }
+        }
+        if (datum.network_port_name_4) {
+            if (datum.network_port_name_4.trim() === datum.network_port_name_2.trim() ||
+            datum.network_port_name_4.trim() === datum.network_port_name_3.trim() ||
+            datum.network_port_name_4.trim() === datum.network_port_name_1.trim()) {
+                uniqueNP = false
+            }
+            if (/\s/g.test(datum.network_port_name_4)) {
+                errors = [...errors, [i+1, 'Network port name 4 has whitespaces']]
+            }
+        }
+
+        if (!uniqueNP) {
+            errors = [...errors, [i+1, 'Network port names must be unique']]
         }
 
         // If all is good, just get the model and whether it has any assets
@@ -503,8 +595,32 @@ function bulkAddModels (models, callback) {
         }
 
         createModel(null, ''+model.vendor, ''+model.model_number, parseInt(model.height), ''+model.display_color,
-         network_ports, parseInt(model.power_ports), ''+model.cpu, ''+model.memory, ''+model.storage,
-         ''+model.comment, () => {
+         network_ports, model.power_ports&&parseInt(model.power_ports), ''+model.cpu, ''+model.memory, ''+model.storage,
+         ''+model.comment, (modelDoc, modelDocid) => {
+             let suffixes_list = []
+             let cpu = modelDoc.cpu
+
+             while (cpu.length > 1) {
+                 cpu = cpu.substr(1)
+                 suffixes_list.push(cpu)
+             }
+
+             let storage = modelDoc.storage
+
+             while (storage.length > 1) {
+                 storage = storage.substr(1)
+                 suffixes_list.push(storage)
+             }
+
+             let modelName = modelDoc.vendor+modelDoc.modelNumber
+
+             while (modelName.length > 1) {
+                 modelName = modelName.substr(1)
+                 suffixes_list.push(modelName)
+             }
+
+             index.saveObject({...modelDoc, objectID: modelDocid, suffixes: suffixes_list.join(' ')})
+
              addedModelsCount++
              if (addedModelsCount === models.length) {
                  callback()
@@ -535,8 +651,32 @@ function bulkModifyModels (models, callback) {
         }
 
         modifyModel(model.id, ''+model.vendor, ''+model.model_number, parseInt(model.height), ''+model.display_color,
-         network_ports, parseInt(model.power_ports), ''+model.cpu, ''+model.memory, ''+model.storage,
-         ''+model.comment, () => {
+         network_ports, model.power_ports&&parseInt(model.power_ports), ''+model.cpu, ''+model.memory, ''+model.storage,
+         ''+model.comment, (modelDoc, modelDocid) => {
+             let suffixes_list = []
+             let cpu = modelDoc.cpu
+
+             while (cpu.length > 1) {
+                 cpu = cpu.substr(1)
+                 suffixes_list.push(cpu)
+             }
+
+             let storage = modelDoc.storage
+
+             while (storage.length > 1) {
+                 storage = storage.substr(1)
+                 suffixes_list.push(storage)
+             }
+
+             let modelName = modelDoc.vendor+modelDoc.modelNumber
+
+             while (modelName.length > 1) {
+                 modelName = modelName.substr(1)
+                 suffixes_list.push(modelName)
+             }
+
+             index.saveObject({...modelDoc, objectID: modelDocid, suffixes: suffixes_list.join(' ')})
+
              modifiedModelsCount++
              if (modifiedModelsCount === models.length) {
                  callback()

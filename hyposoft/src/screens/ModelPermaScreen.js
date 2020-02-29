@@ -93,17 +93,13 @@ class ModelPermaScreen extends Component {
         if (!userutils.isLoggedInUserAdmin()) {
             ToastsStore.info('Only admins can do this', 3000, 'burntToast')
             return
-        }
-
-        if (this.state.assets.length > 0) {
-            ToastsStore.info("Can't delete model with live assets", 3000, 'burntToast')
-            this.hideDeleteDialog()
         } else {
             modelutils.deleteModel(this.state.id, () => {
                 ToastsStore.info("Model deleted", 3000, 'burntToast')
                 this.init()
                 this.hideDeleteDialog()
                 index.deleteObject(this.state.id)
+                window.location.href = "/models/";
             })
         }
     }
@@ -135,7 +131,7 @@ class ModelPermaScreen extends Component {
                         ...doc.data(),
                         id: doc.id,
                         itemNo: i++,
-                        datacenterAbbreviation: datacenterAbbrev
+                        datacenterAbbrev: datacenterAbbrev
                     });
                     count++;
                     if (count === docSnaps.docs.length) {
@@ -200,9 +196,9 @@ class ModelPermaScreen extends Component {
                             sortable: true,
                         },
                         {
-                            property: 'datacenterAbbreviation',
+                            property: 'datacenterAbbrev',
                             header: <Text size='small'>Datacenter</Text>,
-                            render: datum => <Text size='small'>{datum.datacenterAbbreviation}</Text>,
+                            render: datum => <Text size='small'>{datum.datacenterAbbrev}</Text>,
                             sortable: true
                         },
                         {

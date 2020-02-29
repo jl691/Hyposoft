@@ -39,14 +39,29 @@ function fixMACAddress(mac) {
     return canonicalMAC;
 }
 
+function unfixMacAddressesForMACForm(addresses) {
+    var ms = []
+    var field;
+    for (field in addresses) {
+      ms.push({networkPort: field,macAddress: addresses[field]})
+    }
+    console.log(ms);
+    return ms
+}
+
 //TODO: NEED TO FIX THIS SINCE IT USES STATE
 //toLowercase, to colon
 function handleMacAddressFixAndSet(addresses, callback) {
     let macAddresses = {};
     console.log(addresses)
     let count = 0;
+
+    if(addresses.length==0){
+
+        callback(macAddresses);
+    }
     addresses.forEach(obj => {
-        
+
         let address = obj.macAddress
         let port = obj.networkPort
         console.log(address)
@@ -58,10 +73,10 @@ function handleMacAddressFixAndSet(addresses, callback) {
         else {
             count++;
             let fixedMAC = "";
-   
+
 
             if (address) {
-                fixedMAC = this.fixMACAddress(address);
+                fixedMAC = fixMACAddress(address);
                 let fixedObj = { networkPort: port, macAddress: fixedMAC }
                 macAddresses[port]=fixedMAC
             }
@@ -87,5 +102,5 @@ export {
     getNetworkPortLabels,
     fixMACAddress,
     handleMacAddressFixAndSet,
-
+    unfixMacAddressesForMACForm
 }

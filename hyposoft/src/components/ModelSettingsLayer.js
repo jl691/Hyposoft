@@ -50,6 +50,11 @@ class ModelSettingsLayer extends React.Component {
             this.dbFunction = modelutils.createModel
             console.log(this.layerTitle)
         } else {
+            modelutils.doesModelHaveAssets(this.props.model.id, yes => {
+                if (yes) {
+                    this.setState(oldState => ({...oldState, modelHasAssets: true}))
+                }
+            })
             this.hideFunction = this.props.parent.hideEditDialog
             this.dbFunction = modelutils.modifyModel
             this.setState({
@@ -74,10 +79,16 @@ class ModelSettingsLayer extends React.Component {
         if (this.state.vendor.trim() === '') {
             ToastsStore.info('Vendor required', 3000, 'burntToast')
             return
+        } else if (this.state.vendor.trim().length > 50) {
+            ToastsStore.info('Vendor name should be less than 50 characters long', 3000, 'burntToast')
+            return
         }
 
         if (this.state.modelNumber.trim() === '') {
             ToastsStore.info('Model number required', 3000, 'burntToast')
+            return
+        } else if (this.state.modelNumber.trim().length > 50) {
+            ToastsStore.info('Model number should be less than 50 characters long', 3000, 'burntToast')
             return
         }
 
@@ -86,8 +97,8 @@ class ModelSettingsLayer extends React.Component {
             return
         }
 
-        if (isNaN(this.state.height.trim()) || !Number.isInteger(parseFloat(this.state.height.trim())) || parseInt(this.state.height.trim()) <= 0) {
-            ToastsStore.info('Height should be a positive integer', 3000, 'burntToast')
+        if (isNaN(this.state.height.trim()) || !Number.isInteger(parseFloat(this.state.height.trim())) || parseInt(this.state.height.trim()) <= 0 || parseInt(this.state.height.trim()) > 42) {
+            ToastsStore.info('Height should be a positive integer not greater than 42U', 3000, 'burntToast')
             this.setState(oldState => ({...oldState, height: ''}))
             return
         }
@@ -102,10 +113,27 @@ class ModelSettingsLayer extends React.Component {
             networkPorts = []
         }
 
+        if (networkPorts.length > Array.from(new Set(networkPorts)).length) {
+            ToastsStore.info('Network ports should have unique names', 3000, 'burntToast')
+            return
+        }
+
+        for (var np = 0; np < networkPorts.length; np++) {
+            if (/\s/g.test(networkPorts[np].trim())) {
+                ToastsStore.info('Network ports cannot have whitespaces in their names', 3000, 'burntToast')
+                return
+            }
+        }
+
+        if (networkPorts.length > 100) {
+            ToastsStore.info('Models should not have more than 100 network ports', 3000, 'burntToast')
+            return
+        }
+
         var powerPorts = null
         if (this.state.powerPorts.trim() !== '' &&
-            (isNaN(this.state.powerPorts.trim()) || !Number.isInteger(parseFloat(this.state.powerPorts.trim())) || parseInt(this.state.powerPorts.trim()) < 0)) {
-            ToastsStore.info('Power ports should be a non-negative integer', 3000, 'burntToast')
+            (isNaN(this.state.powerPorts.trim()) || !Number.isInteger(parseFloat(this.state.powerPorts.trim())) || parseInt(this.state.powerPorts.trim()) < 0 || parseInt(this.state.powerPorts.trim()) > 10)) {
+            ToastsStore.info('Power ports should be a non-negative integer not greater than 10', 3000, 'burntToast')
             this.setState(oldState => ({...oldState, powerPorts: ''}))
             return
         } else if (this.state.powerPorts.trim() !== '') {
@@ -115,13 +143,24 @@ class ModelSettingsLayer extends React.Component {
 
         var memory = null
         if (this.state.memory.trim() !== '' &&
-            (isNaN(this.state.memory.trim()) || !Number.isInteger(parseFloat(this.state.memory.trim())) || parseInt(this.state.memory.trim()) < 0)) {
-            ToastsStore.info('Memory should be a non-negative integer', 3000, 'burntToast')
+            (isNaN(this.state.memory.trim()) || !Number.isInteger(parseFloat(this.state.memory.trim())) || parseInt(this.state.memory.trim()) < 0 || parseInt(this.state.memory.trim()) > 1000)) {
+            ToastsStore.info('Memory should be a non-negative integer less than 1000', 3000, 'burntToast')
             this.setState(oldState => ({...oldState, memory: ''}))
             return
         } else if (this.state.memory.trim() !== '') {
             memory = parseInt(this.state.memory)
         }
+
+        if (this.state.storage.trim() !== '' && this.state.storage.trim().length > 50) {
+            ToastsStore.info('Storage should be less than 50 characters long', 3000, 'burntToast')
+            return
+        }
+
+        if (this.state.cpu.trim() !== '' && this.state.cpu.trim().length > 50) {
+            ToastsStore.info('CPU should be less than 50 characters long', 3000, 'burntToast')
+            return
+        }
+
         modelutils.getModelByModelname(this.state.vendor.trim() + ' ' + this.state.modelNumber.trim(), doc => {
             if (doc && doc.id !== this.state.id) {
                 ToastsStore.info(this.state.modelNumber.trim() + ' by ' + this.state.vendor.trim() + ' exists', 3000, 'burntToast')
@@ -133,16 +172,36 @@ class ModelSettingsLayer extends React.Component {
                     powerPorts, this.state.cpu,
                     memory, this.state.storage,
                     this.state.comment, (model, id) => {
-                        if (this.props.model.height !== this.state.height && this.props.assets && this.props.assets.length) {
-                            ToastsStore.info("Didn't update height because there are deployed assets of this model!")
-                        }
                         ToastsStore.info('Model saved', 3000, 'burntToast')
-                        if(this.props.model.vendor !== this.state.vendor || this.props.model.modelNumber !== this.state.modelNumber){
+                        if(this.props.type === 'edit' && (this.props.model.vendor !== this.state.vendor || this.props.model.modelNumber !== this.state.modelNumber)){
                             window.location.href = "/models/" + this.state.vendor + "/" + this.state.modelNumber;
                         }
                         this.hideFunction()
                         this.props.parent.componentDidMount()
-                        index.saveObject({...model, objectID: id})
+
+                        let suffixes_list = []
+                        let cpu = model.cpu
+
+                        while (cpu.length > 1) {
+                            cpu = cpu.substr(1)
+                            suffixes_list.push(cpu)
+                        }
+
+                        let storage = model.storage
+
+                        while (storage.length > 1) {
+                            storage = storage.substr(1)
+                            suffixes_list.push(storage)
+                        }
+
+                        let modelName = model.vendor+model.modelNumber
+
+                        while (modelName.length > 1) {
+                            modelName = modelName.substr(1)
+                            suffixes_list.push(modelName)
+                        }
+
+                        index.saveObject({...model, objectID: id, suffixes: suffixes_list.join(' ')})
                     })
             }
         })
@@ -205,7 +264,7 @@ class ModelSettingsLayer extends React.Component {
                     <Heading level={4} margin="none">
                         {this.state.layerTitle}
                     </Heading>
-                    <p>Models are uniquely identified by a model number for each given Vendor.</p>
+                    <p>Models are uniquely identified by a model number for each given Vendor. {this.state.modelHasAssets && <b>Some fields are disabled because this model has live assets</b>}</p>
 
                     <Form>
                         <Box direction='row' justify='center' gap='medium'>
@@ -261,6 +320,7 @@ class ModelSettingsLayer extends React.Component {
                                            }}
                                            value={this.state.height}
                                            title='Height'
+                                           disabled={this.state.modelHasAssets}
                                 />
                                 <Text size={"small"} style={{marginLeft: "20px"}}>Network Ports (Optional)</Text>
                                 <TextInput style={{
@@ -275,13 +335,14 @@ class ModelSettingsLayer extends React.Component {
                                            onBlur={e => this.adjustNetworkPortsList()}
                                            value={this.state.networkPortsCount}
                                            title='Network ports'
+                                           disabled={this.state.modelHasAssets}
                                 />
                                 <Text size={"small"} style={{marginLeft: "20px"}}>Network Port Names (Optional)</Text>
                                 <TextInput style={{
                                     borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                     width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
                                 }}
-                                           disabled={this.state.networkPortsDisabled}
+                                           disabled={this.state.networkPortsDisabled || this.state.modelHasAssets}
                                            placeholder="eg. port1, port2"
                                            onChange={e => {
                                                const value = e.target.value
@@ -302,6 +363,7 @@ class ModelSettingsLayer extends React.Component {
                                                this.setState(oldState => ({...oldState, powerPorts: value}))
                                            }}
                                            value={this.state.powerPorts}
+                                           disabled={this.state.modelHasAssets}
                                            title='Power ports'
                                 />
                                 <Text size={"small"} style={{marginLeft: "20px"}}>CPU (Optional)</Text>

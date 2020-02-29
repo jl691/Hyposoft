@@ -116,6 +116,7 @@ function addRackRange(rowStart, rowEnd, numberStart, numberEnd, height, datacent
                                 number: j,
                                 height: height,
                                 assets: [],
+                                powerPorts:[],
                                 datacenter: datacenterID
                             }).then(function (docRef) {
                                 datacenterutils.addRackToDatacenter(docRef.id, datacenter, result => {
@@ -392,12 +393,17 @@ function checkAssetFits(position, height, rack, callback, id = null) { //rackU, 
                                     if (height) {
                                         console.log("found the model height! " + height);
                                         let instPositions = [];
-                                        for (let i = docRefAsset.data().rackU; i < docRefAsset.data().rackU + height; i++) {
+                                        console.log(instPositions);
+                                        console.log(docRefAsset.data())
+                                        for (let i = docRefAsset.data().rackU; i < parseInt(docRefAsset.data().rackU) + height; i++) {
                                             instPositions.push(i);
+                                            console.log(i)
                                         }
                                         //check for intersection
+                                        console.log("out")
                                         let intersection = tentPositions.filter(value => instPositions.includes(value));
                                         if (intersection.length) {
+                                            console.log(intersection)
                                             console.log("conflicting!")
                                             conflicting.push(docRefAsset.id);
                                         }
@@ -414,6 +420,7 @@ function checkAssetFits(position, height, rack, callback, id = null) { //rackU, 
                         })
                     } else {
                         assetCount++;
+                        console.log("here")
                         if (assetCount === docRefRack.data().assets.length) {
                             callback(conflicting);
                         }
@@ -521,49 +528,62 @@ function generateAllRackUsageReports(callback) {
     let ownerCounts = new Map();
     let queryCount = 0;
     firebaseutils.assetRef.get().then(function (querySnapshot) {
-        querySnapshot.forEach(function (doc) {
-            console.log(" in the foreach for doc " + doc);
-            getModelHeightColor(doc.data().model, (height, color) => {
-                if (height) {
-                    //start with vendor
-                    if (vendorCounts.has(doc.data().vendor)) {
-                        vendorCounts.set(doc.data().vendor, vendorCounts.get(doc.data().vendor) + height);
-                    } else {
-                        vendorCounts.set(doc.data().vendor, height);
-                    }
-                    //then model
-                    if (modelCounts.has(doc.data().modelNumber)) {
-                        modelCounts.set(doc.data().modelNumber, modelCounts.get(doc.data().modelNumber) + height);
-                    } else {
-                        modelCounts.set(doc.data().modelNumber, height);
-                    }
-
-                    //then owner
-                    if (ownerCounts.has(doc.data().owner)) {
-                        ownerCounts.set(doc.data().owner, ownerCounts.get(doc.data().owner) + height);
-                    } else {
-                        ownerCounts.set(doc.data().owner, height);
-                    }
-
-                    usedCount += height;
-                    queryCount = queryCount + 1;
-                    console.log("querycount is " + queryCount)
-                    if (queryCount === querySnapshot.size) {
-                        getTotalRackHeight(result => {
-                            if (result) {
-                                callback(usedCount, result, vendorCounts, modelCounts, ownerCounts)
-                            } else {
-                                console.log("failing here " + result)
-                                callback(null);
-                            }
-                        })
-                    }
+        if(querySnapshot.empty){
+            getTotalRackHeight(result => {
+                if (result) {
+                    callback(0, result, vendorCounts, modelCounts, ownerCounts)
                 } else {
-                    console.log("this failed")
+                    console.log("failing here " + result)
                     callback(null);
                 }
-            });
-        })
+            })
+        }
+        else {
+            querySnapshot.forEach(function (doc) {
+                console.log(" in the foreach for doc " + doc);
+                getModelHeightColor(doc.data().model, (height, color) => {
+                    if (height) {
+                        //start with vendor
+                        if (vendorCounts.has(doc.data().vendor)) {
+                            vendorCounts.set(doc.data().vendor, vendorCounts.get(doc.data().vendor) + height);
+                        } else {
+                            vendorCounts.set(doc.data().vendor, height);
+                        }
+                        //then model
+                        if (modelCounts.has(doc.data().modelNumber)) {
+                            modelCounts.set(doc.data().modelNumber, modelCounts.get(doc.data().modelNumber) + height);
+                        } else {
+                            modelCounts.set(doc.data().modelNumber, height);
+                        }
+
+                        //then owner
+                        let owner = doc.data().owner ? doc.data().owner : "No owner";
+                        if (ownerCounts.has(owner)) {
+                            ownerCounts.set(owner, ownerCounts.get(owner) + height);
+                        } else {
+                            ownerCounts.set(owner, height);
+                        }
+
+                        usedCount += height;
+                        queryCount = queryCount + 1;
+                        console.log("querycount is " + queryCount)
+                        if (queryCount === querySnapshot.size) {
+                            getTotalRackHeight(result => {
+                                if (result) {
+                                    callback(usedCount, result, vendorCounts, modelCounts, ownerCounts)
+                                } else {
+                                    console.log("failing here " + result)
+                                    callback(null);
+                                }
+                            })
+                        }
+                    } else {
+                        console.log("this failed")
+                        callback(null);
+                    }
+                });
+            })
+        }
     }).catch(function (error) {
         callback(null);
     })

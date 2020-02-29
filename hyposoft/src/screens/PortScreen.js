@@ -35,7 +35,6 @@ class PortScreen extends Component {
         this.exportAssets = this.exportAssets.bind(this)
         this.importModels = this.importModels.bind(this)
         this.importAssets = this.importAssets.bind(this)
-        this.addAssetsToDb = this.addAssetsToDb.bind(this)
         this.showFormatDocumentation = this.showFormatDocumentation.bind(this)
         this.importConnections = this.importConnections.bind(this)
         this.exportConnections = this.exportConnections.bind(this)
@@ -227,14 +226,6 @@ class PortScreen extends Component {
         })
     }
 
-    addAssetsToDb(toBeAdded) {
-        assetutils.forceAddAssetsToDb(toBeAdded)
-    }
-
-    modifyAssetsInDb(toBeModified) {
-        assetutils.forceModifyAssetsInDb(toBeModified)
-    }
-
     showFormatDocumentation() {
         this.setState(oldState => ({
             ...oldState, showFormatDocumentation: true
@@ -294,7 +285,7 @@ class PortScreen extends Component {
                             gap='small'
                             pad={{top: 'medium', left: 'medium', right: 'medium'}} >
                             {content}
-                            <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={this.showFormatDocumentation}>Need documentation for file format?</Anchor>
+                            <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={() => {}} href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Need documentation for file format?</Anchor>
                         </Box>
                     </Box>
                 </Box>

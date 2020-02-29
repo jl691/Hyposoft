@@ -1,22 +1,30 @@
 import { racksRef, modelsRef } from './firebaseutils'
 import * as datacenterutils from './datacenterutils'
+import * as firebaseutils from './firebaseutils'
 
 //Toast message at the front end level
 
 
-function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerConnections, model, callback) {
+function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerConnections, model, callback, assetID = null) {
     // assuming all or nothing. If an asset has 2 power ports, can't just plug one in
-
+    console.log(powerConnections);
     //How to handle when the rack does not have a network managed port?? How does this affect the detailed view? Getting the status?
     let success = 0;
+    let allOrNothingCount=0;
+  console.log("Validating power ports, this is power ports : "+ powerConnections)
+    if(!powerConnections.length){
+        console.log("Calling back cause no power connections")
+        callback(null);
+    }
     for (let i = 0; i < powerConnections.length; i++) {
-        
+        console.log("in the for loop");
         let pduSide = powerConnections[i].pduSide;
         let port = powerConnections[i].port;
 
         if (pduSide.trim() === "" && port.trim() === "") {
+            console.log("incrementing successes for pduside " + pduSide + " and port " + port)
             success++;
-            
+
             if (success == powerConnections.length) {
                 console.log("Returning successfully")
                 console.log(powerConnections.length)
@@ -25,15 +33,15 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
             //TODO: need to signify to store a null in the DB. That way, can do a .length check to know to dispplay "no connection" in the asset detail view
         }
 
+        //take out else and try with jsut if???
         else if (pduSide.trim() !== "" && port.trim() !== "") {
 
 
             modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
-                let numPowerPorts = querySnapshot.docs[0].data().powerPorts;
+                let numPowerPorts = querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : 0;
                 console.log("Num powerPorts for this model: " + numPowerPorts)
-
-                //FOR TESTING
-                numPowerPorts=4
+             
+                allOrNothingCount++;
 
                 if (parseInt(port) >= 1 && parseInt(port) <= 24) {
 
@@ -41,10 +49,12 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
                     if (powerConnections.length === numPowerPorts) {
                         //check for conflicts
                         checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, status => {
+                            console.log(status)
                             if (status) {
                                 callback(status)
                             }
                             else {
+                                console.log("incrementing successes for pduside " + pduSide + " and port " + port)
                                 success++;
                                 if (success == powerConnections.length) {
                                     console.log("Returning successfully")
@@ -52,12 +62,22 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
                                 }
                             }
 
-                        })
+                        }, assetID)
 
                     }
-                    else if (numPowerPorts!=null){
-                        callback("To make power connections for this model " + model + ", you need to make " + numPowerPorts + " connections.")
+                   
+                    else if (numPowerPorts != null && allOrNothingCount === 1) {
 
+                        if(numPowerPorts > 0){
+                            callback("To make power connections for this model " + model + ", you need to make " + numPowerPorts + " connections.")
+
+                        }
+                        else{
+                            //the model has 0 powerPorts on it
+                            callback("Cannot make power connections. The model " + model + " has " + numPowerPorts + " power ports.")
+
+                        }
+                        
                     }
 
                 } else {
@@ -66,7 +86,7 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
 
                 }
 
-            }).catch(function (error) {console.log("Could not find the model: " + error)})
+            }).catch(function (error) { console.log("Could not find the model: " + error) })
 
 
         }
@@ -102,7 +122,7 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
 
                 racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", id).get().then(function (querySnapshot) {
 
-                    rackPowerConns = querySnapshot.docs[0].data().powerPorts
+                    rackPowerConns = querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : [];
 
                     for (let i = 0; i < rackPowerConns.length; i++) {
 
@@ -170,7 +190,7 @@ function getFirstFreePort(rack, datacenter, callback) { //only expecting at most
 
 }
 
-function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, callback) {
+function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, callback, assetID = null) {
     //No 'double connections': no PDU has more than one power port associated with it: conflicts/availability
 
     if (parseInt(inputRackU) < 10) {
@@ -184,19 +204,35 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
         let rackNum = parseInt(splitRackArray[1])
 
         racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", id).get().then(function (rackConnectionsDoc) {
-            let rackPowerConns = rackConnectionsDoc.docs[0].data().powerPorts
+            console.log(rackConnectionsDoc.docs[0].data())
+            let rackPowerConns = rackConnectionsDoc.docs[0].data().powerPorts ? rackConnectionsDoc.docs[0].data().powerPorts : [];
             console.log(rackConnectionsDoc)
             console.log(rackPowerConns)
 
-            rackPowerConns.forEach(function (powerConn) {
-                if (powerConn.pduSide === pduSide && powerConn.port === port) {
-                    callback("Trying to make a conflicting power connection at " + pduSide + " " + port)
-                }
-                else {
-                    callback(null)
-                }
-            })
-
+            if (rackPowerConns.length) {
+                let count = 0;
+                rackPowerConns.forEach(function (powerConn) {
+                    console.log(assetID)
+                    console.log(powerConn);
+                    console.log(powerConn.pduSide, pduSide)
+                    console.log(powerConn.port, port)
+                    if (assetID && assetID != powerConn.assetID && powerConn.pduSide === pduSide && parseInt(powerConn.port) === parseInt(port)) {
+                        callback("Trying to make a conflicting power connection at " + pduSide + " " + port)
+                    } else if(!assetID && powerConn.pduSide === pduSide && parseInt(powerConn.port) === parseInt(port)){
+                        callback("Trying to make a conflicting power connection at " + pduSide + " " + port)
+                    }
+                    else {
+                        count++;
+                        if (count === rackPowerConns.length) {
+                            callback(null)
+                        }
+                    }
+                })
+            }
+            else {
+                //There are no occupied ports on the rack
+                callback(null)
+            }
 
         }).catch(error => console.log(error))
 
@@ -204,24 +240,25 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
 
 }
 
-//This is so the db in assets collection will store null instead of "" if no power connections are made
-function formatPowerConnections(powerPorts) {
-    //need to return null if no power port conections have been made
-    if (powerPorts[0].pduSide === "") {
-        //TODO:didn't fill out anything. But what if first is empty but second is not?
-        powerPorts=[];
-        return powerPorts;
-    }
-    else {
-        return powerPorts;
-    }
 
-}
+//This is so the db in assets collection will store null instead of "" if no power connections are made
+// function formatPowerConnections(powerPorts) {
+//     //need to return null if no power port conections have been made
+//     if (powerPorts[0].pduSide === "") {
+//         //TODO:didn't fill out anything. But what if first is empty but second is not?
+//         powerPorts = [];
+//         return powerPorts;
+//     }
+//     else {
+//         return powerPorts;
+//     }
+
+// }
 
 export {
     validatePowerConnections,
     checkConflicts,
     getFirstFreePort,
-    formatPowerConnections,
-    
+   // formatPowerConnections,
+
 }

@@ -161,8 +161,12 @@ class UsersScreen extends Component {
             return
         }
 
-        userutils.deleteUser(this.state.deleteUsername, () => {
-            ToastsStore.info("Deleted @"+this.state.deleteUsername, 3000, 'burntToast')
+        userutils.deleteUser(this.state.deleteUsername, isLocalUser => {
+            if (isLocalUser) {
+                ToastsStore.info("Deleted @"+this.state.deleteUsername, 3000, 'burntToast')
+            } else {
+                ToastsStore.info("Can't delete NetID user", 3000, 'burntToast')
+            }
             this.onCloseDelete()
 
             this.init()
@@ -447,21 +451,8 @@ class UsersScreen extends Component {
                             <Heading level={4} margin="none">
                                 Edit user
                             </Heading>
-                            <p>You can only change users' usernames, as they can't do that. All other profile details must be changed by the user themselves.</p>
                             <Form>
                                 <Box direction="column" gap="small" margin={{top: 'small'}}>
-                                    <TextInput style={{
-                                            borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                            width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                        }}
-                                        placeholder="New username"
-                                        onChange={e => {
-                                            const value = e.target.value
-                                            this.setState(oldState => ({...oldState, editUserNewUsername: value}))
-                                        }}
-                                        value={this.state.editUserNewUsername}
-                                        title='Email'
-                                        />
                                     <Select
                                         options={['User', 'Admin']}
                                         value={this.state.editRole}

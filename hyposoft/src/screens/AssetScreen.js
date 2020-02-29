@@ -15,7 +15,7 @@ import {
     Menu,
     Select
 } from 'grommet'
-import {Add, Filter} from 'grommet-icons'
+import {Add, Filter, Share} from 'grommet-icons'
 import AddAssetForm from '../components/AddAssetForm'
 import DeleteAssetPopup from '../components/DeleteAssetPopup'
 import EditAssetForm from '../components/EditAssetForm'
@@ -27,8 +27,11 @@ import UserMenu from '../components/UserMenu'
 import AssetTable from '../components/AssetTable'
 import * as userutils from "../utils/userutils";
 import * as assetutils from "../utils/assetutils";
+import * as assetmacutils from "../utils/assetmacutils";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as datacenterutils from "../utils/datacenterutils";
+import * as bulkassetutils from "../utils/bulkassetsutils";
+import * as bulkconnectionstutils from "../utils/bulkconnectionsutils";
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
@@ -57,7 +60,6 @@ class AssetScreen extends Component {
             updateRackU: "",
             updateOwner: "",
             updateComment: "",
-            updateDatacenter: "",
             rangeNumberStart: "",
             rangeNumberEnd: "",
             rackSortChoice: "asc",//by default, will be ascending
@@ -65,12 +67,8 @@ class AssetScreen extends Component {
             searchQuery: "",
             updateDatacenter: "",
             updateAsset_id:"",
-            updateMacAddresses: [
-                {
-                    networkPort: "",
-                    macAddress: ""
-                }
-            ],
+            updateMacAddresses:
+                [],
             updateNetworkConnections: [
                 {
                     otherAssetID: "",
@@ -217,6 +215,7 @@ class AssetScreen extends Component {
         });
     }
     handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter, datumMACAddresses, datumNetworkConnections, datumPowerConnections) => {
+
         this.setState({
             popupType: 'Update',
             updateID: datumID,
@@ -234,7 +233,7 @@ class AssetScreen extends Component {
 
         });
 
-        console.log(datumNetworkConnections)
+        // console.log(datumNetworkConnections)
         console.log(datumPowerConnections)
 
     }
@@ -375,6 +374,7 @@ class AssetScreen extends Component {
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
 
+                        popupMode={this.state.popupType}
                         updateIDFromParent={this.state.updateID}
                         updateModelFromParent={this.state.updateModel}
                         updateHostnameFromParent={this.state.updateHostname}
@@ -406,13 +406,12 @@ class AssetScreen extends Component {
                 <Box background='light-2' align={"center"}
                      fill="vertical"
                      overflow="auto"
-                     width="520px"
-                     pad="medium">
+                     pad="small">
 
                     {/* BEGNINNING OF FILTER BAR ==========*/}
                     <Box
                         align='center'
-                        margin={{ left: 'medium', right: 'medium' }}
+                        margin={{ left: 'small', right: 'small' }}
                         justify='start' >
 
                         {/* This box below is for range of racks */}
@@ -420,8 +419,6 @@ class AssetScreen extends Component {
                             borderRadius: 10,
                             borderColor: '#EDEDED'
                         }}
-                             direction='row'
-                             alignSelf='stretch'
                              background='#FFFFFF'
                              width={"medium"}
                              margin={{ top: 'medium', left: 'medium', right: 'medium' }}
@@ -429,8 +426,8 @@ class AssetScreen extends Component {
                             <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
                                 <Text size='small'><b>Filter By Rack Range</b></Text>
                                 {this.generateDatacenters()}
-                                <Stack margin={{ top: 'small' }}>
-                                    <Box gap='small' direction="column" margin='none' align='center'>
+                                <Stack margin={{ top: 'small', bottom: 'small' }}>
+                                    <Box gap='small' direction="column" align='center' margin={{bottom: 'medium'}}>
 
                                         <TextInput style={styles.TIStyle2} name="rangeNumberStart" value={this.state.rangeStart} placeholder="eg. B1" size="xsmall" onChange={this.handleChangeRange} />
                                         <span>to</span>
@@ -505,7 +502,7 @@ class AssetScreen extends Component {
                                             />
 
                                         </Box>
-                                        <Box direction="column" justify="center" margin={{top: 'small'}}>
+                                        <Box direction="column" justify="center" margin={{top: 'small', bottom: 'medium'}}>
                                             <Button label={<Text size="small"> Apply</Text>} onClick={this.handleCombinedSort}/>
                                         </Box>
 
@@ -518,6 +515,7 @@ class AssetScreen extends Component {
 
                             </Box>
                         </Box>
+
                         <Box style={{
                             borderRadius: 10,
                             borderColor: '#EDEDED'
@@ -528,13 +526,20 @@ class AssetScreen extends Component {
                              width={"medium"}
                              margin={{ top: 'medium', left: 'medium', right: 'medium' }}
                              pad='small' >
-                            <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
+                            <Box flex margin={{ left: 'medium', top: 'small', right: 'medium' }} direction='column' justify='start'>
                                 {/*<Box direction="column" width={"medium"} margin={{top: 'small'}}>*/}
-                                    <Button label={<Text size="small">Close</Text>} onClick={() => {
-                                        this.setState({
-                                            popupType: ""
-                                        })
-                                    }}/>
+                                <Button label={<Text size="small">Close</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
+                                    this.setState({
+                                        popupType: ""
+                                    })
+                                }}/>
+                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} onClick={() => {
+                                    bulkassetutils.exportFilteredAssets(this.state.searchResults || this.assetTable.current.state.assets);
+                                }} style={{marginBottom: "10px"}}/>
+                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} onClick={() => {
+                                    bulkconnectionstutils.exportFilteredConnections(this.state.searchResults || this.assetTable.current.state.assets);
+                                }} margin={{bottom: 'medium'}}/>
+                                {/*this.assetTable.current.state*/}
                                 {/*</Box>*/}
                             </Box>
                         </Box>
@@ -567,9 +572,11 @@ class AssetScreen extends Component {
                                     }}>Assets</Heading>
                                     <UserMenu alignSelf='end' this={this}/>
                                 </AppBar>
-                                <Button primary icon={<Filter size={"large"}/>}
+                                <Button primary icon={<Filter size={"medium"}/>}
                                         onClick={() => this.setState({popupType: "Filters"})}
                                 style={{
+                                    borderRadius: '100%',
+                                    padding: '12px',
                                     position: "absolute",
                                     right: "2%",
                                     bottom: "2%"
@@ -582,8 +589,8 @@ class AssetScreen extends Component {
                                 >
                                     <Box direction='row' justify='center'>
                                         <Box direction='row' justify='center'>
-                                            <Box width='xxlarge' direction='column' align='stretch' justify='start'>
-                                                <Box margin={{top: 'medium'}}>
+                                            <Box pad='medium' width='xxlarge' direction='column' align='stretch' justify='start'>
+                                                <Box>
                                                     <Form onSubmit={() => this.handleSearch()}>
                                                         <TextInput style={styles.TIStyle}
                                                                    placeholder="Search for assets (type your query and press enter)"

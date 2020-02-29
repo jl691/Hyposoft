@@ -12,19 +12,31 @@ function getPortStatus(pdu, portNumber, callback) {
 function powerPortOn(pdu, portNumber, callback) {
     axios.get('https://hyposoft-53c70.appspot.com/poweron?pdu='+pdu+'&port='+portNumber, {}).then(response => {
         callback(response)
+    }).catch(() => {
+        callback(null)
     })
 }
 
 function powerPortOff(pdu, portNumber, callback) {
     axios.get('https://hyposoft-53c70.appspot.com/poweroff?pdu='+pdu+'&port='+portNumber, {}).then(response => {
         callback(response)
+    }).catch(() => {
+        callback(null)
     })
 }
 
 function checkConnectedToPDU(assetID, callback){
     firebaseutils.assetRef.doc(assetID).get().then(function (docSnapshot) {
         if(docSnapshot.exists){
-            console.log(docSnapshot.data())
+            console.log(docSnapshot.data());
+            console.log(docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1");
+            console.log(docSnapshot.data().datacenterAbbrev.toUpperCase())
+            console.log(docSnapshot.data().rackRow.charCodeAt(0) >= 65);
+            console.log(docSnapshot.data().rackRow.charCodeAt(0) <= 69);
+            console.log(parseInt(docSnapshot.data().rackNum) >= 1);
+            console.log(parseInt(docSnapshot.data().rackNum) <= 19);
+            console.log(docSnapshot.data().powerConnections);
+            console.log(docSnapshot.data().powerConnections.length)
             if(docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1" && docSnapshot.data().rackRow.charCodeAt(0) >= 65 && docSnapshot.data().rackRow.charCodeAt(0) <= 69 && parseInt(docSnapshot.data().rackNum) >= 1 && parseInt(docSnapshot.data().rackNum) <= 19 && docSnapshot.data().powerConnections && docSnapshot.data().powerConnections.length){
                 console.log("Should be true")
                 callback(true);
