@@ -1,34 +1,30 @@
 import React from "react";
-import * as datacenterutils from "../utils/datacenterutils";
+import * as changeplanutils from "../utils/changeplanutils";
+import * as userutils from "../utils/userutils";
 import {Box, Button, Grommet, Heading, Text, DataTable, Layer} from "grommet";
 import theme from "../theme";
 import AppBar from "../components/AppBar";
 import HomeButton from "../components/HomeButton";
 import UserMenu from "../components/UserMenu";
 import {ToastsContainer, ToastsStore} from "react-toasts";
-import * as userutils from "../utils/userutils";
-import {Add, Close, Edit, FormEdit, Trash} from "grommet-icons";
+import {Add, Checkmark, Close, Edit, Print, Trash} from "grommet-icons";
 import {Redirect} from "react-router-dom";
 import AddDatacenterForm from "../components/AddDatacenterForm";
+import AddChangePlanForm from "../components/AddChangePlanForm";
 import DeleteDatacenterForm from "../components/DeleteDatacenterForm";
-import EditDatacenterForm from "../components/EditDatacenterForm";
+import DeleteChangePlanForm from "../components/DeleteChangePlanForm";
 
-class DatacenterScreen extends React.Component {
+class ChangePlanScreen extends React.Component {
 
     startAfter = null;
     itemCount = 1;
-    colors={};
 
     constructor(props) {
         super(props);
         this.state = {
-            datacenters: [],
+            changePlans: [],
             initialLoaded: false,
-            popupType: "",
-            editName: "",
-            editAbbrev: "",
-            deleteName: "",
-            deleteAbbrev: ""
+            popupType: ""
         }
     }
 
@@ -37,33 +33,27 @@ class DatacenterScreen extends React.Component {
     }
 
     forceRefresh() {
+        this.itemCount = 1;
         this.startAfter = null;
         this.setState({
-            datacenters: [],
+            changePlans: [],
             initialLoaded: false,
             popupType: "",
-            editName: "",
-            editAbbrev: "",
-            deleteName: "",
-            deleteAbbrev: ""
         });
-        datacenterutils.getDatacenters(this.itemCount, (newItemCount, newStart, datacenters, empty) => {
-            console.log("got a callback!")
-            console.log("yeeters 1", newStart)
-            console.log("yeeters 2", datacenters)
-            if (empty) {
-                console.log("empty")
-                this.setState({initialLoaded: true});
-            } else if (newStart && datacenters) {
-                console.log("made it yeeeet")
+        changeplanutils.getChangePlans(this.itemCount, (newItemCount, newStart, changePlans, empty) => {
+            if(empty){
+                this.setState({
+                    initialLoaded: true
+                });
+            } else if(newItemCount) {
+                this.itemCount = newItemCount;
                 this.startAfter = newStart;
                 this.setState({
-                    datacenters: datacenters,
+                    changePlans: changePlans,
                     initialLoaded: true
-                })
-                this.itemCount = newItemCount;
+                });
             }
-        })
+        });
     }
 
     AdminTools() {
@@ -87,8 +77,8 @@ class DatacenterScreen extends React.Component {
                         <Box flex
                              margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
                              direction='column' justify='start'>
-                            <Heading level='4' margin='none'>Add datacenter</Heading>
-                            <p>Add a new datacenter.</p>
+                            <Heading level='4' margin='none'>Add change plan</Heading>
+                            <p>Add a new change plan.</p>
                             <Box direction='column' flex alignSelf='stretch'>
                                 <Button primary icon={<Add/>} label="Add" onClick={() => {
                                     this.setState({popupType: "Add"})
@@ -111,16 +101,21 @@ class DatacenterScreen extends React.Component {
                 <DataTable step={25}
                            onMore={() => {
                                if (this.startAfter) {
-                                   datacenterutils.getDatacenters(this.itemCount, (newItemCount, newStartAfter, newDatacenters, empty) => {
-                                       if (!empty) {
-                                           this.startAfter = newStartAfter
-                                           this.setState({datacenters: this.state.datacenters.concat(newDatacenters)})
+                                   changeplanutils.getChangePlans(this.itemCount, (newItemCount, newStart, changePlans, empty) => {
+                                       if(!empty && newItemCount){
                                            this.itemCount = newItemCount;
+                                           this.startAfter = newStart;
+                                           this.setState({
+                                               changePlans: changePlans,
+                                           });
                                        }
                                    }, this.startAfter);
                                }
                            }}
-                           columns={this.generateColumns()} data={this.state.datacenters} size={"large"}/>
+                           onClickRow={({datum}) => {
+                               this.props.history.push('/changeplans/' + datum.id)
+                           }}
+                           columns={this.generateColumns()} data={this.state.changePlans} size={"large"}/>
             )
         }
     }
@@ -140,62 +135,57 @@ class DatacenterScreen extends React.Component {
                     <Text size='small'>{datum.name}</Text>)
             },
             {
-                property: "abbreviation",
-                header: <Text size='small'>Abbreviation</Text>,
+                property: "owner",
+                header: <Text size='small'>Owner</Text>,
                 render: datum => (
-                    <Text size='small'>{datum.abbreviation}</Text>)
+                    <Text size='small'>{datum.owner}</Text>)
             },
             {
-                property: "rackCount",
-                header: <Text size='small'>Racks</Text>,
+                property: "executed",
+                header: <Text size='small'>Executed</Text>,
                 render: datum => (
-                    <Text size='small'>{datum.rackCount}</Text>)
+                    <Text size='small'>{datum.executed.toString()}</Text>)
+            },
+            {
+                property: "execute",
+                header: <Text size='small'>Execute</Text>,
+                render: datum => (
+                    <Checkmark/>)
+            },
+            {
+                property: "delete",
+                header: <Text size='small'>Delete</Text>,
+                render: datum => (
+                    <Trash onClick={(e) => {
+                        e.persist();
+                        e.nativeEvent.stopImmediatePropagation();
+                        e.stopPropagation();
+                        this.setState({
+                            deleteName: datum.name,
+                            deleteID: datum.id,
+                            popupType: "Delete"
+                        })
+                    }}/>)
+            },
+            {
+                property: "workorder",
+                header: <Text size='small'>Work Order</Text>,
+                render: datum => (
+                    <Print/>)
             }
         ];
-        if (userutils.isLoggedInUserAdmin()) {
-            cols.push({
-                    property: "delete",
-                    header: <Text size='small'>Delete</Text>,
-                    render: datum =>
-                        <Trash onClick={() => {
-                            this.setState({
-                                deleteName: datum.name,
-                                deleteAbbrev: datum.abbreviation,
-                                popupType: "Delete"
-                            })
-                        }}
-                               style={{cursor: 'pointer', backgroundColor: this.colors[datum.count+'_edit_color']}}
-                               onMouseOver={e => this.colors[datum.count+'_edit_color']='#dddddd'}
-                               onMouseLeave={e => this.colors[datum.count+'_edit_color']=''}/>
-                },
-                {
-                    property: "edit",
-                    header: <Text size='small'>Edit</Text>,
-                    render: datum =>
-                        <Edit onClick={() => {
-                            this.setState({
-                                editName: datum.name,
-                                editAbbrev: datum.abbreviation,
-                                popupType: "Edit"
-                            })
-                        }}
-                              style={{cursor: 'pointer', backgroundColor: this.colors[datum.count+'_edit_color']}}
-                              onMouseOver={e => this.colors[datum.count+'_edit_color']='#dddddd'}
-                              onMouseLeave={e => this.colors[datum.count+'_edit_color']=''}/>
-                });
-        }
         return cols;
     }
-
-    callbackFunction = (data) => {
-        this.forceRefresh();
-    };
 
     cancelPopup = (data) => {
         this.setState({
             popupType: ""
         })
-    }
+    };
+
+    callbackFunction = (data) => {
+        this.forceRefresh();
+    };
 
     render() {
         if (!userutils.isUserLoggedIn()) {
@@ -209,24 +199,15 @@ class DatacenterScreen extends React.Component {
             popup = (
                 <Layer onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
-                    <AddDatacenterForm parentCallback={this.callbackFunction}/>
+                    <AddChangePlanForm parentCallback={this.callbackFunction}/>
                     <Button label="Cancel" icon={<Close/>}
                             onClick={() => this.setState({popupType: ""})}/>
                 </Layer>
             )
         } else if(popupType === 'Delete'){
             popup = (
-                <DeleteDatacenterForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
-                                      name={this.state.deleteName} abbreviation={this.state.deleteAbbrev}/>
-            )
-        } else if (popupType === 'Edit') {
-            popup = (
-                <Layer onEsc={() => this.setState({popupType: undefined})}
-                       onClickOutside={() => this.setState({popupType: undefined})}>
-                    <EditDatacenterForm parentCallback={this.callbackFunction} name={this.state.editName} abbreviation={this.state.editAbbrev}/>
-                    <Button label="Cancel" icon={<Close/>}
-                            onClick={() => this.setState({popupType: ""})}/>
-                </Layer>
+                <DeleteChangePlanForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
+                                      name={this.state.deleteName} id={this.state.deleteID}/>
             )
         }
 
@@ -237,7 +218,7 @@ class DatacenterScreen extends React.Component {
                         <HomeButton alignSelf='start' this={this}/>
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
-                        }}>Datacenters</Heading>
+                        }}>Change Plans</Heading>
                         <UserMenu alignSelf='end' this={this}/>
                     </AppBar>
                     <Box direction='row'
@@ -283,4 +264,4 @@ class DatacenterScreen extends React.Component {
 
 }
 
-export default DatacenterScreen
+export default ChangePlanScreen
