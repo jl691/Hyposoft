@@ -19,12 +19,14 @@ import ResetPasswordScreen from './screens/ResetPasswordScreen'
 import ModelsScreen from './screens/ModelsScreen'
 import ModelPermaScreen from './screens/ModelPermaScreen'
 import PortScreen from './screens/PortScreen'
-
+import ChangePlanScreen from "./screens/ChangePlanScreen";
+import DetailedChangePlanScreen from "./screens/DetailedChangePlanScreen";
 import RackView from "./components/RackView";
 import AssetScreen from './screens/AssetScreen'
 import RackElevations from "./components/RackElevations";
 import DatacenterScreen from "./screens/DatacenterScreen";
 import LogScreen from "./screens/LogScreen"
+import DetailedChangeScreen from "./screens/DetailedChangeScreen"
 
 import PostOAuthHandler from './handlers/PostOAuthHandler'
 import NetworkNeighborhood from "./components/NetworkNeighborhood";
@@ -48,10 +50,13 @@ ReactDOM.render((
                     <Route exact path='/models/:vendor/:modelNumber' component={ModelPermaScreen} />
                     {/* TODO: have url be the ID of the instance */}
                     <Route exact path='/assets/:assetID' component={DetailedAssetScreen}/>
+                    <Route exact path='/changeplans/:changePlanID' component={DetailedChangePlanScreen}/>
+                    <Route exact path='/changeplans/:changePlanID/:stepID' component={DetailedChangeScreen}/>
                     {/* TODO: implement a functionality to take you to instance screen vs http://localhost:3000/instances*/}
                     <Route exact path='/assets' component={AssetScreen} />
                     <Route path='/port' component={PortScreen} />
                     <Route path='/postoauth' component={PostOAuthHandler} />
+                    <Route exact path='/changeplans' component={ChangePlanScreen}/>
                 </Switch>
             </BrowserRouter>
         ), document.getElementById('root'))
