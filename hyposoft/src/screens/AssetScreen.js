@@ -15,7 +15,7 @@ import {
     Menu,
     Select
 } from 'grommet'
-import {Add, Filter, Share} from 'grommet-icons'
+import {Add, View, Filter, Share} from 'grommet-icons'
 import AddAssetForm from '../components/AddAssetForm'
 import DeleteAssetPopup from '../components/DeleteAssetPopup'
 import EditAssetForm from '../components/EditAssetForm'
@@ -647,6 +647,15 @@ class AssetScreen extends Component {
                                                 {userutils.isLoggedInUserAdmin() && (
                                                     <Button primary icon={<Add/>} label="Add Asset" alignSelf='center'
                                                             onClick={() => this.setState({popupType: "Add"})}/>
+                                                )}
+                                                {userutils.isLoggedInUserAdmin() && (
+                                                  <Button primary icon={<View/>} margin={{
+                                                      left: 'medium',
+                                                      top: 'small',
+                                                      bottom: 'small',
+                                                      right: 'medium'
+                                                  }} label="View Decommissioned Assets" alignSelf='center'
+                                                          onClick={() => this.props.history.push('/decommissioned')}/>
                                                 )}
                                             </Box>
                                         </Box>

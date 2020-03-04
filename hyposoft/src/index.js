@@ -27,6 +27,7 @@ import RackElevations from "./components/RackElevations";
 import DatacenterScreen from "./screens/DatacenterScreen";
 import LogScreen from "./screens/LogScreen"
 import DetailedChangeScreen from "./screens/DetailedChangeScreen"
+import DecommissionedAssetScreen from "./screens/DecommissionedAssetScreen"
 
 import PostOAuthHandler from './handlers/PostOAuthHandler'
 import NetworkNeighborhood from "./components/NetworkNeighborhood";
@@ -57,6 +58,7 @@ ReactDOM.render((
                     <Route path='/port' component={PortScreen} />
                     <Route path='/postoauth' component={PostOAuthHandler} />
                     <Route exact path='/changeplans' component={ChangePlanScreen}/>
+                    <Route exact path='/decommissioned' component={DecommissionedAssetScreen}/>
                 </Switch>
             </BrowserRouter>
         ), document.getElementById('root'))
