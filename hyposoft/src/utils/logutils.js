@@ -22,6 +22,10 @@ function DATACENTER() {
     return 'datacenter'
 }
 
+function CHANGEPLAN() {
+    return 'change plan'
+}
+
 // ACTIONS
 function CREATE() {
     return 'created'
@@ -33,6 +37,14 @@ function MODIFY() {
 
 function DELETE() {
     return 'deleted'
+}
+
+function EXECUTE() {
+    return 'executed'
+}
+
+function COMPLETE() {
+    return 'completed'
 }
 
 // only optional is objectId and objectType
@@ -68,6 +80,9 @@ function addLog(objectId, objectType, action, data = null) {
             break
         case DATACENTER():
             getDatacenterName(objectId,data,action,datacenter => finishAddingLog(datacenter, objectId, objectType, action))
+            break
+        case CHANGEPLAN():
+            getChangePlanName(objectId,data,action,changeplan => finishAddingLog(changeplan, objectId, objectType, action))
             break
         default:
             console.log("Could not create log due to unknown type: " + objectType)
@@ -302,6 +317,18 @@ function getDatacenterName(id,data,action,callback) {
     }
 }
 
+function getChangePlanName(id,data,action,callback) {
+    if (data && action === DELETE()) {
+        callback({name: data.name, data: data, previousData: null, datacenter: null})
+    } else {
+        firebaseutils.changeplansRef.doc(id).get().then(doc => callback({name: doc.data().name, data: doc.data(), previousData: data, datacenter: null}))
+        .catch( error => {
+          console.log("Error getting documents: ", error)
+          callback(null)
+        })
+    }
+}
+
 function assetDiff(data,field) {
     switch (field) {
       case 'networkConnections':
@@ -454,4 +481,4 @@ var isEqual = function (value, other, name) {
 	return true;
 };
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CREATE, MODIFY, DELETE,addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName }
+export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, CREATE, MODIFY, DELETE, EXECUTE, COMPLETE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName }
