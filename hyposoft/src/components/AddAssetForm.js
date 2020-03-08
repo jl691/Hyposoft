@@ -34,7 +34,7 @@ import AssetMACForm from './AssetMACForm';
 //     changeplanconflictutils.rackNonExistent(this.state.rack, this.state.datacenterName),
 
 
-        
+
 // ]
 
 
@@ -56,12 +56,12 @@ export default class AddAssetForm extends Component {
             macAddresses: [],
             networkConnections: [],
             powerConnections: [
-            //     {
-            //     pduSide: "",
-            //     port: ""
-            // }
-        ],
-           
+                //     {
+                //     pduSide: "",
+                //     port: ""
+                // }
+            ],
+
 
         }
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -75,7 +75,7 @@ export default class AddAssetForm extends Component {
         this.deletePowerConnection = this.deletePowerConnection.bind(this);
     }
 
-   
+
 
     defaultPDUFields(model, rack, datacenter) {
         //if the model has 2 or more ports, need to do these default fields
@@ -164,7 +164,7 @@ export default class AddAssetForm extends Component {
         this.setState(prevState => ({
             networkConnections: networkConnectionsCopy
         }));
-       
+
 
     }
 
@@ -203,7 +203,7 @@ export default class AddAssetForm extends Component {
         return canonicalMAC;
     }
 
-     //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
+    //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
     //toLowercase, to colon
     handleMacAddressFixAndSet(macAddresses) {
         //need to loop through macAddresses and specfically get the macAddress field
@@ -246,22 +246,22 @@ export default class AddAssetForm extends Component {
 
     }
 
-    checkNetworkPortUniqueness(networkPorts, callback){
-        if(!networkPorts.length){
+    checkNetworkPortUniqueness(networkPorts, callback) {
+        if (!networkPorts.length) {
             callback(true);
         } else {
             let thisPortArray = [];
             let otherIDPortArray = [];
             let count = 0;
-            networkPorts.forEach(networkConnection =>{
+            networkPorts.forEach(networkConnection => {
                 let otherIDPortTemp = networkConnection.otherAssetID + networkConnection.otherPort;
-                if(thisPortArray.includes(networkConnection.thisPort) || otherIDPortArray.includes(otherIDPortTemp)){
+                if (thisPortArray.includes(networkConnection.thisPort) || otherIDPortArray.includes(otherIDPortTemp)) {
                     callback(null);
                 } else {
                     thisPortArray.push(networkConnection.thisPort);
                     otherIDPortArray.push(otherIDPortTemp);
                     count++;
-                    if(count === networkPorts.length){
+                    if (count === networkPorts.length) {
                         callback(true);
                     }
                 }
@@ -288,107 +288,61 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Rack U must be a number.");
             } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
                 ToastsStore.error("Rack U must be positive.");
-      
+
             }
             else {
 
-                if (this.state.showPowerConnections) {
-                    let existingPowerConnections = [];
-                    Object.keys(this.state.powerConnections).forEach(connection => {
-                        let thisKey = this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port;
-                        if (existingPowerConnections.includes(thisKey)) {
-                            ToastsStore.error("Power connections must be unique.");
-                        } else {
-                            existingPowerConnections.push(this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port);
-                            if (existingPowerConnections.length === Object.keys(this.state.powerConnections).length) {
+                let existingPowerConnections = [];
+                Object.keys(this.state.powerConnections).forEach(connection => {
+                    let thisKey = this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port;
+                    if (existingPowerConnections.includes(thisKey) && this.state.showPowerConnections ) {
+                        ToastsStore.error("Power connections must be unique.");
+                    } else {
+                        existingPowerConnections.push(this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port);
+                        if (existingPowerConnections.length === Object.keys(this.state.powerConnections).length) {
 
 
-                                
-                                this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
-                                    if(result) {
-                                        assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
+                            this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
+                                if (result) {
+                                    assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
-                                            if (fixedAddr) {
-                                                assetutils.addAsset(
-                                                    this.state.asset_id,
-                                                    this.state.model,
-                                                    this.state.hostname,
-                                                    this.state.rack,
-                                                    parseInt(this.state.rackU),
-                                                    this.state.owner,
-                                                    this.state.comment,
-                                                    this.state.datacenter,
-                                                    fixedAddr,
-                                                    this.state.networkConnections,
-                                                    this.state.showPowerConnections ? this.state.powerConnections : [],
-                                                    errorMessage => {
-                                                        if (errorMessage) {
-                                                            ToastsStore.error(errorMessage, 10000)
-                                                           // ToastsStore.error(errTest, 10000)
+                                        if (fixedAddr) {
+                                            assetutils.addAsset(
+                                                this.state.asset_id,
+                                                this.state.model,
+                                                this.state.hostname,
+                                                this.state.rack,
+                                                parseInt(this.state.rackU),
+                                                this.state.owner,
+                                                this.state.comment,
+                                                this.state.datacenter,
+                                                fixedAddr,
+                                                this.state.networkConnections,
+                                                this.state.showPowerConnections ? this.state.powerConnections : [],
+                                                errorMessage => {
+                                                    if (errorMessage) {
+                                                        ToastsStore.error(errorMessage, 10000)
+                                                        // ToastsStore.error(errTest, 10000)
 
-                                                        } else {
-                                                            this.props.parentCallback(true);
-                                                            ToastsStore.success('Successfully added asset!');
-                                                        }
+                                                    } else {
+                                                        this.props.parentCallback(true);
+                                                        ToastsStore.success('Successfully added asset!');
                                                     }
-                                                );
-                                            }
-                                            else {
-                                                ToastsStore.error(macError)
-                                            }
-                                        });
-                                    } else {
-                                        ToastsStore.error("Network connections must be unique");
-                                    }
-                                })
-                            }
-                        }
-                    })
-                } else {
-
-                    this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
-                        if(result){
-                            assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
-
-                                if (fixedAddr) {
-                                    console.log(fixedAddr)
-                                    assetutils.addAsset(
-                                        this.state.asset_id,
-                                        this.state.model,
-                                        this.state.hostname,
-                                        this.state.rack,
-                                        parseInt(this.state.rackU),
-                                        this.state.owner,
-                                        this.state.comment,
-                                        this.state.datacenter,
-                                        fixedAddr,
-                                        this.state.networkConnections,
-                                        this.state.showPowerConnections ? this.state.powerConnections : [],
-
-                                        errorMessage => {
-                                            if (errorMessage) {
-                                                ToastsStore.error(errorMessage, 10000)
-                                            } else {
-                                                this.props.parentCallback(true);
-                                                ToastsStore.success('Successfully added asset!');
-                                            }
+                                                }
+                                            );
                                         }
-                                    );
-
-
+                                        else {
+                                            ToastsStore.error(macError)
+                                        }
+                                    });
+                                } else {
+                                    ToastsStore.error("Network connections must be unique");
                                 }
-                                else {
-                                    ToastsStore.error(macError)
-                                }
-
-
-
-                            });
-                        } else {
-                            ToastsStore.error("Network connections must be unique.")
+                            })
                         }
-                    })
-                }
+                    }
+                })
+
 
 
             }
