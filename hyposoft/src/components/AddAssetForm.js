@@ -12,11 +12,12 @@ import {
     CheckBox
 } from 'grommet'
 
-
+import errMsg from '../errorMessages/errorMessages.json'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as assetpowerportutils from '../utils/assetpowerportutils'
 import * as assetmacutils from '../utils/assetmacutils'
+import * as changeplanconflictutils from '../utils/changeplanconflictutils'
 import * as modelutils from '../utils/modelutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
@@ -28,9 +29,16 @@ import AssetNetworkPortsForm from './AssetNetworkPortsForm';
 import AssetMACForm from './AssetMACForm';
 
 
-//Instance table has a layer, that holds the button to add instance and the form
+//TODO: maybe export all the change plan add asst conflicts check from the utils class as an object?
+// const addAssetChangePlanValidations=[
+//     changeplanconflictutils.rackNonExistent(this.state.rack, this.state.datacenterName),
 
-//TODO: need to change states in here, screen, elsewhere
+
+        
+// ]
+
+
+
 export default class AddAssetForm extends Component {
     constructor(props) {
         super(props);
@@ -67,6 +75,7 @@ export default class AddAssetForm extends Component {
         this.deletePowerConnection = this.deletePowerConnection.bind(this);
     }
 
+   
 
     defaultPDUFields(model, rack, datacenter) {
         //if the model has 2 or more ports, need to do these default fields
@@ -194,6 +203,7 @@ export default class AddAssetForm extends Component {
         return canonicalMAC;
     }
 
+     //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
     //toLowercase, to colon
     handleMacAddressFixAndSet(macAddresses) {
         //need to loop through macAddresses and specfically get the macAddress field
@@ -259,8 +269,11 @@ export default class AddAssetForm extends Component {
         }
     }
 
-    handleSubmit(event) {
+    async handleSubmit(event) {
         if (event.target.name === "addInst") {
+            // await changeplanconflictutils.rackNonExistent(this.state.rack, this.state.datacenterName)
+            // .then(
+
             if (!this.state.model || !this.state.rack || !this.state.rackU || !this.state.datacenter) {
                 //not all required fields filled out
                 ToastsStore.error("Please fill out all required fields.");
@@ -275,10 +288,10 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Rack U must be a number.");
             } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
                 ToastsStore.error("Rack U must be positive.");
-
-                //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
+      
             }
             else {
+
                 if (this.state.showPowerConnections) {
                     let existingPowerConnections = [];
                     Object.keys(this.state.powerConnections).forEach(connection => {
@@ -288,13 +301,14 @@ export default class AddAssetForm extends Component {
                         } else {
                             existingPowerConnections.push(this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port);
                             if (existingPowerConnections.length === Object.keys(this.state.powerConnections).length) {
-                                //TODO: fix this in assetmacutils
+
+
+                                
                                 this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
                                     if(result) {
                                         assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
                                             if (fixedAddr) {
-                                                console.log(fixedAddr)
                                                 assetutils.addAsset(
                                                     this.state.asset_id,
                                                     this.state.model,
@@ -310,6 +324,8 @@ export default class AddAssetForm extends Component {
                                                     errorMessage => {
                                                         if (errorMessage) {
                                                             ToastsStore.error(errorMessage, 10000)
+                                                           // ToastsStore.error(errTest, 10000)
+
                                                         } else {
                                                             this.props.parentCallback(true);
                                                             ToastsStore.success('Successfully added asset!');
@@ -385,7 +401,7 @@ export default class AddAssetForm extends Component {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
         }
-        console.log(this.state)
+        //console.log(this.state)
 
 
         return (
