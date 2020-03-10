@@ -22,6 +22,7 @@ class DetailedChangeScreen extends React.Component {
     componentDidMount() {
         this.changePlanID = this.props.match.params.changePlanID;
         this.stepID = this.props.match.params.stepID;
+        console.log(this.stepID)
         this.forceRefresh();
     }
 
@@ -31,6 +32,8 @@ class DetailedChangeScreen extends React.Component {
                 this.setState({
                     change: result
                 });
+            } else {
+                console.log(result)
             }
         })
     }
@@ -38,46 +41,76 @@ class DetailedChangeScreen extends React.Component {
     generateNetworkConnectionRow(old){
         let thisState = old ? this.state.change.changes.networkConnections.old : this.state.change.changes.networkConnections.new;
         //console.log(this.state.change.changes.networkConnections.new)
-        return Object.keys(thisState).map((connection) =>
-            (
+        if (thisState && Object.keys(thisState).length) {
+            return Object.keys(thisState).map((connection) =>
+                (
+                    <TableRow>
+                        <TableCell scope="row">
+                            {connection}
+                        </TableCell>
+                        <TableCell>{thisState[connection].otherAssetID}</TableCell>
+                        <TableCell>{thisState[connection].otherPort}</TableCell>
+                    </TableRow>
+                )
+            )
+        } else {
+            return (
                 <TableRow>
                     <TableCell scope="row">
-                        {connection}
+                        <strong>No network connections.</strong>
                     </TableCell>
-                    <TableCell>{thisState[connection].otherAssetID}</TableCell>
-                    <TableCell>{thisState[connection].otherPort}</TableCell>
                 </TableRow>
             )
-        )
+        }
     }
 
     generatePowerConnectionRow(old){
         let thisState = old ? this.state.change.changes.powerConnections.old : this.state.change.changes.powerConnections.new;
-        return Object.keys(thisState).map((connection) => (
-            <TableRow>
-                <TableCell scope={"row"}>
-                    {connection}
-                </TableCell>
-                <TableCell>
-                    {thisState[connection].pduSide}
-                </TableCell>
-                <TableCell>
-                    {thisState[connection].port}
-                </TableCell>
-            </TableRow>
-        ))
+        if (thisState && Object.keys(thisState).length) {
+            return Object.keys(thisState).map((connection) => (
+                <TableRow>
+                    <TableCell scope={"row"}>
+                        {connection}
+                    </TableCell>
+                    <TableCell>
+                        {thisState[connection].pduSide}
+                    </TableCell>
+                    <TableCell>
+                        {thisState[connection].port}
+                    </TableCell>
+                </TableRow>
+            ))
+        } else {
+            return (
+                <TableRow>
+                    <TableCell scope="row">
+                        <strong>No power connections.</strong>
+                    </TableCell>
+                </TableRow>
+            )
+        }
     }
 
     generateMACRow(old){
         let thisState = old ? this.state.change.changes.macAddresses.old : this.state.change.changes.macAddresses.new;
-        return Object.keys(thisState).map((address) => (
-            <TableRow>
-                <TableCell scope="row">
-                    {address}
-                </TableCell>
-                <TableCell>{thisState[address]}</TableCell>
-            </TableRow>
-        ))
+        if (thisState && Object.keys(thisState).length) {
+            return Object.keys(thisState).map((address) => (
+                <TableRow>
+                    <TableCell scope="row">
+                        {address}
+                    </TableCell>
+                    <TableCell>{thisState[address]}</TableCell>
+                </TableRow>
+            ))
+        } else {
+            return (
+                <TableRow>
+                    <TableCell scope="row">
+                        <strong>No MAC addresses.</strong>
+                    </TableCell>
+                </TableRow>
+            )
+        }
     }
 
     generateChangeTable() {
