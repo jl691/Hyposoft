@@ -75,4 +75,14 @@ function deleteChangePlan(id, callback){
     })
 }
 
-export { getChangePlans, getChanges, getChangeDetails, addChangePlan, deleteChangePlan }
+function editChangePlan(id, newName, callback){
+    firebaseutils.changeplansRef.doc(id).update({
+        name: newName
+    }).then(function () {
+        callback(true)
+    }).catch(function () {
+        callback(null)
+    })
+}
+
+export { getChangePlans, getChanges, getChangeDetails, addChangePlan, deleteChangePlan, editChangePlan }

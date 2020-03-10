@@ -13,6 +13,8 @@ import AddDatacenterForm from "../components/AddDatacenterForm";
 import AddChangePlanForm from "../components/AddChangePlanForm";
 import DeleteDatacenterForm from "../components/DeleteDatacenterForm";
 import DeleteChangePlanForm from "../components/DeleteChangePlanForm";
+import EditDatacenterForm from "../components/EditDatacenterForm";
+import EditChangePlanForm from "../components/EditChangePlanForm";
 
 class ChangePlanScreen extends React.Component {
 
@@ -147,6 +149,21 @@ class ChangePlanScreen extends React.Component {
                     <Text size='small'>{datum.executed.toString()}</Text>)
             },
             {
+                property: "Edit",
+                header: <Text size='small'>Edit</Text>,
+                render: datum => (
+                    <Edit onClick={(e) => {
+                        e.persist();
+                        e.nativeEvent.stopImmediatePropagation();
+                        e.stopPropagation();
+                        this.setState({
+                            editName: datum.name,
+                            editID: datum.id,
+                            popupType: "Edit"
+                        })
+                    }}/>)
+            },
+            {
                 property: "execute",
                 header: <Text size='small'>Execute</Text>,
                 render: datum => (
@@ -208,6 +225,15 @@ class ChangePlanScreen extends React.Component {
             popup = (
                 <DeleteChangePlanForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
                                       name={this.state.deleteName} id={this.state.deleteID}/>
+            )
+        } else if(popupType === 'Edit'){
+            popup = (
+                <Layer onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+                    <EditChangePlanForm parentCallback={this.callbackFunction} name={this.state.editName} id={this.state.editID}/>
+                    <Button label="Cancel" icon={<Close/>}
+                            onClick={() => this.setState({popupType: ""})}/>
+                </Layer>
             )
         }
 
