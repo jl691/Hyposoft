@@ -51,5 +51,6 @@ var modelsRef = db.collection('models')
 var datacentersRef = db.collection('datacenters')
 var logsRef = db.collection('logs')
 var changeplansRef = db.collection('changeplans')
+var decommissionRef = db.collection('decommission')
 
-export { hashAndSalt, hashAndSalt2, usersRef, racksRef, assetRef, modelsRef, claimsRef, recoveriesRef, datacentersRef, logsRef, db, firebase, changeplansRef }
+export { hashAndSalt, hashAndSalt2, usersRef, racksRef, assetRef, modelsRef, claimsRef, recoveriesRef, datacentersRef, logsRef, db, firebase, changeplansRef, decommissionRef }

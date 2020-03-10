@@ -39,6 +39,10 @@ function DELETE() {
     return 'deleted'
 }
 
+function DECOMMISSION() {
+    return 'decommissioned'
+}
+
 function EXECUTE() {
     return 'executed'
 }
@@ -259,7 +263,7 @@ function getUserName(id,data,action,callback) {
 }
 
 function getAssetName(id,data,action,callback) {
-    if (data && action === DELETE()) {
+    if (data && (action === DELETE() || action === DECOMMISSION())) {
         callback({name: data.model+' '+data.hostname, data: data, previousData: null, datacenter: data.datacenter})
     } else {
         firebaseutils.assetRef.doc(id).get().then(doc => callback({name: doc.data().model+' '+doc.data().hostname, data: doc.data(), previousData: data, datacenter: doc.data().datacenter}))
@@ -481,4 +485,4 @@ var isEqual = function (value, other, name) {
 	return true;
 };
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, CREATE, MODIFY, DELETE, EXECUTE, COMPLETE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName }
+export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName }
