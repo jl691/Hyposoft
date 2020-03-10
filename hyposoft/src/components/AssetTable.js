@@ -1,7 +1,7 @@
 import React, {Component} from 'react'
 import {Redirect} from 'react-router-dom'
 import {DataTable, Text, Box} from 'grommet'
-import {FormEdit, FormTrash, Power, Clear, PowerCycle, FormUp, FormDown} from "grommet-icons"
+import {FormEdit, FormTrash, FormClose, Power, Clear, PowerCycle, FormUp, FormDown} from "grommet-icons"
 import * as assetutils from '../utils/assetutils'
 import * as assetmacutils from '../utils/assetmacutils'
 import * as powerutils from '../utils/powerutils'
@@ -77,25 +77,7 @@ export default class AssetTable extends Component {
 
     getAdminColumns() {
         if (userutils.isLoggedInUserAdmin()) {
-            return [{
-                property: "delete",
-                header: <Text size='small'>Delete</Text>,
-                sortable: false,
-                align: 'center',
-
-                render: datum => (
-                    <FormTrash
-                        style={{cursor: 'pointer', backgroundColor: this.colors[datum.asset_id+'_delete_color']}}
-                        onClick={(e) => {
-                            console.log(datum)
-                            e.persist()
-                            e.nativeEvent.stopImmediatePropagation()
-                            e.stopPropagation()
-                            this.props.deleteButtonCallbackFromParent(datum)
-                        }} onMouseOver={e => this.colors[datum.asset_id+'_delete_color']='#dddddd'}
-                        onMouseLeave={e => this.colors[datum.asset_id+'_delete_color']=''}/>
-                )
-            },
+            return [
             {
                 property: "update",
                 header: <Text size='small'>Update</Text>,
@@ -125,6 +107,43 @@ export default class AssetTable extends Component {
 
                         }} onMouseOver={e => this.colors[data.asset_id+'_edit_color']='#dddddd'}
                         onMouseLeave={e => this.colors[data.asset_id+'_edit_color']=''}/>
+                )
+            },
+            {
+                property: "delete",
+                header: <Text size='small'>Delete</Text>,
+                sortable: false,
+                align: 'center',
+
+                render: datum => (
+                    <FormTrash
+                        style={{cursor: 'pointer', backgroundColor: this.colors[datum.asset_id+'_delete_color']}}
+                        onClick={(e) => {
+                            console.log(datum)
+                            e.persist()
+                            e.nativeEvent.stopImmediatePropagation()
+                            e.stopPropagation()
+                            this.props.deleteButtonCallbackFromParent(datum)
+                        }} onMouseOver={e => this.colors[datum.asset_id+'_delete_color']='#dddddd'}
+                        onMouseLeave={e => this.colors[datum.asset_id+'_delete_color']=''}/>
+                )
+            },
+            {
+                property: "decommission",
+                header: <Text size='small'>Decommission</Text>,
+                sortable: false,
+                align: 'center',
+
+                render: datum => (
+                    <FormClose
+                        style={{cursor: 'pointer', backgroundColor: this.colors[datum.asset_id+'_decommission_color']}}
+                        onClick={(e) => {
+                            e.persist()
+                            e.nativeEvent.stopImmediatePropagation()
+                            e.stopPropagation()
+                            this.props.decommissionButtonCallbackFromParent(datum)
+                        }} onMouseOver={e => this.colors[datum.asset_id+'_decommission_color']='#dddddd'}
+                        onMouseLeave={e => this.colors[datum.asset_id+'_decommission_color']=''}/>
                 )
             }]
         }

@@ -18,6 +18,7 @@ import {
 import {Add, View, Filter, Share} from 'grommet-icons'
 import AddAssetForm from '../components/AddAssetForm'
 import DeleteAssetPopup from '../components/DeleteAssetPopup'
+import DecommissionAssetPopup from '../components/DecommissionAssetPopup'
 import EditAssetForm from '../components/EditAssetForm'
 
 import theme from '../theme'
@@ -52,6 +53,9 @@ class AssetScreen extends Component {
             deleteID: "",
             deleteModel: "",
             deleteHostname: "",
+            decommissionID: "",
+            decommissionModel: "",
+            decommissionHostname: "",
             updateID: "",
             initialLoaded: false,
             updateModel: "",
@@ -88,6 +92,7 @@ class AssetScreen extends Component {
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
         this.handleCancelRefreshPopupChange = this.handleCancelRefreshPopupChange.bind(this);
         this.handleDeleteButton = this.handleDeleteButton.bind(this);
+        this.handleDecommissionButton = this.handleDecommissionButton.bind(this);
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleChangeRange = this.handleChangeRange.bind(this);
@@ -212,6 +217,14 @@ class AssetScreen extends Component {
             deleteID: datum.asset_id,
             deleteModel: datum.model,
             deleteHostname: datum.hostname
+        });
+    }
+    handleDecommissionButton = (datum) => {
+        this.setState({
+            popupType: 'Decommission',
+            decommissionID: datum.asset_id,
+            decommissionModel: datum.model,
+            decommissionHostname: datum.hostname
         });
     }
     handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter, datumMACAddresses, datumNetworkConnections, datumPowerConnections) => {
@@ -359,6 +372,21 @@ class AssetScreen extends Component {
                         deleteModel={this.state.deleteModel}
                         deleteHostname={this.state.deleteHostname}
 
+                    />
+                </Layer>
+            )
+        } else if (popupType === 'Decommission') {
+
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+
+                    <DecommissionAssetPopup
+                        parentCallback={this.handleCancelRefreshPopupChange}
+                        cancelCallback={this.handleCancelPopupChange}
+                        decommissionIDFromParent={this.state.decommissionID}
+                        decommissionModel={this.state.decommissionModel}
+                        decommissionHostname={this.state.decommissionHostname}
                     />
                 </Layer>
             )
@@ -631,6 +659,7 @@ class AssetScreen extends Component {
                                                         <Box align="center">
                                                             <AssetTable
                                                                 deleteButtonCallbackFromParent={this.handleDeleteButton}
+                                                                decommissionButtonCallbackFromParent={this.handleDecommissionButton}
 
                                                                 UpdateButtonCallbackFromParent={this.handleUpdateButton}
 
