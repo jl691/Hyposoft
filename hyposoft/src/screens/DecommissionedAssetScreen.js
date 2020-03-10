@@ -149,6 +149,17 @@ class DecommissionedAssetScreen extends Component {
                             render: datum => <Text size='small'>{datum.rackU}</Text>,
                         },
                         {
+                            property: 'name',
+                            header: <Text size='small'
+                            // onClick={() => {
+                            //     this.setSort("rackU")
+                            // }} style={{cursor: "pointer"}}
+                            >Demoted By  {
+                              // this.state.sortField === 'rackU' && (this.state.sortAscending ? <FormDown /> : <FormUp />)
+                            }</Text>,
+                            render: datum => <Text size='small'>{datum.name}</Text>,
+                        },
+                        {
                             property: 'owner',
                             header: <Text size='small'
                             // onClick={() => {
