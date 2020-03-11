@@ -5,7 +5,6 @@ import {
     Grommet,
     Heading,
     Box,
-    CheckBox,
     Table,
     TableHeader,
     TableRow,
@@ -17,7 +16,6 @@ import theme from '../theme'
 import BackButton from '../components/BackButton'
 import AppBar from '../components/AppBar'
 import UserMenu from '../components/UserMenu'
-import {PowerCycle} from "grommet-icons";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 
 export default class DetailedDecommissionedAssetScreen extends Component {
