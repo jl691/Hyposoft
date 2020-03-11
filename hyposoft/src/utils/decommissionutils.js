@@ -1,6 +1,7 @@
 import * as firebaseutils from './firebaseutils'
 import * as logutils from './logutils'
 import * as userutils from './userutils'
+import * as assetnetworkportutils from '../utils/assetnetworkportutils'
 
 function decommissionAsset(id,callback) {
     firebaseutils.assetRef.doc(id).get().then(doc => {
@@ -9,24 +10,26 @@ function decommissionAsset(id,callback) {
             return
         }
         const docData = doc.data()
-        firebaseutils.usersRef.doc(userutils.getLoggedInUser()).get().then(doc => {
-          if (!doc.exists) {
+        assetnetworkportutils.getNetworkPortConnections(id, graph => {
+          firebaseutils.usersRef.doc(userutils.getLoggedInUser()).get().then(doc => {
+            if (!doc.exists) {
+                callback(false)
+                return
+            }
+            firebaseutils.assetRef.doc(id).delete().then(() => {
+                logutils.addLog(id,logutils.ASSET(),logutils.DECOMMISSION(),docData)
+                firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username,graph: graph}).then(() => callback(true))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(false)
+                })
+                })
+            })
+            .catch( error => {
+              console.log("Error getting documents: ", error)
               callback(false)
-              return
-          }
-          firebaseutils.assetRef.doc(id).delete().then(() => {
-              logutils.addLog(id,logutils.ASSET(),logutils.DECOMMISSION(),docData)
-              firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username}).then(() => callback(true))
-              .catch( error => {
-                  console.log("Error getting documents: ", error)
-                  callback(false)
-              })
-              })
-          })
-          .catch( error => {
-            console.log("Error getting documents: ", error)
-            callback(false)
-          })
+            })
+        })
     })
     .catch( error => {
       console.log("Error getting documents: ", error)
