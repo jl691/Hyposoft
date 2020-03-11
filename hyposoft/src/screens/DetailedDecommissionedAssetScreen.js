@@ -247,7 +247,7 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                         <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
                                              gap='small'>
                                             <Button label="View Model Details" onClick={() => {
-                                                this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNum)
+                                                this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNumber)
                                             }}/>
                                             <Button label="Network Neighborhood" onClick={() => {
                                                 this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
