@@ -51,9 +51,32 @@ function getAssets(startAfter, callback, search = '') {
     })
 }
 
+function sortAssets(startAfter, callback, field, direction) {
+    var query = direction ? (startAfter ? firebaseutils.decommissionRef.orderBy(field).startAfter(startAfter)
+                                        : firebaseutils.decommissionRef.orderBy(field))
+                          : (startAfter ? firebaseutils.decommissionRef.orderBy(field,'desc').startAfter(startAfter)
+                                        : firebaseutils.decommissionRef.orderBy(field,'desc'))
+    query.get().then(docSnaps => {
+        if (docSnaps.empty) {
+            callback(null, null)
+            return
+        }
+        var newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
+
+        const assets = docSnaps.docs.map(doc => (
+            {...doc.data(), date: getDate(doc.data().timestamp)}
+        ))
+        callback(assets,newStartAfter)
+    })
+    .catch( error => {
+        console.log("Error getting documents: ", error)
+        callback(null,null)
+    })
+}
+
 function getDate(timestamp) {
     var dateArray = new Date(timestamp).toString().split(' ',5)
     return dateArray.join(' ')
 }
 
-export { decommissionAsset, getAssets }
+export { decommissionAsset, getAssets, sortAssets }
