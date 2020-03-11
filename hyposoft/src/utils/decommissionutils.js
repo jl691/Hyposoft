@@ -47,18 +47,20 @@ function getAssets(startAfter, callback, search = '') {
     })
     .catch( error => {
         console.log("Error getting documents: ", error)
-        callback(null,null)
+        callback([],null)
     })
 }
 
 function sortAssets(startAfter, callback, field, direction) {
-    var query = direction ? (startAfter ? firebaseutils.decommissionRef.orderBy(field).startAfter(startAfter)
-                                        : firebaseutils.decommissionRef.orderBy(field))
-                          : (startAfter ? firebaseutils.decommissionRef.orderBy(field,'desc').startAfter(startAfter)
-                                        : firebaseutils.decommissionRef.orderBy(field,'desc'))
+    var query = field ? (direction ? (startAfter ? firebaseutils.decommissionRef.orderBy(field).startAfter(startAfter)
+                                                 : firebaseutils.decommissionRef.orderBy(field))
+                                   : (startAfter ? firebaseutils.decommissionRef.orderBy(field,'desc').startAfter(startAfter)
+                                                 : firebaseutils.decommissionRef.orderBy(field,'desc')))
+                      : (startAfter ? firebaseutils.decommissionRef.orderBy('timestamp','desc').startAfter(startAfter)
+                                    : firebaseutils.decommissionRef.orderBy('timestamp','desc'))
     query.get().then(docSnaps => {
         if (docSnaps.empty) {
-            callback(null, null)
+            callback([], null)
             return
         }
         var newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
@@ -70,7 +72,7 @@ function sortAssets(startAfter, callback, field, direction) {
     })
     .catch( error => {
         console.log("Error getting documents: ", error)
-        callback(null,null)
+        callback([],null)
     })
 }
 

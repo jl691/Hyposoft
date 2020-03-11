@@ -31,7 +31,7 @@ class DecommissionedAssetScreen extends Component {
       decomutils.getAssets(this.startAfter, (assets, newStartAfter) => {
           this.startAfter = newStartAfter;
           this.setState(oldState => (
-              {...oldState, assets: assets, initialLoaded: true}
+              {...oldState, assets: assets, initialLoaded: true, sortField: '', sortAscending: true}
           ))
       })
     }
@@ -69,15 +69,15 @@ class DecommissionedAssetScreen extends Component {
             return <Text>Please wait...</Text>
         } else {
             return <DataTable
-                // step={500}
-                // onMore={() => {
-                //     decomutils.getAssets(this.startAfter, (assets, newStartAfter) => {
-                //         this.startAfter = newStartAfter;
-                //         this.setState(oldState => (
-                //             {assets: this.state.assets.concat(assets)}
-                //         ))
-                //     },this.state.searchQuery)
-                // }}
+                step={500}
+                onMore={() => {
+                    decomutils.sortAssets(this.startAfter, (assets, newStartAfter) => {
+                        this.startAfter = newStartAfter;
+                        this.setState(oldState => (
+                            {assets: this.state.assets.concat(assets)}
+                        ))
+                    },this.state.sortField,this.state.sortAscending)
+                }}
                 columns={
                     [
                         {
