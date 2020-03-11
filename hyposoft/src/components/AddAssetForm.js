@@ -314,7 +314,7 @@ export default class AddAssetForm extends Component {
                                                             this.props.parentCallback(true);
                                                             ToastsStore.success('Successfully added asset!');
                                                         }
-                                                    }
+                                                    }, this.props.changePlanID ? this.props.changePlanID : null
                                                 );
                                             }
                                             else {
@@ -356,7 +356,7 @@ export default class AddAssetForm extends Component {
                                                 this.props.parentCallback(true);
                                                 ToastsStore.success('Successfully added asset!');
                                             }
-                                        }
+                                        }, this.props.changePlanID ? this.props.changePlanID : null
                                     );
 
 
@@ -400,7 +400,7 @@ export default class AddAssetForm extends Component {
                         <Box direction="column" pad='xsmall' gap="small" flex overflow={{ vertical: 'scroll' }}>
                             <FormField name="model" label="Model">
 
-                                <TextInput name="model" required="true"
+                                <TextInput name="model" required={true}
                                     placeholder="eg. Dell R710"
                                     onChange={e => {
                                         const value = e.target.value
@@ -461,7 +461,7 @@ export default class AddAssetForm extends Component {
                                         })
                                     }}
                                     title='Datacenter'
-                                    required="true"
+                                    required={true}
                                 />
                             </FormField>
 
@@ -497,7 +497,7 @@ export default class AddAssetForm extends Component {
                                     }
                                     }
                                     title='Rack'
-                                    required="true"
+                                    required={true}
                                 />
                             </FormField>
 
@@ -506,7 +506,7 @@ export default class AddAssetForm extends Component {
 
 
                                 <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
-                                    value={this.state.rackU} required="true" />
+                                    value={this.state.rackU} required={true} />
                             </FormField>
 
 
