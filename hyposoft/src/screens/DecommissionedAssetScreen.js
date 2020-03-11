@@ -213,21 +213,9 @@ class DecommissionedAssetScreen extends Component {
                 sortable={true}
                 size="medium"
                 // Decommissioned detail view
-                // onClickRow={({datum}) => {
-                //     logutils.doesObjectStillExist(datum.objectType,datum.objectId,exists => {
-                //         if (exists) {
-                //             if (datum.objectType === logutils.MODEL()) {
-                //                 this.props.history.push('/models/'+datum.currentData.vendor+'/'+datum.currentData.modelNumber)
-                //             } else if (datum.objectType === logutils.ASSET()) {
-                //                 this.props.history.push('/assets/'+datum.objectId)
-                //             } else {
-                //                 ToastsStore.error(datum.objectType+' does not have a detailed view', 3000)
-                //             }
-                //         } else {
-                //             ToastsStore.error(datum.objectType+' does not exist anymore', 3000)
-                //         }
-                //     })
-                // }}
+                onClickRow={({datum}) => {
+                    this.props.history.push('/decommissioned/' + datum.assetId)
+                }}
             />
         }
     }

@@ -102,4 +102,12 @@ function getDate(timestamp) {
     return dateArray.join(' ')
 }
 
-export { decommissionAsset, getAssets, sortAssets }
+function getAssetDetails(id, callback) {
+    firebaseutils.decommissionRef.where('assetId','==',id).get().then(docSnaps => callback({...docSnaps.docs[0].data(),date: getDate(docSnaps.docs[0].data().timestamp)}))
+    .catch( error => {
+        console.log("Error getting documents: ", error)
+        callback(null)
+    })
+}
+
+export { decommissionAsset, getAssets, sortAssets, getAssetDetails }
