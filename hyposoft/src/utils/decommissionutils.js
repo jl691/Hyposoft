@@ -40,9 +40,30 @@ function getAssets(startAfter, callback, search = '') {
     query.get().then(docSnaps => {
         var newStartAfter = docSnaps.docs[docSnaps.docs.length-1]
 
-        const assets = docSnaps.docs.map(doc => (
-            {...doc.data(), date: getDate(doc.data().timestamp)}
-        ))
+        // const assets = docSnaps.docs.map(doc => (
+        //     {...doc.data(), date: getDate(doc.data().timestamp)}
+        // ))
+        // callback(assets,newStartAfter)
+        var assets = []
+        const searchName = search.trim().toLowerCase()
+        docSnaps.docs.forEach(doc => {
+            var strings = []
+            strings.push(getDate(doc.data().timestamp).toLowerCase())
+            strings.push(doc.data().assetId.toLowerCase())
+            strings.push(doc.data().model.toLowerCase())
+            strings.push(doc.data().hostname.toLowerCase())
+            strings.push(doc.data().name.toLowerCase())
+            strings.push(doc.data().owner.toLowerCase())
+            strings.push(doc.data().datacenterAbbrev.toLowerCase())
+            var comp;
+            for (comp in strings) {
+                if (!search || strings[comp].includes(searchName)) {
+                    assets = [...assets,{...doc.data(), date: getDate(doc.data().timestamp)}]
+                    newStartAfter = doc
+                    break
+                }
+            }
+        })
         callback(assets,newStartAfter)
     })
     .catch( error => {

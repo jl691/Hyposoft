@@ -3,12 +3,19 @@ import AppBar from '../components/AppBar'
 import BackButton from '../components/BackButton'
 import UserMenu from '../components/UserMenu'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
-import { Anchor, Box, Button, DataTable, Grommet, Heading, Text, TextInput } from 'grommet'
+import { Anchor, Box, Button, DataTable, Form, Grommet, Heading, Text, TextInput } from 'grommet'
 import { FormUp, FormDown } from "grommet-icons"
 import {Redirect} from "react-router-dom";
 import theme from '../theme'
 import * as userutils from '../utils/userutils'
 import * as decomutils from '../utils/decommissionutils'
+
+const styles = {
+    TIStyle: {
+        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#FFFFFF',
+        width: '100%', paddingLeft: 20, fontWeight: 'normal'
+    }
+}
 
 class DecommissionedAssetScreen extends Component {
     startAfter = null
@@ -33,7 +40,7 @@ class DecommissionedAssetScreen extends Component {
           this.setState(oldState => (
               {...oldState, assets: assets, initialLoaded: true, sortField: '', sortAscending: true}
           ))
-      })
+      },this.state.searchQuery)
     }
 
     setSort(field) {
@@ -56,12 +63,26 @@ class DecommissionedAssetScreen extends Component {
         this.startAfter = null;
         this.setState({
             assets: [],
-            initialLoaded: false
+            initialLoaded: false,
+            searchQuery: ''
         });
         decomutils.sortAssets(this.startAfter,(assets, newStartAfter) => {
             this.startAfter = newStartAfter;
             this.setState({assets: assets, initialLoaded: true})
         }, field, newSort)
+    }
+
+    search() {
+        this.startAfter = null
+        if (this.state.searchQuery.trim() === '') {
+            this.setState({
+                initialLoaded: false
+            }, function () {
+                this.init()
+                return
+            })
+        }
+        this.init()
     }
 
     getTable(){
@@ -71,20 +92,29 @@ class DecommissionedAssetScreen extends Component {
             return <DataTable
                 step={500}
                 onMore={() => {
-                    decomutils.sortAssets(this.startAfter, (assets, newStartAfter) => {
-                        this.startAfter = newStartAfter;
-                        this.setState(oldState => (
-                            {assets: this.state.assets.concat(assets)}
-                        ))
-                    },this.state.sortField,this.state.sortAscending)
+                    if (this.state.searchQuery) {
+                        this.init()
+                    } else {
+                        decomutils.sortAssets(this.startAfter, (assets, newStartAfter) => {
+                            this.startAfter = newStartAfter;
+                            this.setState(oldState => (
+                                {assets: this.state.assets.concat(assets)}
+                            ))
+                        },this.state.sortField,this.state.sortAscending)
+                    }
                 }}
                 columns={
                     [
                         {
                             property: 'date',
-                            header: <Text size='small'>Date and Time (EST)</Text>,
+                            header: <Text size='small'
+                            onClick={() => {
+                                this.setSort("timestamp")
+                            }} style={{cursor: "pointer"}}
+                            >Date and Time (EST){
+                              this.state.sortField === 'timestamp' && (this.state.sortAscending ? <FormDown /> : <FormUp />)
+                            }</Text>,
                             render: datum => <Text size='small'>{datum.date}</Text>,
-                            sortable: false,
                         },
                         {
                             property: 'assetId',
@@ -223,7 +253,20 @@ class DecommissionedAssetScreen extends Component {
                       <Box direction='row' justify='center'>
                              <Box direction='row' justify='center'>
                                  <Box width='xlarge' direction='column' align='stretch' justify='start'>
-
+                                    <Box margin={{top: 'medium'}}>
+                                        <Form onSubmit={() => this.search()}>
+                                            <TextInput style={styles.TIStyle}
+                                                placeholder="Search for assets (type your query and press enter)"
+                                                type='search'
+                                                onChange={e => {
+                                                  const value = e.target.value
+                                                  this.setState(oldState => ({...oldState, searchQuery: value}))
+                                                }}
+                                                value={this.state.searchQuery}
+                                                title='Search'
+                                                />
+                                        </Form>
+                                    </Box>
                                      <Box style={{
                                               borderRadius: 10,
                                               borderColor: '#EDEDED'
