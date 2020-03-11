@@ -277,6 +277,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
                                                         assetIDutils.generateAssetID().then(newID => {
                                                             const assetObject = {
+                                                                assetId: newID,
                                                                 modelId: doc.id,
                                                                 model: model,
                                                                 hostname: hostname,
