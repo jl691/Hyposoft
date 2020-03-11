@@ -485,5 +485,4 @@ var isEqual = function (value, other, name) {
 	return true;
 };
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName }
-
+export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }
