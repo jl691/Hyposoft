@@ -20,14 +20,14 @@ const rackNonExistent = async (changePlanID, stepID, rackName, datacenter) => {
     let splitRackArray = rackName.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
-    let errorID = null;
+    let errorIDSet = new Set();
 
     rackutils.getRackID(rackRow, rackNum, datacenter, async function (rackID) {
 
         if (!rackID) {
-            errorID = "rackErrID"
+            errorIDSet.add("rackErrID")
 
-            await addConflictToDB(changePlanID, stepID, "rack", errorID);
+            await addConflictToDB(changePlanID, stepID, "rack", errorIDSet);
             console.log("From the error strings resource file: " + errorStrings.rackErrID)
 
         }
@@ -37,11 +37,11 @@ const rackNonExistent = async (changePlanID, stepID, rackName, datacenter) => {
 }
 
 const datacenterNonExistent = async (changePlanID, stepID, datacenterName) => {
-    let errorID = null;
+    let errorIDSet = new Set();
     datacenterutils.getDataFromName(datacenterName, async function (data) {
         if (!data) {
-            errorID = "datacenterErrID"
-            await addConflictToDB(changePlanID, stepID, "datacenter", errorID)
+            errorIDSet.add("datacenterErrID")
+            await addConflictToDB(changePlanID, stepID, "datacenter", errorIDSet)
             console.log("From the error strings resource file: " + errorStrings.datacenterErrID)
         }
 
@@ -49,13 +49,45 @@ const datacenterNonExistent = async (changePlanID, stepID, datacenterName) => {
 
 }
 
-//for add. When editing the pchange plan, how to check for self-conflicting?
+const hostnameConflict = async (changePlanID, stepID, hostname, assetID) => {
+    let errorIDSet = new Set();
+    assetRef.where("hostname", "==", hostname).get().then(async function (docSnaps) {
+        if (!docSnaps.empty && assetID !== docSnaps.docs[0].id && hostname !== "") {
+
+            errorIDSet.add("hostnameErrID")
+            await addConflictToDB(changePlanID, stepID, "hostname", errorIDSet)
+            console.log("From the error strings resource file: " + errorStrings.hostnameErrID)
+
+        }
+
+    })
+
+}
+
+const ownerConflict = async (changePlanID, stepID, owner) => {
+    let errorIDSet = new Set();
+    if (owner !== "") {
+        let username = owner;
+        usersRef.where('username', '==', username).get().then(async function (querySnapshot) {
+            if (querySnapshot.empty) {
+                errorIDSet.add("ownerErrID")
+                await addConflictToDB(changePlanID, stepID, "owner", errorIDSet)
+                console.log("From the error strings resource file: " + errorStrings.ownerErrID)
+
+
+            }
+        })
+    }
+}
+
+//for add. When editing the change plan, how to check for self-conflicting?
+//Also need to test this rigorously
 const rackUConflict = async (changePlanID, stepID, model, datacenter, rackName, rackU) => {
     let splitRackArray = rackName.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
-    let errorID = null;
+    let errorIDSet = new Set();
 
     //need to get the rackID
     rackutils.getRackID(rackRow, rackNum, datacenter, async function (rackID) {
@@ -66,23 +98,29 @@ const rackUConflict = async (changePlanID, stepID, model, datacenter, rackName, 
                 let rackHeight = querySnapshot.docs[0].data().height
                 modelutils.getModelByModelname(model, async function (doc) {
                     //doc.data().height refers to model height
-                    if (rackHeight > parseInt(rackU) + doc.data().height) {
-                        //need to get get model height
-                        rackutils.checkAssetFits(rackU, doc.data().height, rackID, async function (status) {
-                            if (status) {
-                                errorID = "rackUConflictErrID"
-                                await addConflictToDB(changePlanID, stepID, "rackU", errorID)
-                                console.log("From the error strings resource file: " + errorStrings.rackUConflictErrID)
+                    //need to get get model height
+                    rackutils.checkAssetFits(rackU, doc.data().height, rackID, async function (status) {
+                        if (status && !(rackHeight > parseInt(rackU) + doc.data().height)) {
+                            //asset conflicts with other assets and does not fit on the rack
+                            errorIDSet.add("rackUConflictErrID")
+                            errorIDSet.add("rackUFitErrID")
 
-                            }
-                        })
-                    }
-                    else {
-                        //the asset at the rackU will not fit within the rack
-                        errorID = "rackUFitErrID"
-                        await addConflictToDB(changePlanID, stepID, "rackU", errorID)
-                        console.log("From the error strings resource file: " + errorStrings.rackUFitErrID)
-                    }
+                        }
+                        else if (status && (rackHeight > parseInt(rackU) + doc.data().height)) {
+                            //asset conflicts with other assets, but does fit on the rack
+                            errorIDSet.add("rackUConflictErrID")
+
+                        }
+                        else if (rackHeight > parseInt(rackU) + doc.data().height) {
+                            //asset does not fit within the rack at the rackU
+                            errorIDSet.add("rackUFitErrID")
+
+                        }
+                    })
+
+                    await addConflictToDB(changePlanID, stepID, "rackU", errorIDSet)
+                    console.log("From the error strings resource file: " + errorStrings.rackUFitErrID)
+
                 })
             }
         })
@@ -90,75 +128,106 @@ const rackUConflict = async (changePlanID, stepID, model, datacenter, rackName, 
 
 }
 
-//checks if there is already an asset in the live data with the same hostname you are trying to add
-//when adding an asset, pass in null for asset ID. Otherwise, for editing, pass the correct ID in
-const hostnameConflict = async (changePlanID, stepID, hostname, assetID) =>{
-    let errorID=null;
-    assetRef.where("hostname", "==", hostname).get().then( async function(docSnaps) {
-        if (!docSnaps.empty && assetID !== docSnaps.docs[0].id && hostname !== "") {
+//Lmao need to test this rigorously
+const powerConnectionConflict = async (changePlanID, stepID, powerConnections, datacenter, rack, rackU, model, assetID) => {
+    let errorIDSet = new Set();
 
-            errorID = "hostnameErrID"
-            await addConflictToDB(changePlanID, stepID, "hostname", errorID)
-            console.log("From the error strings resource file: " + errorStrings.hostnameErrID)
-           
-        }
-       
-    })
+    for (let i = 0; i < powerConnections.length; i++) {
+        let pduSide = powerConnections[i].pduSide;
+        let port = powerConnections[i].port;
+
+        await powerConnectionOccupied(datacenter, rack, rackU, pduSide, port, errorIDSet)
+        await powerConnectionIncompleteForm(pduSide, port, errorIDSet)
+        await powerConnectionInvalidNum(port, errorIDSet)
+        await powerConnectionNumConnections(powerConnections, model, errorIDSet)
+    }
+    console.log("These are the error IDs for this change plan set for power connections: " + [...errorIDSet.entries()])
+
+    await addConflictToDB(changePlanID, stepID, "powerConnections", errorIDSet)
 
 }
+//instead of an array, use a set!! and then make it into an array before you add to the database
+const powerConnectionOccupied = async (datacenter, rack, rackU, pduSide, port, errorIDSet) => {
+    console.log("In powerConnectionOccupied function")
+    assetpowerportutils.checkConflicts(datacenter, rack, rackU, pduSide, port, async function (status) {
+        if (status) {
+            errorIDSet.add("powerConnectionConflictErrID")
+        }
 
-const ownerConflict = async (changePlanID, stepID, owner) =>{
-    let errorID = null;
-    if (owner !== "") {
-        let username = owner;
-        usersRef.where('username', '==', username).get().then( async function(querySnapshot){
-            if (querySnapshot.empty) {
-                errorID = "ownerErrID"
-                await addConflictToDB(changePlanID, stepID, "owner", errorID)
-                console.log("From the error strings resource file: " + errorStrings.ownerErrID)
-                
+    })
+}
 
-            }
-        })
+const powerConnectionIncompleteForm = async (pduSide, port, errorIDSet) => {
+    if (pduSide.trim() === "" && port.trim() === "") {
+        console.log("All fields for power connections in asset change plan have been filled out appropriately.")
+    }
+    else if (pduSide.trim() !== "" && port.trim() !== "") {
+        console.log("No power connections were made for this asset in the change plan. ")
+    }
+    else {
+        errorIDSet.add("powerConnectionsIncompleteFormErrID")
     }
 }
 
-//Already used with
+const powerConnectionInvalidNum = async (port, errorIDSet) => {
+    (port >= 1 && port <= 24) ?
+        console.log("Valid port numbers. In changeplanconflictutils")
+        : errorIDSet.add("powerConnectionsInvalidPortErrID")
+}
 
-//onst powerPortConflicts = async (changePlanID, stepID, powerPorts)
+const powerConnectionNumConnections = async (powerConnections, model, errorIDSet) => {
+    modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
+        let numPowerPorts = querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : 0;
+        console.log("Num powerPorts for this model: " + numPowerPorts)
+
+        if (powerConnections.length !== numPowerPorts) {
+            if (numPowerPorts > 0) {
+                errorIDSet.add("powerConnectionsIncorrectNumConnectionsErrID")
+            }
+            else {
+                errorIDSet.add("powerConnectionModel0ErrID")
+            }
+        }
+    })
+}
+
+const networkConnectionConflict=
+
 
 
 //when do I call this? everytime submit is clicked
 //pass in the correct parameters
-async function addAssetChangePlanPackage(changePlanID) {
-    // await rackNonExistent(changePlanID, "step1docID", "Z1", "WC1")
-    await datacenterNonExistent(changePlanID, "step1docID", "testFakeName")
+async function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections) {
+
+    await rackNonExistent(changePlanID, stepID, rack, datacenter)
+    await datacenterNonExistent(changePlanID, stepID, datacenter)
+    await rackUConflict(changePlanID, stepID, model, datacenter, rack, rackU)
+    await hostnameConflict(changePlanID, stepID, hostname, assetID)
+    await ownerConflict(changePlanID, stepID, owner)
+    await powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, model, assetID)
+
 
 }
 
-
-async function addConflictToDB(changePlanID, stepID, fieldName, errID) {
+async function addConflictToDB(changePlanID, stepID, fieldName, errorIDSet) {
 
     //Call this method at each validation function at the end, where appropriate
+    //What if the stepID doc does not exist? Does .set() take care of this for you?
+    //the answer: yes, set with merge will update fields in the document or create it if it doesn't exists
+    let errorIDArray = [...errorIDSet]
 
-    //TODO:whenever a change plan is made, need to add the conflicts subcollection
-    console.log("Step document id: " + stepID)
-    console.log('FieldName to put into database: ' + fieldName)
+    if (errorIDArray.length) {
+        console.log("Error ID(s) that will be added to the conflict/stepID doc: " + [...errorIDArray])
+        changeplansRef.doc(changePlanID).collection('conflicts').doc(stepID).set({
+            [fieldName]: errorIDArray
 
-    //what if the stepID doc does not exist?
-    changeplansRef.doc(changePlanID).collection('conflicts').doc(stepID).set({
-        //fieldName: errID
-        [fieldName]: errID
+        }, { merge: true })
 
-    }, { merge: true })
+    }
 
 }
 
-
-
 export {
-    rackNonExistent,
     addAssetChangePlanPackage,
-
 
 }
