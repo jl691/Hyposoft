@@ -194,13 +194,25 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
 function doesObjectStillExist(objectType,objectId,callback) {
     switch (objectType) {
         case ASSET():
-            firebaseutils.assetRef.doc(objectId).get().then(doc => callback(doc.exists))
+            firebaseutils.assetRef.doc(objectId).get().then(doc => {
+                if (doc.exists) {
+                    callback(true,true)
+                    return
+                }
+                firebaseutils.decommissionRef.where('assetId','==',objectId).get().then(docSnaps => {
+                    if (docSnaps.docs.length === 0) {
+                        callback(false,false)
+                        return
+                    }
+                    callback(docSnaps.docs[0].exists,false)
+                })
+            })
             break
         case MODEL():
-            firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.exists))
+            firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.exists,true))
             break
         default:
-            callback(true)
+            callback(true,true)
     }
 }
 
@@ -485,5 +497,4 @@ var isEqual = function (value, other, name) {
 	return true;
 };
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName }
-
+export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }
