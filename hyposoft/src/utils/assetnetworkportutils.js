@@ -357,33 +357,37 @@ function symmetricNetworkConnectionsDelete(deleteID, callback) {
             assetRef.doc(otherConnectedAsset).get().then(function (otherAssetDoc) {
                 console.log(otherAssetDoc)
                 //delete yourself
-                let conns = Object.keys(otherAssetDoc.data().networkConnections);
-                console.log(conns)
-                conns.forEach(function (conn) {
-                    console.log("in the innerforeach for ", conn)
-                    console.log(otherAssetDoc.data().networkConnections[conn].otherAssetID)
-                    console.log(deleteID)
-                    if (otherAssetDoc.data().networkConnections[conn].otherAssetID === deleteID) {
-                        console.log("matched")
-                        //then call firld delete frecase code
-                        assetRef.doc(otherConnectedAsset).update({
-                            [`networkConnections.${conn}`]: firebase.firestore.FieldValue.delete()
-                        }).then(function () {
-                            console.log("update worked for " + otherConnectedAsset)
-                            count++;
-                            //console.log("count is " + count + " and networkconnections size is " + networkConnections.length)
-                            if (count === networkConnections.length) {
-                                console.log("calling back")
-                                return(callback(true))
-                            }
-                        }).catch(function (error) {
-                            console.log("not quite")
-                            console.log(error);
-                            return(callback(null))
-                        });
-                        console.log("after the update")
-                    }
-                })
+                if (otherAssetDoc.exists) {
+                  let conns = Object.keys(otherAssetDoc.data().networkConnections);
+                  console.log(conns)
+                  conns.forEach(function (conn) {
+                      console.log("in the innerforeach for ", conn)
+                      console.log(otherAssetDoc.data().networkConnections[conn].otherAssetID)
+                      console.log(deleteID)
+                      if (otherAssetDoc.data().networkConnections[conn].otherAssetID === deleteID) {
+                          console.log("matched")
+                          //then call firld delete frecase code
+                          assetRef.doc(otherConnectedAsset).update({
+                              [`networkConnections.${conn}`]: firebase.firestore.FieldValue.delete()
+                          }).then(function () {
+                              console.log("update worked for " + otherConnectedAsset)
+                              count++;
+                              //console.log("count is " + count + " and networkconnections size is " + networkConnections.length)
+                              if (count === networkConnections.length) {
+                                  console.log("calling back")
+                                  return(callback(true))
+                              }
+                          }).catch(function (error) {
+                              console.log("not quite")
+                              console.log(error);
+                              return(callback(null))
+                          });
+                          console.log("after the update")
+                      }
+                  })
+                } else {
+                  return(callback(true))
+                }
             }).catch(function (error) {
                 console.log(error);
                 return(callback(null))
@@ -426,7 +430,7 @@ function networkConnectionsToMap(networkConnectionsArray, callback) {
 
         /*
                 for (let i = 0; i < networkConnectionsArray.length; i++) {
-        
+
                     //var propertyName = 'thisPort';
                     let key = networkConnectionsArray[i].thisPort;
                     let value1 = networkConnectionsArray[i].otherAssetID;
@@ -434,9 +438,9 @@ function networkConnectionsToMap(networkConnectionsArray, callback) {
                     JSONValues["otherAssetID"] = value1
                     JSONValues["otherPort"] = value2
                     JSONConnections[key] = JSONValues;
-        
+
                 }
-        
+
                 return JSONConnections;
         */
 
@@ -576,7 +580,7 @@ function addPortsByAsset(assetID, level, callback) {
 }
 
 //note this only deletes a single connection, not to be confused with the other function that deletes all
-//When you edit and delete a single network connection, 
+//When you edit and delete a single network connection,
 //assetID is the asset you're editing
 //connectionName is name of networkPort, thisPort, you want to delete
 function symmetricDeleteSingleNetworkConnection(assetID, connectionName, otherAssetID, otherPort, callback) {
