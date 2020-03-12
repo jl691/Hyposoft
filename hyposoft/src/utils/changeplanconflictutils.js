@@ -191,15 +191,13 @@ const powerConnectionNumConnections = async (powerConnections, model, errorIDSet
     })
 }
 
-const networkConnectionConflict=
+// const networkConnectionConflict=
 
 
 
 //when do I call this? everytime submit is clicked
 //pass in the correct parameters
 async function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections) {
-
-    
 
     await rackNonExistent(changePlanID, stepID, rack, datacenter)
     await datacenterNonExistent(changePlanID, stepID, datacenter)
