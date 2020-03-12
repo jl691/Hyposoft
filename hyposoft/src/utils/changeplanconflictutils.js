@@ -199,6 +199,8 @@ const networkConnectionConflict=
 //pass in the correct parameters
 async function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections) {
 
+    
+
     await rackNonExistent(changePlanID, stepID, rack, datacenter)
     await datacenterNonExistent(changePlanID, stepID, datacenter)
     await rackUConflict(changePlanID, stepID, model, datacenter, rack, rackU)
@@ -228,6 +230,13 @@ async function addConflictToDB(changePlanID, stepID, fieldName, errorIDSet) {
 }
 
 export {
+   
     addAssetChangePlanPackage,
+    rackNonExistent,
+    datacenterNonExistent,
+    rackUConflict,
+    hostnameConflict,
+    ownerConflict,
+    powerConnectionConflict
 
 }
