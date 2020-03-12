@@ -558,15 +558,16 @@ class DecommissionedAssetScreen extends Component {
                                 <Stack >
                                     <Box gap='small' direction="column" margin='small'>
                                         {/* Put sort buttons here */}
-                                        <Text size='small'><b>Rack</b></Text>
-                                        <Box direction="row" justify="start" margin="small">
+                                        <Text size='small'><b>Sort by Rack and RackU</b></Text>
+                                        <Box direction="row" justify="center" margin="small" wrap={true}>
                                             <RadioButtonGroup
                                                 label="Rack"
                                                 name="rackSortChoice"
+                                                margin={{right: "small"}}
                                                 value={this.state.rackSortChoice}
                                                 options={[
-                                                    { label: "Ascending", value: "asc" },
-                                                    { label: "Descending", value: "desc" },
+                                                    { label: "Rack: Ascend", value: "asc" },
+                                                    { label: "Rack: Descend", value: "desc" },
                                                 ]}
                                                 onClick={e => {
                                                     this.value = e.target.value
@@ -574,16 +575,14 @@ class DecommissionedAssetScreen extends Component {
                                                     this.handleRadioButtonChange(e)
                                                 }}
                                             />
-                                        </Box>
-                                        <Text size='small'><b>Rack U</b></Text>
-                                        <Box direction="row" justify="start" margin="small">
                                             <RadioButtonGroup
                                                 label="Rack"
                                                 name="rackUSortChoice"
+                                                margin={{left: "small"}}
                                                 value={this.state.rackUSortChoice}
                                                 options={[
-                                                    { label: "Ascending", value: "asc" },
-                                                    { label: "Descending", value: "desc" },
+                                                    { label: "RackU: Ascend", value: "asc" },
+                                                    { label: "RackU: Descend", value: "desc" },
 
                                                 ]}
                                                 onClick={e => {
@@ -593,8 +592,15 @@ class DecommissionedAssetScreen extends Component {
                                                 }}
                                             />
                                         </Box>
-                                        <Box direction="column" justify="center" margin={{top: 'small', bottom: 'medium'}}>
+                                        <Box direction="column" justify="center" margin={{top: 'small', bottom: 'small'}}>
                                             <Button label={<Text size="small"> Apply</Text>} onClick={this.handleCombinedSort}/>
+                                        </Box>
+                                        <Box direction="column" justify="center" margin={{bottom: 'small'}}>
+                                            <Button label={<Text size="small"> Close</Text>} onClick={() => {
+                                                this.setState({
+                                                    popupType: ""
+                                                })
+                                            }}/>
                                         </Box>
                                     </Box>
                                 </Stack>
