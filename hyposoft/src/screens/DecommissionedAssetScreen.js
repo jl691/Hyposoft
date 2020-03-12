@@ -35,10 +35,13 @@ class DecommissionedAssetScreen extends Component {
           rackUSortChoice: "asc",
           datacentersLoaded: false,
           rangeStart: "",
-          rangeEnd: ""
+          rangeEnd: "",
+          dateStart: "",
+          dateEnd: ""
         }
 
         this.handleChangeRange = this.handleChangeRange.bind(this);
+        this.handleChangeDate = this.handleChangeDate.bind(this);
         this.handleRadioButtonChange = this.handleRadioButtonChange.bind(this);
         this.handleCombinedSort = this.handleCombinedSort.bind(this);
     }
@@ -158,10 +161,35 @@ class DecommissionedAssetScreen extends Component {
         }
     }
 
+    handleChangeDate(event) {
+        if (event.target.name === "dateParameterStart") {
+            this.setState({
+                dateStart: event.target.value
+            }, function () {
+                this.checkDateFilterDone();
+            });
+        } else if (event.target.name === "dateParameterEnd") {
+            this.setState({
+                dateEnd: event.target.value
+            }, function () {
+                this.checkDateFilterDone();
+            });
+        }
+    }
+
     checkFilterDone(){
         if (/[A-Z]\d+/.test(this.state.rangeStart) && /[A-Z]\d+/.test(this.state.rangeEnd) && this.state.datacenter) {
             console.log("passed")
             this.handleFilter(this.state.rangeStart, this.state.rangeEnd, this.state.datacenter);
+        } else {
+            this.restoreDefault();
+        }
+    }
+
+    checkDateFilterDone(){
+        if (/^(0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])[- /.](19|20)\d\d/.test(this.state.dateStart) && /^(0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])[- /.](19|20)\d\d/.test(this.state.dateEnd) && this.state.dateParameter) {
+            console.log("passed")
+            //this.handleDateFilter();
         } else {
             this.restoreDefault();
         }
@@ -208,6 +236,30 @@ class DecommissionedAssetScreen extends Component {
             }
 
         })
+    }
+
+    generateDateInputs() {
+      let returnVal;
+      if (this.state.dateParameter === 'Between') {
+        returnVal = (
+          <Stack margin={{ top: 'small', bottom: 'small' }}>
+              <Box gap='small' direction="column" align='center' margin={{bottom: 'medium'}}>
+                  <TextInput style={styles.TIStyle2} name="dateParameterStart" value={this.state.dateStart} placeholder="eg. 1/1/2020" size="xsmall" onChange={this.handleChangeDate} />
+                  <span>and</span>
+                  <TextInput style={styles.TIStyle2} name="dateParameterEnd" value={this.state.dateEnd} placeholder="eg. 12/1/2020" size="xsmall" onChange={this.handleChangeDate} />
+              </Box>
+          </Stack>
+        )
+      } else {
+        returnVal = (
+          <Stack margin={{ top: 'small', bottom: 'small' }}>
+              <Box gap='small' direction="column" align='center' margin={{bottom: 'medium'}}>
+                  <TextInput style={styles.TIStyle2} name="dateParameterStart" value={this.state.dateStart} placeholder="eg. 1/1/2020" size="xsmall" onChange={this.handleChangeDate} />
+              </Box>
+          </Stack>
+        )
+      }
+      return returnVal
     }
 
     generateDatacenters() {
@@ -440,6 +492,34 @@ class DecommissionedAssetScreen extends Component {
                         align='center'
                         margin={{ left: 'small', right: 'small' }}
                         justify='start' >
+                        {/* This box below is for filtering by date */}
+                        <Box style={{
+                            borderRadius: 10,
+                            borderColor: '#EDEDED'
+                        }}
+                        direction='row'
+                        background='#FFFFFF'
+                        alignSelf='stretch'
+                        width={"medium"}
+                        margin={{ top: 'small', left: 'medium', right: 'medium' }}
+                        pad='xsmall' >
+                             <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
+                                 <Text size='small'><b>Filter By Date</b></Text>
+                                 {<Select
+                                     placeholder="Select a date parameter..."
+                                     options={['Before','After','Between']}
+                                     value={this.state.dateParameter}
+                                     onChange={(option) => {
+                                         this.setState({
+                                             dateParameter: option.value
+                                         }, function () {
+                                             this.checkFilterDone();
+                                         });
+                                     }}
+                                 />}
+                                {this.generateDateInputs()}
+                              </Box>
+                        </Box>
                         {/* This box below is for range of racks */}
                         <Box style={{
                             borderRadius: 10,
@@ -447,7 +527,7 @@ class DecommissionedAssetScreen extends Component {
                         }}
                              background='#FFFFFF'
                              width={"medium"}
-                             margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                             margin={{ top: 'small', left: 'medium', right: 'medium' }}
                              pad='small' >
                             <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
                                 <Text size='small'><b>Filter By Rack Range</b></Text>
@@ -472,7 +552,7 @@ class DecommissionedAssetScreen extends Component {
                              alignSelf='stretch'
                              background='#FFFFFF'
                              width={"medium"}
-                             margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                             margin={{ top: 'small', left: 'medium', right: 'medium' }}
                              pad='xxsmall' >
                             <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
                                 <Stack >
@@ -518,32 +598,6 @@ class DecommissionedAssetScreen extends Component {
                                         </Box>
                                     </Box>
                                 </Stack>
-                            </Box>
-                        </Box>
-                        <Box style={{
-                            borderRadius: 10,
-                            borderColor: '#EDEDED'
-                        }}
-                             direction='row'
-                             alignSelf='stretch'
-                             background='#FFFFFF'
-                             width={"medium"}
-                             margin={{ top: 'medium', left: 'medium', right: 'medium' }}
-                             pad='small' >
-                            <Box flex margin={{ left: 'medium', top: 'small', right: 'medium' }} direction='column' justify='start'>
-                                {/*<Box direction="column" width={"medium"} margin={{top: 'small'}}>*/}
-                                <Button label={<Text size="small">Close</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
-                                    this.setState({
-                                        popupType: ""
-                                    })
-                                }}/>
-                                {/* <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} onClick={() => {
-                                    bulkassetutils.exportFilteredAssets(this.state.searchResults || this.assetTable.current.state.assets);
-                                }} style={{marginBottom: "10px"}}/>
-                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} onClick={() => {
-                                    bulkconnectionstutils.exportFilteredConnections(this.state.searchResults || this.assetTable.current.state.assets);
-                                }} margin={{bottom: 'medium'}}/>
-                                */}
                             </Box>
                         </Box>
                     </Box>
