@@ -69,6 +69,7 @@ export default class DetailedAssetScreen extends Component {
 
     generateNetworkTable() {
         if (this.state.asset.networkConnections && Object.keys(this.state.asset.networkConnections).length) {
+            console.log(this.state.asset.networkConnections)
             return Object.keys(this.state.asset.networkConnections).map((connection) => (
                 <TableRow>
                     <TableCell scope="row">

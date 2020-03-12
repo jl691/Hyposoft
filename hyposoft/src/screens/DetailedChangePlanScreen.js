@@ -73,11 +73,11 @@ class DetailedChangePlanScreen extends React.Component {
                         <Box flex
                              margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
                              direction='column' justify='start'>
-                            <Heading level='4' margin='none'>Add change plan</Heading>
+                            <Heading level='4' margin='none'>Add change</Heading>
                             <p>Add a new change.</p>
                             <Box direction='column' flex alignSelf='stretch'>
                                 <Button primary icon={<Add/>} label="Add" onClick={() => {
-                                    this.setState({popupType: "Add"})
+                                    this.props.history.push('/changeplans/' + this.changePlanID + '/add')
                                 }}/>
                             </Box>
                         </Box>

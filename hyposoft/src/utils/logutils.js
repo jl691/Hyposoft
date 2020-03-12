@@ -22,6 +22,10 @@ function DATACENTER() {
     return 'datacenter'
 }
 
+function CHANGEPLAN() {
+    return 'change plan'
+}
+
 // ACTIONS
 function CREATE() {
     return 'created'
@@ -33,6 +37,18 @@ function MODIFY() {
 
 function DELETE() {
     return 'deleted'
+}
+
+function DECOMMISSION() {
+    return 'decommissioned'
+}
+
+function EXECUTE() {
+    return 'executed'
+}
+
+function COMPLETE() {
+    return 'completed'
 }
 
 // only optional is objectId and objectType
@@ -68,6 +84,9 @@ function addLog(objectId, objectType, action, data = null) {
             break
         case DATACENTER():
             getDatacenterName(objectId,data,action,datacenter => finishAddingLog(datacenter, objectId, objectType, action))
+            break
+        case CHANGEPLAN():
+            getChangePlanName(objectId,data,action,changeplan => finishAddingLog(changeplan, objectId, objectType, action))
             break
         default:
             console.log("Could not create log due to unknown type: " + objectType)
@@ -175,13 +194,25 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
 function doesObjectStillExist(objectType,objectId,callback) {
     switch (objectType) {
         case ASSET():
-            firebaseutils.assetRef.doc(objectId).get().then(doc => callback(doc.exists))
+            firebaseutils.assetRef.doc(objectId).get().then(doc => {
+                if (doc.exists) {
+                    callback(true,true)
+                    return
+                }
+                firebaseutils.decommissionRef.where('assetId','==',objectId).get().then(docSnaps => {
+                    if (docSnaps.docs.length === 0) {
+                        callback(false,false)
+                        return
+                    }
+                    callback(docSnaps.docs[0].exists,false)
+                })
+            })
             break
         case MODEL():
-            firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.exists))
+            firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.exists,true))
             break
         default:
-            callback(true)
+            callback(true,true)
     }
 }
 
@@ -244,7 +275,7 @@ function getUserName(id,data,action,callback) {
 }
 
 function getAssetName(id,data,action,callback) {
-    if (data && action === DELETE()) {
+    if (data && (action === DELETE() || action === DECOMMISSION())) {
         callback({name: data.model+' '+data.hostname, data: data, previousData: null, datacenter: data.datacenter})
     } else {
         firebaseutils.assetRef.doc(id).get().then(doc => callback({name: doc.data().model+' '+doc.data().hostname, data: doc.data(), previousData: data, datacenter: doc.data().datacenter}))
@@ -295,6 +326,18 @@ function getDatacenterName(id,data,action,callback) {
         callback({name: data.name, data: data, previousData: null, datacenter: null})
     } else {
         firebaseutils.datacentersRef.doc(id).get().then(doc => callback({name: doc.data().name, data: doc.data(), previousData: data, datacenter: null}))
+        .catch( error => {
+          console.log("Error getting documents: ", error)
+          callback(null)
+        })
+    }
+}
+
+function getChangePlanName(id,data,action,callback) {
+    if (data && action === DELETE()) {
+        callback({name: data.name, data: data, previousData: null, datacenter: null})
+    } else {
+        firebaseutils.changeplansRef.doc(id).get().then(doc => callback({name: doc.data().name, data: doc.data(), previousData: data, datacenter: null}))
         .catch( error => {
           console.log("Error getting documents: ", error)
           callback(null)
@@ -454,4 +497,4 @@ var isEqual = function (value, other, name) {
 	return true;
 };
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CREATE, MODIFY, DELETE,addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName }
+export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }

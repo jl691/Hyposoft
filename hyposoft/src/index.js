@@ -27,9 +27,12 @@ import RackElevations from "./components/RackElevations";
 import DatacenterScreen from "./screens/DatacenterScreen";
 import LogScreen from "./screens/LogScreen"
 import DetailedChangeScreen from "./screens/DetailedChangeScreen"
+import DecommissionedAssetScreen from "./screens/DecommissionedAssetScreen"
+import DetailedDecommissionedAssetScreen from "./screens/DetailedDecommissionedAssetScreen"
 
 import PostOAuthHandler from './handlers/PostOAuthHandler'
 import NetworkNeighborhood from "./components/NetworkNeighborhood";
+import AddChangeForm from "./components/AddChangeForm";
 
 ReactDOM.render((
             <BrowserRouter>
@@ -51,12 +54,15 @@ ReactDOM.render((
                     {/* TODO: have url be the ID of the instance */}
                     <Route exact path='/assets/:assetID' component={DetailedAssetScreen}/>
                     <Route exact path='/changeplans/:changePlanID' component={DetailedChangePlanScreen}/>
+                    <Route exact path='/changeplans/:changePlanID/add' component={AddChangeForm}/>
                     <Route exact path='/changeplans/:changePlanID/:stepID' component={DetailedChangeScreen}/>
                     {/* TODO: implement a functionality to take you to instance screen vs http://localhost:3000/instances*/}
                     <Route exact path='/assets' component={AssetScreen} />
                     <Route path='/port' component={PortScreen} />
                     <Route path='/postoauth' component={PostOAuthHandler} />
                     <Route exact path='/changeplans' component={ChangePlanScreen}/>
+                    <Route exact path='/decommissioned' component={DecommissionedAssetScreen}/>
+                    <Route exact path='/decommissioned/:assetID' component={DetailedDecommissionedAssetScreen}/>
                 </Switch>
             </BrowserRouter>
         ), document.getElementById('root'))

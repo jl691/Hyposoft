@@ -50,12 +50,12 @@ export default class AddAssetForm extends Component {
             macAddresses: [],
             networkConnections: [],
             powerConnections: [
-            //     {
-            //     pduSide: "",
-            //     port: ""
-            // }
-        ],
-           
+                //     {
+                //     pduSide: "",
+                //     port: ""
+                // }
+            ],
+
 
         }
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -157,7 +157,7 @@ export default class AddAssetForm extends Component {
         this.setState(prevState => ({
             networkConnections: networkConnectionsCopy
         }));
-       
+
 
     }
 
@@ -238,22 +238,22 @@ export default class AddAssetForm extends Component {
 
     }
 
-    checkNetworkPortUniqueness(networkPorts, callback){
-        if(!networkPorts.length){
+    checkNetworkPortUniqueness(networkPorts, callback) {
+        if (!networkPorts.length) {
             callback(true);
         } else {
             let thisPortArray = [];
             let otherIDPortArray = [];
             let count = 0;
-            networkPorts.forEach(networkConnection =>{
+            networkPorts.forEach(networkConnection => {
                 let otherIDPortTemp = networkConnection.otherAssetID + networkConnection.otherPort;
-                if(thisPortArray.includes(networkConnection.thisPort) || otherIDPortArray.includes(otherIDPortTemp)){
+                if (thisPortArray.includes(networkConnection.thisPort) || otherIDPortArray.includes(otherIDPortTemp)) {
                     callback(null);
                 } else {
                     thisPortArray.push(networkConnection.thisPort);
                     otherIDPortArray.push(otherIDPortTemp);
                     count++;
-                    if(count === networkPorts.length){
+                    if (count === networkPorts.length) {
                         callback(true);
                     }
                 }
@@ -261,9 +261,9 @@ export default class AddAssetForm extends Component {
         }
     }
 
-   async handleSubmit(event) {
-    //flawed logic: want to move first if statement out, also not always doing a change plan
-        await changeplanconflictutils.addAssetChangePlanPackage("VwC1BMKipvuuvmR1LrYR").then(() =>{
+    async handleSubmit(event) {
+        //flawed logic: want to move first if statement out, also not always doing a change plan
+        await changeplanconflictutils.addAssetChangePlanPackage("VwC1BMKipvuuvmR1LrYR").then(() => {
 
             console.log("Inside the add asset change plan package .then()")
             if (event.target.name === "addInst") {
@@ -281,7 +281,7 @@ export default class AddAssetForm extends Component {
                     ToastsStore.error("Rack U must be a number.");
                 } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
                     ToastsStore.error("Rack U must be positive.");
-    
+
                     //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
                 }
                 else {
@@ -296,9 +296,9 @@ export default class AddAssetForm extends Component {
                                 if (existingPowerConnections.length === Object.keys(this.state.powerConnections).length) {
                                     //TODO: fix this in assetmacutils
                                     this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
-                                        if(result) {
+                                        if (result) {
                                             assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
-    
+
                                                 if (fixedAddr) {
                                                     console.log(fixedAddr)
                                                     assetutils.addAsset(
@@ -320,28 +320,29 @@ export default class AddAssetForm extends Component {
                                                                 this.props.parentCallback(true);
                                                                 ToastsStore.success('Successfully added asset!');
                                                             }
-                                                        }
+                                                        }, this.props.changePlanID ? this.props.changePlanID : null
                                                     );
                                                 }
                                                 else {
                                                     ToastsStore.error(macError)
                                                 }
                                             });
+
                                         } else {
-                                            ToastsStore.error("Network connections must be unique");
+                                            ToastsStore.error("Network connections must be unique.")
                                         }
                                     })
                                 }
                             }
                         })
                     } else {
-    
+
                         this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
-                            if(result){
+                            if (result) {
                                 assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
-    
+
                                     if (fixedAddr) {
-                                        //console.log(fixedAddr)
+                                        console.log(fixedAddr)
                                         assetutils.addAsset(
                                             this.state.asset_id,
                                             this.state.model,
@@ -354,45 +355,34 @@ export default class AddAssetForm extends Component {
                                             fixedAddr,
                                             this.state.networkConnections,
                                             this.state.showPowerConnections ? this.state.powerConnections : [],
-    
+
                                             errorMessage => {
                                                 if (errorMessage) {
-                                                    
                                                     ToastsStore.error(errorMessage, 10000)
                                                 } else {
                                                     this.props.parentCallback(true);
                                                     ToastsStore.success('Successfully added asset!');
                                                 }
-                                            }
+                                            }, this.props.changePlanID ? this.props.changePlanID : null
                                         );
-    
-    
+
+
                                     }
                                     else {
                                         ToastsStore.error(macError)
                                     }
-    
-    
-    
                                 });
                             } else {
                                 ToastsStore.error("Network connections must be unique.")
                             }
                         })
                     }
-    
-    
+
+
                 }
-    
+
             }
-
-
-
-
         })
-
-
-     
     }
 
     render() {
@@ -415,7 +405,7 @@ export default class AddAssetForm extends Component {
                         <Box direction="column" pad='xsmall' gap="small" flex overflow={{ vertical: 'scroll' }}>
                             <FormField name="model" label="Model">
 
-                                <TextInput name="model" required="true"
+                                <TextInput name="model" required={true}
                                     placeholder="eg. Dell R710"
                                     onChange={e => {
                                         const value = e.target.value
@@ -476,7 +466,7 @@ export default class AddAssetForm extends Component {
                                         })
                                     }}
                                     title='Datacenter'
-                                    required="true"
+                                    required={true}
                                 />
                             </FormField>
 
@@ -512,7 +502,7 @@ export default class AddAssetForm extends Component {
                                     }
                                     }
                                     title='Rack'
-                                    required="true"
+                                    required={true}
                                 />
                             </FormField>
 
@@ -521,7 +511,7 @@ export default class AddAssetForm extends Component {
 
 
                                 <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
-                                    value={this.state.rackU} required="true" />
+                                    value={this.state.rackU} required={true} />
                             </FormField>
 
 
