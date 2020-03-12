@@ -188,7 +188,12 @@ class ChangePlanScreen extends React.Component {
                 property: "workorder",
                 header: <Text size='small'>Work Order</Text>,
                 render: datum => (
-                    <Print/>)
+                    <Print onClick={(e) => {
+                        e.persist();
+                        e.nativeEvent.stopImmediatePropagation();
+                        e.stopPropagation();
+                        this.props.history.push('/changeplans/' + datum.id + '/workorder')
+                    }}/>)
             }
         ];
         return cols;

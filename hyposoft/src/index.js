@@ -32,6 +32,7 @@ import DecommissionedAssetScreen from "./screens/DecommissionedAssetScreen"
 import PostOAuthHandler from './handlers/PostOAuthHandler'
 import NetworkNeighborhood from "./components/NetworkNeighborhood";
 import AddChangeForm from "./components/AddChangeForm";
+import WorkOrderScreen from "./screens/WorkOrderScreen";
 
 ReactDOM.render((
             <BrowserRouter>
@@ -54,6 +55,7 @@ ReactDOM.render((
                     <Route exact path='/assets/:assetID' component={DetailedAssetScreen}/>
                     <Route exact path='/changeplans/:changePlanID' component={DetailedChangePlanScreen}/>
                     <Route exact path='/changeplans/:changePlanID/add' component={AddChangeForm}/>
+                    <Route exact path='/changeplans/:changePlanID/workorder' component={WorkOrderScreen}/>
                     <Route exact path='/changeplans/:changePlanID/:stepID' component={DetailedChangeScreen}/>
                     {/* TODO: implement a functionality to take you to instance screen vs http://localhost:3000/instances*/}
                     <Route exact path='/assets' component={AssetScreen} />
