@@ -24,7 +24,7 @@ class NetworkNeighborhood extends React.Component {
         })
     }
 
-    buildGraph(result,deployed) {
+    buildGraph(result,isGraphClickable) {
       let data;
       if(result){
           console.log(result);
@@ -82,7 +82,7 @@ class NetworkNeighborhood extends React.Component {
                   minNodeSpacing: 30
               }
           });
-          if (deployed) {
+          if (isGraphClickable) {
             cy.on('tap', 'node', function(){
                 if (this.data('deployed')) {
                   try { // your browser may block popups
