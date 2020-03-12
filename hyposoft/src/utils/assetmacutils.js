@@ -81,7 +81,7 @@ function handleMacAddressFixAndSet(addresses, callback) {
                 macAddresses[port]=fixedMAC
             }
 
-            console.log("MAC address passed to database: " + fixedMAC)
+           // console.log("MAC address passed to database: " + fixedMAC)
             if (count === addresses.length) {
                 callback(macAddresses)
             }

@@ -12,7 +12,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
     seenThisPorts = [];
     console.log(networkPortConnections)
     console.log(seenOtherPorts.size)
-    console.log("upppppp in this bitch", networkPortConnections)
+    //console.log("upppppp in this bitch", networkPortConnections)
 
     let success = 0;
 
