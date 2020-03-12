@@ -3,12 +3,13 @@ import AppBar from '../components/AppBar'
 import BackButton from '../components/BackButton'
 import UserMenu from '../components/UserMenu'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
-import { Anchor, Box, Button, DataTable, Form, Grommet, Heading, Text, TextInput } from 'grommet'
-import { FormUp, FormDown } from "grommet-icons"
+import { Anchor,Box,Button,DataTable,Form,Grommet,Heading,Layer,RadioButtonGroup,Select,Stack,Menu,Text,TextInput } from 'grommet'
+import { Filter, FormUp, FormDown } from "grommet-icons"
 import {Redirect} from "react-router-dom";
 import theme from '../theme'
 import * as userutils from '../utils/userutils'
 import * as decomutils from '../utils/decommissionutils'
+import * as datacenterutils from "../utils/datacenterutils"
 
 const styles = {
     TIStyle: {
@@ -19,24 +20,42 @@ const styles = {
 
 class DecommissionedAssetScreen extends Component {
     startAfter = null
+    datacenters = []
+    defaultAssets = []
 
     constructor(props) {
         super(props)
         this.state = {
           initialLoaded: false,
+          popupType: "",
           searchQuery: '',
           sortField: "",
-          sortAscending: true
+          sortAscending: true,
+          rackSortChoice: "asc",//by default, will be ascending
+          rackUSortChoice: "asc",
+          datacentersLoaded: false,
+          rangeStart: "",
+          rangeEnd: ""
         }
+
+        this.handleChangeRange = this.handleChangeRange.bind(this);
+        this.handleRadioButtonChange = this.handleRadioButtonChange.bind(this);
+        this.handleCombinedSort = this.handleCombinedSort.bind(this);
     }
 
     componentDidMount() {
+        if (localStorage.getItem('tipShown') !== 'yes') {
+            ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
+            localStorage.setItem('tipShown', 'yes')
+        }
+        this.fetchDatacenters()
         this.init()
     }
 
     init() {
       decomutils.getAssets(this.startAfter, (assets, newStartAfter) => {
-          this.startAfter = newStartAfter;
+          this.startAfter = newStartAfter
+          this.defaultAssets = assets
           this.setState(oldState => (
               {...oldState, assets: assets, initialLoaded: true, sortField: '', sortAscending: true}
           ))
@@ -70,6 +89,175 @@ class DecommissionedAssetScreen extends Component {
             this.startAfter = newStartAfter;
             this.setState({assets: assets, initialLoaded: true})
         }, field, newSort)
+    }
+
+    restoreDefault() {
+        this.setState({assets: this.defaultAssets})
+    }
+
+    handleFilter(start, end, datacenter) {
+        console.log("triggered with " + start + " and " + end)
+        let splitRackArrayStart = start.split(/(\d+)/);
+        let rackRowStart = splitRackArrayStart[0];
+        let rackNumStart = parseInt(splitRackArrayStart[1]);
+
+        let splitRackArrayEnd = end.split(/(\d+)/);
+        let rackRowEnd = splitRackArrayEnd[0];
+        let rackNumEnd = parseInt(splitRackArrayEnd[1]);
+
+        let newAssets = [];
+        let splitRackArrayTemp, rackRowTemp, rackNumTemp;
+        this.defaultAssets.forEach(asset => {
+            splitRackArrayTemp = asset.rack.split(/(\d+)/);
+            rackRowTemp = splitRackArrayTemp[0];
+            rackNumTemp = parseInt(splitRackArrayTemp[1]);
+            console.log("current asset: " + rackRowTemp.charCodeAt(0) + " " + rackNumTemp)
+            console.log("rackRowTemp " + rackRowTemp + " rackNumTemp " + rackNumTemp)
+            console.log("rackRowStart " + rackRowStart.charCodeAt(0) + " rackRowEnd " + rackRowEnd.charCodeAt(0) + " rackNumStart " + rackNumStart + " rackNumEnd " + rackNumEnd)
+            /*if(rackRowTemp.charCodeAt(0) >= rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) <= rackRowEnd.charCodeAt(0) && rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd){
+                console.log("found a match!")
+                newInstances.push(asset);
+            }*/
+            if (datacenter === "All datacenters" || asset.datacenter === datacenter) {
+                if ((rackRowTemp === rackRowStart && rackNumTemp >= rackNumStart) || (rackRowTemp === rackRowEnd && rackNumTemp <= rackNumEnd) || (rackRowTemp.charCodeAt(0) > rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) < rackRowEnd.charCodeAt(0))) {
+                    if (rackRowStart === rackRowEnd && rackRowEnd === rackRowTemp) {
+                        if (rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd) {
+                            console.log("found a match!")
+                            newAssets.push(asset);
+                        }
+                    } else {
+                        console.log("found a match!")
+                        newAssets.push(asset);
+                    }
+                }
+            }
+        })
+
+        this.setState({assets: newAssets})
+    }
+
+    handleRackRackUSort(sortedAssets) {
+        this.setState({assets: sortedAssets,searchQuery: ''})
+    }
+
+    handleChangeRange(event) {
+        if (event.target.name === "rangeNumberStart") {
+            console.log("start")
+            this.setState({
+                rangeStart: event.target.value
+            }, function () {
+                this.checkFilterDone();
+            });
+        } else if (event.target.name === "rangeNumberEnd") {
+            console.log("end")
+            this.setState({
+                rangeEnd: event.target.value
+            }, function () {
+                this.checkFilterDone();
+            });
+        }
+    }
+
+    checkFilterDone(){
+        if (/[A-Z]\d+/.test(this.state.rangeStart) && /[A-Z]\d+/.test(this.state.rangeEnd) && this.state.datacenter) {
+            console.log("passed")
+            this.handleFilter(this.state.rangeStart, this.state.rangeEnd, this.state.datacenter);
+        } else {
+            this.restoreDefault();
+        }
+    }
+
+    handleRadioButtonChange(event) {
+        if (event.target.name === "rackSortChoice") {
+            console.log(event.target.value)
+            this.setState({
+                rackSortChoice: event.target.value
+            });
+
+        } else if (event.target.name === "rackUSortChoice") {
+            console.log(event.target.value)
+            this.setState({
+                rackUSortChoice: event.target.value
+            });
+        }
+    }
+
+    handleCombinedSort(event) {
+        let rackBool = this.state.rackSortChoice === "asc" ? true : false;
+        let rackUBool = this.state.rackUSortChoice === "asc" ? true : false;
+
+        if(this.state.rangeStart && this.state.rangeEnd && this.state.datacenter){
+            ToastsStore.info("To sort by rack and rack U as well as filter by rack range, please sort by rack and rack U first before filtering by range.", 10000)
+        }
+
+        this.setState({
+            datacenter: "",
+            rangeStart: "",
+            rangeEnd: ""
+        });
+
+        decomutils.sortAssetsByRackAndRackU(rackBool, rackUBool, sortedInst => {
+            console.log("Will be sorting racks: " + this.state.rackSortChoice)
+            console.log("Will be sorting rackU: " + this.state.rackUSortChoice)
+
+            if (sortedInst) {
+                this.handleRackRackUSort(sortedInst)
+            } else {
+                console.log("Done goofed somehow trying to sort")
+
+            }
+
+        })
+    }
+
+    generateDatacenters() {
+        if (!this.state.datacentersLoaded) {
+            return (<Menu
+                label="Please wait..."
+            />)
+        } else {
+            //console.log(this.datacenters)
+            return (
+                <Select
+                    placeholder="Select a datacenter..."
+                    options={this.datacenters}
+                    value={this.state.datacenter}
+                    onChange={(option) => {
+                        this.setState({
+                            datacenter: option.value
+                        }, function () {
+                            this.checkFilterDone();
+                        });
+                    }}
+                />
+            )
+        }
+    }
+
+    fetchDatacenters() {
+        let count = 0;
+        datacenterutils.getAllDatacenterNames(names => {
+            if (names.length) {
+                names.forEach(name => {
+                    this.datacenters.push(name);
+                    count++;
+                    if (count === names.length) {
+                        this.datacenters.push(name);
+                        this.datacenters.push("All datacenters")
+                        //console.log(items)
+                        this.setState({
+                            datacentersLoaded: true
+                        });
+                    }
+                })
+            } else {
+                console.log("no datacenters")
+                this.datacenters.push("No datacenters exist.")
+                this.setState({
+                    datacentersLoaded: true
+                });
+            }
+        })
     }
 
     search() {
@@ -221,12 +409,152 @@ class DecommissionedAssetScreen extends Component {
     }
 
     render() {
+        const {popupType} = this.state;
+        let popup;
+        if (localStorage.getItem('tipShown') !== 'yes') {
+            ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
+            localStorage.setItem('tipShown', 'yes')
+        }
+
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/'/>
+        }
+        if (popupType === 'Filters') {
+            popup = (<Layer
+                position="right"
+                full="vertical"
+                modal
+                onClickOutside={() => this.setState({
+                    popupType: ""
+                })}
+                onEsc={() => this.setState({
+                    popupType: ""
+                })}
+            >
+                <Box background='light-2' align={"center"}
+                     fill="vertical"
+                     overflow="auto"
+                     pad="small">
+                    {/* BEGNINNING OF FILTER BAR ==========*/}
+                    <Box
+                        align='center'
+                        margin={{ left: 'small', right: 'small' }}
+                        justify='start' >
+                        {/* This box below is for range of racks */}
+                        <Box style={{
+                            borderRadius: 10,
+                            borderColor: '#EDEDED'
+                        }}
+                             background='#FFFFFF'
+                             width={"medium"}
+                             margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                             pad='small' >
+                            <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
+                                <Text size='small'><b>Filter By Rack Range</b></Text>
+                                {this.generateDatacenters()}
+                                <Stack margin={{ top: 'small', bottom: 'small' }}>
+                                    <Box gap='small' direction="column" align='center' margin={{bottom: 'medium'}}>
+
+                                        <TextInput style={styles.TIStyle2} name="rangeNumberStart" value={this.state.rangeStart} placeholder="eg. B1" size="xsmall" onChange={this.handleChangeRange} />
+                                        <span>to</span>
+                                        <TextInput style={styles.TIStyle2} name="rangeNumberEnd" value={this.state.rangeEnd} placeholder="eg. C21" size="xsmall" onChange={this.handleChangeRange} />
+                                    </Box>
+
+                                </Stack>
+                            </Box>
+                        </Box>
+                        {/* Box for Combined Rack and Rack U sort */}
+                        <Box style={{
+                            borderRadius: 10,
+                            borderColor: '#EDEDED'
+                        }}
+                             direction='row'
+                             alignSelf='stretch'
+                             background='#FFFFFF'
+                             width={"medium"}
+                             margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                             pad='xxsmall' >
+                            <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
+                                <Stack >
+                                    <Box gap='small' direction="column" margin='small'>
+                                        {/* Put sort buttons here */}
+                                        <Text size='small'><b>Rack</b></Text>
+                                        <Box direction="row" justify="start" margin="small">
+                                            <RadioButtonGroup
+                                                label="Rack"
+                                                name="rackSortChoice"
+                                                value={this.state.rackSortChoice}
+                                                options={[
+                                                    { label: "Ascending", value: "asc" },
+                                                    { label: "Descending", value: "desc" },
+                                                ]}
+                                                onClick={e => {
+                                                    this.value = e.target.value
+                                                    this.setState(oldState => ({ ...oldState, rackSortChoice: this.value }))
+                                                    this.handleRadioButtonChange(e)
+                                                }}
+                                            />
+                                        </Box>
+                                        <Text size='small'><b>Rack U</b></Text>
+                                        <Box direction="row" justify="start" margin="small">
+                                            <RadioButtonGroup
+                                                label="Rack"
+                                                name="rackUSortChoice"
+                                                value={this.state.rackUSortChoice}
+                                                options={[
+                                                    { label: "Ascending", value: "asc" },
+                                                    { label: "Descending", value: "desc" },
+
+                                                ]}
+                                                onClick={e => {
+                                                    this.value = e.target.value
+                                                    this.setState(oldState => ({ ...oldState, rackUSortChoice: this.value }))
+                                                    this.handleRadioButtonChange(e)
+                                                }}
+                                            />
+                                        </Box>
+                                        <Box direction="column" justify="center" margin={{top: 'small', bottom: 'medium'}}>
+                                            <Button label={<Text size="small"> Apply</Text>} onClick={this.handleCombinedSort}/>
+                                        </Box>
+                                    </Box>
+                                </Stack>
+                            </Box>
+                        </Box>
+                        <Box style={{
+                            borderRadius: 10,
+                            borderColor: '#EDEDED'
+                        }}
+                             direction='row'
+                             alignSelf='stretch'
+                             background='#FFFFFF'
+                             width={"medium"}
+                             margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                             pad='small' >
+                            <Box flex margin={{ left: 'medium', top: 'small', right: 'medium' }} direction='column' justify='start'>
+                                {/*<Box direction="column" width={"medium"} margin={{top: 'small'}}>*/}
+                                <Button label={<Text size="small">Close</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
+                                    this.setState({
+                                        popupType: ""
+                                    })
+                                }}/>
+                                {/* <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} onClick={() => {
+                                    bulkassetutils.exportFilteredAssets(this.state.searchResults || this.assetTable.current.state.assets);
+                                }} style={{marginBottom: "10px"}}/>
+                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} onClick={() => {
+                                    bulkconnectionstutils.exportFilteredConnections(this.state.searchResults || this.assetTable.current.state.assets);
+                                }} margin={{bottom: 'medium'}}/>
+                                */}
+                            </Box>
+                        </Box>
+                    </Box>
+                    {/* END OFF FILTER BAR ================= */}
+                </Box>
+            </Layer>);
         }
         return (
           <Grommet theme={theme} full className='fade'>
               <Box fill background='light-2'>
+                  {popup}
                   <AppBar>
                       <BackButton alignSelf='start' this={this}/>
                       <Heading alignSelf='center' level='4' margin={{
@@ -234,6 +562,15 @@ class DecommissionedAssetScreen extends Component {
                       }} >Decommissioned Assets</Heading>
                       <UserMenu alignSelf='end' this={this} />
                   </AppBar>
+                  <Button primary icon={<Filter size={"medium"}/>}
+                          onClick={() => this.setState({popupType: 'Filters'})}
+                  style={{
+                      borderRadius: '100%',
+                      padding: '12px',
+                      position: "absolute",
+                      right: "2%",
+                      bottom: "2%"
+                  }}/>
 
                   <Box direction='row'
                       justify='center'

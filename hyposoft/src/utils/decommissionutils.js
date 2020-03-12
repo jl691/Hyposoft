@@ -113,4 +113,28 @@ function getAssetDetails(id, callback) {
     })
 }
 
-export { decommissionAsset, getAssets, sortAssets, getAssetDetails }
+// rackAsc should be a boolean corresponding to true if rack is ascending
+// rackUAsc should be a boolean corresponding to true if rackU is ascending
+function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback) {
+    var query = firebaseutils.decommissionRef
+    if (!rackAsc && !rackUAsc) {
+        query = firebaseutils.decommissionRef.orderBy("rackRow", "desc").orderBy("rackNum", "desc").orderBy("rackU", "desc")
+    } else if (rackAsc && !rackUAsc) {
+        query = firebaseutils.decommissionRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU", "desc")
+    } else if (!rackAsc && rackUAsc) {
+        query = firebaseutils.decommissionRef.orderBy("rackRow", "desc").orderBy("rackNum", "desc").orderBy("rackU")
+    } else {
+        query = firebaseutils.decommissionRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU")
+    }
+    query.get().then(querySnapshot => {
+        const assets = querySnapshot.docs.map(doc => (
+            {...doc.data(), date: getDate(doc.data().timestamp)}
+        ))
+        callback(assets)
+    }).catch(error => {
+        console.log("Error getting documents: ", error)
+        callback(null)
+    })
+}
+
+export { decommissionAsset, getAssets, sortAssets, getAssetDetails, sortAssetsByRackAndRackU }
