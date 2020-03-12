@@ -524,14 +524,14 @@ function addPortsByAsset(assetID, level, callback) {
     assetRef.doc(assetID).get().then(docSnap => {
         //let assetModel = docSnap.data().model;
         if (docSnap.exists) {
-            finishAddPortsByAsset(docSnap)
+            finishAddPortsByAsset(docSnap,true)
             return
         }
         decommissionRef.where('assetId','==',assetID).get().then(docSnaps => {
             if (docSnaps.docs.length === 0) {
                 return(callback(null, null))
             }
-            finishAddPortsByAsset(docSnaps.docs[0])
+            finishAddPortsByAsset(docSnaps.docs[0],false)
             return
         })
         .catch(function (error) {
@@ -543,7 +543,7 @@ function addPortsByAsset(assetID, level, callback) {
         return(callback(null, null))
     })
 
-    function finishAddPortsByAsset(docSnap) {
+    function finishAddPortsByAsset(docSnap, deployed) {
       let nodeClass = (level === 1) ? "origin" : "second";
       let nodeLevel = (level === 1) ? 1 : 2;
       let hostname = docSnap.data().hostname ? docSnap.data().hostname : "No hostname";
@@ -552,6 +552,7 @@ function addPortsByAsset(assetID, level, callback) {
               data: {
                   id: assetID,
                   level: nodeLevel,
+                  deployed: deployed,
                   display: assetID + "\n" + hostname
               },
               classes: nodeClass,
@@ -563,13 +564,13 @@ function addPortsByAsset(assetID, level, callback) {
           Object.keys(docSnap.data().networkConnections).forEach(function (connection) {
               assetRef.doc(docSnap.data().networkConnections[connection].otherAssetID.toString()).get().then(otherDocSnap => {
                   if (otherDocSnap.exists) {
-                      finishAddPortsByOtherAsset(docSnap, otherDocSnap, connection)
+                      finishAddPortsByOtherAsset(docSnap, otherDocSnap, true, connection)
                   } else {
                     decommissionRef.where('assetId','==',docSnap.data().networkConnections[connection].otherAssetID.toString()).get().then(docSnaps => {
                         if (docSnaps.docs.length === 0) {
                             return(callback(null, null))
                         }
-                        finishAddPortsByOtherAsset(docSnap, docSnaps.docs[0], connection)
+                        finishAddPortsByOtherAsset(docSnap, docSnaps.docs[0], false, connection)
                     })
                     .catch(function (error) {
                         console.log(error);
@@ -586,7 +587,7 @@ function addPortsByAsset(assetID, level, callback) {
           return(callback([], []))
       }
 
-      function finishAddPortsByOtherAsset(docSnap, otherDocSnap, connection) {
+      function finishAddPortsByOtherAsset(docSnap, otherDocSnap, deployed, connection) {
         assetSecondLevel.push(docSnap.data().networkConnections[connection].otherAssetID.toString());
         console.log("here 2")
         //let otherAssetModel = otherDocSnap.data().model;
@@ -597,6 +598,7 @@ function addPortsByAsset(assetID, level, callback) {
             data: {
                 id: docSnap.data().networkConnections[connection].otherAssetID,
                 level: innerNodeLevel,
+                deployed: deployed,
                 display: docSnap.data().networkConnections[connection].otherAssetID + "\n" + otherHostname
             },
             classes: innerNodeClass,

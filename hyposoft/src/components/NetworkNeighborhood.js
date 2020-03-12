@@ -84,10 +84,18 @@ class NetworkNeighborhood extends React.Component {
           });
           if (deployed) {
             cy.on('tap', 'node', function(){
-                try { // your browser may block popups
-                    window.open( "/assets/" + this.data('id') );
-                } catch(e){ // fall back on url change
-                    window.location.href = "/assets/" + this.data('id');
+                if (this.data('deployed')) {
+                  try { // your browser may block popups
+                      window.open( "/assets/" + this.data('id') );
+                  } catch(e){ // fall back on url change
+                      window.location.href = "/assets/" + this.data('id');
+                  }
+                } else {
+                  try { // your browser may block popups
+                      window.open( "/decommissioned/" + this.data('id') );
+                  } catch(e){ // fall back on url change
+                      window.location.href = "/decommissioned/" + this.data('id');
+                  }
                 }
             });
           }
