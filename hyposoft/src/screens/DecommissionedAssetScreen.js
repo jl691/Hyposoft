@@ -139,6 +139,59 @@ class DecommissionedAssetScreen extends Component {
         this.setState({assets: newAssets})
     }
 
+    handleDateFilter(isBetween) {
+        const splitDateStart = this.state.dateStart.includes('/') ? this.state.dateStart.split('/')
+                                                                  : this.state.dateStart.split('-')
+        var startDate = new Date()
+        startDate.setMonth(parseInt(splitDateStart[0])-1)
+        startDate.setDate(parseInt(splitDateStart[1]))
+        startDate.setFullYear(parseInt(splitDateStart[2]))
+        switch (this.state.dateParameter) {
+          case 'After':
+            startDate.setHours(23)
+            startDate.setMinutes(59)
+            startDate.setSeconds(59)
+            startDate.setMilliseconds(999)
+            break
+          default:
+            startDate.setHours(0)
+            startDate.setMinutes(0)
+            startDate.setSeconds(0)
+            startDate.setMilliseconds(0)
+        }
+
+        var endDate = new Date()
+        if (isBetween) {
+          const splitDateEnd = this.state.dateEnd.includes('/') ? this.state.dateEnd.split('/')
+                                                                : this.state.dateEnd.split('-')
+          endDate.setMonth(parseInt(splitDateEnd[0])-1)
+          endDate.setDate(parseInt(splitDateEnd[1]))
+          endDate.setFullYear(parseInt(splitDateEnd[2]))
+          endDate.setHours(23)
+          endDate.setMinutes(59)
+          endDate.setSeconds(59)
+          endDate.setMilliseconds(999)
+        }
+
+        var newAssets = []
+        this.defaultAssets.forEach(asset => {
+            const timestamp = asset.timestamp
+            const startTime = startDate.getTime()
+            if ((this.state.dateParameter === 'After' && timestamp > startTime)
+                || (this.state.dateParameter === 'Before' && timestamp < startTime)
+                || (this.state.dateParameter === 'Between' && timestamp >= startTime)) {
+                if (isBetween) {
+                    if (timestamp <= endDate.getTime()) {
+                      newAssets.push(asset)
+                    }
+                } else {
+                  newAssets.push(asset)
+                }
+            }
+        })
+        this.setState({assets: newAssets})
+    }
+
     handleRackRackUSort(sortedAssets) {
         this.setState({assets: sortedAssets,searchQuery: ''})
     }
@@ -179,7 +232,6 @@ class DecommissionedAssetScreen extends Component {
 
     checkFilterDone(){
         if (/[A-Z]\d+/.test(this.state.rangeStart) && /[A-Z]\d+/.test(this.state.rangeEnd) && this.state.datacenter) {
-            console.log("passed")
             this.handleFilter(this.state.rangeStart, this.state.rangeEnd, this.state.datacenter);
         } else {
             this.restoreDefault();
@@ -187,11 +239,20 @@ class DecommissionedAssetScreen extends Component {
     }
 
     checkDateFilterDone(){
-        if (/^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/.test(this.state.dateStart) && /^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/.test(this.state.dateEnd) && this.state.dateParameter) {
-            console.log("passed")
-            //this.handleDateFilter();
+        if (/^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/.test(this.state.dateStart)
+            && !(this.state.dateStart.includes('/') && this.state.dateStart.includes('-'))
+            && this.state.dateParameter
+            && this.state.dateParameter !== 'Between') {
+            this.handleDateFilter(false)
+        }
+        else if (/^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/.test(this.state.dateStart)
+                && /^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/.test(this.state.dateEnd)
+                && !(this.state.dateStart.includes('/') && this.state.dateStart.includes('-'))
+                && !(this.state.dateEnd.includes('/') && this.state.dateEnd.includes('-'))
+                && this.state.dateParameter) {
+            this.handleDateFilter(true)
         } else {
-            this.restoreDefault();
+            this.restoreDefault()
         }
     }
 
