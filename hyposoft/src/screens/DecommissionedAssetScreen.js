@@ -187,7 +187,7 @@ class DecommissionedAssetScreen extends Component {
     }
 
     checkDateFilterDone(){
-        if (/^(0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])[- /.](19|20)\d\d/.test(this.state.dateStart) && /^(0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])[- /.](19|20)\d\d/.test(this.state.dateEnd) && this.state.dateParameter) {
+        if (/^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/.test(this.state.dateStart) && /^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{4}$/.test(this.state.dateEnd) && this.state.dateParameter) {
             console.log("passed")
             //this.handleDateFilter();
         } else {
