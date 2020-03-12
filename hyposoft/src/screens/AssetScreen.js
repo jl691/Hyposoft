@@ -476,71 +476,58 @@ class AssetScreen extends Component {
                              alignSelf='stretch'
                              background='#FFFFFF'
                              width={"medium"}
-                             margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                             margin={{ top: 'small', left: 'medium', right: 'medium' }}
                              pad='xxsmall' >
                             <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
                                 <Stack >
                                     <Box gap='small' direction="column" margin='small'>
                                         {/* Put sort buttons here */}
-                                        <Text size='small'><b>Rack</b></Text>
-                                        <Box direction="row" justify="start" margin="small">
+                                        <Text size='small'><b>Sort by Rack and RackU</b></Text>
+                                        <Box direction="row" justify="center" margin="small" wrap={true}>
                                             <RadioButtonGroup
                                                 label="Rack"
                                                 name="rackSortChoice"
+                                                margin={{right: "small"}}
                                                 value={this.state.rackSortChoice}
-
                                                 options={[
-                                                    { label: "Ascending", value: "asc" },
-                                                    { label: "Descending", value: "desc" },
-
+                                                    { label: "Rack: Ascend", value: "asc" },
+                                                    { label: "Rack: Descend", value: "desc" },
                                                 ]}
-
                                                 onClick={e => {
-
                                                     this.value = e.target.value
                                                     this.setState(oldState => ({ ...oldState, rackSortChoice: this.value }))
                                                     this.handleRadioButtonChange(e)
-
                                                 }}
-
                                             />
-
-                                        </Box>
-                                        <Text size='small'><b>Rack U</b></Text>
-                                        <Box direction="row" justify="start" margin="small">
                                             <RadioButtonGroup
                                                 label="Rack"
                                                 name="rackUSortChoice"
+                                                margin={{left: "small"}}
                                                 value={this.state.rackUSortChoice}
-
                                                 options={[
-                                                    { label: "Ascending", value: "asc" },
-                                                    { label: "Descending", value: "desc" },
+                                                    { label: "RackU: Ascend", value: "asc" },
+                                                    { label: "RackU: Descend", value: "desc" },
 
                                                 ]}
-
                                                 onClick={e => {
-
                                                     this.value = e.target.value
                                                     this.setState(oldState => ({ ...oldState, rackUSortChoice: this.value }))
                                                     this.handleRadioButtonChange(e)
-
                                                 }}
-
                                             />
-
                                         </Box>
-                                        <Box direction="column" justify="center" margin={{top: 'small', bottom: 'medium'}}>
+                                        <Box direction="column" justify="center" margin={{top: 'small', bottom: 'small'}}>
                                             <Button label={<Text size="small"> Apply</Text>} onClick={this.handleCombinedSort}/>
                                         </Box>
-
-
+                                        <Box direction="column" justify="center" margin={{bottom: 'small'}}>
+                                            <Button label={<Text size="small"> Close</Text>} onClick={() => {
+                                                this.setState({
+                                                    popupType: ""
+                                                })
+                                            }}/>
+                                        </Box>
                                     </Box>
-
                                 </Stack>
-
-
-
                             </Box>
                         </Box>
 
@@ -556,12 +543,7 @@ class AssetScreen extends Component {
                              pad='small' >
                             <Box flex margin={{ left: 'medium', top: 'small', right: 'medium' }} direction='column' justify='start'>
                                 {/*<Box direction="column" width={"medium"} margin={{top: 'small'}}>*/}
-                                <Button label={<Text size="small">Close</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
-                                    this.setState({
-                                        popupType: ""
-                                    })
-                                }}/>
-                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} onClick={() => {
+                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
                                     bulkassetutils.exportFilteredAssets(this.state.searchResults || this.assetTable.current.state.assets);
                                 }} style={{marginBottom: "10px"}}/>
                                 <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} onClick={() => {
