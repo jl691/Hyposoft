@@ -2,6 +2,7 @@ import * as firebaseutils from './firebaseutils'
 import * as logutils from './logutils'
 import * as userutils from './userutils'
 import * as assetnetworkportutils from '../utils/assetnetworkportutils'
+import * as assetutils from "../utils/assetutils"
 
 function decommissionAsset(id,callback) {
     firebaseutils.assetRef.doc(id).get().then(doc => {
@@ -16,14 +17,18 @@ function decommissionAsset(id,callback) {
                 callback(false)
                 return
             }
-            firebaseutils.assetRef.doc(id).delete().then(() => {
-                logutils.addLog(id,logutils.ASSET(),logutils.DECOMMISSION(),docData)
-                firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username,graph: graph}).then(() => callback(true))
-                .catch( error => {
-                    console.log("Error getting documents: ", error)
-                    callback(false)
-                })
-                })
+            assetutils.deleteAsset(id, result => {
+                if (result) {
+                  logutils.addLog(id,logutils.ASSET(),logutils.DECOMMISSION(),docData)
+                  firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username,graph: graph}).then(() => callback(true))
+                  .catch( error => {
+                      console.log("Error getting documents: ", error)
+                      callback(false)
+                  })
+                } else {
+                  callback(false)
+                }
+              }, true)
             })
             .catch( error => {
               console.log("Error getting documents: ", error)

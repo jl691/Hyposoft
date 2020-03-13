@@ -603,7 +603,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
     })
 }
 
-function deleteAsset(assetID, callback) {
+function deleteAsset(assetID, callback, isDecommission = false) {
 
     assetRef.doc(assetID).get().then(function (doc) {
 
@@ -648,7 +648,9 @@ function deleteAsset(assetID, callback) {
                                         })
                                             .then(function () {
                                                 console.log("Document successfully deleted!");
-                                                logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
+                                                if (!isDecommission) {
+                                                  logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
+                                                }
                                                 index.deleteObject(assetID)
                                                 callback(assetID);
                                             })
@@ -676,7 +678,9 @@ function deleteAsset(assetID, callback) {
                                     })
                                         .then(function () {
                                             console.log("Document successfully deleted!");
-                                            logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
+                                            if (!isDecommission) {
+                                              logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
+                                            }
                                             index.deleteObject(assetID)
                                             callback(assetID);
                                         })
