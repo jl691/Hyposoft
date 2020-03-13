@@ -25,6 +25,7 @@ import RackUsageReport from "./RackUsageReport";
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as datacenterutils from "../utils/datacenterutils";
 import * as assetnetworkportutils from "../utils/assetnetworkportutils";
+import * as changeplanutils from "../utils/changeplanutils";
 import {Redirect} from "react-router-dom";
 import SingleRackElevation from "./SingleRackElevation";
 

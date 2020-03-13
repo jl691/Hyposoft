@@ -104,6 +104,28 @@ class DetailedChangePlanScreen extends React.Component {
                             </Box>
                         </Box>
                     </Box>
+                    <Box style={{
+                        borderRadius: 10,
+                        borderColor: '#EDEDED'
+                    }}
+                         direction='row'
+                         alignSelf='stretch'
+                         background='#FFFFFF'
+                         width={'medium'}
+                         margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                         pad='small'>
+                        <Box flex
+                             margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                             direction='column' justify='start'>
+                            <Heading level='4' margin='none'>Work order</Heading>
+                            <p>Generate a work order for this change plan.</p>
+                            <Box direction='column' flex alignSelf='stretch'>
+                                <Button primary icon={<Print/>} label="Generate" onClick={() => {
+                                    this.props.history.push('/changeplans/' + this.changePlanID + '/workorder')
+                                }}/>
+                            </Box>
+                        </Box>
+                    </Box>
                 </Box>
             );
         }
