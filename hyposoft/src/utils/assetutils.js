@@ -25,7 +25,7 @@ function getAsset(callback, field = null, direction = null) {
 
     query.get().then(docSnaps => {
         if (docSnaps.empty) {
-            callback(null, null, true);
+            callback(null, [], true);
         } else {
             const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
             docSnaps.docs.forEach(doc => {
