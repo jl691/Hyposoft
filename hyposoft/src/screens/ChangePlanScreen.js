@@ -42,7 +42,7 @@ class ChangePlanScreen extends React.Component {
             initialLoaded: false,
             popupType: "",
         });
-        changeplanutils.getChangePlans(this.itemCount, (newItemCount, newStart, changePlans, empty) => {
+        changeplanutils.getChangePlans(this.itemCount, userutils.getLoggedInUserUsername(), (newItemCount, newStart, changePlans, empty) => {
             if(empty){
                 this.setState({
                     initialLoaded: true
@@ -103,7 +103,7 @@ class ChangePlanScreen extends React.Component {
                 <DataTable step={25}
                            onMore={() => {
                                if (this.startAfter) {
-                                   changeplanutils.getChangePlans(this.itemCount, (newItemCount, newStart, changePlans, empty) => {
+                                   changeplanutils.getChangePlans(this.itemCount, userutils.getLoggedInUserUsername(), (newItemCount, newStart, changePlans, empty) => {
                                        if(!empty && newItemCount){
                                            this.itemCount = newItemCount;
                                            this.startAfter = newStart;

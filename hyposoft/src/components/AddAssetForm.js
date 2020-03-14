@@ -9,7 +9,7 @@ import {
     Box,
     Accordion,
     AccordionPanel,
-    CheckBox
+    CheckBox, Text
 } from 'grommet'
 
 
@@ -403,6 +403,13 @@ export default class AddAssetForm extends Component {
                     >Add Asset</Heading>
                     <Form onSubmit={this.handleSubmit} name="addInst">
                         <Box direction="column" pad='xsmall' gap="small" flex overflow={{ vertical: 'scroll' }}>
+                            {this.props.changePlanID && (<Box style={{
+                                borderRadius: 10
+                            }} width={"large"} background={"status-warning"} align={"center"} alignSelf={"center"}
+                                 margin={{top: "medium"}}>
+                                <Heading level={"3"} margin={"small"}>Warning</Heading>
+                                <Box>This asset will only be added within the change plan.</Box>
+                            </Box>)}
                             <FormField name="model" label="Model">
 
                                 <TextInput name="model" required={true}

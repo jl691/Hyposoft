@@ -6,6 +6,7 @@ import BackButton from "../components/BackButton";
 import UserMenu from "../components/UserMenu";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as changeplanutils from "../utils/changeplanutils";
+import * as userutils from "../utils/userutils";
 
 class DetailedChangeScreen extends React.Component {
 
@@ -27,7 +28,7 @@ class DetailedChangeScreen extends React.Component {
     }
 
     forceRefresh() {
-        changeplanutils.getChangeDetails(this.props.match.params.changePlanID, this.props.match.params.stepID, result => {
+        changeplanutils.getChangeDetails(this.props.match.params.changePlanID, this.props.match.params.stepID, userutils.getLoggedInUserUsername(), result => {
             if (result) {
                 this.setState({
                     change: result

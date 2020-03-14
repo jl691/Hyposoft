@@ -10,6 +10,8 @@ import {ToastsContainer, ToastsStore} from "react-toasts";
 import {Add, Checkmark, Close, Edit, Print, Trash} from "grommet-icons";
 import {Redirect} from "react-router-dom";
 import BackButton from "../components/BackButton";
+import DeleteChangePlanForm from "../components/DeleteChangePlanForm";
+import DeleteChangeForm from "../components/DeleteChangeForm";
 
 class DetailedChangePlanScreen extends React.Component {
 
@@ -37,7 +39,7 @@ class DetailedChangePlanScreen extends React.Component {
             initialLoaded: false,
             popupType: "",
         });
-        changeplanutils.getChanges(this.props.match.params.changePlanID, (newStart, changes, empty) => {
+        changeplanutils.getChanges(this.props.match.params.changePlanID, userutils.getLoggedInUserUsername(), (newStart, changes, empty) => {
             if(empty){
                 this.setState({
                     initialLoaded: true
@@ -51,6 +53,16 @@ class DetailedChangePlanScreen extends React.Component {
             }
         });
     }
+
+    cancelPopup = (data) => {
+        this.setState({
+            popupType: ""
+        })
+    };
+
+    callbackFunction = (data) => {
+        this.forceRefresh();
+    };
 
     AdminTools() {
         if (userutils.isLoggedInUserAdmin()) {
@@ -141,7 +153,7 @@ class DetailedChangePlanScreen extends React.Component {
                 <DataTable step={25}
                            onMore={() => {
                                if (this.startAfter) {
-                                   changeplanutils.getChanges(this.changePlanID, (newStart, changes, empty) => {
+                                   changeplanutils.getChanges(this.changePlanID, userutils.getLoggedInUserUsername(), (newStart, changes, empty) => {
                                        if(!empty && newStart){
                                            this.startAfter = newStart;
                                            this.setState({
@@ -189,7 +201,15 @@ class DetailedChangePlanScreen extends React.Component {
                 property: "delete",
                 header: <Text size='small'>Delete</Text>,
                 render: datum => (
-                    <Trash/>)
+                    <Trash onClick={(e) => {
+                        e.persist();
+                        e.nativeEvent.stopImmediatePropagation();
+                        e.stopPropagation();
+                        this.setState({
+                            deleteStepNumber: datum.id,
+                            popupType: "Delete"
+                        })
+                    }}/>)
             }
         ];
         return cols;
@@ -208,6 +228,13 @@ class DetailedChangePlanScreen extends React.Component {
 
         const {popupType} = this.state;
         let popup;
+
+        if(popupType === 'Delete'){
+            popup = (
+                <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
+                                      changePlanID={this.changePlanID} stepNumber={this.state.deleteStepNumber}/>
+            )
+        }
 
         return (
             <Grommet theme={theme} full className='fade'>
@@ -254,7 +281,7 @@ class DetailedChangePlanScreen extends React.Component {
                         </Box>
                     </Box>
                 </Box>
-                {/*                {popup}*/}
+                {popup}
                 <ToastsContainer store={ToastsStore}/>
             </Grommet>
         )

@@ -95,6 +95,8 @@ class AddChangeForm extends React.Component {
             )
         } else if (popupType === 'Edit'){
             let selectedData = this.assetData.get(this.state.selected);
+            console.log(selectedData.macAddresses);
+            console.log(assetmacutils.unfixMacAddressesForMACForm(selectedData.macAddresses))
             popup = (
                 <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
@@ -102,7 +104,7 @@ class AddChangeForm extends React.Component {
                     <EditAssetForm
                         parentCallback={this.handleCancelPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
-                        changePlanID={this.props.match.params.changePlanID}
+                        changePlanID={this.props.match.params.changePlanID}e
                         popupMode={this.state.popupType}
                         updateModelFromParent={selectedData.model}
                         updateHostnameFromParent={selectedData.hostname}
