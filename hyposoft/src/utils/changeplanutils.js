@@ -4,8 +4,9 @@ import * as logutils from "./logutils"
 import {changeplansRef} from "./firebaseutils";
 import {assetRef} from "./firebaseutils";
 
-function getChangePlans(itemCount, callback, start = null) {
-    let query = start ? firebaseutils.changeplansRef.orderBy("name").startAfter(start).limit(25) : firebaseutils.changeplansRef.orderBy("name").limit(25);
+function getChangePlans(itemCount, username, callback, start = null) {
+    console.log(username)
+    let query = start ? firebaseutils.changeplansRef.where("owner", "==", username).orderBy("name").startAfter(start).limit(25) : firebaseutils.changeplansRef.where("owner", "==", username).orderBy("name").limit(25);
     query.get().then(function (querySnapshot) {
         if(querySnapshot.empty){
             callback(null, null, null, true);
@@ -22,41 +23,56 @@ function getChangePlans(itemCount, callback, start = null) {
             })
         }
     }).catch(function (error) {
+        console.log(error)
         callback(null);
     })
 }
 
-function getChanges(changePlanID, callback){
-    firebaseutils.changeplansRef.doc(changePlanID).collection("changes").orderBy("step").get().then(function (querySnapshot) {
-        if(!querySnapshot.empty){
-            let changes = [];
-            let count = 0;
-            querySnapshot.docs.forEach(change => {
-                let newStart = querySnapshot.docs[querySnapshot.docs.length - 1];
-                changes.push({id: change.data().step, ...change.data()})
-                count++;
-                if(count === querySnapshot.size){
-                    callback(newStart, changes, false)
+function getChanges(changePlanID, username, callback){
+    firebaseutils.changeplansRef.doc(changePlanID).get().then(function (documentSnapshot) {
+        if(documentSnapshot.exists && documentSnapshot.data().owner === username){
+            firebaseutils.changeplansRef.doc(changePlanID).collection("changes").orderBy("step").get().then(function (querySnapshot) {
+                if(!querySnapshot.empty){
+                    let changes = [];
+                    let count = 0;
+                    querySnapshot.docs.forEach(change => {
+                        let newStart = querySnapshot.docs[querySnapshot.docs.length - 1];
+                        changes.push({id: change.data().step, ...change.data()})
+                        count++;
+                        if(count === querySnapshot.size){
+                            callback(newStart, changes, false)
+                        }
+                    })
+                } else {
+                    callback(null, null, true);
                 }
+            }).catch(function (error) {
+                callback(null, null, null);
             })
         } else {
             callback(null, null, true);
         }
-    }).catch(function (error) {
+    }).catch(function () {
         callback(null, null, null);
     })
 }
 
-function getChangeDetails(changePlanID, stepID, callback) {
-    firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepID)).get().then(function (querySnapshot) {
-        if(!querySnapshot.empty){
-            callback(querySnapshot.docs[0].data());
+function getChangeDetails(changePlanID, stepID, username, callback) {
+    firebaseutils.changeplansRef.doc(changePlanID).get().then(function (documentSnapshot) {
+        if(documentSnapshot.exists && documentSnapshot.data().owner === username){
+            firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepID)).get().then(function (querySnapshot) {
+                if(!querySnapshot.empty){
+                    callback(querySnapshot.docs[0].data());
+                } else {
+                    callback(null);
+                }
+            }).catch(function (error) {
+                console.log(error)
+                callback(null);
+            })
         } else {
             callback(null);
         }
-    }).catch(function (error) {
-        console.log(error)
-        callback(null);
     })
 }
 
@@ -192,7 +208,7 @@ function deleteChange(changePlanID, stepNum, callback){
         if(querySnapshot.empty){
             callback(null);
         } else {
-            changeplansRef.doc(querySnapshot.docs[0].id).delete().then(function () {
+            changeplansRef.doc(changePlanID).collection("changes").doc(querySnapshot.docs[0].id).delete().then(function () {
                 cascadeUpStepNumbers(changePlanID, stepNum, result => {
                     if(result){
                         callback(true)
@@ -526,4 +542,4 @@ function generateEditWorkOrderMessage(doc, callback){
     })
 }
 
-export { getChangePlans, getChanges, getChangeDetails, addChangePlan, deleteChangePlan, editChangePlan, addAssetChange, editAssetChange, generateWorkOrder }
+export { getChangePlans, getChanges, getChangeDetails, addChangePlan, deleteChangePlan, editChangePlan, addAssetChange, editAssetChange, generateWorkOrder, deleteChange }

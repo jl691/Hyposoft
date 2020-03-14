@@ -87,6 +87,8 @@ export default class AssetTable extends Component {
                     <FormEdit
                         style={{cursor: 'pointer', backgroundColor: this.colors[data.asset_id+'_edit_color']}}
                         onClick={(e) => {
+                            console.log(data.macAddresses);
+                            console.log(assetmacutils.unfixMacAddressesForMACForm(data.macAddresses));
                             e.persist()
                             e.nativeEvent.stopImmediatePropagation()
                             e.stopPropagation()

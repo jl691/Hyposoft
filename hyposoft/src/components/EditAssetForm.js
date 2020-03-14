@@ -342,7 +342,13 @@ export default class EditAssetForm extends Component {
                     >Update Asset</Heading>
 
                     <Form onSubmit={this.handleUpdate} name="updateInst" >
-
+                        {this.props.changePlanID && (<Box style={{
+                            borderRadius: 10
+                        }} width={"large"} background={"status-warning"} align={"center"} alignSelf={"center"}
+                                                          margin={{top: "medium"}}>
+                            <Heading level={"3"} margin={"small"}>Warning</Heading>
+                            <Box>This asset will only be edited within the change plan.</Box>
+                        </Box>)}
                         <FormField name="model" label="Model">
                             {/* change placeholders to what the original values were? */}
                             <TextInput name="model" placeholder="Update Model"
