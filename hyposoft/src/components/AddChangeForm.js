@@ -12,6 +12,7 @@ import BackButton from "./BackButton";
 import EditAssetForm from "./EditAssetForm";
 import * as assetmacutils from "../utils/assetmacutils"
 import * as assetnetworkportutils from "../utils/assetnetworkportutils"
+import DecommissionAssetPopup from "./DecommissionAssetPopup";
 
 class AddChangeForm extends React.Component {
 
@@ -32,15 +33,7 @@ class AddChangeForm extends React.Component {
                 this.assetData = assetData;
                 let count = 0;
                 assetNames.forEach(asset => {
-                    this.menuItems.push({
-                        label: asset,
-                        onClick: () => {
-                            this.setState({
-                                popupType: 'Update',
-                                selected: asset
-                            });
-                        }
-                    });
+                    this.menuItems.push(asset);
                     count++;
                     if (count === assetNames.length) {
                         this.setState({
@@ -57,11 +50,22 @@ class AddChangeForm extends React.Component {
     }
 
     getAssetsList(edit) {
-        let menuItems = [];
-        let action = edit ? "edit" : "delete";
+        let newMenuItems = [];
+        let action = edit ? "Update" : "delete";
         if (this.state.assetsLoaded) {
+            this.menuItems.forEach(menuItem => {
+                newMenuItems.push({
+                    label: menuItem,
+                    onClick: () => {
+                        this.setState({
+                            selected: menuItem,
+                            popupType: action
+                        });
+                    }
+                });
+            });
             return (
-                <Menu items={this.menuItems} label={"Select an asset..."} alignSelf={"center"}/>
+                <Menu items={newMenuItems} label={"Select an asset..."} alignSelf={"center"}/>
             )
         } else {
             return (
@@ -71,6 +75,7 @@ class AddChangeForm extends React.Component {
     }
 
     handleCancelPopupChange() {
+        console.log("clocsing popu")
         this.setState({
             popupType: ""
         });
@@ -117,6 +122,25 @@ class AddChangeForm extends React.Component {
                         updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(selectedData.macAddresses)}
                         updatePowerConnectionsFromParent={selectedData.powerConnections}
                         updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(selectedData.networkConnections)}
+                    />
+                </Layer>
+            )
+        } else if (popupType === 'delete'){
+            let selectedData = this.assetData.get(this.state.selected);
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+
+                    {/*<DecommissionAssetPopup changePlanID={this.props.match.params.changePlanID}
+                                            decommissionIDFromParent={selectedData.assetId}
+                                            parentCallback={this.handleCancelPopupChange()}
+                    cancelCallback={this.handleCancelPopupChange()}/>*/}
+
+                    <DecommissionAssetPopup
+                        changePlanID={this.props.match.params.changePlanID}
+                        decommissionIDFromParent={selectedData.assetId}
+                        parentCallback={this.handleCancelPopupChange}
+                        cancelCallback={this.handleCancelPopupChange}
                     />
                 </Layer>
             )
