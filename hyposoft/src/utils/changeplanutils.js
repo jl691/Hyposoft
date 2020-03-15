@@ -327,6 +327,7 @@ function isEqual(value, other) {
 }
 
 function generateWorkOrder(changePlanID, callback) {
+    console.log(changePlanID)
     changeplansRef.doc(changePlanID).collection("changes").orderBy("step").get().then(function (querySnapshot) {
         if (querySnapshot.empty) {
             callback([])
@@ -336,7 +337,16 @@ function generateWorkOrder(changePlanID, callback) {
             querySnapshot.docs.forEach(doc => {
                 let change = doc.data().change;
                 if (change === "decommission") {
-
+                    console.log("decommission", count)
+                    assetRef.doc(doc.data().assetID.toString()).get().then(function (documentSnapshot) {
+                        steps.set(doc.data().step, ["Decommission asset #" + doc.data().assetID + " from datacenter " + documentSnapshot.data().datacenter + " at rack " + documentSnapshot.data().rack + " at height " + documentSnapshot.data().rackU + " U"])
+                        count++;
+                        if (count === querySnapshot.size) {
+                            callback(steps);
+                        }
+                    }).catch(function () {
+                        callback(null)
+                    });
                 } else if (change === "add") {
                     let assetID = doc.data().assetID ? doc.data().assetID : "TBD";
                     console.log(doc.data().changes.datacenter["new"]);
@@ -367,7 +377,7 @@ function generateWorkOrder(changePlanID, callback) {
 }
 
 function generateEditWorkOrderMessage(doc, callback) {
-    assetRef.doc(doc.data().assetID).get().then(function (documentSnapshot) {
+    assetRef.doc(doc.data().assetID.toString()).get().then(function (documentSnapshot) {
         let changes = [];
         if (documentSnapshot.exists) {
             let datacenterPromise = new Promise(function (resolve, reject) {
