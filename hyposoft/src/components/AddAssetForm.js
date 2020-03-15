@@ -263,7 +263,7 @@ export default class AddAssetForm extends Component {
 
     async handleSubmit(event) {
         //flawed logic: want to move first if statement out, also not always doing a change plan
-        await changeplanconflictutils.addAssetChangePlanPackage("VwC1BMKipvuuvmR1LrYR").then(() => {
+        //await changeplanconflictutils.addAssetChangePlanPackage("VwC1BMKipvuuvmR1LrYR").then(() => {
 
             console.log("Inside the add asset change plan package .then()")
             if (event.target.name === "addInst") {
@@ -382,7 +382,7 @@ export default class AddAssetForm extends Component {
                 }
 
             }
-       })
+       //})
     }
 
     render() {

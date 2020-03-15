@@ -36,7 +36,7 @@ class AddChangeForm extends React.Component {
                         label: asset,
                         onClick: () => {
                             this.setState({
-                                popupType: 'Edit',
+                                popupType: 'Update',
                                 selected: asset
                             });
                         }
@@ -93,7 +93,7 @@ class AddChangeForm extends React.Component {
 
                 </Layer>
             )
-        } else if (popupType === 'Edit'){
+        } else if (popupType === 'Update'){
             let selectedData = this.assetData.get(this.state.selected);
             console.log(selectedData.macAddresses);
             console.log(assetmacutils.unfixMacAddressesForMACForm(selectedData.macAddresses))
