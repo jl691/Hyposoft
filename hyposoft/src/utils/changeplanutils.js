@@ -208,6 +208,29 @@ function editAssetChange(newAsset, assetID, changePlanID, callback) {
     })
 }
 
+function decommissionAssetChange(assetID, changePlanID, callback){
+    changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
+        let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
+        assetRef.doc(assetID).get().then(function (documentSnapshot) {
+            if(documentSnapshot.exists){
+                changeplansRef.doc(changePlanID).collection("changes").add({
+                    assetID: parseInt(assetID),
+                    change: "decommission",
+                    step: changeNumber
+                }).then(function () {
+                    callback(true);
+                }).catch(function () {
+                    callback(null);
+                })
+            } else {
+                callback(null);
+            }
+        }).catch(function () {
+            callback(null);
+        })
+    })
+}
+
 function deleteChange(changePlanID, stepNum, callback) {
     changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepNum)).get().then(function (querySnapshot) {
         if (querySnapshot.empty) {
@@ -710,5 +733,6 @@ export {
     addAssetChange,
     editAssetChange,
     generateWorkOrder,
-    deleteChange
+    deleteChange,
+    decommissionAssetChange
 }
