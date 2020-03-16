@@ -7,6 +7,7 @@ import UserMenu from "../components/UserMenu";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as changeplanutils from "../utils/changeplanutils";
 import * as userutils from "../utils/userutils";
+import DeleteChangeForm from "../components/DeleteChangeForm";
 
 class DetailedChangeScreen extends React.Component {
 
@@ -16,7 +17,8 @@ class DetailedChangeScreen extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            change: ""
+            change: "",
+            popupType: ""
         }
     }
 
@@ -290,7 +292,27 @@ class DetailedChangeScreen extends React.Component {
         )
     }
 
+    cancelPopup = (data) => {
+        this.setState({
+            popupType: ""
+        })
+    };
+
+    callbackFunction = (data) => {
+        window.location.href = "/changeplans/" + this.props.match.params.changePlanID;
+    };
+
     render() {
+        const {popupType} = this.state;
+        let popup;
+
+        if(popupType === 'Delete'){
+            popup = (
+                <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
+                                  changePlanID={this.props.match.params.changePlanID} stepNumber={this.stepID}/>
+            )
+        }
+
         return (
             <React.Fragment>
                 <Grommet theme={theme} full className='fade'>
@@ -360,12 +382,15 @@ class DetailedChangeScreen extends React.Component {
 
                                         }}/>
                                         <Button label="Delete Change" onClick={() => {
-
+                                            this.setState({
+                                                popupType: "Delete"
+                                            })
                                         }}/>
                                     </Box>
                                 </Box>
                             </Box>
                         </Box>
+                        {popup}
                         <ToastsContainer store={ToastsStore}/>
                     </Box>
                 </Grommet>

@@ -3,6 +3,7 @@ import * as assetnetworkportutils from "./assetnetworkportutils";
 import * as logutils from "./logutils"
 import * as assetutils from "./assetutils"
 import * as rackutils from "./rackutils"
+import * as decommissionutils from "./decommissionutils"
 import {changeplansRef} from "./firebaseutils";
 import {assetRef} from "./firebaseutils";
 import {racksRef} from "./firebaseutils";
@@ -134,6 +135,7 @@ function editChangePlan(id, newName, callback) {
 }
 
 function addAssetChange(asset, assetID, changePlanID, callback) {
+    console.log(assetID)
     changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
         let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
         let assetChangePlanObject = {
@@ -585,13 +587,15 @@ function generateEditWorkOrderMessage(doc, callback) {
 }
 
 function executeChangePlan(changePlanID, callback) {
-    changeplansRef.doc(changePlanID).collection("changes").get().then(function (querySnapshot) {
+    changeplansRef.doc(changePlanID.toString()).collection("changes").get().then(function (querySnapshot) {
         if (querySnapshot.empty) {
             callback(true);
         } else {
             let count = 0;
             querySnapshot.docs.forEach(change => {
+                console.log(change)
                 if (change.data().change === "add") {
+                    console.log("add")
                     if (change.data().changes.assetID && change.data().changes.assetID["new"]) {
                         executeAddAsset(change.data().changes.assetID["new"], change, resultAdd => {
                             if (resultAdd) {
@@ -619,6 +623,7 @@ function executeChangePlan(changePlanID, callback) {
                         });
                     }
                 } else if (change.data().change === "edit") {
+                    console.log("edit")
                     executeEditAsset(change, resultEdit => {
                         if (resultEdit) {
                             count++;
@@ -631,10 +636,22 @@ function executeChangePlan(changePlanID, callback) {
                     })
                 } else {
                     //decomission
+                    console.log("decomm")
+                    decommissionutils.decommissionAsset(change.data().assetID.toString(), resultDecom => {
+                        if(resultDecom){
+                            count++;
+                            if (count === querySnapshot.size) {
+                                callback(true);
+                            }
+                        } else {
+                            callback(null);
+                        }
+                    })
                 }
             })
         }
-    }).catch(function () {
+    }).catch(function (error) {
+        console.log(error)
         callback(null);
     })
 }
@@ -744,5 +761,6 @@ export {
     editAssetChange,
     generateWorkOrder,
     deleteChange,
-    decommissionAssetChange
+    decommissionAssetChange,
+    executeChangePlan
 }

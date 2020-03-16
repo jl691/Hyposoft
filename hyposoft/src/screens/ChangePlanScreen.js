@@ -15,6 +15,7 @@ import DeleteDatacenterForm from "../components/DeleteDatacenterForm";
 import DeleteChangePlanForm from "../components/DeleteChangePlanForm";
 import EditDatacenterForm from "../components/EditDatacenterForm";
 import EditChangePlanForm from "../components/EditChangePlanForm";
+import ExecuteChangePlanForm from "../components/ExecuteChangePlanForm";
 
 class ChangePlanScreen extends React.Component {
 
@@ -167,7 +168,17 @@ class ChangePlanScreen extends React.Component {
                 property: "execute",
                 header: <Text size='small'>Execute</Text>,
                 render: datum => (
-                    <Checkmark/>)
+                    <Checkmark onClick={(e) => {
+                        e.persist();
+                        e.nativeEvent.stopImmediatePropagation();
+                        e.stopPropagation();
+                        console.log(datum.id)
+                        this.setState({
+                            executeName: datum.name,
+                            executeID: datum.id,
+                            popupType: "Execute"
+                        })
+                    }}/>)
             },
             {
                 property: "delete",
@@ -209,6 +220,13 @@ class ChangePlanScreen extends React.Component {
         this.forceRefresh();
     };
 
+    successfulExecution = (data) => {
+        this.setState({
+            popupType: ""
+        });
+        ToastsStore.success("Successfully executed the change plan.")
+    }
+
     render() {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/'/>
@@ -236,6 +254,16 @@ class ChangePlanScreen extends React.Component {
                 <Layer onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
                     <EditChangePlanForm parentCallback={this.callbackFunction} name={this.state.editName} id={this.state.editID}/>
+                    <Button label="Cancel" icon={<Close/>}
+                            onClick={() => this.setState({popupType: ""})}/>
+                </Layer>
+            )
+        } else if(popupType === 'Execute'){
+            popup = (
+                <Layer onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+                    <ExecuteChangePlanForm  name={this.state.executeName} id={this.state.executeID}
+                                           cancelPopup={this.cancelPopup} successfulExecution={this.successfulExecution}/>
                     <Button label="Cancel" icon={<Close/>}
                             onClick={() => this.setState({popupType: ""})}/>
                 </Layer>
