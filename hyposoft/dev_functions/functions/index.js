@@ -2,9 +2,9 @@ const functions = require('firebase-functions');
 const firestore = require('@google-cloud/firestore');
 const client = new firestore.v1.FirestoreAdminClient();
 
-const bucket_daily = 'gs://DAILY_BACKUPS';
-const bucket_weekly = 'gs://WEEKLY_BACKUPS';
-const bucket_monthly = 'gs://MONTHLY_BACKUPS';
+const bucket_daily = 'gs://daily_backups_hyposoft_dev';
+const bucket_weekly = 'gs://weekly_backups_hyposoft_dev';
+const bucket_monthly = 'gs://monthly_backups_hyposoft_dev';
 
 exports.scheduledDailyFirestoreExport = functions.pubsub
                                             .schedule('every 24 hours')
