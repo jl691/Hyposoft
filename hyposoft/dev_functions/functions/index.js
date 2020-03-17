@@ -34,7 +34,7 @@ exports.scheduledDailyFirestoreExport = functions.pubsub
 });
 
 exports.scheduledWeeklyFirestoreExport = functions.pubsub
-                                            .schedule('every 7 days')
+                                            .schedule('0 0 * * 0')
                                             .onRun((context) => {
 
   const projectId = process.env.GCP_PROJECT || process.env.GCLOUD_PROJECT;
@@ -61,7 +61,7 @@ exports.scheduledWeeklyFirestoreExport = functions.pubsub
 });
 
 exports.scheduledMonthlyFirestoreExport = functions.pubsub
-                                            .schedule('every 30 days')
+                                            .schedule('0 0 1 * *')
                                             .onRun((context) => {
 
   const projectId = process.env.GCP_PROJECT || process.env.GCLOUD_PROJECT;
