@@ -10,9 +10,6 @@ let seenOtherPorts = new Map(); //Map of otherAssetID --> array of all otherPort
 function validateNetworkConnections(thisModelName, networkPortConnections, callback, oldNetworkConnections = null) {
     seenOtherPorts = new Map();
     seenThisPorts = [];
-    console.log(networkPortConnections)
-    console.log(seenOtherPorts.size)
-    //console.log("upppppp in this bitch", networkPortConnections)
 
     let success = 0;
 
@@ -23,11 +20,12 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
     let numConnectionsMade = networkPortConnections.length
     let mostPossibleConnections = 0;
 
-    //This was added for updating assets. seemed to be stuck, if no network connectios
+    //This was added for updating assets. seemed to be stuck, if no network connections
     if (numConnectionsMade == 0) {
         return(callback(null))
     }
 
+    //What Joyce added
     let uniqueThisPorts = networkPortConnections.map(conn => conn.thisPort)
     let allUniqueThisPorts = new Set(uniqueThisPorts)
     if (allUniqueThisPorts.size < numConnectionsMade) {
@@ -38,9 +36,6 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
         let otherAssetID = networkPortConnections[i].otherAssetID;
         let otherPort = networkPortConnections[i].otherPort;
         let thisPort = networkPortConnections[i].thisPort
-        console.log(otherAssetID);
-        console.log(otherPort);
-        console.log(thisPort)
 
         //Left entirely empty is OK
         if (otherAssetID.toString() === "" && otherPort.trim() === "" && thisPort.trim() === "") {
@@ -62,8 +57,8 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                     errModels.push(thisModelName)
                 }
 
-
                 //Getting the number of network ports from the asset trying to connect to
+                // TODO: so this logic of taking the min is flawed...so might as well take it out (since it is caught by unique port checks) or fix it
                 console.log(otherAssetID)
                 assetRef.doc(otherAssetID).get().then(function (otherAssetModelDoc) {
                     if (!otherAssetModelDoc.exists) {
@@ -427,23 +422,6 @@ function networkConnectionsToMap(networkConnectionsArray, callback) {
                 return(callback(JSONConnections))
             }
         })
-
-        /*
-                for (let i = 0; i < networkConnectionsArray.length; i++) {
-
-                    //var propertyName = 'thisPort';
-                    let key = networkConnectionsArray[i].thisPort;
-                    let value1 = networkConnectionsArray[i].otherAssetID;
-                    let value2 = networkConnectionsArray[i].otherPort;
-                    JSONValues["otherAssetID"] = value1
-                    JSONValues["otherPort"] = value2
-                    JSONConnections[key] = JSONValues;
-
-                }
-
-                return JSONConnections;
-        */
-
     }
 
 }
@@ -472,9 +450,6 @@ function networkConnectionsToArray(networkMap) {
     else {
         return networkArray;
     }
-
-
-
 
 }
 

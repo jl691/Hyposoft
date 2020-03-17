@@ -4,7 +4,22 @@
     "rackUConflictErrID": "An asset at this rack U conflicts with other assets on the rack.",
     "rackUFitErrID": "An asset at this rack U will not fit on the rack.",
     "ownerErrID": "The owner for this asset does not exist.",
-    "hostnameErrID": "The hostname in this change plan step is already taken."
-
+    "hostnameErrID": "The hostname in this change plan step is already taken.",
+    "assetIDErrID": "The asset ID in this change plan step is already taken.",
+    "modelErrID": "The model in this change plan step does not exist.",
+    "powerConnectionConflictErrID": "The power connections in this change plan step are conflicting.",
+    "powerConnectionsIncompleteFormErrID": "The power connections in this change plan step were not filled out correctly in the form.",
+    "powerConnectionsInvalidPortErrID": "The power connections in this change plan step have an invalid port number.",
+    "powerConnectionsIncorrectNumConnectionsErrID": "An incorrect number of power connections were made.",
+    "powerConnectionModel0ErrID": "Tried to made power connections with a model with no power ports.",
+    "networkConnectionNonExistentOtherPortErrID": "The network connections in this change plan step is trying to connect to a nonexistent port on another asset.",
+    "networkConnectionsIncompleteFormErrID": "The network connections in this change plan step were not filled out correctly in the form.",
+    "networkConnectionNonExistentThisPortErrID": "The network connections in this change plan step is trying to connext a nonexistent port on this asset.",
+    "networkConnectionConflictErrID": "The network connections in this change plan step are conflicting.",
+    "networkConnectionOtherAssetIDErrID": "The network connections in this change step plan are trying to connect to a nonexistent asset.",
+    "networkConnectionNonUniqueThisPortErrID": "The network connections must be unique: please check the ports on this asset.",
+    "networkConnectionNonUniqueOtherPortErrID": "The network connections must be unique: please check the ports on other assets you are trying to connect to.",
+    "networkConnectionIncorrectNumConnectionsErrID": "An incorrect number of network connections were made.",
+    "networkConnectionModel0ErrID": "Tried to made network connections with a model with no power ports."
     
 }
