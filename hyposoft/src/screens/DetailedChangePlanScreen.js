@@ -195,7 +195,7 @@ class DetailedChangePlanScreen extends React.Component {
                 property: "assetID",
                 header: <Text size='small'>Asset ID</Text>,
                 render: datum => (
-                    <Text size='small'>{datum.assetID}</Text>)
+                    <Text size='small'>{datum.assetID ? datum.assetID : "TBD"}</Text>)
             },
             {
                 property: "change",

@@ -350,7 +350,7 @@ class DetailedChangeScreen extends React.Component {
                                         </tr>
                                         <tr>
                                             <td><b>Asset ID</b></td>
-                                            <td style={{textAlign: 'right'}}>{this.state.change.assetID}</td>
+                                            <td style={{textAlign: 'right'}}>{this.state.change.assetID ? this.state.change.assetID : "TBD"}</td>
                                         </tr>
                                         <tr>
                                             <td><b>Change</b></td>
