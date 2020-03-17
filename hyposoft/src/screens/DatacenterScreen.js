@@ -7,7 +7,7 @@ import HomeButton from "../components/HomeButton";
 import UserMenu from "../components/UserMenu";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as userutils from "../utils/userutils";
-import {Add, Close, Edit, Trash} from "grommet-icons";
+import {Add, Close, Edit, FormEdit, Trash} from "grommet-icons";
 import {Redirect} from "react-router-dom";
 import AddDatacenterForm from "../components/AddDatacenterForm";
 import DeleteDatacenterForm from "../components/DeleteDatacenterForm";
@@ -17,6 +17,7 @@ class DatacenterScreen extends React.Component {
 
     startAfter = null;
     itemCount = 1;
+    colors={};
 
     constructor(props) {
         super(props);
@@ -162,7 +163,10 @@ class DatacenterScreen extends React.Component {
                                 deleteAbbrev: datum.abbreviation,
                                 popupType: "Delete"
                             })
-                        }}/>
+                        }}
+                               style={{cursor: 'pointer', backgroundColor: this.colors[datum.count+'_edit_color']}}
+                               onMouseOver={e => this.colors[datum.count+'_edit_color']='#dddddd'}
+                               onMouseLeave={e => this.colors[datum.count+'_edit_color']=''}/>
                 },
                 {
                     property: "edit",
@@ -174,7 +178,10 @@ class DatacenterScreen extends React.Component {
                                 editAbbrev: datum.abbreviation,
                                 popupType: "Edit"
                             })
-                        }}/>
+                        }}
+                              style={{cursor: 'pointer', backgroundColor: this.colors[datum.count+'_edit_color']}}
+                              onMouseOver={e => this.colors[datum.count+'_edit_color']='#dddddd'}
+                              onMouseLeave={e => this.colors[datum.count+'_edit_color']=''}/>
                 });
         }
         return cols;

@@ -80,6 +80,7 @@ function validateImportedAssets (data, callback) {
 
             if (datum.hostname.trim() !== '' && datum.hostname in hostnamesToId && hostnamesToId[datum.hostname] !== datum.asset_number) {
                 errors = [...errors, [i + 1, 'Hostname taken by another asset']]
+                console.log(datum.asset_number+' '+hostnamesToId[datum.hostname])
             }
 
             if (!datum.rack_position || String(datum.rack_position).trim() === '') {

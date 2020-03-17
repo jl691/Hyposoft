@@ -5,6 +5,7 @@ import * as assetutils from '../utils/assetutils'
 import * as assetmacutils from '../utils/assetmacutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as assetpowerportutils from '../utils/assetpowerportutils'
+import * as assetnetworkportutils from '../utils/assetnetworkportutils'
 import * as modelutils from '../utils/modelutils'
 import * as userutils from "../utils/userutils";
 import { Redirect } from "react-router-dom";
@@ -32,8 +33,8 @@ export default class EditAssetForm extends Component {
             macAddresses: this.props.updateMacAddressesFromParent, //trace back up to see where it starts to be undefined
             powerConnections: this.props.updatePowerConnectionsFromParent,
             networkConnections: this.props.updateNetworkConnectionsFromParent,
-
-            showPowerConnections: false,
+            editDeletedNetworkConnections: [],
+            showPowerConnections: this.props.updatePowerConnectionsFromParent.length ? true : false
 
         }
         this.handleUpdate = this.handleUpdate.bind(this);
@@ -41,8 +42,15 @@ export default class EditAssetForm extends Component {
         this.addNetworkConnection = this.addNetworkConnection.bind(this);
         this.addPowerConnection = this.addPowerConnection.bind(this);
         this.defaultPDUFields = this.defaultPDUFields.bind(this);
-        this.deleteNetworkConnection=this.deleteNetworkConnection.bind(this)
+        this.deleteNetworkConnection = this.deleteNetworkConnection.bind(this)
         this.deletePowerConnection = this.deletePowerConnection.bind(this);
+    }
+
+    componentDidMount() {
+        console.log(this.state.powerConnections)
+        console.log(this.props.updatePowerConnectionsFromParent ? "block" : "none");
+        let panel = document.getElementById("powerPortConnectionsPanel");
+        panel.style.display = this.props.updatePowerConnectionsFromParent.length ? "block" : "none";
     }
 
     //TODO: use this method properly
@@ -123,22 +131,58 @@ export default class EditAssetForm extends Component {
 
     }
 
-    deleteNetworkConnection(event, idx){
+    deleteNetworkConnection(event, idx) {
+
+        //this is so we can call symmetricSingleDelete in assetutils updateAsset()
+        let packedVals=this.state.networkConnections[idx]['thisPort']+ ":"+this.state.networkConnections[idx]['otherAssetID']+ ":"+this.state.networkConnections[idx]['otherPort']
+        this.state.editDeletedNetworkConnections.push(packedVals)
+        this.setState(prevState => ({
+
+            editDeletedNetworkConnections: [...prevState.editDeletedNetworkConnections]
+
+        }));
+        console.log(this.state.editDeletedNetworkConnections)
+
+
         console.log("removing element " + idx)
         let networkConnectionsCopy = [...this.state.networkConnections];
         networkConnectionsCopy.splice(idx, 1);
         this.setState(prevState => ({
             networkConnections: networkConnectionsCopy
         }));
+
     }
 
-    deletePowerConnection(event, idx){
+    deletePowerConnection(event, idx) {
         console.log("removing element " + idx)
         let powerConnectionsCopy = [...this.state.powerConnections];
         powerConnectionsCopy.splice(idx, 1);
         this.setState(prevState => ({
             powerConnections: powerConnectionsCopy
         }));
+    }
+
+    checkNetworkPortUniqueness(networkPorts, callback){
+        if(!networkPorts.length){
+            callback(true);
+        } else {
+            let thisPortArray = [];
+            let otherIDPortArray = [];
+            let count = 0;
+            networkPorts.forEach(networkConnection =>{
+                let otherIDPortTemp = networkConnection.otherAssetID + networkConnection.otherPort;
+                if(thisPortArray.includes(networkConnection.thisPort) || otherIDPortArray.includes(otherIDPortTemp)){
+                    callback(null);
+                } else {
+                    thisPortArray.push(networkConnection.thisPort);
+                    otherIDPortArray.push(otherIDPortTemp);
+                    count++;
+                    if(count === networkPorts.length){
+                        callback(true);
+                    }
+                }
+            })
+        }
     }
 
     handleUpdate(event) {
@@ -172,84 +216,92 @@ export default class EditAssetForm extends Component {
                             existingConnections.push(this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port);
                             if (existingConnections.length === Object.keys(this.state.powerConnections).length) {
                                 //TODO: fix this in assetmacutils
-                                assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
-                                    if (fixedAddr) {
-                                        console.log(fixedAddr)
-                                        assetutils.updateAsset(
-                                            this.state.asset_id,
-                                            this.state.model,
-                                            this.state.hostname,
-                                            this.state.rack,
-                                            parseInt(this.state.rackU),
-                                            this.state.owner,
-                                            this.state.comment,
-                                            this.state.datacenter,
-                                            fixedAddr,
-                                            this.state.networkConnections,
-                                            this.state.showPowerConnections ? this.state.powerConnections : [{
+                                this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
+                                    if(result) {
+                                        assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
-                                                pduSide: "",
-                                                port: ""
-                                            }],
-                                            errorMessage => {
-                                                if (errorMessage) {
-                                                    ToastsStore.error(errorMessage, 10000)
-                                                } else {
-                                                    this.props.parentCallback(true);
-                                                    ToastsStore.success('Successfully updated asset!');
-                                                }
+
+                                            if (fixedAddr) {
+                                                console.log(fixedAddr)
+                                                assetutils.updateAsset(
+                                                    this.state.asset_id,
+                                                    this.state.model,
+                                                    this.state.hostname,
+                                                    this.state.rack,
+                                                    parseInt(this.state.rackU),
+                                                    this.state.owner,
+                                                    this.state.comment,
+                                                    this.state.datacenter,
+                                                    fixedAddr,
+                                                    this.state.networkConnections,
+                                                    this.state.editDeletedNetworkConnections,
+                                                    this.state.showPowerConnections ? this.state.powerConnections : [],
+
+                                                    errorMsg => {
+                                                        if (errorMsg) {
+                                                            ToastsStore.error(errorMsg, 10000)
+                                                        } else {
+                                                            this.props.parentCallback(true);
+                                                            ToastsStore.success('Successfully updated asset!');
+                                                        }
+                                                    }, this.props.changePlanID ? this.props.changePlanID : null
+                                                );
                                             }
-                                        );
+                                            else {
+                                                ToastsStore.error(macError)
+                                            }
+                                        });
+                                    } else {
+                                        ToastsStore.error("Network connections must be unique");
                                     }
-                                    else {
-                                        ToastsStore.error(macError)
-                                    }
-                                });
+                                })
                             }
                         }
                     })
                 } else {
-                    assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
-                        if (fixedAddr) {
-                            console.log(fixedAddr)
-                            assetutils.updateAsset(
-                                this.state.asset_id,
-                                this.state.model,
-                                this.state.hostname,
-                                this.state.rack,
-                                parseInt(this.state.rackU),
-                                this.state.owner,
-                                this.state.comment,
-                                this.state.datacenter,
-                                fixedAddr,
-                                this.state.networkConnections,
-                                this.state.showPowerConnections ? this.state.powerConnections : [{
+                    this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
+                        if(result) {
+                            assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
-                                    pduSide: "",
-                                    port: ""
-                                }],
+                                if (fixedAddr) {
+                                    console.log(fixedAddr)
+                                    assetutils.updateAsset(
+                                        this.state.asset_id,
+                                        this.state.model,
+                                        this.state.hostname,
+                                        this.state.rack,
+                                        parseInt(this.state.rackU),
+                                        this.state.owner,
+                                        this.state.comment,
+                                        this.state.datacenter,
+                                        fixedAddr,
+                                        this.state.networkConnections,
+                                        this.state.editDeletedNetworkConnections,
+                                        this.state.showPowerConnections ? this.state.powerConnections : [],
 
-                                errorMessage => {
-                                    if (errorMessage) {
-                                        ToastsStore.error(errorMessage, 10000)
-                                    } else {
-                                        this.props.parentCallback(true);
-                                        ToastsStore.success('Successfully updated asset!');
-                                    }
+                                        errorMessage => {
+                                            if (errorMessage) {
+                                                ToastsStore.error(errorMessage, 10000)
+                                            } else {
+                                                this.props.parentCallback(true);
+                                                ToastsStore.success('Successfully updated asset!');
+                                            }
+                                        }, this.props.changePlanID ? this.props.changePlanID : null
+                                    );
+
+
                                 }
-                            );
+                                else {
+                                    ToastsStore.error(macError)
+                                }
 
-
+                            });
+                        } else {
+                            ToastsStore.error("Network connections must be unique");
                         }
-                        else {
-                            ToastsStore.error(macError)
-                        }
-
-
-
-                    });
+                    })
                 }
 
             }
@@ -290,7 +342,13 @@ export default class EditAssetForm extends Component {
                     >Update Asset</Heading>
 
                     <Form onSubmit={this.handleUpdate} name="updateInst" >
-
+                        {this.props.changePlanID && (<Box style={{
+                            borderRadius: 10
+                        }} width={"large"} background={"status-warning"} align={"center"} alignSelf={"center"}
+                                                          margin={{top: "medium"}}>
+                            <Heading level={"3"} margin={"small"}>Warning</Heading>
+                            <Box>This asset will only be edited within the change plan.</Box>
+                        </Box>)}
                         <FormField name="model" label="Model">
                             {/* change placeholders to what the original values were? */}
                             <TextInput name="model" placeholder="Update Model"
@@ -387,37 +445,37 @@ export default class EditAssetForm extends Component {
                         </FormField>
 
                         <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"}
-                                toggle={true} onChange={(e) => {
-                                    let panel = document.getElementById("powerPortConnectionsPanel");
-                                    let display = !this.state.showPowerConnections;
-                                    this.setState({
-                                        showPowerConnections: display
-                                    }, function () {
-                                        panel.style.display = display ? "block" : "none";
-                                    })
-                                }} />
+                            toggle={true} onChange={(e) => {
+                                let panel = document.getElementById("powerPortConnectionsPanel");
+                                let display = !this.state.showPowerConnections;
+                                this.setState({
+                                    showPowerConnections: display
+                                }, function () {
+                                    panel.style.display = display ? "block" : "none";
+                                })
+                            }} />
 
 
                         <Accordion >
 
                             <div id={"powerPortConnectionsPanel"} style={{ display: "none" }}>
-                            <AccordionPanel label="Power Port Connections">
-                                <AssetPowerPortsForm
+                                <AccordionPanel label="Power Port Connections">
+                                    <AssetPowerPortsForm
 
-                                    powerConnections={this.state.powerConnections}
+                                        powerConnections={this.state.powerConnections}
 
-                                    deletePowerConnectionCallbackFromParent={this.deletePowerConnection}
+                                        deletePowerConnectionCallbackFromParent={this.deletePowerConnection}
 
-                                />
+                                    />
 
-                                <Button
-                                    onClick={this.addPowerConnection}
-                                    margin={{ horizontal: 'medium', vertical: 'small' }}
+                                    <Button
+                                        onClick={this.addPowerConnection}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
 
-                                    label="Add a power connection" />
+                                        label="Add a power connection" />
 
 
-                            </AccordionPanel>
+                                </AccordionPanel>
                             </div>
 
                             <AccordionPanel label="MAC Addresses">

@@ -15,9 +15,10 @@ import {
     Menu,
     Select
 } from 'grommet'
-import {Add, Filter, Share} from 'grommet-icons'
+import {Add, View, Filter, Share} from 'grommet-icons'
 import AddAssetForm from '../components/AddAssetForm'
 import DeleteAssetPopup from '../components/DeleteAssetPopup'
+import DecommissionAssetPopup from '../components/DecommissionAssetPopup'
 import EditAssetForm from '../components/EditAssetForm'
 
 import theme from '../theme'
@@ -52,6 +53,9 @@ class AssetScreen extends Component {
             deleteID: "",
             deleteModel: "",
             deleteHostname: "",
+            decommissionID: "",
+            decommissionModel: "",
+            decommissionHostname: "",
             updateID: "",
             initialLoaded: false,
             updateModel: "",
@@ -88,6 +92,7 @@ class AssetScreen extends Component {
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
         this.handleCancelRefreshPopupChange = this.handleCancelRefreshPopupChange.bind(this);
         this.handleDeleteButton = this.handleDeleteButton.bind(this);
+        this.handleDecommissionButton = this.handleDecommissionButton.bind(this);
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleChangeRange = this.handleChangeRange.bind(this);
@@ -214,6 +219,14 @@ class AssetScreen extends Component {
             deleteHostname: datum.hostname
         });
     }
+    handleDecommissionButton = (datum) => {
+        this.setState({
+            popupType: 'Decommission',
+            decommissionID: datum.asset_id,
+            decommissionModel: datum.model,
+            decommissionHostname: datum.hostname
+        });
+    }
     handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter, datumMACAddresses, datumNetworkConnections, datumPowerConnections) => {
 
         this.setState({
@@ -234,7 +247,7 @@ class AssetScreen extends Component {
         });
 
         // console.log(datumNetworkConnections)
-        // console.log(datumPowerConnections)
+        console.log(datumPowerConnections)
 
     }
 
@@ -362,6 +375,21 @@ class AssetScreen extends Component {
                     />
                 </Layer>
             )
+        } else if (popupType === 'Decommission') {
+
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+
+                    <DecommissionAssetPopup
+                        parentCallback={this.handleCancelRefreshPopupChange}
+                        cancelCallback={this.handleCancelPopupChange}
+                        decommissionIDFromParent={this.state.decommissionID}
+                        decommissionModel={this.state.decommissionModel}
+                        decommissionHostname={this.state.decommissionHostname}
+                    />
+                </Layer>
+            )
         } else if (popupType === 'Update') {
             console.log("In parent: updateID is " + this.state.updateID)
 
@@ -448,71 +476,58 @@ class AssetScreen extends Component {
                              alignSelf='stretch'
                              background='#FFFFFF'
                              width={"medium"}
-                             margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                             margin={{ top: 'small', left: 'medium', right: 'medium' }}
                              pad='xxsmall' >
                             <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
                                 <Stack >
                                     <Box gap='small' direction="column" margin='small'>
                                         {/* Put sort buttons here */}
-                                        <Text size='small'><b>Rack</b></Text>
-                                        <Box direction="row" justify="start" margin="small">
+                                        <Text size='small'><b>Sort by Rack and RackU</b></Text>
+                                        <Box direction="row" justify="center" margin="small" wrap={true}>
                                             <RadioButtonGroup
                                                 label="Rack"
                                                 name="rackSortChoice"
+                                                margin={{right: "small"}}
                                                 value={this.state.rackSortChoice}
-
                                                 options={[
-                                                    { label: "Ascending", value: "asc" },
-                                                    { label: "Descending", value: "desc" },
-
+                                                    { label: "Rack: Ascend", value: "asc" },
+                                                    { label: "Rack: Descend", value: "desc" },
                                                 ]}
-
                                                 onClick={e => {
-
                                                     this.value = e.target.value
                                                     this.setState(oldState => ({ ...oldState, rackSortChoice: this.value }))
                                                     this.handleRadioButtonChange(e)
-
                                                 }}
-
                                             />
-
-                                        </Box>
-                                        <Text size='small'><b>Rack U</b></Text>
-                                        <Box direction="row" justify="start" margin="small">
                                             <RadioButtonGroup
                                                 label="Rack"
                                                 name="rackUSortChoice"
+                                                margin={{left: "small"}}
                                                 value={this.state.rackUSortChoice}
-
                                                 options={[
-                                                    { label: "Ascending", value: "asc" },
-                                                    { label: "Descending", value: "desc" },
+                                                    { label: "RackU: Ascend", value: "asc" },
+                                                    { label: "RackU: Descend", value: "desc" },
 
                                                 ]}
-
                                                 onClick={e => {
-
                                                     this.value = e.target.value
                                                     this.setState(oldState => ({ ...oldState, rackUSortChoice: this.value }))
                                                     this.handleRadioButtonChange(e)
-
                                                 }}
-
                                             />
-
                                         </Box>
-                                        <Box direction="column" justify="center" margin={{top: 'small', bottom: 'medium'}}>
+                                        <Box direction="column" justify="center" margin={{top: 'small', bottom: 'small'}}>
                                             <Button label={<Text size="small"> Apply</Text>} onClick={this.handleCombinedSort}/>
                                         </Box>
-
-
+                                        <Box direction="column" justify="center" margin={{bottom: 'small'}}>
+                                            <Button label={<Text size="small"> Close</Text>} onClick={() => {
+                                                this.setState({
+                                                    popupType: ""
+                                                })
+                                            }}/>
+                                        </Box>
                                     </Box>
-
                                 </Stack>
-
-
-
                             </Box>
                         </Box>
 
@@ -528,12 +543,7 @@ class AssetScreen extends Component {
                              pad='small' >
                             <Box flex margin={{ left: 'medium', top: 'small', right: 'medium' }} direction='column' justify='start'>
                                 {/*<Box direction="column" width={"medium"} margin={{top: 'small'}}>*/}
-                                <Button label={<Text size="small">Close</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
-                                    this.setState({
-                                        popupType: ""
-                                    })
-                                }}/>
-                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} onClick={() => {
+                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
                                     bulkassetutils.exportFilteredAssets(this.state.searchResults || this.assetTable.current.state.assets);
                                 }} style={{marginBottom: "10px"}}/>
                                 <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} onClick={() => {
@@ -631,6 +641,7 @@ class AssetScreen extends Component {
                                                         <Box align="center">
                                                             <AssetTable
                                                                 deleteButtonCallbackFromParent={this.handleDeleteButton}
+                                                                decommissionButtonCallbackFromParent={this.handleDecommissionButton}
 
                                                                 UpdateButtonCallbackFromParent={this.handleUpdateButton}
 
@@ -647,6 +658,15 @@ class AssetScreen extends Component {
                                                 {userutils.isLoggedInUserAdmin() && (
                                                     <Button primary icon={<Add/>} label="Add Asset" alignSelf='center'
                                                             onClick={() => this.setState({popupType: "Add"})}/>
+                                                )}
+                                                {userutils.isLoggedInUserAdmin() && (
+                                                  <Button primary icon={<View/>} margin={{
+                                                      left: 'medium',
+                                                      top: 'small',
+                                                      bottom: 'small',
+                                                      right: 'medium'
+                                                  }} label="View Decommissioned Assets" alignSelf='center'
+                                                          onClick={() => this.props.history.push('/decommissioned')}/>
                                                 )}
                                             </Box>
                                         </Box>

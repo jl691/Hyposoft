@@ -9,14 +9,16 @@ import {
     Box,
     Accordion,
     AccordionPanel,
-    CheckBox
+    CheckBox, Text
 } from 'grommet'
 
 
 import { ToastsContainer, ToastsStore } from 'react-toasts';
+import errorStrings from '../res/errorMessages.json'
 import * as assetutils from '../utils/assetutils'
 import * as assetpowerportutils from '../utils/assetpowerportutils'
 import * as assetmacutils from '../utils/assetmacutils'
+import * as changeplanconflictutils from '../utils/changeplanconflictutils'
 import * as modelutils from '../utils/modelutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as userutils from "../utils/userutils";
@@ -46,17 +48,15 @@ export default class AddAssetForm extends Component {
             datacenterAbbrev: "",
             showPowerConnections: false,
             macAddresses: [],
-            networkConnections: [
-                {
-                    otherAssetID: "",
-                    otherPort: "",
-                    thisPort: ""
-                }
+            networkConnections: [],
+            powerConnections: [
+                //     {
+                //     pduSide: "",
+                //     port: ""
+                // }
             ],
-            powerConnections: [{
-                pduSide: "",
-                port: ""
-            }],
+
+
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
@@ -65,7 +65,7 @@ export default class AddAssetForm extends Component {
         this.defaultPDUFields = this.defaultPDUFields.bind(this)
         this.handleMacAddressFixAndSet = this.handleMacAddressFixAndSet.bind(this)
         this.fixMACAddress = this.fixMACAddress.bind(this)
-        this.deleteNetworkConnection=this.deleteNetworkConnection.bind(this)
+        this.deleteNetworkConnection = this.deleteNetworkConnection.bind(this)
         this.deletePowerConnection = this.deletePowerConnection.bind(this);
     }
 
@@ -150,16 +150,18 @@ export default class AddAssetForm extends Component {
         });
     }
 
-    deleteNetworkConnection(event, idx){
+    deleteNetworkConnection(event, idx) {
         console.log("removing element " + idx)
         let networkConnectionsCopy = [...this.state.networkConnections];
         networkConnectionsCopy.splice(idx, 1);
         this.setState(prevState => ({
             networkConnections: networkConnectionsCopy
         }));
+
+
     }
 
-    deletePowerConnection(event, idx){
+    deletePowerConnection(event, idx) {
         console.log("removing element " + idx)
         let powerConnectionsCopy = [...this.state.powerConnections];
         powerConnectionsCopy.splice(idx, 1);
@@ -236,39 +238,110 @@ export default class AddAssetForm extends Component {
 
     }
 
-    handleSubmit(event) {
-        if (event.target.name === "addInst") {
-            if (!this.state.model || !this.state.rack || !this.state.rackU || !this.state.datacenter) {
-                //not all required fields filled out
-                ToastsStore.error("Please fill out all required fields.");
-            } else if (this.state.hostname && !/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)) {
-                //not a valid hostname
-                ToastsStore.error("Invalid hostname. It must start with a letter or number, contain only letters, numbers, or hyphens, and end with a letter or number. It must be 63 characters or less.");
-            } else if (!/[A-Z]\d+/.test(this.state.rack)) {
-                //not a valid rack
-                ToastsStore.error("Invalid rack.");
-            } else if (!parseInt(this.state.rackU)) {
-                //invalid number
-                ToastsStore.error("Rack U must be a number.");
-            } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
-                ToastsStore.error("Rack U must be positive.");
+    checkNetworkPortUniqueness(networkPorts, callback) {
+        if (!networkPorts.length) {
+            callback(true);
+        } else {
+            let thisPortArray = [];
+            let otherIDPortArray = [];
+            let count = 0;
+            networkPorts.forEach(networkConnection => {
+                let otherIDPortTemp = networkConnection.otherAssetID + networkConnection.otherPort;
+                if (thisPortArray.includes(networkConnection.thisPort) || otherIDPortArray.includes(otherIDPortTemp)) {
+                    callback(null);
+                } else {
+                    thisPortArray.push(networkConnection.thisPort);
+                    otherIDPortArray.push(otherIDPortTemp);
+                    count++;
+                    if (count === networkPorts.length) {
+                        callback(true);
+                    }
+                }
+            })
+        }
+    }
 
-                //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
-            }
-            else {
-                if (this.state.showPowerConnections) {
-                    let existingConnections = [];
-                    Object.keys(this.state.powerConnections).forEach(connection => {
-                        let thisKey = this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port;
-                        if(existingConnections.includes(thisKey)){
-                            ToastsStore.error("Power connections must be unique.");
-                        } else {
-                            existingConnections.push(this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port);
-                            if(existingConnections.length === Object.keys(this.state.powerConnections).length){
-                                //TODO: fix this in assetmacutils
+    async handleSubmit(event) {
+        //flawed logic: want to move first if statement out, also not always doing a change plan
+        //await changeplanconflictutils.addAssetChangePlanPackage("VwC1BMKipvuuvmR1LrYR").then(() => {
+
+            console.log("Inside the add asset change plan package .then()")
+            if (event.target.name === "addInst") {
+                if (!this.state.model || !this.state.rack || !this.state.rackU || !this.state.datacenter) {
+                    //not all required fields filled out
+                    ToastsStore.error("Please fill out all required fields.");
+                } else if (this.state.hostname && !/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)) {
+                    //not a valid hostname
+                    ToastsStore.error("Invalid hostname. It must start with a letter or number, contain only letters, numbers, or hyphens, and end with a letter or number. It must be 63 characters or less.");
+                } else if (!/[A-Z]\d+/.test(this.state.rack)) {
+                    //not a valid rack
+                    ToastsStore.error("Invalid rack.");
+                } else if (!parseInt(this.state.rackU)) {
+                    //invalid number
+                    ToastsStore.error("Rack U must be a number.");
+                } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
+                    ToastsStore.error("Rack U must be positive.");
+
+                    //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
+                }
+                else {
+                    if (this.state.showPowerConnections) {
+                        let existingPowerConnections = [];
+                        Object.keys(this.state.powerConnections).forEach(connection => {
+                            let thisKey = this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port;
+                            if (existingPowerConnections.includes(thisKey)) {
+                                ToastsStore.error("Power connections must be unique.");
+                            } else {
+                                existingPowerConnections.push(this.state.powerConnections[connection].pduSide + this.state.powerConnections[connection].port);
+                                if (existingPowerConnections.length === Object.keys(this.state.powerConnections).length) {
+                                    //TODO: fix this in assetmacutils
+                                    this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
+                                        if (result) {
+                                            assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
+
+                                                if (fixedAddr) {
+                                                    console.log(fixedAddr)
+                                                    assetutils.addAsset(
+                                                        this.state.asset_id,
+                                                        this.state.model,
+                                                        this.state.hostname,
+                                                        this.state.rack,
+                                                        parseInt(this.state.rackU),
+                                                        this.state.owner,
+                                                        this.state.comment,
+                                                        this.state.datacenter,
+                                                        fixedAddr,
+                                                        this.state.networkConnections,
+                                                        this.state.showPowerConnections ? this.state.powerConnections : [],
+                                                        errorMessage => {
+                                                            if (errorMessage) {
+                                                                ToastsStore.error(errorMessage, 10000)
+                                                            } else {
+                                                                this.props.parentCallback(true);
+                                                                ToastsStore.success('Successfully added asset!');
+                                                            }
+                                                        }, this.props.changePlanID ? this.props.changePlanID : null
+                                                    );
+                                                }
+                                                else {
+                                                    ToastsStore.error(macError)
+                                                }
+                                            });
+
+                                        } else {
+                                            ToastsStore.error("Network connections must be unique.")
+                                        }
+                                    })
+                                }
+                            }
+                        })
+                    } else {
+
+                        this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
+                            if (result) {
                                 assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
-                                    if(fixedAddr){
+                                    if (fixedAddr) {
                                         console.log(fixedAddr)
                                         assetutils.addAsset(
                                             this.state.asset_id,
@@ -281,11 +354,8 @@ export default class AddAssetForm extends Component {
                                             this.state.datacenter,
                                             fixedAddr,
                                             this.state.networkConnections,
-                                            this.state.showPowerConnections ? this.state.powerConnections : [{
+                                            this.state.showPowerConnections ? this.state.powerConnections : [],
 
-                                                pduSide: "",
-                                                port: ""
-                                            }],
                                             errorMessage => {
                                                 if (errorMessage) {
                                                     ToastsStore.error(errorMessage, 10000)
@@ -293,63 +363,26 @@ export default class AddAssetForm extends Component {
                                                     this.props.parentCallback(true);
                                                     ToastsStore.success('Successfully added asset!');
                                                 }
-                                            }
+                                            }, this.props.changePlanID ? this.props.changePlanID : null
                                         );
+
+
                                     }
-                                    else{
+                                    else {
                                         ToastsStore.error(macError)
                                     }
                                 });
+                            } else {
+                                ToastsStore.error("Network connections must be unique.")
                             }
-                        }
-                    })
-                } else {
-                    assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
-
-                        if(fixedAddr){
-                            console.log(fixedAddr)
-                            assetutils.addAsset(
-                                this.state.asset_id,
-                                this.state.model,
-                                this.state.hostname,
-                                this.state.rack,
-                                parseInt(this.state.rackU),
-                                this.state.owner,
-                                this.state.comment,
-                                this.state.datacenter,
-                                fixedAddr,
-                                this.state.networkConnections,
-                                this.state.showPowerConnections ? this.state.powerConnections : [{
-
-                                    pduSide: "",
-                                    port: ""
-                                }],
-
-                                errorMessage => {
-                                    if (errorMessage) {
-                                        ToastsStore.error(errorMessage, 10000)
-                                    } else {
-                                        this.props.parentCallback(true);
-                                        ToastsStore.success('Successfully added asset!');
-                                    }
-                                }
-                            );
+                        })
+                    }
 
 
-                        }
-                        else{
-                            ToastsStore.error(macError)
-                        }
-
-
-
-                    });
                 }
 
-
             }
-
-        }
+       //})
     }
 
     render() {
@@ -357,7 +390,7 @@ export default class AddAssetForm extends Component {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
         }
-        console.log(this.state)
+        //console.log(this.state)
 
 
         return (
@@ -370,9 +403,16 @@ export default class AddAssetForm extends Component {
                     >Add Asset</Heading>
                     <Form onSubmit={this.handleSubmit} name="addInst">
                         <Box direction="column" pad='xsmall' gap="small" flex overflow={{ vertical: 'scroll' }}>
+                            {this.props.changePlanID && (<Box style={{
+                                borderRadius: 10
+                            }} width={"large"} background={"status-warning"} align={"center"} alignSelf={"center"}
+                                 margin={{top: "medium"}}>
+                                <Heading level={"3"} margin={"small"}>Warning</Heading>
+                                <Box>This asset will only be added within the change plan.</Box>
+                            </Box>)}
                             <FormField name="model" label="Model">
 
-                                <TextInput name="model" required="true"
+                                <TextInput name="model" required={true}
                                     placeholder="eg. Dell R710"
                                     onChange={e => {
                                         const value = e.target.value
@@ -433,7 +473,7 @@ export default class AddAssetForm extends Component {
                                         })
                                     }}
                                     title='Datacenter'
-                                    required="true"
+                                    required={true}
                                 />
                             </FormField>
 
@@ -469,7 +509,7 @@ export default class AddAssetForm extends Component {
                                     }
                                     }
                                     title='Rack'
-                                    required="true"
+                                    required={true}
                                 />
                             </FormField>
 
@@ -478,7 +518,7 @@ export default class AddAssetForm extends Component {
 
 
                                 <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
-                                    value={this.state.rackU} required="true" />
+                                    value={this.state.rackU} required={true} />
                             </FormField>
 
 

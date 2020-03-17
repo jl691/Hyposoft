@@ -57,6 +57,8 @@ export default class AssetNetworkPortsForm extends Component {
         let { networkConnections } = this.props
         //console.log(networkConnections)
         return (
+               // Object.keys(networkConnections).map((key, idx) => {
+            //     console.log(networkConnections[key])
             networkConnections.map((val, idx) => {
                 return (
                     <Grommet key={idx} theme={theme}>
@@ -103,6 +105,7 @@ export default class AssetNetworkPortsForm extends Component {
                                             networkPortSuggestions: results
                                         })))
                                     }}
+                                           required={"true"}
 
                                 />
 
@@ -137,6 +140,7 @@ export default class AssetNetworkPortsForm extends Component {
                                             assetIdSuggestions: results
                                         })), this.props.currentId ? this.props.currentId : '')
                                     }}
+                                           required={"true"}
                                 />
                             </FormField>
 
@@ -167,6 +171,7 @@ export default class AssetNetworkPortsForm extends Component {
                                             otherAssetPortSuggestions: results
                                         })))
                                     }}
+                                           required={"true"}
                                 />
 
                             </FormField>

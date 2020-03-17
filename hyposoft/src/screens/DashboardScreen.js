@@ -6,7 +6,6 @@ import ItemCard from '../components/ItemCard'
 import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import * as userutils from '../utils/userutils'
-import * as powerutils from '../utils/powerutils'
 
 import {
     Box,
@@ -30,6 +29,7 @@ class DashboardScreen extends Component {
         {id: 4, title: 'Import / Export', desc: 'Import and export models and assets'},
         {id: 5, title: 'Datacenters', desc: 'View and manage datacenters'},
         {id: 6, title: 'Logs', desc: 'View global logs'},
+        {id: 7, title: 'Change Plans', desc: 'View change plans'}
         //{id: 5, title: 'Reports', desc: 'Generate rack usage reports'}
     ]
 
@@ -55,6 +55,9 @@ class DashboardScreen extends Component {
                 break
             case 6:
                 this.setState({redirect: '/logs'})
+                break
+            case 7:
+                this.setState({redirect: '/changeplans'})
                 break
             default:
                 alert(action)
