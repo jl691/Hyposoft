@@ -7,6 +7,7 @@ import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import * as userutils from '../utils/userutils'
 import * as powerutils from '../utils/powerutils'
+import * as labelutils from '../utils/labelutils'
 
 import {
     Box,
@@ -66,6 +67,9 @@ class DashboardScreen extends Component {
     }
 
     render() {
+        console.log('calling generateLabelPDF()')
+        labelutils.generateLabelPDF([])
+
         if (this.state.redirect !== '') {
             return <Redirect to={this.state.redirect} />
         }
