@@ -3,6 +3,7 @@ import * as assetnetworkportutils from "./assetnetworkportutils";
 import * as logutils from "./logutils"
 import * as assetutils from "./assetutils"
 import * as rackutils from "./rackutils"
+import * as decommissionutils from "./decommissionutils"
 import {changeplansRef} from "./firebaseutils";
 import {assetRef} from "./firebaseutils";
 import {racksRef} from "./firebaseutils";
@@ -67,6 +68,7 @@ function getChangeDetails(changePlanID, stepID, username, callback) {
         if (documentSnapshot.exists && documentSnapshot.data().owner === username) {
             firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepID)).get().then(function (querySnapshot) {
                 if (!querySnapshot.empty) {
+                    console.log(querySnapshot.docs[0].data())
                     callback(querySnapshot.docs[0].data());
                 } else {
                     callback(null);
@@ -134,16 +136,18 @@ function editChangePlan(id, newName, callback) {
 }
 
 function addAssetChange(asset, assetID, changePlanID, callback) {
+    console.log(assetID)
     changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
         let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
         let assetChangePlanObject = {
-            assetID: parseInt(assetID),
+            assetID: assetID ? parseInt(assetID) : "",
             change: "add",
             changes: {},
             step: changeNumber
         };
+        console.log(asset);
         Object.keys(asset).forEach(assetProperty => {
-            if (asset[assetProperty] && (typeof asset[assetProperty] !== "object" || (typeof asset[assetProperty] === "object" && Object.keys(asset[assetProperty]).length))) {
+            //if (typeof asset[assetProperty] !== "object" || (typeof asset[assetProperty] === "object" && Object.keys(asset[assetProperty]).length)) {
                 let oldProperty = (assetProperty === "networkConnections" || assetProperty === "macAddresses") ? {} : (assetProperty === "powerConnections" ? [] : "");
                 assetChangePlanObject.changes = {
                     ...assetChangePlanObject.changes,
@@ -152,7 +156,7 @@ function addAssetChange(asset, assetID, changePlanID, callback) {
                         new: asset[assetProperty]
                     }
                 }
-            }
+            //}
         });
         changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function () {
             //network ports need to be done at time of execution
@@ -585,19 +589,28 @@ function generateEditWorkOrderMessage(doc, callback) {
 }
 
 function executeChangePlan(changePlanID, callback) {
-    changeplansRef.doc(changePlanID).collection("changes").get().then(function (querySnapshot) {
+    changeplansRef.doc(changePlanID.toString()).collection("changes").get().then(function (querySnapshot) {
         if (querySnapshot.empty) {
             callback(true);
         } else {
             let count = 0;
             querySnapshot.docs.forEach(change => {
+                console.log(change)
                 if (change.data().change === "add") {
-                    if (change.data().changes.assetID && change.data().changes.assetID["new"]) {
-                        executeAddAsset(change.data().changes.assetID["new"], change, resultAdd => {
+                    console.log("add")
+                    if (change.data().changes.assetId && change.data().changes.assetId["new"]) {
+                        console.log("not generating")
+                        executeAddAsset(change.data().changes.assetId["new"], change, resultAdd => {
                             if (resultAdd) {
                                 count++;
                                 if (count === querySnapshot.size) {
-                                    callback(true);
+                                    changeplansRef.doc(changePlanID.toString()).update({
+                                        executed: true
+                                    }).then(function () {
+                                        callback(true);
+                                    }).catch(function () {
+                                        callback(null);
+                                    });
                                 }
                             } else {
                                 callback(null);
@@ -605,12 +618,19 @@ function executeChangePlan(changePlanID, callback) {
                         });
                     } else {
                         //generate
+                        console.log("generating")
                         assetIDutils.generateAssetID().then(newID => {
                             executeAddAsset(newID, change, resultAdd => {
                                 if (resultAdd) {
                                     count++;
                                     if (count === querySnapshot.size) {
-                                        callback(true);
+                                        changeplansRef.doc(changePlanID.toString()).update({
+                                            executed: true
+                                        }).then(function () {
+                                            callback(true);
+                                        }).catch(function () {
+                                            callback(null);
+                                        });
                                     }
                                 } else {
                                     callback(null);
@@ -619,11 +639,18 @@ function executeChangePlan(changePlanID, callback) {
                         });
                     }
                 } else if (change.data().change === "edit") {
+                    console.log("edit")
                     executeEditAsset(change, resultEdit => {
                         if (resultEdit) {
                             count++;
                             if (count === querySnapshot.size) {
-                                callback(true);
+                                changeplansRef.doc(changePlanID.toString()).update({
+                                    executed: true
+                                }).then(function () {
+                                    callback(true);
+                                }).catch(function () {
+                                    callback(null);
+                                });
                             }
                         } else {
                             callback(null);
@@ -631,31 +658,53 @@ function executeChangePlan(changePlanID, callback) {
                     })
                 } else {
                     //decomission
+                    console.log("decomm")
+                    decommissionutils.decommissionAsset(change.data().assetID.toString(), resultDecom => {
+                        if(resultDecom){
+                            count++;
+                            if (count === querySnapshot.size) {
+                                changeplansRef.doc(changePlanID.toString()).update({
+                                    executed: true
+                                }).then(function () {
+                                    callback(true);
+                                }).catch(function () {
+                                    callback(null);
+                                });
+                            }
+                        } else {
+                            callback(null);
+                        }
+                    })
                 }
             })
         }
-    }).catch(function () {
+    }).catch(function (error) {
+        console.log(error)
         callback(null);
     })
 }
 
 function executeAddAsset(id, doc, callback) {
+    console.log(id);
     let assetObject = {
         assetId: id
     };
     let count = 0;
-    doc.data().changes.forEach(change => {
+    console.log(doc.data().changes)
+    Object.keys(doc.data().changes).forEach(change => {
         assetObject = {
             ...assetObject,
             [change]: doc.data().changes[change]["new"]
         };
         count++;
-        if (count === doc.data().changes.length) {
+        if (count === Object.keys(doc.data().changes).length) {
 
             //TODO: TEST
             assetRef.doc(id).set(assetObject).then(function (docRef) {
-                assetnetworkportutils.symmetricNetworkConnectionsAdd(assetnetworkportutils.networkConnectionsToArray(doc.data().changes.networkConnections["new"]), id);
-                if (doc.data().changes.powerConnections["new"].length != 0) {
+                if(doc.data().changes.networkConnections){
+                    assetnetworkportutils.symmetricNetworkConnectionsAdd(assetnetworkportutils.networkConnectionsToArray(doc.data().changes.networkConnections["new"]), id);
+                }
+                if (doc.data().changes.powerConnections && doc.data().changes.powerConnections["new"].length != 0) {
                     racksRef.doc(String(doc.data().changes.rackID["new"])).update({
                         assets: firebase.firestore.FieldValue.arrayUnion(id),
                         powerPorts: firebase.firestore.FieldValue.arrayUnion(...doc.data().changes.powerConnections["new"].map(obj => ({
@@ -678,7 +727,7 @@ function executeAddAsset(id, doc, callback) {
                 }
             }).catch(function (error) {
                 // callback("Error");
-                console.log(null)
+                console.log(error)
             })
 
 
@@ -689,19 +738,22 @@ function executeAddAsset(id, doc, callback) {
 function executeEditAsset(doc, callback) {
     let assetObject = {};
     let count = 0;
-    doc.data().changes.forEach(change => {
+    Object.keys(doc.data().changes).forEach(change => {
         assetObject = {
             ...assetObject,
             [change]: doc.data().changes[change]["new"]
         };
         count++;
-        if (count === doc.data().changes.length) {
-            assetnetworkportutils.symmetricNetworkConnectionsDelete(doc.data().assetID, deleteResult => {
+        if (count === Object.keys(doc.data().changes).length) {
+            console.log("checkpoint w")
+            assetnetworkportutils.symmetricNetworkConnectionsDelete(doc.data().assetID.toString(), deleteResult => {
                 if (deleteResult) {
                     logutils.getObjectData(String(doc.data().assetID), logutils.ASSET(), assetData => {
-                        assetnetworkportutils.symmetricNetworkConnectionsAdd(assetnetworkportutils.networkConnectionsToArray(doc.data().changes.networkConnections["new"]), doc.data().assetID);
-
-                        assetRef.doc(doc.data().assetID).get().then(function (documentSnapshot) {
+                        if(doc.data().changes.networkConnections){
+                            assetnetworkportutils.symmetricNetworkConnectionsAdd(assetnetworkportutils.networkConnectionsToArray(doc.data().changes.networkConnections["new"]), doc.data().assetID);
+                        }
+                        assetRef.doc(doc.data().assetID.toString()).get().then(function (documentSnapshot) {
+                            console.log("checkpoint 1")
                             if (documentSnapshot.exists) {
                                 let oldRackID = documentSnapshot.data().rackID;
                                 let newRackID = doc.data().changes.rackID ? doc.data().changes.rackID["new"] : documentSnapshot.data().rackID;
@@ -709,7 +761,7 @@ function executeEditAsset(doc, callback) {
                                 let newPowerPorts = doc.data().changes.powerConnections ? doc.data().changes.powerConnections["new"] : documentSnapshot.data().powerConnections;
                                 assetutils.replaceAssetRack(oldRackID, newRackID, oldPowerPorts, newPowerPorts, doc.data().assetID, null, replaceResult => {
                                     if (replaceResult) {
-                                        assetRef.doc(String(doc.data().assetID)).set(assetObject).then(function () {
+                                        assetRef.doc(String(doc.data().assetID)).update(assetObject).then(function () {
                                             console.log("Updated model successfully")
                                             logutils.addLog(String(doc.data().assetID), logutils.ASSET(), logutils.MODIFY(), assetData)
                                             callback(true);
@@ -744,5 +796,6 @@ export {
     editAssetChange,
     generateWorkOrder,
     deleteChange,
-    decommissionAssetChange
+    decommissionAssetChange,
+    executeChangePlan
 }

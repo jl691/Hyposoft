@@ -1,6 +1,7 @@
 import React from "react";
 import * as changeplanutils from "../utils/changeplanutils";
 import * as userutils from "../utils/userutils";
+import * as firebaseutils from "../utils/firebaseutils";
 import {Box, Button, Grommet, Heading, Text, DataTable, Layer} from "grommet";
 import theme from "../theme";
 import AppBar from "../components/AppBar";
@@ -12,6 +13,7 @@ import {Redirect} from "react-router-dom";
 import BackButton from "../components/BackButton";
 import DeleteChangePlanForm from "../components/DeleteChangePlanForm";
 import DeleteChangeForm from "../components/DeleteChangeForm";
+import ExecuteChangePlanForm from "../components/ExecuteChangePlanForm";
 
 class DetailedChangePlanScreen extends React.Component {
 
@@ -23,12 +25,22 @@ class DetailedChangePlanScreen extends React.Component {
         this.state = {
             changes: [],
             initialLoaded: false,
-            popupType: ""
+            popupType: "",
+            name: ""
         }
+
+        this.componentDidMount = this.componentDidMount.bind(this);
     }
 
     componentDidMount() {
         this.changePlanID = this.props.match.params.changePlanID;
+        firebaseutils.changeplansRef.doc(this.changePlanID).get().then(documentSnapshot => {
+           if(documentSnapshot.exists){
+               this.setState({
+                   name: documentSnapshot.data().name
+               })
+           }
+        });
         this.forceRefresh()
     }
 
@@ -111,7 +123,7 @@ class DetailedChangePlanScreen extends React.Component {
                             <p>Execute this change plan.</p>
                             <Box direction='column' flex alignSelf='stretch'>
                                 <Button primary icon={<Checkmark/>} label="Execute" onClick={() => {
-                                    this.setState({popupType: "Add"})
+                                    this.setState({popupType: "Execute"})
                                 }}/>
                             </Box>
                         </Box>
@@ -183,7 +195,7 @@ class DetailedChangePlanScreen extends React.Component {
                 property: "assetID",
                 header: <Text size='small'>Asset ID</Text>,
                 render: datum => (
-                    <Text size='small'>{datum.assetID}</Text>)
+                    <Text size='small'>{datum.assetID ? datum.assetID : "TBD"}</Text>)
             },
             {
                 property: "change",
@@ -221,6 +233,13 @@ class DetailedChangePlanScreen extends React.Component {
         })
     }
 
+    successfulExecution = (data) => {
+        this.setState({
+            popupType: ""
+        });
+        ToastsStore.success("Successfully executed the change plan.")
+    }
+
     render() {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/'/>
@@ -234,6 +253,12 @@ class DetailedChangePlanScreen extends React.Component {
                 <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
                                       changePlanID={this.changePlanID} stepNumber={this.state.deleteStepNumber}/>
             )
+        } else if(popupType === 'Execute'){
+            console.log(this.changePlanID)
+            popup = (
+                <ExecuteChangePlanForm cancelPopup={this.cancelPopup} successfulExecution={this.successfulExecution}
+                                  id={this.changePlanID} name={this.state.name}/>
+            )
         }
 
         return (
@@ -243,7 +268,7 @@ class DetailedChangePlanScreen extends React.Component {
                         <BackButton alignSelf='start' this={this}/>
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
-                        }}>Change Plan: {this.changePlanID}</Heading>
+                        }}>Change Plan: {this.state.name}</Heading>
                         <UserMenu alignSelf='end' this={this}/>
                     </AppBar>
                     <Box direction='row'

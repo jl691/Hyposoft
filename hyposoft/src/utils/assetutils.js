@@ -382,6 +382,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                     console.log(error)
                                                                 })
                                                             } else {
+                                                                delete assetObject["assetId"];
                                                                 changeplanutils.addAssetChange(assetObject, "", changePlanID, result => {
                                                                     if(result){
                                                                         callback(null);
@@ -744,6 +745,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                         if (result) {
                                             //get old rack document
                                             assetRef.doc(assetID).get().then(docSnap => {
+                                                console.log(assetID, docSnap)
                                                 let oldRack = docSnap.data().rack;
                                                 let oldSplitRackArray = oldRack.split(/(\d+)/).filter(Boolean)
                                                 let oldRackRow = oldSplitRackArray[0]
