@@ -153,7 +153,7 @@ class ChangePlanScreen extends React.Component {
                 property: "Edit",
                 header: <Text size='small'>Edit</Text>,
                 render: datum => (
-                    <Edit onClick={(e) => {
+                    !datum.executed && <Edit onClick={(e) => {
                         e.persist();
                         e.nativeEvent.stopImmediatePropagation();
                         e.stopPropagation();
@@ -168,7 +168,7 @@ class ChangePlanScreen extends React.Component {
                 property: "execute",
                 header: <Text size='small'>Execute</Text>,
                 render: datum => (
-                    <Checkmark onClick={(e) => {
+                    !datum.executed && <Checkmark onClick={(e) => {
                         e.persist();
                         e.nativeEvent.stopImmediatePropagation();
                         e.stopPropagation();
@@ -184,7 +184,7 @@ class ChangePlanScreen extends React.Component {
                 property: "delete",
                 header: <Text size='small'>Delete</Text>,
                 render: datum => (
-                    <Trash onClick={(e) => {
+                    !datum.executed && <Trash onClick={(e) => {
                         e.persist();
                         e.nativeEvent.stopImmediatePropagation();
                         e.stopPropagation();

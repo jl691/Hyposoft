@@ -30,10 +30,11 @@ class DetailedChangeScreen extends React.Component {
     }
 
     forceRefresh() {
-        changeplanutils.getChangeDetails(this.props.match.params.changePlanID, this.props.match.params.stepID, userutils.getLoggedInUserUsername(), result => {
+        changeplanutils.getChangeDetails(this.props.match.params.changePlanID, this.props.match.params.stepID, userutils.getLoggedInUserUsername(), (result, executed) => {
             if (result) {
                 this.setState({
-                    change: result
+                    change: result,
+                    executed: executed
                 });
             } else {
                 console.log(result)
@@ -376,7 +377,7 @@ class DetailedChangeScreen extends React.Component {
                                             {this.generateChangeTable()}
                                         </TableBody>
                                     </Table>
-                                    <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                    {!this.state.executed && <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
                                          gap='small'>
                                         <Button label="Edit Change" onClick={() => {
 
@@ -386,7 +387,7 @@ class DetailedChangeScreen extends React.Component {
                                                 popupType: "Delete"
                                             })
                                         }}/>
-                                    </Box>
+                                    </Box>}
                                 </Box>
                             </Box>
                         </Box>

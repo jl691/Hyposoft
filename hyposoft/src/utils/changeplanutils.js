@@ -68,8 +68,7 @@ function getChangeDetails(changePlanID, stepID, username, callback) {
         if (documentSnapshot.exists && documentSnapshot.data().owner === username) {
             firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepID)).get().then(function (querySnapshot) {
                 if (!querySnapshot.empty) {
-                    console.log(querySnapshot.docs[0].data())
-                    callback(querySnapshot.docs[0].data());
+                    callback(querySnapshot.docs[0].data(), documentSnapshot.data().executed);
                 } else {
                     callback(null);
                 }
@@ -343,8 +342,10 @@ function generateWorkOrder(changePlanID, callback) {
                 if (change === "decommission") {
                     console.log("decommission", count)
                     assetRef.doc(doc.data().assetID.toString()).get().then(function (documentSnapshot) {
+                        console.log(documentSnapshot);
                         steps.set(doc.data().step, ["Decommission asset #" + doc.data().assetID + " from datacenter " + documentSnapshot.data().datacenter + " at rack " + documentSnapshot.data().rack + " at height " + documentSnapshot.data().rackU + " U"])
                         count++;
+                        console.log("3", count, querySnapshot.size)
                         if (count === querySnapshot.size) {
                             callback(steps);
                         }
@@ -578,6 +579,7 @@ function generateEditWorkOrderMessage(doc, callback) {
             });
             let promiseArray = [datacenterPromise, rackPromise, heightPromise, networkConnectionsPromise, powerConnectionsPromise];
             Promise.all(promiseArray).then(function () {
+                console.log("resolved all", changes)
                 callback(changes);
             })
         } else {
@@ -605,7 +607,8 @@ function executeChangePlan(changePlanID, callback) {
                                 count++;
                                 if (count === querySnapshot.size) {
                                     changeplansRef.doc(changePlanID.toString()).update({
-                                        executed: true
+                                        executed: true,
+                                        timestamp: Date.now()
                                     }).then(function () {
                                         callback(true);
                                     }).catch(function () {
@@ -625,7 +628,8 @@ function executeChangePlan(changePlanID, callback) {
                                     count++;
                                     if (count === querySnapshot.size) {
                                         changeplansRef.doc(changePlanID.toString()).update({
-                                            executed: true
+                                            executed: true,
+                                            timestamp: Date.now()
                                         }).then(function () {
                                             callback(true);
                                         }).catch(function () {
@@ -645,7 +649,8 @@ function executeChangePlan(changePlanID, callback) {
                             count++;
                             if (count === querySnapshot.size) {
                                 changeplansRef.doc(changePlanID.toString()).update({
-                                    executed: true
+                                    executed: true,
+                                    timestamp: Date.now()
                                 }).then(function () {
                                     callback(true);
                                 }).catch(function () {
@@ -664,7 +669,8 @@ function executeChangePlan(changePlanID, callback) {
                             count++;
                             if (count === querySnapshot.size) {
                                 changeplansRef.doc(changePlanID.toString()).update({
-                                    executed: true
+                                    executed: true,
+                                    timestamp: Date.now()
                                 }).then(function () {
                                     callback(true);
                                 }).catch(function () {

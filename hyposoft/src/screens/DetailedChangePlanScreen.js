@@ -37,7 +37,8 @@ class DetailedChangePlanScreen extends React.Component {
         firebaseutils.changeplansRef.doc(this.changePlanID).get().then(documentSnapshot => {
            if(documentSnapshot.exists){
                this.setState({
-                   name: documentSnapshot.data().name
+                   name: documentSnapshot.data().name,
+                   executed: documentSnapshot.data().executed
                })
            }
         });
@@ -78,80 +79,113 @@ class DetailedChangePlanScreen extends React.Component {
 
     AdminTools() {
         if (userutils.isLoggedInUserAdmin()) {
-            return (
-                <Box
-                    width='medium'
-                    align='center'
-                    margin={{left: 'medium', right: 'medium'}}
-                    justify='start'>
-                    <Box style={{
-                        borderRadius: 10,
-                        borderColor: '#EDEDED'
-                    }}
-                         direction='row'
-                         alignSelf='stretch'
-                         background='#FFFFFF'
-                         width={'medium'}
-                         margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                         pad='small'>
-                        <Box flex
-                             margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                             direction='column' justify='start'>
-                            <Heading level='4' margin='none'>Add change</Heading>
-                            <p>Add a new change.</p>
-                            <Box direction='column' flex alignSelf='stretch'>
-                                <Button primary icon={<Add/>} label="Add" onClick={() => {
-                                    this.props.history.push('/changeplans/' + this.changePlanID + '/add')
-                                }}/>
+            if (!this.state.executed) {
+                return (
+                    <Box
+                        width='medium'
+                        align='center'
+                        margin={{left: 'medium', right: 'medium'}}
+                        justify='start'>
+                        <Box style={{
+                            borderRadius: 10,
+                            borderColor: '#EDEDED'
+                        }}
+                             direction='row'
+                             alignSelf='stretch'
+                             background='#FFFFFF'
+                             width={'medium'}
+                             margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                             pad='small'>
+                            <Box flex
+                                 margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                 direction='column' justify='start'>
+                                <Heading level='4' margin='none'>Add change</Heading>
+                                <p>Add a new change.</p>
+                                <Box direction='column' flex alignSelf='stretch'>
+                                    <Button primary icon={<Add/>} label="Add" onClick={() => {
+                                        this.props.history.push('/changeplans/' + this.changePlanID + '/add')
+                                    }}/>
+                                </Box>
+                            </Box>
+                        </Box>
+                        <Box style={{
+                            borderRadius: 10,
+                            borderColor: '#EDEDED'
+                        }}
+                             direction='row'
+                             alignSelf='stretch'
+                             background='#FFFFFF'
+                             width={'medium'}
+                             margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                             pad='small'>
+                            <Box flex
+                                 margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                 direction='column' justify='start'>
+                                <Heading level='4' margin='none'>Execute change plan</Heading>
+                                <p>Execute this change plan.</p>
+                                <Box direction='column' flex alignSelf='stretch'>
+                                    <Button primary icon={<Checkmark/>} label="Execute" onClick={() => {
+                                        this.setState({popupType: "Execute"})
+                                    }}/>
+                                </Box>
+                            </Box>
+                        </Box>
+                        <Box style={{
+                            borderRadius: 10,
+                            borderColor: '#EDEDED'
+                        }}
+                             direction='row'
+                             alignSelf='stretch'
+                             background='#FFFFFF'
+                             width={'medium'}
+                             margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                             pad='small'>
+                            <Box flex
+                                 margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                 direction='column' justify='start'>
+                                <Heading level='4' margin='none'>Work order</Heading>
+                                <p>Generate a work order for this change plan.</p>
+                                <Box direction='column' flex alignSelf='stretch'>
+                                    <Button primary icon={<Print/>} label="Generate" onClick={() => {
+                                        this.props.history.push('/changeplans/' + this.changePlanID + '/workorder')
+                                    }}/>
+                                </Box>
                             </Box>
                         </Box>
                     </Box>
-                    <Box style={{
-                        borderRadius: 10,
-                        borderColor: '#EDEDED'
-                    }}
-                         direction='row'
-                         alignSelf='stretch'
-                         background='#FFFFFF'
-                         width={'medium'}
-                         margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                         pad='small'>
-                        <Box flex
-                             margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                             direction='column' justify='start'>
-                            <Heading level='4' margin='none'>Execute change plan</Heading>
-                            <p>Execute this change plan.</p>
-                            <Box direction='column' flex alignSelf='stretch'>
-                                <Button primary icon={<Checkmark/>} label="Execute" onClick={() => {
-                                    this.setState({popupType: "Execute"})
-                                }}/>
+                );
+            } else {
+                return (
+                    <Box
+                        width='medium'
+                        align='center'
+                        margin={{left: 'medium', right: 'medium'}}
+                        justify='start'>
+                        <Box style={{
+                            borderRadius: 10,
+                            borderColor: '#EDEDED'
+                        }}
+                             direction='row'
+                             alignSelf='stretch'
+                             background='#FFFFFF'
+                             width={'medium'}
+                             margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                             pad='small'>
+                            <Box flex
+                                 margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                 direction='column' justify='start'>
+                                <Heading level='4' margin='none'>Work order</Heading>
+                                <p>Generate a work order for this change plan.</p>
+                                <Box direction='column' flex alignSelf='stretch'>
+                                    <Button primary icon={<Print/>} label="Generate" onClick={() => {
+                                        this.props.history.push('/changeplans/' + this.changePlanID + '/workorder')
+                                    }}/>
+                                </Box>
                             </Box>
                         </Box>
                     </Box>
-                    <Box style={{
-                        borderRadius: 10,
-                        borderColor: '#EDEDED'
-                    }}
-                         direction='row'
-                         alignSelf='stretch'
-                         background='#FFFFFF'
-                         width={'medium'}
-                         margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                         pad='small'>
-                        <Box flex
-                             margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                             direction='column' justify='start'>
-                            <Heading level='4' margin='none'>Work order</Heading>
-                            <p>Generate a work order for this change plan.</p>
-                            <Box direction='column' flex alignSelf='stretch'>
-                                <Button primary icon={<Print/>} label="Generate" onClick={() => {
-                                    this.props.history.push('/changeplans/' + this.changePlanID + '/workorder')
-                                }}/>
-                            </Box>
-                        </Box>
-                    </Box>
-                </Box>
-            );
+                )
+            }
         }
     }
 
@@ -207,13 +241,13 @@ class DetailedChangePlanScreen extends React.Component {
                 property: "edit",
                 header: <Text size='small'>Edit</Text>,
                 render: datum => (
-                    <Edit/>)
+                    !this.state.executed && <Edit/>)
             },
             {
                 property: "delete",
                 header: <Text size='small'>Delete</Text>,
                 render: datum => (
-                    <Trash onClick={(e) => {
+                    !this.state.executed && <Trash onClick={(e) => {
                         e.persist();
                         e.nativeEvent.stopImmediatePropagation();
                         e.stopPropagation();
