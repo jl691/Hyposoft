@@ -1,6 +1,7 @@
 import React from "react";
 import * as changeplanutils from "../utils/changeplanutils";
 import * as userutils from "../utils/userutils";
+import * as decommissionutils from "../utils/decommissionutils";
 import * as firebaseutils from "../utils/firebaseutils";
 import {Box, Button, Grommet, Heading, Text, DataTable, Layer} from "grommet";
 import theme from "../theme";
@@ -38,7 +39,8 @@ class DetailedChangePlanScreen extends React.Component {
            if(documentSnapshot.exists){
                this.setState({
                    name: documentSnapshot.data().name,
-                   executed: documentSnapshot.data().executed
+                   executed: documentSnapshot.data().executed,
+                   timestamp: documentSnapshot.data().timestamp
                })
            }
         });
@@ -308,6 +310,13 @@ class DetailedChangePlanScreen extends React.Component {
                     <Box direction='row'
                          justify='center'
                          wrap={true}>
+                        {this.state.executed && <Box style={{
+                            borderRadius: 10
+                        }} width={"large"} background={"status-ok"} align={"center"} alignSelf={"center"}
+                                                     margin={{top: "medium"}}>
+                            <Heading level={"3"} margin={"small"}>Change Plan Executed</Heading>
+                            <Box>This change plan was executed on {decommissionutils.getDate(this.state.timestamp)}. Thus, no further changes can be made.</Box>
+                        </Box>}
                         <Box direction='row' justify='center' overflow={{horizontal: 'hidden'}}>
                             <Box direction='row' justify='center'>
                                 <Box width='large' direction='column' align='stretch' justify='start'>

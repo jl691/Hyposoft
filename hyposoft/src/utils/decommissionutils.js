@@ -142,4 +142,4 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback) {
     })
 }
 
-export { decommissionAsset, getAssets, sortAssets, getAssetDetails, sortAssetsByRackAndRackU }
+export { decommissionAsset, getAssets, sortAssets, getAssetDetails, sortAssetsByRackAndRackU, getDate }

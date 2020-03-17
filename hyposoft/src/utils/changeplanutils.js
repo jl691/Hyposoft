@@ -68,7 +68,7 @@ function getChangeDetails(changePlanID, stepID, username, callback) {
         if (documentSnapshot.exists && documentSnapshot.data().owner === username) {
             firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepID)).get().then(function (querySnapshot) {
                 if (!querySnapshot.empty) {
-                    callback(querySnapshot.docs[0].data(), documentSnapshot.data().executed);
+                    callback(querySnapshot.docs[0].data(), documentSnapshot.data().executed, documentSnapshot.data().timestamp);
                 } else {
                     callback(null);
                 }
