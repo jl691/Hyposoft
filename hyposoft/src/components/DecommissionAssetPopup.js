@@ -3,6 +3,7 @@ import { Button, Grommet, Form, Heading, Text, Box } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as decomutils from '../utils/decommissionutils'
 import * as userutils from "../utils/userutils";
+import * as changeplanutils from "../utils/changeplanutils";
 import {Redirect} from "react-router-dom";
 import theme from "../theme";
 
@@ -20,16 +21,27 @@ export default class DecommissionAssetPopup extends Component {
 
     handleDecommission(event) {
         if (event.target.name === "decommissionInst") {
-            decomutils.decommissionAsset(this.props.decommissionIDFromParent, status => {
-                if (status) {
-                    ToastsStore.success('Decommission asset')
-                    this.props.parentCallback(true)
+            if(this.props.changePlanID){
+                changeplanutils.decommissionAssetChange(this.props.decommissionIDFromParent, this.props.changePlanID, result => {
+                    if(result){
+                        ToastsStore.success('Decommissioned asset successfully');
+                        this.props.parentCallback(true);
+                    } else {
+                        ToastsStore.error('Error decommissioning asset.');
+                    }
+                })
+            } else {
+                decomutils.decommissionAsset(this.props.decommissionIDFromParent, status => {
+                        if (status) {
+                            ToastsStore.success('Decommissioned asset successfully')
+                            this.props.parentCallback(true)
 
-                } else {
-                    ToastsStore.error('Error decommissioning asset.')
-                }
+                        } else {
+                            ToastsStore.error('Error decommissioning asset.')
+                        }
+                    }
+                )
             }
-            )
         }
 
     }
@@ -50,7 +62,7 @@ export default class DecommissionAssetPopup extends Component {
                     <Form onSubmit={this.handleDecommission}
                         name="decommissionInst"
                     >
-                        <Text>Are you sure you want to decommission asset <strong>{this.props.decommissionModel} {this.props.decommissionHostname}</strong>? This cannot be undone. </Text>
+                        <Text>Are you sure you want to decommission asset #<strong>{this.props.decommissionIDFromParent}</strong>? This cannot be undone. </Text>
                         <Box direction={"row"}>
                             <Button
                                 alignSelf="center"

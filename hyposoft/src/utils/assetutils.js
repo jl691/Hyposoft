@@ -382,6 +382,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                     console.log(error)
                                                                 })
                                                             } else {
+                                                                delete assetObject["assetId"];
                                                                 changeplanutils.addAssetChange(assetObject, "", changePlanID, result => {
                                                                     if(result){
                                                                         callback(null);
@@ -744,6 +745,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                         if (result) {
                                             //get old rack document
                                             assetRef.doc(assetID).get().then(docSnap => {
+                                                console.log(assetID, docSnap)
                                                 let oldRack = docSnap.data().rack;
                                                 let oldSplitRackArray = oldRack.split(/(\d+)/).filter(Boolean)
                                                 let oldRackRow = oldSplitRackArray[0]
@@ -764,7 +766,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                         //get new rack document
                                                         //get instance id
                                                         console.log(powerConnections);
-                                                        replaceAssetRack(oldResult, result, oldPowerConnections, powerConnections, assetID, result => {
+                                                        replaceAssetRack(oldResult, result, oldPowerConnections, powerConnections, assetID, changePlanID, result => {
                                                             logutils.getObjectData(String(assetID), logutils.ASSET(), assetData => {
 
                                                                 //console.log(assetnetworkportutils.networkConnectionsToArray(networkConnections))
@@ -1173,44 +1175,17 @@ function validateAssetForm(assetID, model, hostname, rack, racku, owner, datacen
     })
 }
 
-function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, callback) {
-    if (String(oldRack) === String(newRack)) {
+function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, changePlanID, callback) {
+    if(!changePlanID){
+        if (String(oldRack) === String(newRack)) {
 
-        console.log(oldPowerPorts);
-        console.log(newPowerPorts);
+            console.log(oldPowerPorts);
+            console.log(newPowerPorts);
 
-        if (!oldPowerPorts.length && !newPowerPorts.length) {
-            callback(true);
-        } else if (!oldPowerPorts.length && newPowerPorts.length) {
-            //old is empty
-            racksRef.doc(String(oldRack)).update({
-                powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj => ({
-                    ...obj,
-                    assetID: id
-                })))
-            }).then(function () {
+            if (!oldPowerPorts.length && !newPowerPorts.length) {
                 callback(true);
-            }).catch(function () {
-                callback(null);
-            })
-        } else if (!newPowerPorts.length && !oldPowerPorts.length) {
-            racksRef.doc(String(oldRack)).update({
-                powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({
-                    ...obj,
-                    assetID: id
-                })))
-            }).then(function () {
-                callback(true);
-            }).catch(function () {
-                callback(null);
-            })
-        } else {
-            racksRef.doc(String(oldRack)).update({
-                powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({
-                    ...obj,
-                    assetID: id
-                })))
-            }).then(function () {
+            } else if (!oldPowerPorts.length && newPowerPorts.length) {
+                //old is empty
                 racksRef.doc(String(oldRack)).update({
                     powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj => ({
                         ...obj,
@@ -1221,30 +1196,61 @@ function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, ca
                 }).catch(function () {
                     callback(null);
                 })
-            }).catch(function () {
-                callback(null);
-            })
-        }
+            } else if (!newPowerPorts.length && !oldPowerPorts.length) {
+                racksRef.doc(String(oldRack)).update({
+                    powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({
+                        ...obj,
+                        assetID: id
+                    })))
+                }).then(function () {
+                    callback(true);
+                }).catch(function () {
+                    callback(null);
+                })
+            } else {
+                racksRef.doc(String(oldRack)).update({
+                    powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({
+                        ...obj,
+                        assetID: id
+                    })))
+                }).then(function () {
+                    racksRef.doc(String(oldRack)).update({
+                        powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj => ({
+                            ...obj,
+                            assetID: id
+                        })))
+                    }).then(function () {
+                        callback(true);
+                    }).catch(function () {
+                        callback(null);
+                    })
+                }).catch(function () {
+                    callback(null);
+                })
+            }
 
-    } else {
-        racksRef.doc(String(oldRack)).update({
-            assets: firebase.firestore.FieldValue.arrayRemove(id),
-            powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({...obj, assetID: id})))
-        }).then(() => {
-            racksRef.doc(String(newRack)).update({
-                assets: firebase.firestore.FieldValue.arrayUnion(id),
-                powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj => ({
-                    ...obj,
-                    assetID: id
-                })))
+        } else {
+            racksRef.doc(String(oldRack)).update({
+                assets: firebase.firestore.FieldValue.arrayRemove(id),
+                powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({...obj, assetID: id})))
             }).then(() => {
-                callback(true);
+                racksRef.doc(String(newRack)).update({
+                    assets: firebase.firestore.FieldValue.arrayUnion(id),
+                    powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj => ({
+                        ...obj,
+                        assetID: id
+                    })))
+                }).then(() => {
+                    callback(true);
+                }).catch(function (error) {
+                    callback(false);
+                })
             }).catch(function (error) {
                 callback(false);
             })
-        }).catch(function (error) {
-            callback(false);
-        })
+        }
+    } else {
+        callback(true);
     }
 }
 
@@ -1455,5 +1461,6 @@ export {
     validateImportedAssets,
     sortAssetsByRackAndRackU,
     getSuggestedDatacenters,
-    getAllAssetsList
+    getAllAssetsList,
+    replaceAssetRack
 }
