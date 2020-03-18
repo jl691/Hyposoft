@@ -6,7 +6,6 @@ import ItemCard from '../components/ItemCard'
 import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import * as userutils from '../utils/userutils'
-import * as powerutils from '../utils/powerutils'
 
 import {
     Box,

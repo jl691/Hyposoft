@@ -35,6 +35,7 @@ class DashboardScreen extends Component {
     }
 
     render() {
+
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
         }
