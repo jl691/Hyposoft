@@ -16,6 +16,7 @@ function validateImportedConnections (data, callback) {
             return
         for (var i = 0; i < data.length; i++) {
             var datum = data[i]
+            console.log(fetchedAssets)
             if (!fetchedAssets[datum.src_hostname]) {
                 errors = [...errors, [i+1, 'No asset with provided source hostname found']]
             } else if (!(datum.src_port in fetchedAssets[datum.src_hostname].networkConnections)) {
