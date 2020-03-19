@@ -48,10 +48,10 @@ const datacenterNonExistent = async (changePlanID, stepID, datacenterName) => {
 
 }
 
-const hostnameConflict = async (changePlanID, stepID, hostname, assetID) => {
+const hostnameConflict = async (changePlanID, stepID, hostname) => {
     let errorIDSet = new Set();
     assetRef.where("hostname", "==", hostname).get().then(async function (docSnaps) {
-        if (!docSnaps.empty && assetID !== docSnaps.docs[0].id && hostname !== "") {
+        if (!docSnaps.empty && hostname !== "") {
 
             errorIDSet.add("hostnameErrID")
             await addConflictToDB(changePlanID, stepID, "hostname", errorIDSet)
@@ -80,21 +80,23 @@ const ownerConflict = async (changePlanID, stepID, owner) => {
 }
 
 //was the assetID you were planning to use taken?
-const assetIDConflict = async (changePlanID, stepID, assetID) =>{
+const assetIDConflict = async (changePlanID, stepID, assetID) => {
     let errorIDSet = new Set()
-    assetRef.doc(assetID).get().then( async function(assetDoc) {
-        if(assetDoc.exists){
-            errorIDSet.add("assetIDErrID")
-            await addConflictToDB(changePlanID, stepID, "assetID", errorIDSet)
-            console.log("From the error strings resource file: " + errorStrings.assetIDErrID)
-        }
-    })
+    if (assetID !== "") {
+        assetRef.doc(assetID).get().then(async function (assetDoc) {
+            if (assetDoc.exists) {
+                errorIDSet.add("assetIDErrID")
+                await addConflictToDB(changePlanID, stepID, "assetID", errorIDSet)
+                console.log("From the error strings resource file: " + errorStrings.assetIDErrID)
+            }
+        })
+    }
 }
 
-const modelConflict = async(changePlanID, stepID, model) =>{
+const modelConflict = async (changePlanID, stepID, model) => {
     let errorIDSet = new Set()
-    modelsRef.doc(model).get().then(async function (modelDoc){
-        if(!modelDoc.exists){
+    modelsRef.doc(model).get().then(async function (modelDoc) {
+        if (!modelDoc.exists) {
             errorIDSet.add("modelErrID")
             await addConflictToDB(changePlanID, stepID, "model", errorIDSet)
             console.log("From the error strings resource file: " + errorStrings.modelErrID)
@@ -254,7 +256,7 @@ const networkConnectionConflict = async (changePlanID, stepID, networkConnection
             await addConflictToDB(changePlanID, stepID, "networkConnections", errorIDSet)
 
         }
-        
+
     }
 }
 
@@ -299,7 +301,6 @@ const networkConnectionConflictsHelper = async (oldNetworkConnections, thisPort,
 
 }
 
-//TODO: how to think of this function with otherPOrtexist function? maybe rewrite and combine the two
 const networkConnectionOtherAssetID = async (otherAssetID, errorIDSet) => {
     assetRef.doc(otherAssetID).get().then(function (otherAssetModelDoc) {
         if (!otherAssetModelDoc.exists) {
@@ -379,17 +380,22 @@ const networkConnectionNumConnections = async (numConnectionsMade, thisModelName
 
 //when do I call this? everytime submit is clicked
 //pass in the correct parameters
-async function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, oldNetworkConnections) {
+async function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections) {
+
+    let oldNetworkConnections = null;
+    assetID = assetID.toString()
 
     await rackNonExistent(changePlanID, stepID, rack, datacenter)
     await datacenterNonExistent(changePlanID, stepID, datacenter)
-    await rackUConflict(changePlanID, stepID, model, datacenter, rack, rackU)
-    await hostnameConflict(changePlanID, stepID, hostname, assetID)
-    await ownerConflict(changePlanID, stepID, owner)
-    await powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, model, assetID)
-    await networkConnectionConflict(networkConnections, oldNetworkConnections, model)
+    await hostnameConflict(changePlanID, stepID, hostname)
+    //await ownerConflict(changePlanID, stepID, owner)
     await assetIDConflict(changePlanID, stepID, assetID)
     await modelConflict(changePlanID, stepID, model)
+
+    //need to to test that all possible errors are caught at once
+    // await rackUConflict(changePlanID, stepID, model, datacenter, rack, rackU)
+    // await networkConnectionConflict(networkConnections, oldNetworkConnections, model)
+    // await powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, model, assetID)
 
 }
 
