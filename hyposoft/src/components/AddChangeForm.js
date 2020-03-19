@@ -109,7 +109,7 @@ class AddChangeForm extends React.Component {
                     <EditAssetForm
                         parentCallback={this.handleCancelPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
-                        changePlanID={this.props.match.params.changePlanID}e
+                        changePlanID={this.props.match.params.changePlanID}
                         popupMode={this.state.popupType}
                         updateModelFromParent={selectedData.model}
                         updateHostnameFromParent={selectedData.hostname}

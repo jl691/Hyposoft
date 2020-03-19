@@ -713,7 +713,7 @@ function deleteAsset(assetID, callback, isDecommission = false) {
 //hostname updating works, owner updating works, conflicts, etc.
 
 function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
-                     networkConnectionsArray, deletedNCThisPort, powerConnections, callback, changePlanID = null) {
+                     networkConnectionsArray, deletedNCThisPort, powerConnections, callback, changePlanID = null, changeDocID = null) {
 
     validateAssetForm(assetID, model, hostname, rack, rackU, owner, datacenter).then(
         _ => {
@@ -873,13 +873,14 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                             }
                                                                                         })
                                                                                     } else {
+                                                                                        console.log(changeDocID);
                                                                                         changeplanutils.editAssetChange(assetObject, assetID, changePlanID, result => {
                                                                                             if(result){
                                                                                                 callback(null);
                                                                                             } else {
                                                                                                 callback("Error adding asset to the specified change plan.")
                                                                                             }
-                                                                                        });
+                                                                                        }, changeDocID);
                                                                                     }
                                                                                     //assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, assetID);
                                                                                 }

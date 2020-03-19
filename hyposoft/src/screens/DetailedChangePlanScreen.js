@@ -15,6 +15,10 @@ import BackButton from "../components/BackButton";
 import DeleteChangePlanForm from "../components/DeleteChangePlanForm";
 import DeleteChangeForm from "../components/DeleteChangeForm";
 import ExecuteChangePlanForm from "../components/ExecuteChangePlanForm";
+import EditDecommissionChangeForm from "../components/EditDecommissionChangeForm";
+import EditAssetForm from "../components/EditAssetForm";
+import * as assetmacutils from "../utils/assetmacutils";
+import * as assetnetworkportutils from "../utils/assetnetworkportutils";
 
 class DetailedChangePlanScreen extends React.Component {
 
@@ -27,7 +31,8 @@ class DetailedChangePlanScreen extends React.Component {
             changes: [],
             initialLoaded: false,
             popupType: "",
-            name: ""
+            name: "",
+            assetsLoaded: false
         }
 
         this.componentDidMount = this.componentDidMount.bind(this);
@@ -243,7 +248,20 @@ class DetailedChangePlanScreen extends React.Component {
                 property: "edit",
                 header: <Text size='small'>Edit</Text>,
                 render: datum => (
-                    !this.state.executed && <Edit/>)
+                    !this.state.executed && <Edit onClick={(e) => {
+                        e.persist();
+                        e.nativeEvent.stopImmediatePropagation();
+                        e.stopPropagation();
+                        changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, mergedAsset => {
+                            if(mergedAsset){
+                                this.setState({
+                                    popupType: "Edit" + datum.change,
+                                    stepID: datum.id,
+                                    currentChange: mergedAsset
+                                });
+                            }
+                        });
+                    }}/>)
             },
             {
                 property: "delete",
@@ -276,6 +294,14 @@ class DetailedChangePlanScreen extends React.Component {
         ToastsStore.success("Successfully executed the change plan.")
     }
 
+    successfulEdit = (data) => {
+        this.setState({
+            popupType: ""
+        });
+        this.forceRefresh();
+        ToastsStore.success(data);
+    }
+
     render() {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/'/>
@@ -294,6 +320,38 @@ class DetailedChangePlanScreen extends React.Component {
             popup = (
                 <ExecuteChangePlanForm cancelPopup={this.cancelPopup} successfulExecution={this.successfulExecution}
                                   id={this.changePlanID} name={this.state.name}/>
+            )
+        } else if(popupType === 'Editdecommission'){
+            console.log(this.changePlanID)
+            popup = (
+                <EditDecommissionChangeForm cancelPopup={this.cancelPopup} stepID={this.state.stepID}
+                changePlanID={this.changePlanID} successfulEdit={this.successfulEdit}/>
+            )
+        } else if(popupType === 'Editedit'){
+            console.log(this.state.currentChange)
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+
+                    <EditAssetForm
+                        parentCallback={this.cancelPopup}
+                        cancelCallback={this.cancelPopup}
+                        changePlanID={this.changePlanID}
+                        popupMode={'Update'}
+                        changeDocID={this.state.currentChange.changeDocID}
+                        updateModelFromParent={this.state.currentChange.model}
+                        updateHostnameFromParent={this.state.currentChange.hostname}
+                        updateRackFromParent={this.state.currentChange.rack}
+                        updateRackUFromParent={this.state.currentChange.rackU}
+                        updateOwnerFromParent={this.state.currentChange.owner}
+                        updateCommentFromParent={this.state.currentChange.comment}
+                        updateDatacenterFromParent={this.state.currentChange.datacenter}
+                        updateAssetIDFromParent={this.state.currentChange.assetId}
+                        updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses)}
+                        updatePowerConnectionsFromParent={this.state.currentChange.powerConnections}
+                        updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.currentChange.networkConnections)}
+                    />
+                </Layer>
             )
         }
 
