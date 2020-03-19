@@ -1,5 +1,6 @@
 import * as firebase from 'firebase/app'
 import 'firebase/firestore'
+import 'firebase/database'
 import { sha256 } from 'js-sha256'
 
 const firebaseConfig = {
