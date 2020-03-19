@@ -23,6 +23,7 @@ function hashAndSalt(data) {
 }
 
 const db = firebase.firestore()
+const testDB = firebase.database()
 
 var usersRef = db.collection('users')
 var claimsRef = db.collection('claims')
@@ -33,4 +34,4 @@ var modelsRef = db.collection('models')
 var datacentersRef = db.collection('datacenters')
 var logsRef = db.collection('logs')
 
-export { hashAndSalt, usersRef, racksRef, assetRef, modelsRef, claimsRef, recoveriesRef, datacentersRef, logsRef, db, firebase }
+export { hashAndSalt, usersRef, racksRef, assetRef, modelsRef, claimsRef, recoveriesRef, datacentersRef, logsRef, db, testDB, firebase }

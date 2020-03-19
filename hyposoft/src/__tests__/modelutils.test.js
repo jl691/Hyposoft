@@ -6,7 +6,10 @@ var modelIds = []
 
 describe('modelutilsTests', () => {
   beforeAll(done => {
-    addInitialModels(() => done())
+    addInitialModels(() => {
+      firebaseutils.testDB.goOnline()
+      done()
+    })
   })
 
 
@@ -25,7 +28,10 @@ describe('modelutilsTests', () => {
   })
 
   afterAll(done => {
-    tearDownModels(() => done())
+    tearDownModels(() => {
+      firebaseutils.testDB.goOffline()
+      done()
+    })
   })
 })
 
