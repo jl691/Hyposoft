@@ -23,6 +23,24 @@ function hashAndSalt(data) {
     return sha256(data + salt)
 }
 
+function makeSalt(length) {
+    // Randomly generates a salt of requested length
+    var result           = ''
+    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    var charactersLength = characters.length
+    for ( var i = 0; i < length; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength))
+    }
+    return result
+}
+
+function hashAndSalt2(data, randSalt=null) {
+    if (!randSalt) {
+        randSalt = makeSalt(15)
+    }
+    return sha256(data + randSalt)+'|'+randSalt
+}
+
 const db = firebase.firestore()
 const testDB = firebase.database()
 
@@ -34,5 +52,7 @@ var racksRef = db.collection('racks')
 var modelsRef = db.collection('models')
 var datacentersRef = db.collection('datacenters')
 var logsRef = db.collection('logs')
+var changeplansRef = db.collection('changeplans')
+var decommissionRef = db.collection('decommission')
 
-export { hashAndSalt, usersRef, racksRef, assetRef, modelsRef, claimsRef, recoveriesRef, datacentersRef, logsRef, db, testDB, firebase }
+export { hashAndSalt, usersRef, racksRef, assetRef, modelsRef, claimsRef, recoveriesRef, datacentersRef, logsRef, db, testDB, firebase, changeplansRef, decommissionRef }
