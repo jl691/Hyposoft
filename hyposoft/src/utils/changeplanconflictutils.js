@@ -407,11 +407,13 @@ async function addConflictToDB(changePlanID, stepID, fieldName, errorIDSet) {
     let errorIDArray = [...errorIDSet]
 
     if (errorIDArray.length) {
-        console.log("Error ID(s) that will be added to the conflict/stepID doc: " + [...errorIDArray])
+        //console.log("Error ID(s) that will be added to the conflict/stepID doc: " + [...errorIDArray])
         changeplansRef.doc(changePlanID).collection('conflicts').doc(stepID).set({
             [fieldName]: errorIDArray
 
-        }, { merge: true })
+        }, { merge: true }).then(
+            console.log("Successfully added the conflict to the database.")
+        )
 
     }
 
@@ -420,5 +422,11 @@ async function addConflictToDB(changePlanID, stepID, fieldName, errorIDSet) {
 export {
 
     addAssetChangePlanPackage,
+    rackNonExistent,
+    datacenterNonExistent,
+    hostnameConflict,
+    ownerConflict,
+    assetIDConflict,
+    modelConflict,
 
 }

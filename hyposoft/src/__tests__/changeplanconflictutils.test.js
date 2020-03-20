@@ -1,11 +1,12 @@
 import * as changeplanconflictutils from '../utils/changeplanconflictutils.js'
+import * as changeplanutils from '../utils/changeplanutils'
 import * as userutils from '../utils/userutils'
 import * as firebaseutils from '../utils/firebaseutils'
 
 var ids = {}
-jest.setTimeout(100000);
+jest.setTimeout(200000);
 
-describe('decomutilsTests', () => {
+describe('change plan add asset tests', () => {
     beforeAll(done => {
         conflictSetup(() => {
             firebaseutils.testDB.goOnline()
@@ -13,33 +14,55 @@ describe('decomutilsTests', () => {
         })
     })
 
-    test('change plan add asset conflicts: basic', done => {
+    test('change plan add asset conflicts: basic', async (done) => {
         //trying to simulate someone clicking on the detail view of the change plan step and retriggering the check
-        changeplanconflictutils.addAssetChangePlanPackage(ids['changePlan'], ids['changePlanStep'], 'Test Model1', 'asset1', 'Test Datacenter', 'A1', 1, 'testUser', '999999', [], {});
+        // await changeplanconflictutils.addAssetChangePlanPackage(ids['changePlan'], ids['changePlanStep'], 'Test Model1', 'asset1', 'Test Datacenter', 'A1', 1, 'testUser', '999999', [], {});
 
-        firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
-            //surely there is a more elegant way to check
-            // const correctDoc = {
-            //     rack: "rackErrID",
-            //     datacenter: "datacenterErrID",
-            //     hostname: "hostnameErrID",
-            //     assetID: "assetIDErrID",
-            //     model: "modelErrID"
-            // }
-            if (docRef.exists && docRef.id == ids['changePlanStep']
-                && docRef.data().rack[0] === "rackErrID" && docRef.data().rack[0] === "datacenterErrID"
-                && docRef.data().hostname[0] === "hostnameErrID" && docRef.data().assetID[0] === "assetIDErrID"
-                && DOMRectReadOnly.data().model[0] === "modelErrID") {
+        await changeplanconflictutils.rackNonExistent(ids['changePlan'], ids['changePlanStep'], 'A1', 'Test Datacenter')
 
-                expect(true).toBe(true)
-                done()
-            }
+        firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').get().then(docSnaps => {
+            // console.log([...docSnaps.docs])
+            // ids = {...ids,conflictDoc: docSnaps.docs[0].id}
+            firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
+            
+              expect(docRef.data().rack[0]).toBe('rackErrID')
+              //expect(docRef.id).toBe(ids['changePlanStep'])
+              done()
+            })
         })
+
+
+
+
+        // firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
+        //     //surely there is a more elegant way to check than my massive if statement below
+          
+        //     console.log(ids['changePlan'])
+        //     console.log(docRef.exists)
+        //     console.log(docRef.data())
+        //     // console.log(docRef.data().rack[0])
+        //     if (docRef.exists && docRef.id == ids['changePlanStep']
+        //         && docRef.data().rack[0] === "rackErrID"
+        //         //  && docRef.data().datacenter[0] === "datacenterErrID"
+        //         // && docRef.data().hostname[0] === "hostnameErrID" && docRef.data().assetID[0] === "assetIDErrID"
+        //         // && docRef.data().model[0] === "modelErrID"
+        //         ) {
+
+        //         expect(true).toBe(true)
+        //         done()
+        //     }
+
+        //     else {
+        //         expect(false).toBe(true)
+        //         done()
+        //     }
+        // })
 
     })
 
     afterAll(done => {
         tearDown(() => {
+            console.log("Deleting all created database documents")
             firebaseutils.testDB.goOffline()
             done()
         })
@@ -92,17 +115,22 @@ function conflictSetup(callback) {
 }
 
 function tearDown(callback) {
-    firebaseutils.changeplansRef.doc(ids['changePlan']).delete().then(docRef => {
-        firebaseutils.assetRef.doc(ids['asset']).delete().then(docRef => {
-            firebaseutils.usersRef.doc(ids['user']).delete().then(docRef => {
-                // firebaseutils.changeplansRef.doc(ids['changePlan']).collection('changes').delete().then(docRef => {
-                // firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').delete().then(docRef => {
 
-                callback()
+    firebaseutils.assetRef.doc(ids['asset']).delete().then(docRef => {
+        firebaseutils.usersRef.doc(ids['user']).delete().then(docRef => {
+            changeplanutils.deleteChangePlan(ids['changePlan'], status =>{
 
-                // })
-                // })
-            })
+
+           
+            //firebaseutils.changeplansRef.doc(ids['changePlan']).collection('changes').delete().then(docRef => {
+                //firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').delete().then(docRef => {
+                   // firebaseutils.changeplansRef.doc(ids['changePlan']).delete().then(docRef => {
+                        callback()
+
+                    //})
+                //})
+            //})
+        })
         })
     })
 }
