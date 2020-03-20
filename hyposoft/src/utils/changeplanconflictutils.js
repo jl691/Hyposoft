@@ -388,7 +388,7 @@ async function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, 
     await rackNonExistent(changePlanID, stepID, rack, datacenter)
     await datacenterNonExistent(changePlanID, stepID, datacenter)
     await hostnameConflict(changePlanID, stepID, hostname)
-    //await ownerConflict(changePlanID, stepID, owner)
+    await ownerConflict(changePlanID, stepID, owner)
     await assetIDConflict(changePlanID, stepID, assetID)
     await modelConflict(changePlanID, stepID, model)
 

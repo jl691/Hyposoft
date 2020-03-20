@@ -185,17 +185,6 @@ class DetailedChangePlanScreen extends React.Component {
                         //console.log(datum.changes.modelNumber.new)
                         changeplanutils.getStepDocID(this.changePlanID, datum.id, status => {
                             if (status) {
-                                // console.log(this.changePlanID)
-                                // console.log(status)
-                                // console.log(datum.changes.model.new)
-                                // console.log(datum.changes.hostname.new)
-                                // console.log(datum.changes.datacenter.new)
-                                // console.log(datum.changes.rack.new)
-                                // console.log(datum.changes.rackU.new)
-                                // console.log(datum.changes.owner.new)
-                                // console.log(datum.assetID)
-                                // console.log(datum.changes.powerConnections.new)
-                                // console.log(datum.changes.networkConnections.new)
 
                                 changeplanconflictutils.addAssetChangePlanPackage(this.changePlanID, status, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new)
                             }
