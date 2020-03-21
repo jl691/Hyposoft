@@ -2,7 +2,6 @@
     "rackErrID": "The rack in this change plan step does not exist.",
     "datacenterErrID": "The datacenter in this change plan step does not exist.",
     "rackUConflictErrID": "An asset at this rack U conflicts with other assets on the rack.",
-    "rackUFitErrID": "An asset at this rack U will not fit on the rack.",
     "ownerErrID": "The owner for this asset does not exist.",
     "hostnameErrID": "The hostname in this change plan step is already taken.",
     "assetIDErrID": "The asset ID in this change plan step is already taken.",

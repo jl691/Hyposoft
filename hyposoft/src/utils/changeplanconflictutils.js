@@ -14,206 +14,291 @@ import errorStrings from '../res/errorMessages.json'
 
 //check decomm asset change plan edits
 
+//the callback(false) ight not serve any purpose, was thinking of using it in unit testing or as a return val?
 
-const rackNonExistent = async (changePlanID, stepID, rackName, datacenter) => {
+
+const rackNonExistent = (changePlanID, stepID, rackName, datacenter, callback) => {
     let splitRackArray = rackName.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
     let errorIDSet = new Set();
 
-    rackutils.getRackID(rackRow, rackNum, datacenter, async function (rackID) {
-
+    rackutils.getRackID(rackRow, rackNum, datacenter, function (rackID) {
         if (!rackID) {
             errorIDSet.add("rackErrID")
 
-            await addConflictToDB(changePlanID, stepID, "rack", errorIDSet);
-            console.log("From the error strings resource file: " + errorStrings.rackErrID)
+            addConflictToDB(changePlanID, stepID, "rack", errorIDSet, status => {
 
+                callback(status)
+            });
+
+        }
+        //rack exists
+        else {
+            callback(false)
         }
 
     })
 
 }
 
-const datacenterNonExistent = async (changePlanID, stepID, datacenterName) => {
+const datacenterNonExistent = (changePlanID, stepID, datacenterName, callback) => {
     let errorIDSet = new Set();
     datacenterutils.getDataFromName(datacenterName, async function (data) {
         if (!data) {
             errorIDSet.add("datacenterErrID")
-            await addConflictToDB(changePlanID, stepID, "datacenter", errorIDSet)
-            console.log("From the error strings resource file: " + errorStrings.datacenterErrID)
+
+            addConflictToDB(changePlanID, stepID, "datacenter", errorIDSet, status => {
+
+                callback(status)
+            })
         }
+        else { callback(false) }
 
     })
 
 }
 
-const hostnameConflict = async (changePlanID, stepID, hostname) => {
+const hostnameConflict = (changePlanID, stepID, hostname, callback) => {
     let errorIDSet = new Set();
     assetRef.where("hostname", "==", hostname).get().then(async function (docSnaps) {
         if (!docSnaps.empty && hostname !== "") {
 
             errorIDSet.add("hostnameErrID")
-            await addConflictToDB(changePlanID, stepID, "hostname", errorIDSet)
-            console.log("From the error strings resource file: " + errorStrings.hostnameErrID)
 
+            addConflictToDB(changePlanID, stepID, "hostname", errorIDSet, status => {
+                callback(status)
+            })
+
+        }
+        else {
+            callback(false)
         }
 
     })
 
 }
 
-const ownerConflict = async (changePlanID, stepID, owner) => {
+//does the owner still exist?
+const ownerConflict = (changePlanID, stepID, owner, callback) => {
     let errorIDSet = new Set();
     if (owner !== "") {
         let username = owner;
         usersRef.where('username', '==', username).get().then(async function (querySnapshot) {
             if (querySnapshot.empty) {
                 errorIDSet.add("ownerErrID")
-                await addConflictToDB(changePlanID, stepID, "owner", errorIDSet)
-                console.log("From the error strings resource file: " + errorStrings.ownerErrID)
+                addConflictToDB(changePlanID, stepID, "owner", errorIDSet, status => {
 
-
+                    callback(status)
+                })
+            }
+            else {
+                callback(false)
             }
         })
+    }
+    else {
+        //there is no conflict
+        callback(false)
     }
 }
 
 //was the assetID you were planning to use taken?
-const assetIDConflict = async (changePlanID, stepID, assetID) => {
+const assetIDConflict = (changePlanID, stepID, assetID, callback) => {
     let errorIDSet = new Set()
     if (assetID !== "") {
         assetRef.doc(assetID).get().then(async function (assetDoc) {
             if (assetDoc.exists) {
                 errorIDSet.add("assetIDErrID")
-                await addConflictToDB(changePlanID, stepID, "assetID", errorIDSet)
-                console.log("From the error strings resource file: " + errorStrings.assetIDErrID)
+                addConflictToDB(changePlanID, stepID, "assetID", errorIDSet, status => {
+                    callback(status)
+                })
+            }
+            else {
+                callback(false)
             }
         })
     }
+    else { callback(false) }
 }
 
-const modelConflict = async (changePlanID, stepID, model) => {
+const modelConflict = (changePlanID, stepID, model, callback) => {
     let errorIDSet = new Set()
     modelsRef.doc(model).get().then(async function (modelDoc) {
         if (!modelDoc.exists) {
             errorIDSet.add("modelErrID")
-            await addConflictToDB(changePlanID, stepID, "model", errorIDSet)
-            console.log("From the error strings resource file: " + errorStrings.modelErrID)
+            addConflictToDB(changePlanID, stepID, "model", errorIDSet, status => {
+                callback(status)
+            })
+        }
+        else {
+            callback(false)
         }
     })
 }
 
+// "rackUFitErrID": "An asset at this rack U will not fit on the rack.",
 //for add. When editing the change plan, how to check for self-conflicting?
 //Also need to test this rigorously
-const rackUConflict = async (changePlanID, stepID, model, datacenter, rackName, rackU) => {
+//if there are no conflicts, will this work properly?
+// const rackUConflict = (changePlanID, stepID, model, datacenter, rackName, rackU, callback) => {
+//     let splitRackArray = rackName.split(/(\d+)/).filter(Boolean)
+//     let rackRow = splitRackArray[0]
+//     let rackNum = parseInt(splitRackArray[1])
+
+//     let errorIDSet = new Set();
+
+//     //need to get the rackID
+//     rackutils.getRackID(rackRow, rackNum, datacenter, async function (rackID) {
+
+//         racksRef.doc(rackID).get().then(async function (querySnapshot) {
+//             //checking if the rack exists
+//             if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number) {
+//                 let rackHeight = querySnapshot.docs[0].data().height
+//                 modelutils.getModelByModelname(model, async function (doc) {
+//                     //doc.data().height refers to model height
+//                     //need to get get model height
+//                     rackutils.checkAssetFits(rackU, doc.data().height, rackID, async function (status) {
+//                         if (status && !(rackHeight > parseInt(rackU) + doc.data().height)) {
+//                             //asset conflicts with other assets and does not fit on the rack
+//                             errorIDSet.add("rackUConflictErrID")
+//                             errorIDSet.add("rackUFitErrID")
+
+//                         }
+//                         else if (status && (rackHeight > parseInt(rackU) + doc.data().height)) {
+//                             //asset conflicts with other assets, but does fit on the rack
+//                             errorIDSet.add("rackUConflictErrID")
+
+//                         }
+//                         else if (rackHeight > parseInt(rackU) + doc.data().height) {
+//                             //asset does not fit within the rack at the rackU
+//                             errorIDSet.add("rackUFitErrID")
+
+//                         }
+//                         else{
+//                             callback(false)
+//                         }
+//                     })
+
+//                     addConflictToDB(changePlanID, stepID, "rackU", errorIDSet, status =>{
+//                         console.log(status)
+//                         callback(status)
+//                     })
+
+//                 })
+//             }
+//         })
+//     })
+
+// }
+
+const rackUConflict = (changePlanID, stepID, model, datacenter, rackName, rackU, callback) => {
     let splitRackArray = rackName.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
     let errorIDSet = new Set();
 
-    //need to get the rackID
     rackutils.getRackID(rackRow, rackNum, datacenter, async function (rackID) {
 
         racksRef.doc(rackID).get().then(async function (querySnapshot) {
             //checking if the rack exists
-            if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number) {
-                let rackHeight = querySnapshot.docs[0].data().height
+            if (!querySnapshot.empty) {
                 modelutils.getModelByModelname(model, async function (doc) {
                     //doc.data().height refers to model height
                     //need to get get model height
                     rackutils.checkAssetFits(rackU, doc.data().height, rackID, async function (status) {
-                        if (status && !(rackHeight > parseInt(rackU) + doc.data().height)) {
-                            //asset conflicts with other assets and does not fit on the rack
+                        if (status) {
+                            //asset conflicts with other assets
                             errorIDSet.add("rackUConflictErrID")
-                            errorIDSet.add("rackUFitErrID")
+                            addConflictToDB(changePlanID, stepID, "rackU", errorIDSet, status => {
+                                console.log(status)
+                                callback(status)
+                            })
 
                         }
-                        else if (status && (rackHeight > parseInt(rackU) + doc.data().height)) {
-                            //asset conflicts with other assets, but does fit on the rack
-                            errorIDSet.add("rackUConflictErrID")
-
-                        }
-                        else if (rackHeight > parseInt(rackU) + doc.data().height) {
-                            //asset does not fit within the rack at the rackU
-                            errorIDSet.add("rackUFitErrID")
-
+                        else {
+                            callback(false)
                         }
                     })
 
-                    await addConflictToDB(changePlanID, stepID, "rackU", errorIDSet)
-                    console.log("From the error strings resource file: " + errorStrings.rackUFitErrID)
+
 
                 })
+            }
+            else {
+                console.log("rack does not exists")
+                callback(false)
             }
         })
     })
 
 }
 
+
+//instead of an array, use a set!! and then make it into an array before you add to the database
+const powerConnectionOccupied = (datacenter, rack, rackU, pduSide, port, errorIDSet, callback) => {
+    assetpowerportutils.checkConflicts(datacenter, rack, rackU, pduSide, port, async function (status) {
+        if (status) {
+            errorIDSet.add("powerConnectionConflictErrID")
+        }
+        callback()
+
+    })
+}
+
+// const powerConnectionIncompleteForm = async (pduSide, port, errorIDSet) => {
+//     if (pduSide.trim() === "" && port.trim() === "") {
+//         console.log("All fields for power connections in asset change plan have been filled out appropriately.")
+//     }
+//     else if (pduSide.trim() !== "" && port.trim() !== "") {
+//         console.log("No power connections were made for this asset in the change plan. ")
+//     }
+//     else {
+//         errorIDSet.add("powerConnectionsIncompleteFormErrID")
+//     }
+// }
+
+// const powerConnectionInvalidNum = async (port, errorIDSet) => {
+//     (port >= 1 && port <= 24) ?
+//         console.log("Valid port numbers. In changeplanconflictutils")
+//         : errorIDSet.add("powerConnectionsInvalidPortErrID")
+// }
+
+//TODO: double check this logic. What if no power connections were made? numPowerPOrts is 0? how can you conclude model 0 in the else?
+// const powerConnectionNumConnections = (powerConnections, model, errorIDSet, callback) => {
+//     modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
+//         let numPowerPorts = querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : 0;
+//         console.log("Num powerPorts for this model: " + numPowerPorts)
+
+//         if (powerConnections.length !== numPowerPorts) {
+//             if (numPowerPorts > 0) {
+//                 errorIDSet.add("powerConnectionsIncorrectNumConnectionsErrID")
+//             }
+//             else {
+//                 errorIDSet.add("powerConnectionModel0ErrID")
+//             }
+//         }
+//         callback()
+//     })
+// }
 //Lmao need to test this rigorously
-const powerConnectionConflict = async (changePlanID, stepID, powerConnections, datacenter, rack, rackU, model) => {
+const powerConnectionConflict = (changePlanID, stepID, powerConnections, datacenter, rack, rackU, callback) => {
 
     let errorIDSet = new Set()
     for (let i = 0; i < powerConnections.length; i++) {
         let pduSide = powerConnections[i].pduSide;
         let port = powerConnections[i].port;
 
-        await powerConnectionOccupied(datacenter, rack, rackU, pduSide, port, errorIDSet)
-        await powerConnectionIncompleteForm(pduSide, port, errorIDSet)
-        await powerConnectionInvalidNum(port, errorIDSet)
-        await powerConnectionNumConnections(powerConnections, model, errorIDSet)
+        powerConnectionOccupied(datacenter, rack, rackU, pduSide, port, errorIDSet, callback1 => {
+            addConflictToDB(changePlanID, stepID, "powerConnections", errorIDSet, status => {
+                callback(status)
+            })
+        })
+
+
     }
     console.log("These are the error IDs for this change plan set for power connections: " + [...errorIDSet.entries()])
-
-    await addConflictToDB(changePlanID, stepID, "powerConnections", errorIDSet)
-
-}
-//instead of an array, use a set!! and then make it into an array before you add to the database
-const powerConnectionOccupied = async (datacenter, rack, rackU, pduSide, port, errorIDSet) => {
-    console.log("In powerConnectionOccupied function")
-    assetpowerportutils.checkConflicts(datacenter, rack, rackU, pduSide, port, async function (status) {
-        if (status) {
-            errorIDSet.add("powerConnectionConflictErrID")
-        }
-
-    })
-}
-
-const powerConnectionIncompleteForm = async (pduSide, port, errorIDSet) => {
-    if (pduSide.trim() === "" && port.trim() === "") {
-        console.log("All fields for power connections in asset change plan have been filled out appropriately.")
-    }
-    else if (pduSide.trim() !== "" && port.trim() !== "") {
-        console.log("No power connections were made for this asset in the change plan. ")
-    }
-    else {
-        errorIDSet.add("powerConnectionsIncompleteFormErrID")
-    }
-}
-
-const powerConnectionInvalidNum = async (port, errorIDSet) => {
-    (port >= 1 && port <= 24) ?
-        console.log("Valid port numbers. In changeplanconflictutils")
-        : errorIDSet.add("powerConnectionsInvalidPortErrID")
-}
-
-//TODO: double check this logic. What if no power connections were made? numPowerPOrts is 0? how can you conclude model 0 in the else?
-const powerConnectionNumConnections = async (powerConnections, model, errorIDSet) => {
-    modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
-        let numPowerPorts = querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : 0;
-        console.log("Num powerPorts for this model: " + numPowerPorts)
-
-        if (powerConnections.length !== numPowerPorts) {
-            if (numPowerPorts > 0) {
-                errorIDSet.add("powerConnectionsIncorrectNumConnectionsErrID")
-            }
-            else {
-                errorIDSet.add("powerConnectionModel0ErrID")
-            }
-        }
-    })
 }
 
 const networkConnectionConflict = async (changePlanID, stepID, networkConnections, oldNetworkConnections, model) => {
@@ -399,7 +484,7 @@ async function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, 
 
 }
 
-async function addConflictToDB(changePlanID, stepID, fieldName, errorIDSet) {
+function addConflictToDB(changePlanID, stepID, fieldName, errorIDSet, callback) {
 
     //Call this method at each validation function at the end, where appropriate
     //What if the stepID doc does not exist? Does .set() take care of this for you?
@@ -407,16 +492,24 @@ async function addConflictToDB(changePlanID, stepID, fieldName, errorIDSet) {
     let errorIDArray = [...errorIDSet]
 
     if (errorIDArray.length) {
-        //console.log("Error ID(s) that will be added to the conflict/stepID doc: " + [...errorIDArray])
+
+        console.log("Error ID(s) that will be added to the conflict/stepID doc: " + [...errorIDArray])
         changeplansRef.doc(changePlanID).collection('conflicts').doc(stepID).set({
             [fieldName]: errorIDArray
 
-        }, { merge: true }).then(
+        }, { merge: true }).then(function () {
             console.log("Successfully added the conflict to the database.")
+            return (callback(true))
+
+        }).catch(function () {
+            callback(false)
+        }
         )
-
     }
-
+    else {
+        //no IDs in the array. If this works, can refactor the basic tests
+        callback(false)
+    }
 }
 
 export {
@@ -428,5 +521,9 @@ export {
     ownerConflict,
     assetIDConflict,
     modelConflict,
+    rackUConflict,
+    powerConnectionConflict,
+
+
 
 }

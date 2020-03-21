@@ -4,9 +4,9 @@ import * as userutils from '../utils/userutils'
 import * as firebaseutils from '../utils/firebaseutils'
 
 var ids = {}
-jest.setTimeout(200000);
+jest.setTimeout(60000);
 
-describe('change plan add asset tests', () => {
+describe('change plan add asset tests: basic test', () => {
     beforeAll(done => {
         conflictSetup(() => {
             firebaseutils.testDB.goOnline()
@@ -14,51 +14,74 @@ describe('change plan add asset tests', () => {
         })
     })
 
-    test('change plan add asset conflicts: basic', async (done) => {
+    test('changeplan add asset conflicts: rack', done => {
         //trying to simulate someone clicking on the detail view of the change plan step and retriggering the check
         // await changeplanconflictutils.addAssetChangePlanPackage(ids['changePlan'], ids['changePlanStep'], 'Test Model1', 'asset1', 'Test Datacenter', 'A1', 1, 'testUser', '999999', [], {});
 
-        await changeplanconflictutils.rackNonExistent(ids['changePlan'], ids['changePlanStep'], 'A1', 'Test Datacenter')
-
-        firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').get().then(docSnaps => {
-            // console.log([...docSnaps.docs])
-            // ids = {...ids,conflictDoc: docSnaps.docs[0].id}
+        changeplanconflictutils.rackNonExistent(ids['changePlan'], ids['changePlanStep'], 'A1', 'Test Datacenter', rackStatus => {
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
-            
-              expect(docRef.data().rack[0]).toBe('rackErrID')
-              //expect(docRef.id).toBe(ids['changePlanStep'])
-              done()
+                expect(docRef.data().rack[0]).toBe('rackErrID')
+                done()
             })
+
         })
 
+    })
+    test('changeplan add asset conflicts: datacenter', done => {
+        changeplanconflictutils.datacenterNonExistent(ids['changePlan'], ids['changePlanStep'], 'Test Datacenter', datacenterStatus => {
+            firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
+                expect(docRef.data().datacenter[0]).toBe('datacenterErrID')
+                done()
+            })
 
-
-
-        // firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
-        //     //surely there is a more elegant way to check than my massive if statement below
-          
-        //     console.log(ids['changePlan'])
-        //     console.log(docRef.exists)
-        //     console.log(docRef.data())
-        //     // console.log(docRef.data().rack[0])
-        //     if (docRef.exists && docRef.id == ids['changePlanStep']
-        //         && docRef.data().rack[0] === "rackErrID"
-        //         //  && docRef.data().datacenter[0] === "datacenterErrID"
-        //         // && docRef.data().hostname[0] === "hostnameErrID" && docRef.data().assetID[0] === "assetIDErrID"
-        //         // && docRef.data().model[0] === "modelErrID"
-        //         ) {
-
-        //         expect(true).toBe(true)
-        //         done()
-        //     }
-
-        //     else {
-        //         expect(false).toBe(true)
-        //         done()
-        //     }
-        // })
+        })
 
     })
+    test('changeplan add asset conflicts: hostname', done => {
+        changeplanconflictutils.hostnameConflict(ids['changePlan'], ids['changePlanStep'], 'asset1', hostnameStatus => {
+            firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
+                expect(docRef.data().hostname[0]).toBe('hostnameErrID')
+                done()
+            })
+
+        })
+
+    })
+    test('changeplan add asset conflicts: owner', done => {
+        changeplanconflictutils.ownerConflict(ids['changePlan'], ids['changePlanStep'], 'testUser', ownerStatus => {
+            firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
+                //expect(ownerStatus).toBe(true)
+                expect(docRef.data().owner[0]).toBe('ownerErrID')
+                done()
+            })
+
+        })
+
+    })
+    test('changeplan add asset conflicts: assetID', done => {
+        changeplanconflictutils.assetIDConflict(ids['changePlan'], ids['changePlanStep'], '999999', assetIDStatus => {
+            firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
+                expect(docRef.data().assetID[0]).toBe('assetIDErrID')
+                done()
+            })
+
+        })
+
+    })
+    
+    test('changeplan add asset conflicts: model', done => {
+        changeplanconflictutils.modelConflict(ids['changePlan'], ids['changePlanStep'], 'Test Model1', modelStatus => {
+            firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
+                expect(docRef.data().model[0]).toBe('modelErrID')
+                done()
+            })
+
+        })
+
+    })
+  
+    
+
 
     afterAll(done => {
         tearDown(() => {
@@ -118,19 +141,9 @@ function tearDown(callback) {
 
     firebaseutils.assetRef.doc(ids['asset']).delete().then(docRef => {
         firebaseutils.usersRef.doc(ids['user']).delete().then(docRef => {
-            changeplanutils.deleteChangePlan(ids['changePlan'], status =>{
-
-
-           
-            //firebaseutils.changeplansRef.doc(ids['changePlan']).collection('changes').delete().then(docRef => {
-                //firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').delete().then(docRef => {
-                   // firebaseutils.changeplansRef.doc(ids['changePlan']).delete().then(docRef => {
-                        callback()
-
-                    //})
-                //})
-            //})
-        })
+            changeplanutils.deleteChangePlan(ids['changePlan'], status => {
+                callback()
+            })
         })
     })
 }

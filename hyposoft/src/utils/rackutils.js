@@ -196,8 +196,11 @@ function deleteSingleRack(id, callback) {
 }
 
 function getRackID(row, number, datacenter, callback) {
+  
     datacenterutils.getDataFromName(datacenter, datacenterID => {
+        console.log(datacenterID)
         if (datacenterID) {
+            console.log(row, number)
             firebaseutils.racksRef.where("letter", "==", row).where("number", "==", parseInt(number)).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
                 if (!querySnapshot.empty) {
                     callback(querySnapshot.docs[0].id);
@@ -381,10 +384,11 @@ function checkAssetFits(position, height, rack, callback, id = null) { //rackU, 
         if (docRefRack.data().assets.length) {
             docRefRack.data().assets.forEach(assetID => {
                // console.log("this rack contains " + assetID);
+               console.log(assetID)
                 firebaseutils.assetRef.doc(assetID).get().then(function (docRefAsset) {
                     if (assetID !== id) {
 
-                       console.log(docRefAsset.data().model)
+                       console.log(docRefAsset.data())
                         modelutils.getModelByModelname(docRefAsset.data().model, result => {
                             if (result) {
                                // console.log("found a model!")
