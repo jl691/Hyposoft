@@ -4,7 +4,7 @@ import * as userutils from "../utils/userutils";
 import {Box, Button, Grommet, Heading, Text, DataTable, Layer} from "grommet";
 import theme from "../theme";
 import AppBar from "../components/AppBar";
-import HomeButton from "../components/HomeButton";
+import HomeMenu from "../components/HomeMenu";
 import UserMenu from "../components/UserMenu";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import {Add, Checkmark, Close, Edit, Print, Trash} from "grommet-icons";
@@ -274,7 +274,7 @@ class ChangePlanScreen extends React.Component {
             <Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
                     <AppBar>
-                        <HomeButton alignSelf='start' this={this}/>
+                        <HomeMenu alignSelf='start' this={this}/>
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                         }}>Change Plans</Heading>

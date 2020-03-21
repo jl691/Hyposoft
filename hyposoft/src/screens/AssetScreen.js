@@ -1,5 +1,4 @@
 import React, {Component} from 'react'
-import {BrowserRouter as Router, Route} from 'react-router-dom'
 
 import {
     Text,
@@ -23,7 +22,7 @@ import EditAssetForm from '../components/EditAssetForm'
 
 import theme from '../theme'
 import AppBar from '../components/AppBar'
-import HomeButton from '../components/HomeButton'
+import HomeMenu from '../components/HomeMenu'
 import UserMenu from '../components/UserMenu'
 import AssetTable from '../components/AssetTable'
 import * as userutils from "../utils/userutils";
@@ -579,17 +578,14 @@ class AssetScreen extends Component {
 
         return (
 
-            <Router>
 
-                <Route
-                    exact path="/assets" render={props => (
                     <React.Fragment>
                         <Grommet theme={theme} full className='fade'>
                             <Box fill background='light-2' overflow={"auto"}>
                                 {popup}
                                 <AppBar>
 
-                                    <HomeButton alignSelf='start' this={this}/>
+                                    <HomeMenu alignSelf='start' this={this}/>
                                     <Heading alignSelf='center' level='4' margin={{
                                         top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                                     }}>Assets</Heading>
@@ -695,11 +691,7 @@ class AssetScreen extends Component {
 
                     </React.Fragment>
 
-                )}
 
-                />
-
-            </Router>
         )
     }
 }
