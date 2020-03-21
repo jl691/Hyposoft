@@ -32,6 +32,7 @@ import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as datacenterutils from "../utils/datacenterutils";
 import * as bulkassetutils from "../utils/bulkassetsutils";
 import * as bulkconnectionstutils from "../utils/bulkconnectionsutils";
+import * as labelutils from "../utils/labelutils";
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
@@ -558,8 +559,11 @@ class AssetScreen extends Component {
                                 <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
                                     bulkassetutils.exportFilteredAssets(this.state.searchResults || this.assetTable.current.state.assets);
                                 }} style={{marginBottom: "10px"}}/>
-                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} onClick={() => {
+                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} margin={{bottom: 'medium'}} onClick={() => {
                                     bulkconnectionstutils.exportFilteredConnections(this.state.searchResults || this.assetTable.current.state.assets);
+                                }} style={{marginBottom: "10px"}}/>
+                                <Button icon={<Share/>} label={<Text size="small">Export Selected Barcodes</Text>} onClick={() => {
+                                    labelutils.generateLabelPDF(this.state.searchResults || this.assetTable.current.state.assets);
                                 }} margin={{bottom: 'medium'}}/>
                                 {/*this.assetTable.current.state*/}
                                 {/*</Box>*/}
