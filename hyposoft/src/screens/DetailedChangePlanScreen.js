@@ -19,6 +19,7 @@ import EditDecommissionChangeForm from "../components/EditDecommissionChangeForm
 import EditAssetForm from "../components/EditAssetForm";
 import * as assetmacutils from "../utils/assetmacutils";
 import * as assetnetworkportutils from "../utils/assetnetworkportutils";
+import AddAssetForm from "../components/AddAssetForm";
 
 class DetailedChangePlanScreen extends React.Component {
 
@@ -252,15 +253,33 @@ class DetailedChangePlanScreen extends React.Component {
                         e.persist();
                         e.nativeEvent.stopImmediatePropagation();
                         e.stopPropagation();
-                        changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, mergedAsset => {
-                            if(mergedAsset){
-                                this.setState({
-                                    popupType: "Edit" + datum.change,
-                                    stepID: datum.id,
-                                    currentChange: mergedAsset
-                                });
-                            }
-                        });
+                        if(datum.change === "edit") {
+                            changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, mergedAsset => {
+                                if(mergedAsset){
+                                    this.setState({
+                                        popupType: "Edit" + datum.change,
+                                        stepID: datum.id,
+                                        currentChange: mergedAsset
+                                    });
+                                }
+                            });
+                        } else if(datum.change === "add") {
+                            changeplanutils.getAssetFromAddAsset(this.changePlanID, datum.id, asset => {
+                                if(asset){
+                                    this.setState({
+                                        popupType: "Edit" + datum.change,
+                                        stepID: datum.id,
+                                        currentChange: asset
+                                    });
+                                }
+                            })
+                        } else if(datum.change === "decommission") {
+                            this.setState({
+                                popupType: "Edit" + datum.change,
+                                stepID: datum.id,
+                            });
+                        }
+
                     }}/>)
             },
             {
@@ -350,6 +369,33 @@ class DetailedChangePlanScreen extends React.Component {
                         updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses)}
                         updatePowerConnectionsFromParent={this.state.currentChange.powerConnections}
                         updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.currentChange.networkConnections)}
+                    />
+                </Layer>
+            )
+        } else if(popupType === 'Editadd'){
+            console.log(this.state.currentChange.macAddresses, this.state.currentChange, assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses))
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+
+                    <AddAssetForm
+                        parentCallback={this.cancelPopup}
+                        cancelCallback={this.cancelPopup}
+                        changePlanID={this.changePlanID}
+                        popupMode={"Update"}
+                        changeDocID={this.state.currentChange.changeDocID}
+                        updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses)}
+                        updatePowerConnectionsFromParent={this.state.currentChange.powerConnections}
+                        updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.currentChange.networkConnections)}
+
+                        updateModelFromParent={this.state.currentChange.model}
+                        updateHostnameFromParent={this.state.currentChange.hostname}
+                        updateRackFromParent={this.state.currentChange.rack}
+                        updateRackUFromParent={this.state.currentChange.rackU}
+                        updateOwnerFromParent={this.state.currentChange.owner}
+                        updateCommentFromParent={this.state.currentChange.comment}
+                        updateDatacenterFromParent={this.state.currentChange.datacenter}
+                        updateAssetIDFromParent={this.state.currentChange.assetId ? this.state.currentChange.assetId : ""}
                     />
                 </Layer>
             )

@@ -104,7 +104,7 @@ function getAssetAt(start, callback, field = null, direction = null) {
     })
 }
 
-function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, callback, changePlanID = null) {
+function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, callback, changePlanID = null, changeDocID = null) {
 
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
@@ -266,7 +266,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                         } else {
                                                                             callback("Error adding asset to the specified change plan.")
                                                                         }
-                                                                    })
+                                                                    }, changeDocID)
                                                                 }
 
                                                             }).catch(errMessage => {
@@ -276,6 +276,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                     } else {
 
                                                         assetIDutils.generateAssetID().then(newID => {
+                                                            console.log("generated the new asset id", newID)
                                                             const assetObject = {
                                                                 assetId: newID,
                                                                 modelId: doc.id,
@@ -345,6 +346,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
                                                                 assetRef.doc(newID)
                                                                     .set(assetObject).then(function (docRef) {
+                                                                        console.log("set the itme")
 
                                                                     assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, newID);
 
@@ -389,7 +391,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                     } else {
                                                                         callback("Error adding asset to the specified change plan.")
                                                                     }
-                                                                })
+                                                                }, changeDocID)
                                                             }
                                                         }).catch("Ran out of tries to generate unique ID")
 
