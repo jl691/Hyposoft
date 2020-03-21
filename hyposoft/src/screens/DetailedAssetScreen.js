@@ -357,19 +357,17 @@ export default class DetailedAssetScreen extends Component {
                                 <UserMenu alignSelf='end' this={this}/>
                             </AppBar>
                             <Box
-
-                                align='center'
+                                align='start'
                                 direction='row'
                                 margin={{left: 'medium', right: 'medium'}}
-                                justify='center'>
+                                justify='start'>
                                 <Box style={{
                                     borderRadius: 10,
                                     borderColor: '#EDEDED'
                                 }}
                                      direction='row'
-
                                      background='#FFFFFF'
-                                     width={'medium'}
+                                     width={'xxlarge'}
                                      margin={{top: 'medium', left: 'medium', right: 'medium'}}
                                      pad='small'>
                                     <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
@@ -460,6 +458,20 @@ export default class DetailedAssetScreen extends Component {
                                              return <div key={key}>{i}</div>
                                          })}
                                          </span>
+                                    </Box>
+                                </Box>
+                                <Box style={{
+                                    borderRadius: 10,
+                                    borderColor: '#EDEDED'
+                                }}
+                                     direction='row'
+                                     background='#FFFFFF'
+                                     width={'large'}
+                                     margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                                     pad='small'>
+                                    <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                         direction='column' justify='start'>
+                                        <Heading level='4' margin='none'>Asset Actions</Heading>
                                         <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
                                              gap='small'>
                                             {this.connectedPDU &&
