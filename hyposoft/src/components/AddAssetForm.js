@@ -37,26 +37,19 @@ export default class AddAssetForm extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            asset_id: "",
-            model: "",
-            hostname: "",
-            rack: "",
-            rackU: "",
-            owner: "",
-            comment: "",
-            datacenterName: "",
-            datacenterAbbrev: "",
-            showPowerConnections: false,
-            macAddresses: [],
-            networkConnections: [],
-            powerConnections: [
-                //     {
-                //     pduSide: "",
-                //     port: ""
-                // }
-            ],
-
-
+            asset_id: this.props.updateAssetIDFromParent,
+            model: this.props.updateModelFromParent,
+            hostname: this.props.updateHostnameFromParent,
+            rack: this.props.updateRackFromParent,
+            rackU: this.props.updateRackUFromParent,
+            owner: this.props.updateOwnerFromParent,
+            comment: this.props.updateCommentFromParent,
+            datacenter: this.props.updateDatacenterFromParent,
+            macAddresses: this.props.updateMacAddressesFromParent, //trace back up to see where it starts to be undefined
+            powerConnections: this.props.updatePowerConnectionsFromParent,
+            networkConnections: this.props.updateNetworkConnectionsFromParent,
+            editDeletedNetworkConnections: [],
+            showPowerConnections: this.props.updatePowerConnectionsFromParent.length ? true : false
         }
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
@@ -67,6 +60,12 @@ export default class AddAssetForm extends Component {
         this.fixMACAddress = this.fixMACAddress.bind(this)
         this.deleteNetworkConnection = this.deleteNetworkConnection.bind(this)
         this.deletePowerConnection = this.deletePowerConnection.bind(this);
+    }
+
+    componentDidMount() {
+        console.log(this.props.updateMacAddressesFromParent);
+        let panel = document.getElementById("powerPortConnectionsPanel");
+        panel.style.display = this.props.updatePowerConnectionsFromParent.length ? "block" : "none";
     }
 
 
@@ -320,7 +319,7 @@ export default class AddAssetForm extends Component {
                                                                 this.props.parentCallback(true);
                                                                 ToastsStore.success('Successfully added asset!');
                                                             }
-                                                        }, this.props.changePlanID ? this.props.changePlanID : null
+                                                        }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null
                                                     );
                                                 }
                                                 else {
@@ -363,7 +362,7 @@ export default class AddAssetForm extends Component {
                                                     this.props.parentCallback(true);
                                                     ToastsStore.success('Successfully added asset!');
                                                 }
-                                            }, this.props.changePlanID ? this.props.changePlanID : null
+                                            }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null
                                         );
 
 
@@ -585,6 +584,7 @@ export default class AddAssetForm extends Component {
                                         fieldCallback={this.handleDisplayMACFields}
                                         model={this.state.model}
                                         macAddresses={this.state.macAddresses}
+                                        popupMode={this.props.popupMode}
 
 
                                     />

@@ -28,6 +28,7 @@ import * as assetnetworkportutils from "../utils/assetnetworkportutils";
 import * as changeplanutils from "../utils/changeplanutils";
 import {Redirect} from "react-router-dom";
 import SingleRackElevation from "./SingleRackElevation";
+import HomeMenu from "./HomeMenu";
 
 class RackView extends React.Component {
 
@@ -644,7 +645,7 @@ class RackView extends React.Component {
             <Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2' overflow={"auto"}>
                     <AppBar>
-                        <HomeButton alignSelf='start' this={this}/>
+                        <HomeMenu alignSelf='start' this={this}/>
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                         }}>Racks</Heading>

@@ -224,6 +224,7 @@ export default class EditAssetForm extends Component {
 
                                             if (fixedAddr) {
                                                 console.log(fixedAddr)
+                                                console.log(this.props.changeDocID)
                                                 assetutils.updateAsset(
                                                     this.state.asset_id,
                                                     this.state.model,
@@ -245,7 +246,7 @@ export default class EditAssetForm extends Component {
                                                             this.props.parentCallback(true);
                                                             ToastsStore.success('Successfully updated asset!');
                                                         }
-                                                    }, this.props.changePlanID ? this.props.changePlanID : null
+                                                    }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null
                                                 );
                                             }
                                             else {
@@ -288,7 +289,7 @@ export default class EditAssetForm extends Component {
                                                 this.props.parentCallback(true);
                                                 ToastsStore.success('Successfully updated asset!');
                                             }
-                                        }, this.props.changePlanID ? this.props.changePlanID : null
+                                        }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null
                                     );
 
 

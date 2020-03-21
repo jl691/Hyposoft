@@ -355,6 +355,19 @@ class AssetScreen extends Component {
                     <AddAssetForm
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
+                        updatePowerConnectionsFromParent={[]}
+                        updateNetworkConnectionsFromParent={[]}
+                        updateMacAddressesFromParent={[]}
+
+                        updateIDFromParent={""}
+                        updateModelFromParent={""}
+                        updateHostnameFromParent={""}
+                        updateRackFromParent={""}
+                        updateRackUFromParent={""}
+                        updateOwnerFromParent={""}
+                        updateCommentFromParent={""}
+                        updateDatacenterFromParent={""}
+                        updateAssetIDFromParent={""}
                     />
 
                 </Layer>

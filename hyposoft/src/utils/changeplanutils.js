@@ -68,8 +68,7 @@ function getChangeDetails(changePlanID, stepID, username, callback) {
         if (documentSnapshot.exists && documentSnapshot.data().owner === username) {
             firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepID)).get().then(function (querySnapshot) {
                 if (!querySnapshot.empty) {
-                    console.log(querySnapshot.docs[0].data())
-                    callback(querySnapshot.docs[0].data());
+                    callback(querySnapshot.docs[0].data(), documentSnapshot.data().executed, documentSnapshot.data().timestamp);
                 } else {
                     callback(null);
                 }
@@ -135,93 +134,28 @@ function editChangePlan(id, newName, callback) {
     })
 }
 
-function addAssetChange(asset, assetID, changePlanID, callback) {
-    console.log(assetID)
-    changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
-        let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
-        let assetChangePlanObject = {
-            assetID: assetID ? parseInt(assetID) : "",
-            change: "add",
-            changes: {},
-            step: changeNumber
-        };
-        console.log(asset);
-        Object.keys(asset).forEach(assetProperty => {
-            //if (typeof asset[assetProperty] !== "object" || (typeof asset[assetProperty] === "object" && Object.keys(asset[assetProperty]).length)) {
-                let oldProperty = (assetProperty === "networkConnections" || assetProperty === "macAddresses") ? {} : (assetProperty === "powerConnections" ? [] : "");
-                assetChangePlanObject.changes = {
-                    ...assetChangePlanObject.changes,
-                    [assetProperty]: {
-                        old: oldProperty,
-                        new: asset[assetProperty]
-                    }
-                }
-            //}
-        });
-        changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function () {
-            //network ports need to be done at time of execution
-            //so does power port and logging
-            callback(true);
-        }).catch(function (error) {
-            console.log(error);
-            callback(null);
-        });
-    }).catch(function (error) {
-        console.log(error);
-        callback(null);
-    })
-}
+function addAssetChange(asset, assetID, changePlanID, callback, docID = null) {
 
-function editAssetChange(newAsset, assetID, changePlanID, callback) {
-    changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
-        let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
-        let assetChangePlanObject = {
-            assetID: parseInt(assetID),
-            change: "edit",
-            changes: {},
-            step: changeNumber
-        };
-        assetRef.doc(assetID).get().then(function (documentSnapshot) {
-            if (documentSnapshot.exists) {
-                let oldAsset = documentSnapshot.data();
-                Object.keys(newAsset).forEach(assetProperty => {
-                    if ((typeof oldAsset[assetProperty] === "object" && !isEqual(oldAsset[assetProperty], newAsset[assetProperty])) || (typeof oldAsset[assetProperty] !== "object" && oldAsset[assetProperty] !== newAsset[assetProperty])) {
-                        assetChangePlanObject.changes = {
-                            ...assetChangePlanObject.changes,
-                            [assetProperty]: {
-                                old: oldAsset[assetProperty],
-                                new: newAsset[assetProperty]
-                            }
-                        }
-                    }
-                });
-                changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function () {
-                    //network ports need to be done at time of execution
-                    //so does power port and logging
-                    callback(true);
-                }).catch(function (error) {
-                    console.log(error);
-                    callback(null);
-                });
-            } else {
-                callback(null);
+    let assetChangePlanObject = {
+        assetID: assetID ? parseInt(assetID) : "",
+        change: "add",
+        changes: {},
+    };
+    Object.keys(asset).forEach(assetProperty => {
+        let oldProperty = (assetProperty === "networkConnections" || assetProperty === "macAddresses") ? {} : (assetProperty === "powerConnections" ? [] : "");
+        assetChangePlanObject.changes = {
+            ...assetChangePlanObject.changes,
+            [assetProperty]: {
+                old: oldProperty,
+                new: asset[assetProperty]
             }
-        });
-    }).catch(function () {
-        callback(null);
-    })
-}
-
-function decommissionAssetChange(assetID, changePlanID, callback){
-    changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
-        let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
-        assetRef.doc(assetID).get().then(function (documentSnapshot) {
-            if(documentSnapshot.exists){
-                changeplansRef.doc(changePlanID).collection("changes").add({
-                    assetID: parseInt(assetID),
-                    change: "decommission",
-                    step: changeNumber
-                }).then(function () {
+        }
+    });
+    if(docID){
+        changeplansRef.doc(changePlanID).collection("changes").doc(docID).get().then(function (docSnapInner) {
+            if(docSnapInner.exists){
+                assetChangePlanObject.step = docSnapInner.data().step;
+                changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject).then(function () {
                     callback(true);
                 }).catch(function () {
                     callback(null);
@@ -229,10 +163,134 @@ function decommissionAssetChange(assetID, changePlanID, callback){
             } else {
                 callback(null);
             }
-        }).catch(function () {
+        }).catch(function (error) {
+            console.log(error);
             callback(null);
         })
-    })
+    } else {
+        changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
+            let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
+            assetChangePlanObject.step = changeNumber;
+            changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function () {
+                //network ports need to be done at time of execution
+                //so does power port and logging
+                callback(true);
+            }).catch(function (error) {
+                console.log(error);
+                callback(null);
+            });
+        }).catch(function (error) {
+            console.log(error);
+            callback(null);
+        })
+    }
+}
+
+function editAssetChange(newAsset, assetID, changePlanID, callback, docID = null) {
+    console.log(docID)
+    assetRef.doc(assetID).get().then(function (documentSnapshot) {
+        if(documentSnapshot.exists){
+            let assetChangePlanObject = {
+                assetID: parseInt(assetID),
+                change: "edit",
+                changes: {}
+            };
+            let oldAsset = documentSnapshot.data();
+            Object.keys(newAsset).forEach(assetProperty => {
+                if ((typeof oldAsset[assetProperty] === "object" && !isEqual(oldAsset[assetProperty], newAsset[assetProperty])) || (typeof oldAsset[assetProperty] !== "object" && oldAsset[assetProperty] !== newAsset[assetProperty])) {
+                    assetChangePlanObject.changes = {
+                        ...assetChangePlanObject.changes,
+                        [assetProperty]: {
+                            old: oldAsset[assetProperty],
+                            new: newAsset[assetProperty]
+                        }
+                    }
+                }
+            });
+            if(docID){
+                changeplansRef.doc(changePlanID).collection("changes").doc(docID).get().then(function (docSnapInner) {
+                    if(docSnapInner.exists){
+                        assetChangePlanObject.step = docSnapInner.data().step;
+                        changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject).then(function () {
+                            callback(true);
+                        }).catch(function () {
+                            callback(null);
+                        })
+                    } else {
+                        callback(null);
+                    }
+                }).catch(function (error) {
+                    console.log(error);
+                    callback(null);
+                })
+            } else {
+                changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
+                    let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
+                    assetChangePlanObject.step = changeNumber;
+                    changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function () {
+                        //network ports need to be done at time of execution
+                        //so does power port and logging
+                        callback(true);
+                    }).catch(function (error) {
+                        console.log(error);
+                        callback(null);
+                    });
+                }).catch(function () {
+                    callback(null);
+                });
+            }
+        } else {
+            callback(null);
+        }
+    });
+}
+
+function decommissionAssetChange(assetID, changePlanID, callback, stepID = null){
+    assetRef.doc(assetID).get().then(function (documentSnapshot) {
+        if(documentSnapshot.exists){
+            if(stepID){
+                changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepID)).get().then(function (querySnapshot) {
+                    if(!querySnapshot.empty){
+                        let docID = querySnapshot.docs[0].id;
+                        changeplansRef.doc(changePlanID).collection("changes").doc(docID).update({
+                            assetID: parseInt(assetID)
+                        }).then(function () {
+                            callback(true);
+                        }).catch(function (error) {
+                            console.log(error)
+                            callback(null);
+                        })
+                    } else {
+                        console.log("1");
+                        callback(null);
+                    }
+                }).catch(function (error) {
+                    console.log(error)
+                    callback(null);
+                })
+            } else {
+                changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
+                    let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
+                    changeplansRef.doc(changePlanID).collection("changes").add({
+                        assetID: parseInt(assetID),
+                        change: "decommission",
+                        step: changeNumber
+                    }).then(function () {
+                        callback(true);
+                    }).catch(function (error) {
+                        console.log(error)
+                        callback(null);
+                    });
+                });
+            }
+        } else {
+            console.log("2")
+            callback(null);
+        }
+    }).catch(function (error) {
+        console.log(error)
+        callback(null);
+    });
 }
 
 function deleteChange(changePlanID, stepNum, callback) {
@@ -343,8 +401,10 @@ function generateWorkOrder(changePlanID, callback) {
                 if (change === "decommission") {
                     console.log("decommission", count)
                     assetRef.doc(doc.data().assetID.toString()).get().then(function (documentSnapshot) {
+                        console.log(documentSnapshot);
                         steps.set(doc.data().step, ["Decommission asset #" + doc.data().assetID + " from datacenter " + documentSnapshot.data().datacenter + " at rack " + documentSnapshot.data().rack + " at height " + documentSnapshot.data().rackU + " U"])
                         count++;
+                        console.log("3", count, querySnapshot.size)
                         if (count === querySnapshot.size) {
                             callback(steps);
                         }
@@ -578,6 +638,7 @@ function generateEditWorkOrderMessage(doc, callback) {
             });
             let promiseArray = [datacenterPromise, rackPromise, heightPromise, networkConnectionsPromise, powerConnectionsPromise];
             Promise.all(promiseArray).then(function () {
+                console.log("resolved all", changes)
                 callback(changes);
             })
         } else {
@@ -605,7 +666,8 @@ function executeChangePlan(changePlanID, callback) {
                                 count++;
                                 if (count === querySnapshot.size) {
                                     changeplansRef.doc(changePlanID.toString()).update({
-                                        executed: true
+                                        executed: true,
+                                        timestamp: Date.now()
                                     }).then(function () {
                                         callback(true);
                                     }).catch(function () {
@@ -625,7 +687,8 @@ function executeChangePlan(changePlanID, callback) {
                                     count++;
                                     if (count === querySnapshot.size) {
                                         changeplansRef.doc(changePlanID.toString()).update({
-                                            executed: true
+                                            executed: true,
+                                            timestamp: Date.now()
                                         }).then(function () {
                                             callback(true);
                                         }).catch(function () {
@@ -645,7 +708,8 @@ function executeChangePlan(changePlanID, callback) {
                             count++;
                             if (count === querySnapshot.size) {
                                 changeplansRef.doc(changePlanID.toString()).update({
-                                    executed: true
+                                    executed: true,
+                                    timestamp: Date.now()
                                 }).then(function () {
                                     callback(true);
                                 }).catch(function () {
@@ -664,7 +728,8 @@ function executeChangePlan(changePlanID, callback) {
                             count++;
                             if (count === querySnapshot.size) {
                                 changeplansRef.doc(changePlanID.toString()).update({
-                                    executed: true
+                                    executed: true,
+                                    timestamp: Date.now()
                                 }).then(function () {
                                     callback(true);
                                 }).catch(function () {
@@ -785,6 +850,54 @@ function executeEditAsset(doc, callback) {
     })
 }
 
+function getMergedAssetAndChange(changePlanID, step, callback){
+    changeplansRef.doc(changePlanID.toString()).collection("changes").where("step", "==", parseInt(step)).get().then(function (querySnapshot) {
+        if(!querySnapshot.empty){
+            let changeData = querySnapshot.docs[0].data().changes;
+            let assetID = querySnapshot.docs[0].data().assetID;
+            assetRef.doc(assetID.toString()).get().then(function (documentSnapshot) {
+                if(documentSnapshot.exists){
+                    let assetData = documentSnapshot.data();
+                    assetData.changeDocID = querySnapshot.docs[0].id;
+                    let count = 0;
+                    Object.keys(changeData).forEach(change => {
+                        assetData[change] = changeData[change]["new"];
+                        count++;
+                        if(count === Object.keys(changeData).length){
+                            callback(assetData);
+                        }
+                    });
+                } else {
+                    callback(null);
+                }
+            })
+        } else {
+            callback(null);
+        }
+    });
+}
+
+function getAssetFromAddAsset(changePlanID, step, callback){
+    changeplansRef.doc(changePlanID.toString()).collection("changes").where("step", "==", parseInt(step)).get().then(function (querySnapshot) {
+        if(!querySnapshot.empty){
+            let changeData = querySnapshot.docs[0].data().changes;
+            let asset = {
+                changeDocID: querySnapshot.docs[0].id
+            };
+            let count = 0;
+            Object.keys(changeData).forEach(change => {
+                asset[change] = changeData[change]["new"];
+                count++;
+                if(count === Object.keys(changeData).length){
+                    callback(asset);
+                }
+            });
+        } else {
+            callback(null);
+        }
+    })
+}
+
 export {
     getChangePlans,
     getChanges,
@@ -797,5 +910,7 @@ export {
     generateWorkOrder,
     deleteChange,
     decommissionAssetChange,
-    executeChangePlan
+    executeChangePlan,
+    getMergedAssetAndChange,
+    getAssetFromAddAsset
 }
