@@ -14,29 +14,74 @@ describe('change plan add asset: power connections test', () => {
         })
     })
 
-    // test('changeplan add asset conflicts: power connections pass', done => {
-    //     changeplanconflictutils.rackUConflict(ids['changePlan'], ids['changePlanStep'], 'Test Model2', 'Test Datacenter2', 'A2', 15, rackUStatus => {
-    //         expect(rackUStatus).toBe(false)
-    //         done()
-    //     })
+    test('changeplan add asset conflicts: power connections pass', done => {
+        const powerConnections = [
+            {
+                pduSide: "Left",
+                port: "3"
+            },
+            {
+                pduSide: "Right",
+                port: "3"
+            }
+        ]
+        changeplanconflictutils.powerConnectionConflict(ids['changePlan'], ids['changePlanStep'], powerConnections, 'Test Datacenter3', 'A3', 1, powerConnectionsStatus => {
+                expect(powerConnectionsStatus).toBe(false)
+                done()
+            
+        })
 
-    // })
+    })
 
-    // test('changeplan add asset conflicts: power connection conflict', done => {
-    //     console.log([...Object.entries(ids)])
-    //     //changePlanID, stepID, powerConnections, datacenter, rack, rackU, callback
-    //     const powerConnections = []
-    //     changeplanconflictutils.powerConnectionConflict(ids['changePlan'], ids['changePlanStep'], powerConnections, 'Test Datacenter3', 'A3', 1, powerConnectionsStatus => {
+    test('changeplan add asset conflicts: power connection conflict', done => {
+        console.log([...Object.entries(ids)])
+        const powerConnections = [
+            {
+                pduSide: "Left",
+                port: "1"
+            },
+            {
+                pduSide: "Right",
+                port: "1"
+            }
+        ]
+        changeplanconflictutils.powerConnectionConflict(ids['changePlan'], ids['changePlanStep'], powerConnections, 'Test Datacenter3', 'A3', 1, powerConnectionsStatus => {
 
-    //         firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
-    //             expect(docRef.data().powerConnections[0]).toBe('powerConnectionConflictErrID')
-    //             done()
-    //         })
-    //     })
-    // })
-   test( "placeholder", done =>{
-       expect(1).toEqual(1)
-   })
+            firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
+                expect(docRef.data().powerConnections[0]).toBe('powerConnectionConflictErrID')
+                done()
+            })
+        })
+    })
+
+    //TODO: okay so this test shows that something is a ticking time bomb??
+    //if you do Left: 5, and switch the order of mixed and conflicts test, the test will not pass
+
+    test('changeplan add asset conflicts: power connections mixed', done =>{
+        //one of the connections that are to be added is occupied already on the rack, the other is not yet occupied (left 5)
+        const powerConnections = [
+            {
+                pduSide: "Left",
+                port: "1"
+            },
+            {
+                pduSide: "Right",
+                port: "5"
+            }
+        ]
+        //left: 1, seems to pass, but left: 5 seems to give the tests some trouble
+        changeplanconflictutils.powerConnectionConflict(ids['changePlan'], ids['changePlanStep'], powerConnections, 'Test Datacenter3', 'A3', 1, powerConnectionsStatus => {
+            firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
+                expect(docRef.data().powerConnections[0]).toBe('powerConnectionConflictErrID')
+                done()
+            })
+            
+        })
+
+    })
+
+   
+
     afterAll(done => {
         tearDown(() => {
             console.log("Deleting all created database documents")
@@ -56,8 +101,8 @@ function conflictSetup(callback) {
         const rack = makeRack()
         firebaseutils.racksRef.add(rack).then(docRef => {
             ids = { ...ids, rack: docRef.id }
-            const testModel2 = makeModel('Test', 'Model2', 5)
-            firebaseutils.modelsRef.add(testModel2).then(docRef => {
+            const testModel3 = makeModel('Test', 'Model3', 5)
+            firebaseutils.modelsRef.add(testModel3).then(docRef => {
                 ids = { ...ids, model: docRef.id }
                 const changePlan = makeChangePlan()
                 firebaseutils.changeplansRef.add(changePlan).then(docRef => {
@@ -65,9 +110,9 @@ function conflictSetup(callback) {
                     const changePlanAddStep = makeChangePlanStep()
                     firebaseutils.changeplansRef.doc(ids['changePlan']).collection('changes').add(changePlanAddStep).then(docRef => {
                         { ids = { ...ids, changePlanStep: docRef.id } }
-                        const asset = makeAsset('111111')
-                        firebaseutils.assetRef.doc('111111').set(asset).then(() => {
-                            ids = { ...ids, asset: '111111' }
+                        const asset = makeAsset('222222')
+                        firebaseutils.assetRef.doc('222222').set(asset).then(() => {
+                            ids = { ...ids, asset: '222222' }
                             callback()
 
                         })
@@ -104,7 +149,7 @@ function makeModel(vendor, modelNum, height) {
         displayColor: 'BD10E0',
         networkPorts: null,
         networkPortsCount: 0,
-        powerPorts: null,
+        powerPorts: 2,
         cpu: null,
         memory: null,
         storage: null,
@@ -116,8 +161,8 @@ function makeModel(vendor, modelNum, height) {
 
 function makeDatacenter() {
     const dc = {
-        name: 'Test Datacenter2',
-        abbreviation: 'TD2',
+        name: 'Test Datacenter3',
+        abbreviation: 'TD3',
         racks: []
     }
     return dc
@@ -125,10 +170,19 @@ function makeDatacenter() {
 function makeRack() {
     const rack = {
         letter: 'A',
-        number: 2,
+        number: 3,
         height: 42,
-        assets: ['111111'],
-        powerPorts: [],
+        assets: ['222222'],
+        powerPorts: [{
+            assetID: '222222',
+            pduSide: "Left",
+            port: "1"
+        },
+        {
+            assetID: '222222',
+            pduSide: 'Right',
+            port: "1"
+        }],
         datacenter: ids['datacenter']
     }
     return rack
@@ -137,9 +191,9 @@ function makeRack() {
 function makeChangePlan() {
     const changePlan = {
         executed: false,
-        name: 'Test Change Plan Conflicts 2',
+        name: 'Test Change Plan Conflicts 3',
         owner: 'admin',
-        timestamp: 1584641154269
+        timestamp: 1584641154270
     }
     return changePlan
 }
@@ -153,11 +207,11 @@ function makeChangePlanStep() {
                 old: ""
             },
             datacenter: {
-                new: "Test Datacenter2",
+                new: "Test Datacenter3",
                 old: ""
             },
             datacenterAbbrev: {
-                new: 'TD2',
+                new: 'TD3',
                 old: ''
             },
             datacenterID: {
@@ -165,7 +219,7 @@ function makeChangePlanStep() {
                 old: ''
             },
             hostname: {
-                new: 'testHostname2',
+                new: 'testHostname3',
                 old: ''
             },
             macAddresses: {
@@ -173,7 +227,7 @@ function makeChangePlanStep() {
                 old: {}
             },
             model: {
-                new: 'Test Model2',
+                new: 'Test Model3',
                 old: ''
             },
             modelID: {
@@ -181,7 +235,7 @@ function makeChangePlanStep() {
                 old: ''
             },
             modelNumber: {
-                new: 'Model2',
+                new: 'Model3',
                 old: ''
             },
             networkConnections: {
@@ -193,11 +247,20 @@ function makeChangePlanStep() {
                 old: ''
             },
             powerConnections: {
-                new: [],
+                new: [
+                    {
+                        pduSide: "Left",
+                        port: "1"
+                    },
+                    {
+                        pduSide: "Right",
+                        port: "1"
+                    }
+                ],
                 old: []
             },
             rack: {
-                new: 'A2',
+                new: 'A3',
                 old: ''
             },
             rackID: {
@@ -205,7 +268,7 @@ function makeChangePlanStep() {
                 old: ''
             },
             rackNum: {
-                new: 2,
+                new: 3,
                 old: ""
             },
             rackRow: {
@@ -231,26 +294,35 @@ function makeAsset(id) {
     const asset = {
         assetId: id,
         modelID: ids['model'],
-        model: 'Test Model2',
-        hostname: 'asset2',
-        rack: 'A2',
+        model: 'Test Model3',
+        hostname: 'asset3',
+        rack: 'A3',
         rackU: 1,
         owner: '',
         comment: '',
         rackID: ids['rack'],
         macAddresses: {},
         networkConnections: {},
-        powerConnections: [],
+        powerConnections: [
+            {
+                pduSide: "Left",
+                port: "1"
+            },
+            {
+                pduSide: "Right",
+                port: "1"
+            }
+        ],
 
         //This is for rack usage reports
-        modelNumber: 'Model2',
+        modelNumber: 'Model3',
         vendor: 'Test',
         //This is for sorting
         rackRow: 'A',
-        rackNum: 2,
-        datacenter: 'Test Datacenter2',
+        rackNum: 3,
+        datacenter: 'Test Datacenter3',
         datacenterID: ids['datacenter'],
-        datacenterAbbrev: 'TD2'
+        datacenterAbbrev: 'TD3'
     }
     return asset
 }

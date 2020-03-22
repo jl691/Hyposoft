@@ -239,8 +239,10 @@ const rackUConflict = (changePlanID, stepID, model, datacenter, rackName, rackU,
 //instead of an array, use a set!! and then make it into an array before you add to the database
 const powerConnectionOccupied = (datacenter, rack, rackU, pduSide, port, errorIDSet, callback) => {
     assetpowerportutils.checkConflicts(datacenter, rack, rackU, pduSide, port, async function (status) {
+        console.log("powerportutils checkConflict callback: " + status)
         if (status) {
             errorIDSet.add("powerConnectionConflictErrID")
+
         }
         callback()
 
@@ -290,192 +292,101 @@ const powerConnectionConflict = (changePlanID, stepID, powerConnections, datacen
         let pduSide = powerConnections[i].pduSide;
         let port = powerConnections[i].port;
 
+
         powerConnectionOccupied(datacenter, rack, rackU, pduSide, port, errorIDSet, callback1 => {
             addConflictToDB(changePlanID, stepID, "powerConnections", errorIDSet, status => {
+                console.log(status)
                 callback(status)
             })
         })
-
-
     }
-    console.log("These are the error IDs for this change plan set for power connections: " + [...errorIDSet.entries()])
+    // console.log("These are the error IDs for this change plan set for power connections: " + [...errorIDSet.entries()])
 }
 
-const networkConnectionConflict = async (changePlanID, stepID, networkConnections, oldNetworkConnections, model) => {
+const networkConnectionConflict = async (changePlanID, stepID, networkConnections, oldNetworkConnections, callback) => {
     let errorIDSet = new Set()
-    let numConnectionsMade = networkConnections.length
-
     for (let i = 0; i < networkConnections.length; i++) {
         let thisPort = networkConnections[i].thisPort
         let otherAssetID = networkConnections[i].otherAssetID
         let otherPort = networkConnections[i].otherPort
 
-        let otherAssetIDExists = await networkConnectionOtherAssetID(otherAssetID, errorIDSet)
-        console.log(otherAssetIDExists)
-
-        if (!otherAssetIDExists) {
-            //this means automatically that other ports don't exist
-            errorIDSet.add("networkConnectionNonExistentOtherPortErrID")
-            //Don't do some checks, because it will error out because of the query. 
-            //what remaining checks can you still do though?
-            await networkConnectionIncompleteForm(thisPort, otherAssetID, otherPort, errorIDSet)
-            await networkConnectionThisPortExist(thisPort, model, errorIDSet)
-            await networkConnectionUniqueThisPort(networkConnections, errorIDSet)
-            await networkConnectionUniqueOtherPort(networkConnections, errorIDSet)
-            await networkConnectionNumConnections(numConnectionsMade, model, errorIDSet)
-            console.log([...Object.entries(errorIDSet)])
-
-            await addConflictToDB(changePlanID, stepID, "networkConnections", errorIDSet)
-
-        }
-        else {
-            await networkConnectionIncompleteForm(thisPort, otherAssetID, otherPort, errorIDSet)
-            await networkConnectionThisPortExist(thisPort, model, errorIDSet)
-            await networkConnectionOtherAssetPortExist(otherAssetID, otherPort, errorIDSet)
-            await networkConnectionConflictsHelper(oldNetworkConnections, thisPort, otherAssetID, otherPort, errorIDSet)
-            await networkConnectionUniqueThisPort(networkConnections, errorIDSet)
-            await networkConnectionUniqueOtherPort(networkConnections, errorIDSet)
-            await networkConnectionNumConnections(numConnectionsMade, model, errorIDSet)
-            console.log([...Object.entries(errorIDSet)])
-
-            await addConflictToDB(changePlanID, stepID, "networkConnections", errorIDSet)
-
-        }
+        networkConnectionOtherAssetID(otherAssetID, errorIDSet, otherAssetStatus => {
+            console.log(otherAssetStatus)
+            if (!otherAssetStatus) {
+                //trying to connect to a nonexistent asset
+                //Don't do some checks, because it will error out because of the query. 
+                errorIDSet.add("networkConnectionNonExistentOtherPortErrID")
+                console.log([...Object.entries(errorIDSet)])
+                addConflictToDB(changePlanID, stepID, "networkConnections", errorIDSet, status => {
+                    callback(status)
+                })
+            } else {
+                networkConnectionOtherAssetPortExist(otherAssetID, otherPort, errorIDSet, callback2 => {
+                    networkConnectionConflictsHelper(oldNetworkConnections, thisPort, otherAssetID, otherPort, errorIDSet, callback3 => {
+                        console.log([...Object.entries(errorIDSet)])
+                        addConflictToDB(changePlanID, stepID, "networkConnections", errorIDSet, status => {
+                            callback(status)
+                        })
+                    })
+                })
+            }
+        })
 
     }
 }
 
-const networkConnectionIncompleteForm = async (thisPort, otherAssetID, otherPort, errorIDSet) => {
-    if (thisPort.trim() === "" && otherAssetID.trim() === "" && otherPort.trim() === "") {
-        console.log("All fields for network connections in asset change plan have been filled out appropriately.")
-    }
-    else if (thisPort.trim() !== "" && otherAssetID.trim() !== "" && otherPort.trim() !== "") {
-        console.log("No power connections were made for this asset in the change plan. ")
-    }
-    else {
-        errorIDSet.add("networkConnectionsIncompleteFormErrID")
-    }
-
-}
-
-const networkConnectionThisPortExist = async (thisPort, thisModel, errorIDSet) => {
-    assetnetworkportutils.checkThisModelPortsExist(thisModel, thisPort, status => {
-        if (status) {
-            errorIDSet.add("networkConnectionNonExistentThisPortErrID")
-        }
-    })
-}
-
-const networkConnectionOtherAssetPortExist = async (otherAssetID, otherPort, errorIDSet) => {
+function networkConnectionOtherAssetPortExist(otherAssetID, otherPort, errorIDSet, callback) {
     assetnetworkportutils.checkOtherAssetPortsExist(otherAssetID, otherPort, status => {
+        console.log(status)
         if (status) {
             errorIDSet.add("networkConnectionNonExistentOtherPortErrID")
         }
+        //if timing is weird or unit tests keep failing randomly, move this callback
+        callback()
     })
 }
 
 //Need to double check why oldetworkConnections is here. Is it just for updating and to check self conflicting?
 //Is it bad if it's null? No, can be null. It appears that it is for self-conflicting, but double check w Allen
-const networkConnectionConflictsHelper = async (oldNetworkConnections, thisPort, otherAssetID, otherPort, errorIDSet) => {
+function networkConnectionConflictsHelper(oldNetworkConnections, thisPort, otherAssetID, otherPort, errorIDSet, callback) {
     assetnetworkportutils.checkNetworkPortConflicts(oldNetworkConnections, thisPort, otherAssetID, otherPort, status => {
+        console.log(status)
         if (status) {
-            console.log("networkConnectionConflictErrID being added to errorIDSet")
+            console.log(status)
             errorIDSet.add("networkConnectionConflictErrID")
         }
+        callback()
     })
 
 }
 
-const networkConnectionOtherAssetID = async (otherAssetID, errorIDSet) => {
+function networkConnectionOtherAssetID(otherAssetID, errorIDSet, callback) {
     assetRef.doc(otherAssetID).get().then(function (otherAssetModelDoc) {
         if (!otherAssetModelDoc.exists) {
-            console.log("networkConnectionOtherAssetIDErrID being added to errorIDSet")
             errorIDSet.add("networkConnectionOtherAssetIDErrID")
-            return false;
+            callback(false)
 
         }
         else {
-            return true;
+            callback(true)
         }
     })
 
 }
 
-const networkConnectionUniqueThisPort = async (networkConnections, errorIDSet) => {
-    let seenThisPorts = new Set();
-    let numNetworkConns = networkConnections.length
-    let forLoopDone = false;
 
-    for (let i = 0; i < numNetworkConns; i++) {
-        let thisPort = networkConnections[i].thisPort;
-        seenThisPorts.add(thisPort)
-        if (i === numNetworkConns - 1) {
-            console.log("Done with the for loop")
-            forLoopDone = true;
-        }
-    }
-
-    if (seenThisPorts.size() < numNetworkConns && forLoopDone) {
-        console.log("Non-unique this port found within the form")
-        errorIDSet.add("networkConnectionNonUniqueThisPortErrID")
-    }
-
-}
-
-const networkConnectionUniqueOtherPort = async (networkConnections, errorIDSet) => {
-    let seenOtherPorts = new Map();
-    let numNetworkConns = networkConnections.length
-
-    for (let i = 0; i < numNetworkConns; i++) {
-        let otherAssetID = networkConnections[i].otherAssetID
-        let otherPort = networkConnections[i].otherPort;
-
-        if (seenOtherPorts.has(otherAssetID) && seenOtherPorts.get(otherAssetID).includes(otherPort)) {
-            errorIDSet.add("networkConnectionNonUniqueOtherPortErrID")
-
-        }
-        else {
-            seenOtherPorts.set(otherAssetID, otherPort)
-        }
-    }
-
-
-
-}
-
-const networkConnectionNumConnections = async (numConnectionsMade, thisModelName, errorIDSet) => {
-    modelsRef.where("modelName", "==", thisModelName).get().then(function (querySnapshot) {
-        //Number of ports on the model that you are trying to add an asset of
-        console.log(querySnapshot.docs[0].data().modelName)
-        let numThisModelPorts = querySnapshot.docs[0].data().networkPortsCount;
-
-        if (numConnectionsMade > numThisModelPorts) {
-
-            if (numThisModelPorts) {
-                errorIDSet.add("networkConnectionIncorrectNumConnectionsErrID")
-
-            }
-            else {
-                errorIDSet.add("networkConnectionModel0ErrID")
-            }
-        }
-    })
-
-}
-
-//when do I call this? everytime submit is clicked
-//pass in the correct parameters
+//NEED TO REWRITE THIS AND INTEGRATE AGAIN
 async function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections) {
 
     let oldNetworkConnections = null;
     assetID = assetID.toString()
 
-    await rackNonExistent(changePlanID, stepID, rack, datacenter)
-    await datacenterNonExistent(changePlanID, stepID, datacenter)
-    await hostnameConflict(changePlanID, stepID, hostname)
-    await ownerConflict(changePlanID, stepID, owner)
-    await assetIDConflict(changePlanID, stepID, assetID)
-    await modelConflict(changePlanID, stepID, model)
+    // await rackNonExistent(changePlanID, stepID, rack, datacenter)
+    // await datacenterNonExistent(changePlanID, stepID, datacenter)
+    // await hostnameConflict(changePlanID, stepID, hostname)
+    // await ownerConflict(changePlanID, stepID, owner)
+    // await assetIDConflict(changePlanID, stepID, assetID)
+    // await modelConflict(changePlanID, stepID, model)
 
     //need to to test that all possible errors are caught at once
     // await rackUConflict(changePlanID, stepID, model, datacenter, rack, rackU)
@@ -501,13 +412,15 @@ function addConflictToDB(changePlanID, stepID, fieldName, errorIDSet, callback) 
             console.log("Successfully added the conflict to the database.")
             return (callback(true))
 
-        }).catch(function () {
+        }).catch(error => {
             callback(false)
+            console.log("Error adding conflict to the db")
         }
         )
     }
     else {
         //no IDs in the array. If this works, can refactor the basic tests
+        console.log("No conflicts found.")
         callback(false)
     }
 }
@@ -523,6 +436,7 @@ export {
     modelConflict,
     rackUConflict,
     powerConnectionConflict,
+    networkConnectionConflict
 
 
 
