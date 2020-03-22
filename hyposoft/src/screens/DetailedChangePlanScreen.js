@@ -1,6 +1,7 @@
 import React from "react";
 import * as changeplanutils from "../utils/changeplanutils";
 import * as userutils from "../utils/userutils";
+import * as decommissionutils from "../utils/decommissionutils";
 import * as firebaseutils from "../utils/firebaseutils";
 import { Box, Button, Grommet, Heading, Text, DataTable, Layer } from "grommet";
 import theme from "../theme";
@@ -14,6 +15,11 @@ import BackButton from "../components/BackButton";
 import DeleteChangePlanForm from "../components/DeleteChangePlanForm";
 import DeleteChangeForm from "../components/DeleteChangeForm";
 import ExecuteChangePlanForm from "../components/ExecuteChangePlanForm";
+import EditDecommissionChangeForm from "../components/EditDecommissionChangeForm";
+import EditAssetForm from "../components/EditAssetForm";
+import * as assetmacutils from "../utils/assetmacutils";
+import * as assetnetworkportutils from "../utils/assetnetworkportutils";
+import AddAssetForm from "../components/AddAssetForm";
 
 
 import * as changeplanconflictutils from '../utils/changeplanconflictutils'
@@ -30,7 +36,8 @@ class DetailedChangePlanScreen extends React.Component {
             changes: [],
             initialLoaded: false,
             popupType: "",
-            name: ""
+            name: "",
+            assetsLoaded: false
         }
 
         this.componentDidMount = this.componentDidMount.bind(this);
@@ -39,11 +46,13 @@ class DetailedChangePlanScreen extends React.Component {
     componentDidMount() {
         this.changePlanID = this.props.match.params.changePlanID;
         firebaseutils.changeplansRef.doc(this.changePlanID).get().then(documentSnapshot => {
-            if (documentSnapshot.exists) {
-                this.setState({
-                    name: documentSnapshot.data().name
-                })
-            }
+           if(documentSnapshot.exists){
+               this.setState({
+                   name: documentSnapshot.data().name,
+                   executed: documentSnapshot.data().executed,
+                   timestamp: documentSnapshot.data().timestamp
+               })
+           }
         });
         this.forceRefresh()
     }
@@ -82,80 +91,113 @@ class DetailedChangePlanScreen extends React.Component {
 
     AdminTools() {
         if (userutils.isLoggedInUserAdmin()) {
-            return (
-                <Box
-                    width='medium'
-                    align='center'
-                    margin={{ left: 'medium', right: 'medium' }}
-                    justify='start'>
-                    <Box style={{
-                        borderRadius: 10,
-                        borderColor: '#EDEDED'
-                    }}
-                        direction='row'
-                        alignSelf='stretch'
-                        background='#FFFFFF'
-                        width={'medium'}
-                        margin={{ top: 'medium', left: 'medium', right: 'medium' }}
-                        pad='small'>
-                        <Box flex
-                            margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
-                            direction='column' justify='start'>
-                            <Heading level='4' margin='none'>Add change</Heading>
-                            <p>Add a new change.</p>
-                            <Box direction='column' flex alignSelf='stretch'>
-                                <Button primary icon={<Add />} label="Add" onClick={() => {
-                                    this.props.history.push('/changeplans/' + this.changePlanID + '/add')
-                                }} />
+            if (!this.state.executed) {
+                return (
+                    <Box
+                        width='medium'
+                        align='center'
+                        margin={{left: 'medium', right: 'medium'}}
+                        justify='start'>
+                        <Box style={{
+                            borderRadius: 10,
+                            borderColor: '#EDEDED'
+                        }}
+                             direction='row'
+                             alignSelf='stretch'
+                             background='#FFFFFF'
+                             width={'medium'}
+                             margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                             pad='small'>
+                            <Box flex
+                                 margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                 direction='column' justify='start'>
+                                <Heading level='4' margin='none'>Add change</Heading>
+                                <p>Add a new change.</p>
+                                <Box direction='column' flex alignSelf='stretch'>
+                                    <Button primary icon={<Add/>} label="Add" onClick={() => {
+                                        this.props.history.push('/changeplans/' + this.changePlanID + '/add')
+                                    }}/>
+                                </Box>
+                            </Box>
+                        </Box>
+                        <Box style={{
+                            borderRadius: 10,
+                            borderColor: '#EDEDED'
+                        }}
+                             direction='row'
+                             alignSelf='stretch'
+                             background='#FFFFFF'
+                             width={'medium'}
+                             margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                             pad='small'>
+                            <Box flex
+                                 margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                 direction='column' justify='start'>
+                                <Heading level='4' margin='none'>Execute change plan</Heading>
+                                <p>Execute this change plan.</p>
+                                <Box direction='column' flex alignSelf='stretch'>
+                                    <Button primary icon={<Checkmark/>} label="Execute" onClick={() => {
+                                        this.setState({popupType: "Execute"})
+                                    }}/>
+                                </Box>
+                            </Box>
+                        </Box>
+                        <Box style={{
+                            borderRadius: 10,
+                            borderColor: '#EDEDED'
+                        }}
+                             direction='row'
+                             alignSelf='stretch'
+                             background='#FFFFFF'
+                             width={'medium'}
+                             margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                             pad='small'>
+                            <Box flex
+                                 margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                 direction='column' justify='start'>
+                                <Heading level='4' margin='none'>Work order</Heading>
+                                <p>Generate a work order for this change plan.</p>
+                                <Box direction='column' flex alignSelf='stretch'>
+                                    <Button primary icon={<Print/>} label="Generate" onClick={() => {
+                                        this.props.history.push('/changeplans/' + this.changePlanID + '/workorder')
+                                    }}/>
+                                </Box>
                             </Box>
                         </Box>
                     </Box>
-                    <Box style={{
-                        borderRadius: 10,
-                        borderColor: '#EDEDED'
-                    }}
-                        direction='row'
-                        alignSelf='stretch'
-                        background='#FFFFFF'
-                        width={'medium'}
-                        margin={{ top: 'medium', left: 'medium', right: 'medium' }}
-                        pad='small'>
-                        <Box flex
-                            margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
-                            direction='column' justify='start'>
-                            <Heading level='4' margin='none'>Execute change plan</Heading>
-                            <p>Execute this change plan.</p>
-                            <Box direction='column' flex alignSelf='stretch'>
-                                <Button primary icon={<Checkmark />} label="Execute" onClick={() => {
-                                    this.setState({ popupType: "Execute" })
-                                }} />
+                );
+            } else {
+                return (
+                    <Box
+                        width='medium'
+                        align='center'
+                        margin={{left: 'medium', right: 'medium'}}
+                        justify='start'>
+                        <Box style={{
+                            borderRadius: 10,
+                            borderColor: '#EDEDED'
+                        }}
+                             direction='row'
+                             alignSelf='stretch'
+                             background='#FFFFFF'
+                             width={'medium'}
+                             margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                             pad='small'>
+                            <Box flex
+                                 margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                 direction='column' justify='start'>
+                                <Heading level='4' margin='none'>Work order</Heading>
+                                <p>Generate a work order for this change plan.</p>
+                                <Box direction='column' flex alignSelf='stretch'>
+                                    <Button primary icon={<Print/>} label="Generate" onClick={() => {
+                                        this.props.history.push('/changeplans/' + this.changePlanID + '/workorder')
+                                    }}/>
+                                </Box>
                             </Box>
                         </Box>
                     </Box>
-                    <Box style={{
-                        borderRadius: 10,
-                        borderColor: '#EDEDED'
-                    }}
-                        direction='row'
-                        alignSelf='stretch'
-                        background='#FFFFFF'
-                        width={'medium'}
-                        margin={{ top: 'medium', left: 'medium', right: 'medium' }}
-                        pad='small'>
-                        <Box flex
-                            margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
-                            direction='column' justify='start'>
-                            <Heading level='4' margin='none'>Work order</Heading>
-                            <p>Generate a work order for this change plan.</p>
-                            <Box direction='column' flex alignSelf='stretch'>
-                                <Button primary icon={<Print />} label="Generate" onClick={() => {
-                                    this.props.history.push('/changeplans/' + this.changePlanID + '/workorder')
-                                }} />
-                            </Box>
-                        </Box>
-                    </Box>
-                </Box>
-            );
+                )
+            }
         }
     }
 
@@ -223,13 +265,44 @@ class DetailedChangePlanScreen extends React.Component {
                 property: "edit",
                 header: <Text size='small'>Edit</Text>,
                 render: datum => (
-                    <Edit />)
+                    !this.state.executed && <Edit onClick={(e) => {
+                        e.persist();
+                        e.nativeEvent.stopImmediatePropagation();
+                        e.stopPropagation();
+                        if(datum.change === "edit") {
+                            changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, mergedAsset => {
+                                if(mergedAsset){
+                                    this.setState({
+                                        popupType: "Edit" + datum.change,
+                                        stepID: datum.id,
+                                        currentChange: mergedAsset
+                                    });
+                                }
+                            });
+                        } else if(datum.change === "add") {
+                            changeplanutils.getAssetFromAddAsset(this.changePlanID, datum.id, asset => {
+                                if(asset){
+                                    this.setState({
+                                        popupType: "Edit" + datum.change,
+                                        stepID: datum.id,
+                                        currentChange: asset
+                                    });
+                                }
+                            })
+                        } else if(datum.change === "decommission") {
+                            this.setState({
+                                popupType: "Edit" + datum.change,
+                                stepID: datum.id,
+                            });
+                        }
+
+                    }}/>)
             },
             {
                 property: "delete",
                 header: <Text size='small'>Delete</Text>,
                 render: datum => (
-                    <Trash onClick={(e) => {
+                    !this.state.executed && <Trash onClick={(e) => {
                         e.persist();
                         e.nativeEvent.stopImmediatePropagation();
                         e.stopPropagation();
@@ -256,6 +329,14 @@ class DetailedChangePlanScreen extends React.Component {
         ToastsStore.success("Successfully executed the change plan.")
     }
 
+    successfulEdit = (data) => {
+        this.setState({
+            popupType: ""
+        });
+        this.forceRefresh();
+        ToastsStore.success(data);
+    }
+
     render() {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
@@ -275,6 +356,65 @@ class DetailedChangePlanScreen extends React.Component {
                 <ExecuteChangePlanForm cancelPopup={this.cancelPopup} successfulExecution={this.successfulExecution}
                     id={this.changePlanID} name={this.state.name} />
             )
+        } else if(popupType === 'Editdecommission'){
+            console.log(this.changePlanID)
+            popup = (
+                <EditDecommissionChangeForm cancelPopup={this.cancelPopup} stepID={this.state.stepID}
+                changePlanID={this.changePlanID} successfulEdit={this.successfulEdit}/>
+            )
+        } else if(popupType === 'Editedit'){
+            console.log(this.state.currentChange)
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+
+                    <EditAssetForm
+                        parentCallback={this.cancelPopup}
+                        cancelCallback={this.cancelPopup}
+                        changePlanID={this.changePlanID}
+                        popupMode={'Update'}
+                        changeDocID={this.state.currentChange.changeDocID}
+                        updateModelFromParent={this.state.currentChange.model}
+                        updateHostnameFromParent={this.state.currentChange.hostname}
+                        updateRackFromParent={this.state.currentChange.rack}
+                        updateRackUFromParent={this.state.currentChange.rackU}
+                        updateOwnerFromParent={this.state.currentChange.owner}
+                        updateCommentFromParent={this.state.currentChange.comment}
+                        updateDatacenterFromParent={this.state.currentChange.datacenter}
+                        updateAssetIDFromParent={this.state.currentChange.assetId}
+                        updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses)}
+                        updatePowerConnectionsFromParent={this.state.currentChange.powerConnections}
+                        updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.currentChange.networkConnections)}
+                    />
+                </Layer>
+            )
+        } else if(popupType === 'Editadd'){
+            console.log(this.state.currentChange.macAddresses, this.state.currentChange, assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses))
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+
+                    <AddAssetForm
+                        parentCallback={this.cancelPopup}
+                        cancelCallback={this.cancelPopup}
+                        changePlanID={this.changePlanID}
+                        popupMode={"Update"}
+                        changeDocID={this.state.currentChange.changeDocID}
+                        updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses)}
+                        updatePowerConnectionsFromParent={this.state.currentChange.powerConnections}
+                        updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.currentChange.networkConnections)}
+
+                        updateModelFromParent={this.state.currentChange.model}
+                        updateHostnameFromParent={this.state.currentChange.hostname}
+                        updateRackFromParent={this.state.currentChange.rack}
+                        updateRackUFromParent={this.state.currentChange.rackU}
+                        updateOwnerFromParent={this.state.currentChange.owner}
+                        updateCommentFromParent={this.state.currentChange.comment}
+                        updateDatacenterFromParent={this.state.currentChange.datacenter}
+                        updateAssetIDFromParent={this.state.currentChange.assetId ? this.state.currentChange.assetId : ""}
+                    />
+                </Layer>
+            )
         }
 
         return (
@@ -288,9 +428,16 @@ class DetailedChangePlanScreen extends React.Component {
                         <UserMenu alignSelf='end' this={this} />
                     </AppBar>
                     <Box direction='row'
-                        justify='center'
-                        wrap={true}>
-                        <Box direction='row' justify='center' overflow={{ horizontal: 'hidden' }}>
+                         justify='center'
+                         wrap={true}>
+                        {this.state.executed && <Box style={{
+                            borderRadius: 10
+                        }} width={"large"} background={"status-ok"} align={"center"} alignSelf={"center"}
+                                                     margin={{top: "medium"}}>
+                            <Heading level={"3"} margin={"small"}>Change Plan Executed</Heading>
+                            <Box>This change plan was executed on {decommissionutils.getDate(this.state.timestamp)}. Thus, no further changes can be made.</Box>
+                        </Box>}
+                        <Box direction='row' justify='center' overflow={{horizontal: 'hidden'}}>
                             <Box direction='row' justify='center'>
                                 <Box width='large' direction='column' align='stretch' justify='start'>
                                     <Box style={{

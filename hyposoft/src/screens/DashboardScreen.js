@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import AppBar from '../components/AppBar'
-import HomeButton from '../components/HomeButton'
+import HomeMenu from '../components/HomeMenu'
 import UserMenu from '../components/UserMenu'
 import ItemCard from '../components/ItemCard'
 import { Redirect } from 'react-router-dom'
@@ -86,7 +86,7 @@ class DashboardScreen extends Component {
 
                 <Box fill background='light-2'>
                     <AppBar>
-                        <HomeButton alignSelf='start' this={this} />
+                        <HomeMenu alignSelf='start' this={this} />
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                         }} >Dashboard</Heading>

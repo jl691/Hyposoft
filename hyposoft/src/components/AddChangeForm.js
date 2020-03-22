@@ -94,6 +94,19 @@ class AddChangeForm extends React.Component {
                         parentCallback={this.handleCancelPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
                         changePlanID={this.props.match.params.changePlanID}
+                        updatePowerConnectionsFromParent={[]}
+                        updateNetworkConnectionsFromParent={[]}
+                        updateMacAddressesFromParent={[]}
+
+                        updateIDFromParent={""}
+                        updateModelFromParent={""}
+                        updateHostnameFromParent={""}
+                        updateRackFromParent={""}
+                        updateRackUFromParent={""}
+                        updateOwnerFromParent={""}
+                        updateCommentFromParent={""}
+                        updateDatacenterFromParent={""}
+                        updateAssetIDFromParent={""}
                     />
 
                 </Layer>
@@ -109,7 +122,7 @@ class AddChangeForm extends React.Component {
                     <EditAssetForm
                         parentCallback={this.handleCancelPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
-                        changePlanID={this.props.match.params.changePlanID}e
+                        changePlanID={this.props.match.params.changePlanID}
                         popupMode={this.state.popupType}
                         updateModelFromParent={selectedData.model}
                         updateHostnameFromParent={selectedData.hostname}

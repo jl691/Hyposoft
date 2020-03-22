@@ -7,6 +7,7 @@ import UserMenu from "../components/UserMenu";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as changeplanutils from "../utils/changeplanutils";
 import * as userutils from "../utils/userutils";
+import * as decommissionutils from "../utils/decommissionutils";
 import DeleteChangeForm from "../components/DeleteChangeForm";
 
 class DetailedChangeScreen extends React.Component {
@@ -30,10 +31,12 @@ class DetailedChangeScreen extends React.Component {
     }
 
     forceRefresh() {
-        changeplanutils.getChangeDetails(this.props.match.params.changePlanID, this.props.match.params.stepID, userutils.getLoggedInUserUsername(), result => {
+        changeplanutils.getChangeDetails(this.props.match.params.changePlanID, this.props.match.params.stepID, userutils.getLoggedInUserUsername(), (result, executed, timestamp) => {
             if (result) {
                 this.setState({
-                    change: result
+                    change: result,
+                    executed: executed,
+                    timestamp: timestamp
                 });
             } else {
                 console.log(result)
@@ -325,6 +328,13 @@ class DetailedChangeScreen extends React.Component {
                             <UserMenu alignSelf='end' this={this}/>
                         </AppBar>
                         {this.generateConflict()}
+                        {this.state.executed && <Box style={{
+                            borderRadius: 10
+                        }} width={"large"} background={"status-ok"} align={"center"} alignSelf={"center"}
+                                                     margin={{top: "medium"}}>
+                            <Heading level={"3"} margin={"small"}>Change Plan Executed</Heading>
+                            <Box>This change plan was executed on {decommissionutils.getDate(this.state.timestamp)}. Thus, no further changes can be made.</Box>
+                        </Box>}
                         <Box
                             align='center'
                             direction='row'
@@ -376,7 +386,7 @@ class DetailedChangeScreen extends React.Component {
                                             {this.generateChangeTable()}
                                         </TableBody>
                                     </Table>
-                                    <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                    {!this.state.executed && <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
                                          gap='small'>
                                         <Button label="Edit Change" onClick={() => {
 
@@ -386,7 +396,7 @@ class DetailedChangeScreen extends React.Component {
                                                 popupType: "Delete"
                                             })
                                         }}/>
-                                    </Box>
+                                    </Box>}
                                 </Box>
                             </Box>
                         </Box>
