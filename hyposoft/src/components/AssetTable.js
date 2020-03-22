@@ -13,14 +13,14 @@ export default class AssetTable extends Component {
     colors={};
     defaultAssets = [];
     startAfter = null;
+    selectAll = false;
 
     state = {
         assets: [],
         initialLoaded: false,
         sortField: "",
         sortAscending: "",
-        selectedAssets: [],
-        selectAll: false
+        selectedAssets: []
     }
 
     constructor(props) {
@@ -164,10 +164,13 @@ export default class AssetTable extends Component {
                 this.startAfter = newStartAfter;
                 this.setState({assets: assetdb, initialLoaded: true})
             }
-        })
+        }, null, null, this.state.selectedAssets)
     }
 
     restoreDefault() {
+        for(var index = 0; index < this.defaultAssets.length; index++) {
+            this.defaultAssets[index].checked = this.state.selectedAssets.includes(this.defaultAssets[index].asset_id)
+        }
         this.setState({assets: this.defaultAssets});
     }
 
@@ -190,6 +193,8 @@ export default class AssetTable extends Component {
             console.log("current asset: " + rackRowTemp.charCodeAt(0) + " " + rackNumTemp)
             console.log("rackRowTemp " + rackRowTemp + " rackNumTemp " + rackNumTemp)
             console.log("rackRowStart " + rackRowStart.charCodeAt(0) + " rackRowEnd " + rackRowEnd.charCodeAt(0) + " rackNumStart " + rackNumStart + " rackNumEnd " + rackNumEnd)
+            // add line to update selected status
+            asset.checked = this.state.selectedAssets.includes(asset.asset_id)
             /*if(rackRowTemp.charCodeAt(0) >= rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) <= rackRowEnd.charCodeAt(0) && rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd){
                 console.log("found a match!")
                 newInstances.push(asset);
@@ -252,10 +257,24 @@ export default class AssetTable extends Component {
       }
     }
 
+    updateSelectAll() {
+        let assets = this.props.searchResults || this.state.assets
+        var selectAll = true
+        for(var index = 0; index < assets.length; index++) {
+            if (!assets[index].checked) {
+                selectAll = false
+                break
+            }
+        }
+        // do not put this inside a set state!!!!
+        this.selectAll = selectAll
+        return selectAll
+    }
+
     handleSelectAllOrNone() {
       let assets = this.props.searchResults || this.state.assets
       var updatedSelectedAssets = this.state.selectedAssets
-      if (!this.state.selectAll) {
+      if (!this.selectAll) {
         for(var index = 0; index < assets.length; index++) {
             if (!updatedSelectedAssets.includes(assets[index].asset_id)) {
                 updatedSelectedAssets = updatedSelectedAssets.concat(assets[index].asset_id)
@@ -271,7 +290,8 @@ export default class AssetTable extends Component {
             assets[index].checked = false
         }
       }
-      this.setState({selectAll: !this.state.selectAll, selectedAssets: updatedSelectedAssets})
+      this.selectAll = !this.selectAll
+      this.setState({selectedAssets: updatedSelectedAssets})
     }
 
     render() {
@@ -333,7 +353,7 @@ export default class AssetTable extends Component {
                         property: 'checked',
                         header: <Text size='small' onClick={() => {
                             this.handleSelectAllOrNone()
-                        }} style={{cursor: "pointer"}}>Select All{(this.state.selectAll ? <CheckboxSelected /> : <Checkbox />)}</Text>,
+                        }} style={{cursor: "pointer"}}>Select All{(this.updateSelectAll() ? <CheckboxSelected /> : <Checkbox />)}</Text>,
                         render: datum => this.handleSelect(datum),
                         sortable: false
                     },

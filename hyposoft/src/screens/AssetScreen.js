@@ -270,7 +270,8 @@ class AssetScreen extends Component {
                             ...hits[i],
                             id: hits[i].objectID,
                             itemNo: itemNo++,
-                            asset_id: hits[i].objectID
+                            asset_id: hits[i].objectID,
+                            checked: this.assetTable.current.state.selectedAssets.includes(hits[i].objectID)
                         }]
                     }
                     console.log(results)
@@ -281,6 +282,7 @@ class AssetScreen extends Component {
                 })
         } else {
             // reset
+            this.assetTable.current.state.assets.forEach(asset => asset.checked = this.assetTable.current.state.selectedAssets.includes(asset.asset_id))
             this.setState(oldState => ({
                 ...oldState,
                 searchResults: undefined
