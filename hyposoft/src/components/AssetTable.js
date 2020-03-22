@@ -338,12 +338,12 @@ export default class AssetTable extends Component {
                             assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
                                 this.startAfter = newStartAfter
                                 this.setState({assets: this.state.assets.concat(newAssets)})
-                            }, this.state.sortField, this.state.sortAscending, this.state.selectedAssets);
+                            }, this.state.sortField, this.state.sortAscending, this.state.selectedAssets, this.selectAll);
                         } else {
                             assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
                                 this.startAfter = newStartAfter
                                 this.setState({assets: this.state.assets.concat(newAssets)})
-                            }, null, null, this.state.selectedAssets);
+                            }, null, null, this.state.selectedAssets, this.selectAll);
                         }
                     }
                 }}

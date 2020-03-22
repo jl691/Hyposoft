@@ -62,7 +62,7 @@ function getAsset(callback, field = null, direction = null, selected = null) {
 }
 
 
-function getAssetAt(start, callback, field = null, direction = null, selected = null) {
+function getAssetAt(start, callback, field = null, direction = null, selected = null, selectAll = null) {
 
     let query;
     if (field && direction !== null) {
@@ -93,7 +93,7 @@ function getAssetAt(start, callback, field = null, direction = null, selected = 
                 networkConnections: doc.data().networkConnections,
                 vendor: doc.data().vendor,
                 modelNumber: doc.data().modelNumber,
-                checked: selected && selected.includes(doc.id)
+                checked: selectAll || (selected && selected.includes(doc.id))
             });
             count++;
             if (count === docSnaps.docs.length) {
