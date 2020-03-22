@@ -45,7 +45,8 @@ function getAsset(callback, field = null, direction = null) {
                     powerConnections: doc.data().powerConnections,
                     networkConnections: doc.data().networkConnections,
                     vendor: doc.data().vendor,
-                    modelNumber: doc.data().modelNumber
+                    modelNumber: doc.data().modelNumber,
+                    checked: false
                 });
                 count++;
                 if (count === docSnaps.docs.length) {
@@ -91,7 +92,8 @@ function getAssetAt(start, callback, field = null, direction = null) {
                 powerConnections: doc.data().powerConnections,
                 networkConnections: doc.data().networkConnections,
                 vendor: doc.data().vendor,
-                modelNumber: doc.data().modelNumber
+                modelNumber: doc.data().modelNumber,
+                checked: false
             });
             count++;
             if (count === docSnaps.docs.length) {

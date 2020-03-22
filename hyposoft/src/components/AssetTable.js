@@ -1,7 +1,7 @@
 import React, {Component} from 'react'
 import {Redirect} from 'react-router-dom'
 import {DataTable, Text, Box} from 'grommet'
-import {FormEdit, FormTrash, FormClose, Power, Clear, PowerCycle, FormUp, FormDown} from "grommet-icons"
+import {Checkbox, CheckboxSelected, FormEdit, FormTrash, FormClose, Power, Clear, PowerCycle, FormUp, FormDown} from "grommet-icons"
 import * as assetutils from '../utils/assetutils'
 import * as assetmacutils from '../utils/assetmacutils'
 import * as powerutils from '../utils/powerutils'
@@ -214,6 +214,32 @@ export default class AssetTable extends Component {
         this.setState({assets: sortedAssets})
     }
 
+    handleSelect(datum) {
+      if (datum.checked) {
+        return (<CheckboxSelected
+            style={{cursor: 'pointer', backgroundColor: this.colors[datum.asset_id+'_check_color']}}
+            onClick={(e) => {
+                e.persist()
+                e.nativeEvent.stopImmediatePropagation()
+                e.stopPropagation()
+                datum.checked = false
+                // need render to be called to see check update as soon as I click
+                this.setState(oldState => ({...oldState}))
+            }}/>)
+    } else {
+      return (<Checkbox
+          style={{cursor: 'pointer', backgroundColor: this.colors[datum.asset_id+'_check_color']}}
+          onClick={(e) => {
+              e.persist()
+              e.nativeEvent.stopImmediatePropagation()
+              e.stopPropagation()
+              datum.checked = true
+              // need render to be called to see check update as soon as I click
+              this.setState(oldState => ({...oldState}))
+          }}/>)
+      }
+    }
+
 
     render() {
         if (!userutils.isUserLoggedIn()) {
@@ -270,6 +296,12 @@ export default class AssetTable extends Component {
                 }}
 
                 columns={[
+                    {
+                        property: 'checked',
+                        header: <Text size='small'>Select</Text>,
+                        render: datum => this.handleSelect(datum),
+                        sortable: false
+                    },
                     {
                         property: 'assetID',
                         header: <Text size='small' onClick={() => {
