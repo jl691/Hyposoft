@@ -337,12 +337,28 @@ export default class AssetTable extends Component {
                         if (this.state.sortField) {
                             assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
                                 this.startAfter = newStartAfter
-                                this.setState({assets: this.state.assets.concat(newAssets)})
+                                // this is a temporary solution to selectAll with onMore
+                                // could differ if get rid of limit(25) in newAssets
+                                var newSelections = []
+                                newAssets.forEach(asset => {
+                                  if (asset.checked && !this.state.selectedAssets.includes(asset.asset_id)) {
+                                      newSelections.push(asset.asset_id)
+                                  }
+                                })
+                                this.setState({assets: this.state.assets.concat(newAssets),selectedAssets: this.state.selectedAssets.concat(newSelections)})
                             }, this.state.sortField, this.state.sortAscending, this.state.selectedAssets, this.selectAll);
                         } else {
                             assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
                                 this.startAfter = newStartAfter
-                                this.setState({assets: this.state.assets.concat(newAssets)})
+                                // this is a temporary solution to selectAll with onMore
+                                // could differ if get rid of limit(25) in newAssets
+                                var newSelections = []
+                                newAssets.forEach(asset => {
+                                  if (asset.checked && !this.state.selectedAssets.includes(asset.asset_id)) {
+                                      newSelections.push(asset.asset_id)
+                                  }
+                                })
+                                this.setState({assets: this.state.assets.concat(newAssets),selectedAssets: this.state.selectedAssets.concat(newSelections)})
                             }, null, null, this.state.selectedAssets, this.selectAll);
                         }
                     }
