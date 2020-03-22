@@ -552,7 +552,7 @@ class AssetScreen extends Component {
                              alignSelf='stretch'
                              background='#FFFFFF'
                              width={"medium"}
-                             margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                             margin={{ top: 'small', left: 'medium', right: 'medium' }}
                              pad='small' >
                             <Box flex margin={{ left: 'medium', top: 'small', right: 'medium' }} direction='column' justify='start'>
                                 {/*<Box direction="column" width={"medium"} margin={{top: 'small'}}>*/}
