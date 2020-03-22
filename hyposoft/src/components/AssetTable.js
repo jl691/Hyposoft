@@ -252,6 +252,27 @@ export default class AssetTable extends Component {
       }
     }
 
+    handleSelectAllOrNone() {
+      let assets = this.props.searchResults || this.state.assets
+      var updatedSelectedAssets = this.state.selectedAssets
+      if (!this.state.selectAll) {
+        for(var index = 0; index < assets.length; index++) {
+            if (!updatedSelectedAssets.includes(assets[index].asset_id)) {
+                updatedSelectedAssets = updatedSelectedAssets.concat(assets[index].asset_id)
+            }
+            assets[index].checked = true
+        }
+      } else {
+        for(var index = 0; index < assets.length; index++) {
+            const ind = updatedSelectedAssets.indexOf(assets[index].asset_id)
+            if (updatedSelectedAssets.includes(assets[index].asset_id) && ind !== -1) {
+               updatedSelectedAssets = updatedSelectedAssets.slice(0,ind).concat(updatedSelectedAssets.slice(ind+1,updatedSelectedAssets.length))
+            }
+            assets[index].checked = false
+        }
+      }
+      this.setState({selectAll: !this.state.selectAll, selectedAssets: updatedSelectedAssets})
+    }
 
     render() {
         if (!userutils.isUserLoggedIn()) {
@@ -311,7 +332,7 @@ export default class AssetTable extends Component {
                     {
                         property: 'checked',
                         header: <Text size='small' onClick={() => {
-                            this.setState({selectAll: !this.state.selectAll})
+                            this.handleSelectAllOrNone()
                         }} style={{cursor: "pointer"}}>Select All{(this.state.selectAll ? <CheckboxSelected /> : <Checkbox />)}</Text>,
                         render: datum => this.handleSelect(datum),
                         sortable: false
