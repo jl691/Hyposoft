@@ -182,7 +182,7 @@ class AssetScreen extends Component {
 
             }
 
-        })
+        }, this.assetTable.current.state.selectedAssets)
     }
 
     handleCancelRefreshPopupChange() {

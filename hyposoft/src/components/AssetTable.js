@@ -63,7 +63,7 @@ export default class AssetTable extends Component {
                 this.startAfter = newStartAfter;
                 this.setState({assets: assetdb, initialLoaded: true})
             }
-        }, field, newSort)
+        }, field, newSort, this.state.selectedAssets)
     }
 
     componentDidMount() {
@@ -241,7 +241,13 @@ export default class AssetTable extends Component {
               e.nativeEvent.stopImmediatePropagation()
               e.stopPropagation()
               datum.checked = true
-              this.setState({selectedAssets: this.state.selectedAssets.concat(datum.asset_id)})
+
+              const ind = this.state.selectedAssets.indexOf(datum.asset_id)
+              if (ind === -1) {
+                this.setState({selectedAssets: this.state.selectedAssets.concat(datum.asset_id)})
+              } else {
+                this.setState({selectedAssets: this.state.selectedAssets})
+              }
           }}/>)
       }
     }
@@ -291,12 +297,12 @@ export default class AssetTable extends Component {
                             assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
                                 this.startAfter = newStartAfter
                                 this.setState({assets: this.state.assets.concat(newAssets)})
-                            }, this.state.sortField, this.state.sortAscending);
+                            }, this.state.sortField, this.state.sortAscending, this.state.selectedAssets);
                         } else {
                             assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
                                 this.startAfter = newStartAfter
                                 this.setState({assets: this.state.assets.concat(newAssets)})
-                            });
+                            }, null, null, this.state.selectedAssets);
                         }
                     }
                 }}
