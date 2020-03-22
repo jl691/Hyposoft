@@ -18,7 +18,9 @@ export default class AssetTable extends Component {
         assets: [],
         initialLoaded: false,
         sortField: "",
-        sortAscending: ""
+        sortAscending: "",
+        selectedAssets: [],
+        selectAll: false
     }
 
     constructor(props) {
@@ -223,8 +225,13 @@ export default class AssetTable extends Component {
                 e.nativeEvent.stopImmediatePropagation()
                 e.stopPropagation()
                 datum.checked = false
-                // need render to be called to see check update as soon as I click
-                this.setState(oldState => ({...oldState}))
+
+                const ind = this.state.selectedAssets.indexOf(datum.asset_id)
+                if (ind !== -1) {
+                  this.setState({selectedAssets: this.state.selectedAssets.slice(0,ind).concat(this.state.selectedAssets.slice(ind+1,this.state.selectedAssets.length))})
+                } else {
+                  this.setState({selectedAssets: this.state.selectedAssets})
+                }
             }}/>)
     } else {
       return (<Checkbox
@@ -234,8 +241,7 @@ export default class AssetTable extends Component {
               e.nativeEvent.stopImmediatePropagation()
               e.stopPropagation()
               datum.checked = true
-              // need render to be called to see check update as soon as I click
-              this.setState(oldState => ({...oldState}))
+              this.setState({selectedAssets: this.state.selectedAssets.concat(datum.asset_id)})
           }}/>)
       }
     }
@@ -298,7 +304,9 @@ export default class AssetTable extends Component {
                 columns={[
                     {
                         property: 'checked',
-                        header: <Text size='small'>Select</Text>,
+                        header: <Text size='small' onClick={() => {
+                            this.setState({selectAll: !this.state.selectAll})
+                        }} style={{cursor: "pointer"}}>Select All{(this.state.selectAll ? <CheckboxSelected /> : <Checkbox />)}</Text>,
                         render: datum => this.handleSelect(datum),
                         sortable: false
                     },

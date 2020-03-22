@@ -25,12 +25,12 @@ function generateLabelPDF (assetsArray) {
         var xoffset = 0.3*parseInt(1+((index%80)/20))+1.75*parseInt(((index%80)/20))
         var yoffset = 0.5+0.5*(index%20)
         var canvas = document.getElementById("barcodecanvas")
-        JsBarcode('#barcodecanvas', ""+assetsArray[index].asset_id, {format: "CODE128C",
+        JsBarcode('#barcodecanvas', ""+assetsArray[index], {format: "CODE128C",
             displayValue: false
         })
         var jpegUrl = canvas.toDataURL("image/jpeg")
         doc.addImage(jpegUrl, 'JPEG', xoffset+0, yoffset+0, 1.75, 0.35)
-        doc.text(xoffset+0.1, yoffset+0.45, 'HypoSoft '+assetsArray[index].asset_id)
+        doc.text(xoffset+0.1, yoffset+0.45, 'HypoSoft '+assetsArray[index])
         doc.rect(xoffset+0.0, yoffset+0.0, 1.75, 0.5)
     }
     window.open(URL.createObjectURL(doc.output("blob")))

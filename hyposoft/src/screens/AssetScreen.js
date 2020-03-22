@@ -563,7 +563,7 @@ class AssetScreen extends Component {
                                     bulkconnectionstutils.exportFilteredConnections(this.state.searchResults || this.assetTable.current.state.assets);
                                 }} style={{marginBottom: "10px"}}/>
                                 <Button icon={<Share/>} label={<Text size="small">Export Selected Barcodes</Text>} onClick={() => {
-                                    labelutils.generateLabelPDF(this.state.searchResults || this.assetTable.current.state.assets);
+                                    labelutils.generateLabelPDF(this.assetTable.current.state.selectedAssets.sort());
                                 }} margin={{bottom: 'medium'}}/>
                                 {/*this.assetTable.current.state*/}
                                 {/*</Box>*/}
