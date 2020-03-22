@@ -202,8 +202,8 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
         racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", id).get().then(function (rackConnectionsDoc) {
             console.log(rackConnectionsDoc.docs[0].data())
             let rackPowerConns = rackConnectionsDoc.docs[0].data().powerPorts ? rackConnectionsDoc.docs[0].data().powerPorts : [];
-            console.log(rackConnectionsDoc)
-            console.log(rackPowerConns)
+//            console.log(rackConnectionsDoc)
+ //           console.log(rackPowerConns)
 
             if (rackPowerConns.length) {
                 let count = 0;
@@ -220,6 +220,7 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
                     else {
                         count++;
                         if (count === rackPowerConns.length) {
+                            console.log("no conflicts found for power ports")
                             callback(null)
                         }
                     }
@@ -227,6 +228,7 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
             }
             else {
                 //There are no occupied ports on the rack
+                console.log("There are no occupied ports on the rack")
                 callback(null)
             }
 

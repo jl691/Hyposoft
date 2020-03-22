@@ -17,6 +17,7 @@ import EditDatacenterForm from "../components/EditDatacenterForm";
 import EditChangePlanForm from "../components/EditChangePlanForm";
 import ExecuteChangePlanForm from "../components/ExecuteChangePlanForm";
 
+
 class ChangePlanScreen extends React.Component {
 
     startAfter = null;
@@ -117,6 +118,7 @@ class ChangePlanScreen extends React.Component {
                            }}
                            onClickRow={({datum}) => {
                                this.props.history.push('/changeplans/' + datum.id)
+                             
                            }}
                            columns={this.generateColumns()} data={this.state.changePlans} size={"large"}/>
             )
