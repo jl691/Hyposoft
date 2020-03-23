@@ -13,11 +13,11 @@ describe('Begin All Tests', () => {
     })
 
     modelutilsTest()
-    decomutilsTest()
-    changeplanconflictPowerConnsTest()
-    changeplanconflictNetworkConnsTest()
-    changeplanconflictsRackUTest()
-    changeplanconflictutilsTest()
+    // decomutilsTest()
+    // changeplanconflictPowerConnsTest()
+    // changeplanconflictNetworkConnsTest()
+    // changeplanconflictsRackUTest()
+    // changeplanconflictutilsTest()
 
     afterAll(done => {
       firebaseutils.testDB.goOffline()
