@@ -267,8 +267,10 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                         if(result){
                                                                             console.log(stepID)
                                                                            
-                                                                            changeplanconflictutils.addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, racku, owner, overrideAssetID, powerConnections, networkConnectionsArray) 
-                                                                            callback(null);
+                                                                            changeplanconflictutils.addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, racku, owner, overrideAssetID, powerConnections, networkConnectionsArray, status =>{
+
+                                                                                callback(null);
+                                                                            }) 
                                                                         } else {
                                                                             callback("Error adding asset to the specified change plan.")
                                                                         }
@@ -394,8 +396,10 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                 changeplanutils.addAssetChange(assetObject, "", changePlanID, (result, stepID) => {
                                                                     if(result){
                                                                         console.log(stepID)
-                                                                        changeplanconflictutils.addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, racku, owner, overrideAssetID, powerConnections, networkConnectionsArray) 
-                                                                        callback(null);
+                                                                        changeplanconflictutils.addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, racku, owner, overrideAssetID, powerConnections, networkConnectionsArray, status =>{
+
+                                                                            callback(null);
+                                                                        }) 
                                                                     } else {
                                                                         callback("Error adding asset to the specified change plan.")
                                                                     }

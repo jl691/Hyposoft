@@ -31,6 +31,7 @@ class DetailedChangeScreen extends React.Component {
         this.changePlanID = this.props.match.params.changePlanID;
         this.stepID = this.props.match.params.stepID;
         console.log(this.stepID)
+        this.generateConflict()
         this.forceRefresh();
     }
 
@@ -282,55 +283,58 @@ class DetailedChangeScreen extends React.Component {
     }
 
     generateConflict() {
-        changeplanutils.getStepDocID(this.props.match.params.changePlanID, this.props.match.params.stepID, stepIDcallback => {
-            if (stepIDcallback) {
 
-                changeplanconflictutils.addAssetChangePlanPackage(
-                    this.props.match.params.changePlanID,
-                    stepIDcallback,
-                    this.state.change.changes.model.new,
-                    this.state.change.changes.hostname.new,
-                    this.state.change.changes.datacenter.new,
-                    this.state.change.changes.rack.new,
-                    this.state.change.changes.rackU.new,
-                    this.state.change.changes.owner.new,
-                    this.state.change.assetID,
-                    this.state.change.changes.powerConnections.new,
-                    this.state.change.changes.networkConnections.new,
-                    status => {
-                        changeplanconflictutils.getErrorMessages(this.props.match.params.changePlanID, parseInt(this.props.match.params.stepID), errorMessages => {
-                            
-                            this.conflictMessages = errorMessages;
-                            console.log(this.conflictMessages)
+        changeplanutils.getStepDocID(this.props.match.params.changePlanID, this.props.match.params.stepID, stepIDcallback => {
+           // changeplansRef.doc(this.props.match.params.changePlanID).collection('changes').doc(this.props.match.params.stepID).get().then(stepDoc => {
+
+               // let changeType = stepDoc.data().change
+                //if (changeType === "add") { TODO  
+                    changeplanconflictutils.addAssetChangePlanPackage(
+                        this.props.match.params.changePlanID,
+                        stepIDcallback,
+                        this.state.change.changes.model.new,
+                        this.state.change.changes.hostname.new,
+                        this.state.change.changes.datacenter.new,
+                        this.state.change.changes.rack.new,
+                        this.state.change.changes.rackU.new,
+                        this.state.change.changes.owner.new,
+                        this.state.change.assetID,
+                        this.state.change.changes.powerConnections.new,
+                        this.state.change.changes.networkConnections.new,
+                        status => {
+                            changeplanconflictutils.getErrorMessages(this.props.match.params.changePlanID, parseInt(this.props.match.params.stepID), errorMessages => {
+
+                                this.conflictMessages = errorMessages;
+                                console.log(this.conflictMessages)
+
+                            })
+
 
                         })
-
-
-                    })
-            }
-
+             //   }
+           //})
         })
 
-        // return (
-        //     <Box style={{
-        //         borderRadius: 10
-        //     }} width={"large"} background={"status-error"} align={"center"} alignSelf={"center"}
-        //         margin={{ top: "medium" }}>
-        //         <Heading level={"3"} margin={"small"}>Conflict</Heading>
-        //         <Box>
-        //             <Text>
-        //                 {console.log(this.conflictMessages)}
-        //                 {this.conflictMessages}
-        //             </Text>
-        //         </Box>
-        //         <Box align={"center"} width={"small"}>
-        //             <Button primary label="Resolve" color={"light-1"} margin={{ top: "small", bottom: "small" }}
-        //                 size={"small"} onClick={() => {
+        return (
+            <Box style={{
+                borderRadius: 10
+            }} width={"large"} background={"status-error"} align={"center"} alignSelf={"center"}
+                margin={{ top: "medium" }}>
+                <Heading level={"3"} margin={"small"}>Conflict</Heading>
+                <Box>
+                    <Text>
+                        {console.log(this.conflictMessages)}
+                        {this.conflictMessages}
+                    </Text>
+                </Box>
+                <Box align={"center"} width={"small"}>
+                    <Button primary label="Resolve" color={"light-1"} margin={{ top: "small", bottom: "small" }}
+                        size={"small"} onClick={() => {
 
-        //                 }} />
-        //         </Box>
-        //     </Box>
-        // )
+                        }} />
+                </Box>
+            </Box>
+        )
     }
 
     cancelPopup = (data) => {
@@ -366,7 +370,7 @@ class DetailedChangeScreen extends React.Component {
                             }}>{this.props.match.params.assetID}</Heading>
                             <UserMenu alignSelf='end' this={this} />
                         </AppBar>
-                        {this.generateConflict()}
+                        {/* {this.generateConflict()} */}
                         {this.state.executed && <Box style={{
                             borderRadius: 10
                         }} width={"large"} background={"status-ok"} align={"center"} alignSelf={"center"}
@@ -374,26 +378,6 @@ class DetailedChangeScreen extends React.Component {
                             <Heading level={"3"} margin={"small"}>Change Plan Executed</Heading>
                             <Box>This change plan was executed on {decommissionutils.getDate(this.state.timestamp)}. Thus, no further changes can be made.</Box>
                         </Box>}
-
-                        { this.conflictMessages !== "" && <Box style={{
-                            borderRadius: 10
-                        }} width={"large"} background={"status-error"} align={"center"} alignSelf={"center"}
-                            margin={{ top: "medium" }}>
-                            <Heading level={"3"} margin={"small"}>Conflict</Heading>
-                            <Box>
-                                {console.log(this.conflictMessages)}
-                                    {this.conflictMessages}
-                                
-                            </Box>
-                            <Box align={"center"} width={"small"}>
-                                <Button primary label="Resolve" color={"light-1"} margin={{ top: "small", bottom: "small" }}
-                                    size={"small"} onClick={() => {
-
-                                    }} />
-                            </Box>
-                        </Box>
-                        }
-
                         <Box
 
                             align='center'
