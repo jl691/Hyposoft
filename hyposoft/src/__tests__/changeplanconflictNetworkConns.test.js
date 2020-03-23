@@ -6,7 +6,7 @@ import * as firebaseutils from '../utils/firebaseutils'
 var ids = {}
 //NOTE: things (specifically assets--there are 3 of them) are very hardcoded in this unit test
 
-export const changeplanconflictNetworkConnsTest = () => describe('change plan add asset: network connections test', () => {
+describe('change plan add asset: network connections test', () => {
     beforeAll(done => {
         conflictSetup(() => {
             firebaseutils.testDB.goOnline()

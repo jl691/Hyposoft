@@ -6,7 +6,7 @@ import * as firebaseutils from '../utils/firebaseutils'
 var ids = {}
 jest.setTimeout(60000);
 
-export const changeplanconflictutilsTest = () => describe('change plan add asset tests: basic test', () => {
+describe('change plan add asset tests: basic test', () => {
     beforeAll(done => {
         conflictSetup(() => {
             firebaseutils.testDB.goOnline()
