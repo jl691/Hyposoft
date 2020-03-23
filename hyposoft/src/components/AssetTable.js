@@ -1,7 +1,7 @@
 import React, {Component} from 'react'
 import {Redirect} from 'react-router-dom'
 import {DataTable, Text, Box} from 'grommet'
-import {FormEdit, FormTrash, FormClose, Power, Clear, PowerCycle, FormUp, FormDown} from "grommet-icons"
+import {Checkbox, CheckboxSelected, FormEdit, FormTrash, FormClose, Power, Clear, PowerCycle, FormUp, FormDown} from "grommet-icons"
 import * as assetutils from '../utils/assetutils'
 import * as assetmacutils from '../utils/assetmacutils'
 import * as powerutils from '../utils/powerutils'
@@ -13,12 +13,14 @@ export default class AssetTable extends Component {
     colors={};
     defaultAssets = [];
     startAfter = null;
+    selectAll = false;
 
     state = {
         assets: [],
         initialLoaded: false,
         sortField: "",
-        sortAscending: ""
+        sortAscending: "",
+        selectedAssets: []
     }
 
     constructor(props) {
@@ -61,7 +63,7 @@ export default class AssetTable extends Component {
                 this.startAfter = newStartAfter;
                 this.setState({assets: assetdb, initialLoaded: true})
             }
-        }, field, newSort)
+        }, field, newSort, this.state.selectedAssets)
     }
 
     componentDidMount() {
@@ -162,10 +164,13 @@ export default class AssetTable extends Component {
                 this.startAfter = newStartAfter;
                 this.setState({assets: assetdb, initialLoaded: true})
             }
-        })
+        }, null, null, this.state.selectedAssets)
     }
 
     restoreDefault() {
+        for(var index = 0; index < this.defaultAssets.length; index++) {
+            this.defaultAssets[index].checked = this.state.selectedAssets.includes(this.defaultAssets[index].asset_id)
+        }
         this.setState({assets: this.defaultAssets});
     }
 
@@ -188,6 +193,8 @@ export default class AssetTable extends Component {
             console.log("current asset: " + rackRowTemp.charCodeAt(0) + " " + rackNumTemp)
             console.log("rackRowTemp " + rackRowTemp + " rackNumTemp " + rackNumTemp)
             console.log("rackRowStart " + rackRowStart.charCodeAt(0) + " rackRowEnd " + rackRowEnd.charCodeAt(0) + " rackNumStart " + rackNumStart + " rackNumEnd " + rackNumEnd)
+            // add line to update selected status
+            asset.checked = this.state.selectedAssets.includes(asset.asset_id)
             /*if(rackRowTemp.charCodeAt(0) >= rackRowStart.charCodeAt(0) && rackRowTemp.charCodeAt(0) <= rackRowEnd.charCodeAt(0) && rackNumTemp >= rackNumStart && rackNumTemp <= rackNumEnd){
                 console.log("found a match!")
                 newInstances.push(asset);
@@ -214,6 +221,78 @@ export default class AssetTable extends Component {
         this.setState({assets: sortedAssets})
     }
 
+    handleSelect(datum) {
+      if (datum.checked) {
+        return (<CheckboxSelected
+            style={{cursor: 'pointer', backgroundColor: this.colors[datum.asset_id+'_check_color']}}
+            onClick={(e) => {
+                e.persist()
+                e.nativeEvent.stopImmediatePropagation()
+                e.stopPropagation()
+                datum.checked = false
+
+                const ind = this.state.selectedAssets.indexOf(datum.asset_id)
+                if (ind !== -1) {
+                  this.setState({selectedAssets: this.state.selectedAssets.slice(0,ind).concat(this.state.selectedAssets.slice(ind+1,this.state.selectedAssets.length))})
+                } else {
+                  this.setState({selectedAssets: this.state.selectedAssets})
+                }
+            }}/>)
+    } else {
+      return (<Checkbox
+          style={{cursor: 'pointer', backgroundColor: this.colors[datum.asset_id+'_check_color']}}
+          onClick={(e) => {
+              e.persist()
+              e.nativeEvent.stopImmediatePropagation()
+              e.stopPropagation()
+              datum.checked = true
+
+              const ind = this.state.selectedAssets.indexOf(datum.asset_id)
+              if (ind === -1) {
+                this.setState({selectedAssets: this.state.selectedAssets.concat(datum.asset_id)})
+              } else {
+                this.setState({selectedAssets: this.state.selectedAssets})
+              }
+          }}/>)
+      }
+    }
+
+    updateSelectAll() {
+        let assets = this.props.searchResults || this.state.assets
+        var selectAll = true
+        for(var index = 0; index < assets.length; index++) {
+            if (!assets[index].checked) {
+                selectAll = false
+                break
+            }
+        }
+        // do not put this inside a set state!!!!
+        this.selectAll = selectAll
+        return selectAll
+    }
+
+    handleSelectAllOrNone() {
+      let assets = this.props.searchResults || this.state.assets
+      var updatedSelectedAssets = this.state.selectedAssets
+      if (!this.selectAll) {
+        for(var index = 0; index < assets.length; index++) {
+            if (!updatedSelectedAssets.includes(assets[index].asset_id)) {
+                updatedSelectedAssets = updatedSelectedAssets.concat(assets[index].asset_id)
+            }
+            assets[index].checked = true
+        }
+      } else {
+        for(var index = 0; index < assets.length; index++) {
+            const ind = updatedSelectedAssets.indexOf(assets[index].asset_id)
+            if (updatedSelectedAssets.includes(assets[index].asset_id) && ind !== -1) {
+               updatedSelectedAssets = updatedSelectedAssets.slice(0,ind).concat(updatedSelectedAssets.slice(ind+1,updatedSelectedAssets.length))
+            }
+            assets[index].checked = false
+        }
+      }
+      this.selectAll = !this.selectAll
+      this.setState({selectedAssets: updatedSelectedAssets})
+    }
 
     render() {
         if (!userutils.isUserLoggedIn()) {
@@ -258,18 +337,43 @@ export default class AssetTable extends Component {
                         if (this.state.sortField) {
                             assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
                                 this.startAfter = newStartAfter
-                                this.setState({assets: this.state.assets.concat(newAssets)})
-                            }, this.state.sortField, this.state.sortAscending);
+                                // this is a temporary solution to selectAll with onMore
+                                // could differ if get rid of limit(25) in newAssets
+                                var newSelections = []
+                                newAssets.forEach(asset => {
+                                  if (asset.checked && !this.state.selectedAssets.includes(asset.asset_id)) {
+                                      newSelections.push(asset.asset_id)
+                                  }
+                                })
+                                this.setState({assets: this.state.assets.concat(newAssets),selectedAssets: this.state.selectedAssets.concat(newSelections)})
+                            }, this.state.sortField, this.state.sortAscending, this.state.selectedAssets, this.selectAll);
                         } else {
                             assetutils.getAssetAt(this.startAfter, (newStartAfter, newAssets) => {
                                 this.startAfter = newStartAfter
-                                this.setState({assets: this.state.assets.concat(newAssets)})
-                            });
+                                // this is a temporary solution to selectAll with onMore
+                                // could differ if get rid of limit(25) in newAssets
+                                var newSelections = []
+                                newAssets.forEach(asset => {
+                                  if (asset.checked && !this.state.selectedAssets.includes(asset.asset_id)) {
+                                      newSelections.push(asset.asset_id)
+                                  }
+                                })
+                                this.setState({assets: this.state.assets.concat(newAssets),selectedAssets: this.state.selectedAssets.concat(newSelections)})
+                            }, null, null, this.state.selectedAssets, this.selectAll);
                         }
                     }
                 }}
 
                 columns={[
+                    {
+                        property: 'checked',
+                        // todo somehow change size to small
+                        header: <Text size='xsmall' onClick={() => {
+                            this.handleSelectAllOrNone()
+                        }} style={{cursor: "pointer"}}>{this.updateSelectAll() ? 'Select None' : 'Select All'}{(this.selectAll ? <CheckboxSelected/> : <Checkbox/>)}</Text>,
+                        render: datum => this.handleSelect(datum),
+                        sortable: false
+                    },
                     {
                         property: 'assetID',
                         header: <Text size='small' onClick={() => {

@@ -13,7 +13,7 @@ const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
 const index = client.initIndex('assets')
 
-function getAsset(callback, field = null, direction = null) {
+function getAsset(callback, field = null, direction = null, selected = null) {
     let query;
     if (field && direction !== null) {
         query = direction ? assetRef.limit(25).orderBy(field) : assetRef.limit(25).orderBy(field, "desc");
@@ -45,7 +45,8 @@ function getAsset(callback, field = null, direction = null) {
                     powerConnections: doc.data().powerConnections,
                     networkConnections: doc.data().networkConnections,
                     vendor: doc.data().vendor,
-                    modelNumber: doc.data().modelNumber
+                    modelNumber: doc.data().modelNumber,
+                    checked: selected && selected.includes(doc.id)
                 });
                 count++;
                 if (count === docSnaps.docs.length) {
@@ -61,7 +62,7 @@ function getAsset(callback, field = null, direction = null) {
 }
 
 
-function getAssetAt(start, callback, field = null, direction = null) {
+function getAssetAt(start, callback, field = null, direction = null, selected = null, selectAll = null) {
 
     let query;
     if (field && direction !== null) {
@@ -91,7 +92,8 @@ function getAssetAt(start, callback, field = null, direction = null) {
                 powerConnections: doc.data().powerConnections,
                 networkConnections: doc.data().networkConnections,
                 vendor: doc.data().vendor,
-                modelNumber: doc.data().modelNumber
+                modelNumber: doc.data().modelNumber,
+                checked: selectAll || (selected && selected.includes(doc.id))
             });
             count++;
             if (count === docSnaps.docs.length) {
@@ -428,7 +430,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
 // rackAsc should be a boolean corresponding to true if rack is ascending
 // rackUAsc should be a boolean corresponding to true if rackU is ascending
-function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback) {
+function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback, selected = null) {
     var vendorArray = []
     var query = assetRef
     if (!rackAsc && !rackUAsc) {
@@ -447,12 +449,8 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback) {
                 if (datacenterAbbrev) {
                     vendorArray.push({
                         asset_id: doc.id,
-                        model: doc.data().model,
-                        hostname: doc.data().hostname,
-                        rack: doc.data().rack,
-                        rackU: doc.data().rackU,
-                        owner: doc.data().owner,
-                        datacenterAbbrev: datacenterAbbrev
+                        ...doc.data(),
+                        checked: selected && selected.includes(doc.id)
                     });
                     count++;
                     if (count === querySnapshot.size) {

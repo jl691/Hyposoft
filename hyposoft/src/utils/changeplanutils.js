@@ -64,6 +64,7 @@ function getChanges(changePlanID, username, callback) {
 }
 
 function getChangeDetails(changePlanID, stepID, username, callback) {
+    //console.log("this is the stepId: " + stepID)
     firebaseutils.changeplansRef.doc(changePlanID).get().then(function (documentSnapshot) {
         if (documentSnapshot.exists && documentSnapshot.data().owner === username) {
             firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepID)).get().then(function (querySnapshot) {
@@ -79,6 +80,24 @@ function getChangeDetails(changePlanID, stepID, username, callback) {
         } else {
             callback(null);
         }
+    })
+}
+
+function getStepDocID(changePlanID,stepNum, callback){
+    firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", stepNum).get().then(function (querySnapshot) {
+        querySnapshot.forEach(function(doc) {
+            // doc.data() is never undefined for query doc snapshots
+            //for some reason only this works to get the document id?? whatever fuck it i don't care anymore
+            console.log(doc.id);
+            callback(doc.id)
+        });
+
+
+        // if(doc.exists){
+        //     console.log(doc.id)
+
+        //     callback(doc.id)
+        // }
     })
 }
 
@@ -103,25 +122,25 @@ function deleteChangePlan(id, callback) {
                 })
             })
         }
-    }).catch(function () {
-        callback(null);
-    });
-    firebaseutils.changeplansRef.doc(id).collection("conflicts").get().then(function (querySnapshot) {
-        if (!querySnapshot.empty) {
-            querySnapshot.docs.forEach(doc => {
-                firebaseutils.changeplansRef.doc(id).collection("conflicts").doc(doc.id).delete().catch(function () {
-                    callback(null);
+        firebaseutils.changeplansRef.doc(id).collection("conflicts").get().then(function (querySnapshot) {
+            if (!querySnapshot.empty) {
+                querySnapshot.docs.forEach(doc => {
+                    firebaseutils.changeplansRef.doc(id).collection("conflicts").doc(doc.id).delete().catch(function () {
+                        callback(null);
+                    })
                 })
+            }
+            firebaseutils.changeplansRef.doc(id).delete().then(function () {
+                callback(true);
+            }).catch(function () {
+                callback(null);
             })
-        }
+        }).catch(function () {
+            callback(null);
+        });
     }).catch(function () {
         callback(null);
     });
-    firebaseutils.changeplansRef.doc(id).delete().then(function () {
-        callback(true);
-    }).catch(function () {
-        callback(null);
-    })
 }
 
 function editChangePlan(id, newName, callback) {
@@ -902,6 +921,7 @@ export {
     getChangePlans,
     getChanges,
     getChangeDetails,
+    getStepDocID,
     addChangePlan,
     deleteChangePlan,
     editChangePlan,

@@ -3,14 +3,14 @@ import * as changeplanutils from "../utils/changeplanutils";
 import * as userutils from "../utils/userutils";
 import * as decommissionutils from "../utils/decommissionutils";
 import * as firebaseutils from "../utils/firebaseutils";
-import {Box, Button, Grommet, Heading, Text, DataTable, Layer} from "grommet";
+import { Box, Button, Grommet, Heading, Text, DataTable, Layer } from "grommet";
 import theme from "../theme";
 import AppBar from "../components/AppBar";
 import HomeButton from "../components/HomeButton";
 import UserMenu from "../components/UserMenu";
-import {ToastsContainer, ToastsStore} from "react-toasts";
-import {Add, Checkmark, Close, Edit, Print, Trash} from "grommet-icons";
-import {Redirect} from "react-router-dom";
+import { ToastsContainer, ToastsStore } from "react-toasts";
+import { Add, Checkmark, Close, Edit, Print, Trash } from "grommet-icons";
+import { Redirect } from "react-router-dom";
 import BackButton from "../components/BackButton";
 import DeleteChangePlanForm from "../components/DeleteChangePlanForm";
 import DeleteChangeForm from "../components/DeleteChangeForm";
@@ -20,6 +20,10 @@ import EditAssetForm from "../components/EditAssetForm";
 import * as assetmacutils from "../utils/assetmacutils";
 import * as assetnetworkportutils from "../utils/assetnetworkportutils";
 import AddAssetForm from "../components/AddAssetForm";
+
+
+import * as changeplanconflictutils from '../utils/changeplanconflictutils'
+import * as assetutils from '../utils/assetutils'
 
 class DetailedChangePlanScreen extends React.Component {
 
@@ -61,11 +65,11 @@ class DetailedChangePlanScreen extends React.Component {
             popupType: "",
         });
         changeplanutils.getChanges(this.props.match.params.changePlanID, userutils.getLoggedInUserUsername(), (newStart, changes, empty) => {
-            if(empty){
+            if (empty) {
                 this.setState({
                     initialLoaded: true
                 });
-            } else if(newStart) {
+            } else if (newStart) {
                 this.startAfter = newStart;
                 this.setState({
                     changes: changes,
@@ -205,22 +209,34 @@ class DetailedChangePlanScreen extends React.Component {
         } else {
             return (
                 <DataTable step={25}
-                           onMore={() => {
-                               if (this.startAfter) {
-                                   changeplanutils.getChanges(this.changePlanID, userutils.getLoggedInUserUsername(), (newStart, changes, empty) => {
-                                       if(!empty && newStart){
-                                           this.startAfter = newStart;
-                                           this.setState({
-                                               changes: changes,
-                                           });
-                                       }
-                                   }, this.startAfter);
-                               }
-                           }}
-                           onClickRow={({datum}) => {
-                               this.props.history.push('/changeplans/' + this.changePlanID + '/' + datum.id)
-                           }}
-                           columns={this.generateColumns()} data={this.state.changes} size={"large"}/>
+                    onMore={() => {
+                        if (this.startAfter) {
+                            changeplanutils.getChanges(this.changePlanID, userutils.getLoggedInUserUsername(), (newStart, changes, empty) => {
+                                if (!empty && newStart) {
+                                    this.startAfter = newStart;
+                                    this.setState({
+                                        changes: changes,
+                                    });
+                                }
+                            }, this.startAfter);
+                        }
+                    }}
+                    onClickRow={({ datum }) => {
+                        this.props.history.push('/changeplans/' + this.changePlanID + '/' + datum.id)
+
+                        //console.log(datum.changes.modelNumber.new)
+                        changeplanutils.getStepDocID(this.changePlanID, datum.id, status => {
+                            if (status) {
+
+                                changeplanconflictutils.addAssetChangePlanPackage(this.changePlanID, status, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new)
+                            }
+                            else {
+                                console.log("tried to somehow click on a nonexistent step?")
+                            }
+                        })
+
+                    }}
+                    columns={this.generateColumns()} data={this.state.changes} size={"large"} />
             )
         }
     }
@@ -294,7 +310,7 @@ class DetailedChangePlanScreen extends React.Component {
                             deleteStepNumber: datum.id,
                             popupType: "Delete"
                         })
-                    }}/>)
+                    }} />)
             }
         ];
         return cols;
@@ -323,22 +339,22 @@ class DetailedChangePlanScreen extends React.Component {
 
     render() {
         if (!userutils.isUserLoggedIn()) {
-            return <Redirect to='/'/>
+            return <Redirect to='/' />
         }
 
-        const {popupType} = this.state;
+        const { popupType } = this.state;
         let popup;
 
-        if(popupType === 'Delete'){
+        if (popupType === 'Delete') {
             popup = (
                 <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
-                                      changePlanID={this.changePlanID} stepNumber={this.state.deleteStepNumber}/>
+                    changePlanID={this.changePlanID} stepNumber={this.state.deleteStepNumber} />
             )
-        } else if(popupType === 'Execute'){
+        } else if (popupType === 'Execute') {
             console.log(this.changePlanID)
             popup = (
                 <ExecuteChangePlanForm cancelPopup={this.cancelPopup} successfulExecution={this.successfulExecution}
-                                  id={this.changePlanID} name={this.state.name}/>
+                    id={this.changePlanID} name={this.state.name} />
             )
         } else if(popupType === 'Editdecommission'){
             console.log(this.changePlanID)
@@ -405,11 +421,11 @@ class DetailedChangePlanScreen extends React.Component {
             <Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
                     <AppBar>
-                        <BackButton alignSelf='start' this={this}/>
+                        <BackButton alignSelf='start' this={this} />
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                         }}>Change Plan: {this.state.name}</Heading>
-                        <UserMenu alignSelf='end' this={this}/>
+                        <UserMenu alignSelf='end' this={this} />
                     </AppBar>
                     <Box direction='row'
                          justify='center'
@@ -428,18 +444,18 @@ class DetailedChangePlanScreen extends React.Component {
                                         borderRadius: 10,
                                         borderColor: '#EDEDED'
                                     }}
-                                         id='containerBox'
-                                         direction='row'
-                                         background='#FFFFFF'
-                                         margin={{top: 'medium', bottom: 'medium'}}
-                                         flex={{
-                                             grow: 0,
-                                             shrink: 0
-                                         }}
-                                         pad='small'>
-                                        <Box margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                             direction='column'
-                                             justify='start' alignSelf='stretch' height={"810px"} flex>
+                                        id='containerBox'
+                                        direction='row'
+                                        background='#FFFFFF'
+                                        margin={{ top: 'medium', bottom: 'medium' }}
+                                        flex={{
+                                            grow: 0,
+                                            shrink: 0
+                                        }}
+                                        pad='small'>
+                                        <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
+                                            direction='column'
+                                            justify='start' alignSelf='stretch' height={"810px"} flex>
                                             <Box align="center">
 
                                                 {this.DataTable()}
@@ -454,7 +470,7 @@ class DetailedChangePlanScreen extends React.Component {
                     </Box>
                 </Box>
                 {popup}
-                <ToastsContainer store={ToastsStore}/>
+                <ToastsContainer store={ToastsStore} />
             </Grommet>
         )
     }

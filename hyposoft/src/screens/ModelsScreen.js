@@ -1,6 +1,6 @@
 import React from 'react'
 import AppBar from '../components/AppBar'
-import HomeButton from '../components/HomeButton'
+import HomeMenu from '../components/HomeMenu'
 import UserMenu from '../components/UserMenu'
 import ModelSettingsLayer from '../components/ModelSettingsLayer'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
@@ -453,7 +453,7 @@ class ModelsScreen extends React.Component {
             <Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
                     <AppBar>
-                        <HomeButton alignSelf='start' this={this} />
+                        <HomeMenu alignSelf='start' this={this} />
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                         }} >Models</Heading>

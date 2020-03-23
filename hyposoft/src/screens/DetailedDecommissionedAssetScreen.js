@@ -133,10 +133,10 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                             </AppBar>
                             <Box
 
-                                align='center'
+                                align='start'
                                 direction='row'
                                 margin={{left: 'medium', right: 'medium'}}
-                                justify='center'>
+                                justify='start'>
                                 <Box style={{
                                     borderRadius: 10,
                                     borderColor: '#EDEDED'
@@ -144,7 +144,7 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                      direction='row'
 
                                      background='#FFFFFF'
-                                     width={'medium'}
+                                     width={'xxlarge'}
                                      margin={{top: 'medium', left: 'medium', right: 'medium'}}
                                      pad='small'>
                                     <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
@@ -242,17 +242,31 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                              return <div key={key}>{i}</div>
                                          })}
                                          </span>
-                                        <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
-                                             gap='small'>
-                                            <Button label="View Model Details" onClick={() => {
-                                                this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNumber)
-                                            }}/>
-                                            <Button label="Network Neighborhood" onClick={() => {
-                                                this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
-                                            }}/>
-                                        </Box>
-                                    </Box>
-                                </Box>
+                                      </Box>
+                                  </Box>
+                                  <Box style={{
+                                      borderRadius: 10,
+                                      borderColor: '#EDEDED'
+                                  }}
+                                       direction='row'
+                                       background='#FFFFFF'
+                                       width={'large'}
+                                       margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                                       pad='small'>
+                                      <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                           direction='column' justify='start'>
+                                          <Heading level='4' margin='none'>Asset Actions</Heading>
+                                          <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                               gap='small'>
+                                              <Button label="View Model Details" onClick={() => {
+                                                  this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNumber)
+                                              }}/>
+                                              <Button label="Network Neighborhood" onClick={() => {
+                                                  this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
+                                              }}/>
+                                          </Box>
+                                      </Box>
+                                  </Box>
                             </Box>
                             <ToastsContainer store={ToastsStore}/>
                         </Box>
