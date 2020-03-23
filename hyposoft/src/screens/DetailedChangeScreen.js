@@ -374,13 +374,20 @@ class DetailedChangeScreen extends React.Component {
                             <UserMenu alignSelf='end' this={this} />
                         </AppBar>
                         {/* {this.generateConflict()} */}
-                        {this.state.executed && <Box style={{
+                        {this.state.executed && 
+                        <Box 
+                        style={{
                             borderRadius: 10
-                        }} width={"large"} background={"status-ok"} align={"center"} alignSelf={"center"}
-                            margin={{ top: "medium" }}>
+                        }} 
+                        width={"large"} 
+                        background={"status-ok"} 
+                        align={"center"} 
+                        alignSelf={"center"}
+                        margin={{ top: "medium" }}>
                             <Heading level={"3"} margin={"small"}>Change Plan Executed</Heading>
                             <Box>This change plan was executed on {decommissionutils.getDate(this.state.timestamp)}. Thus, no further changes can be made.</Box>
-                        </Box>}
+                        </Box>
+                        }
                         <Box
 
                             align='center'
