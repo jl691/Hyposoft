@@ -5,7 +5,7 @@ import * as firebaseutils from '../utils/firebaseutils'
 // NOTE: please only have one assertion in each test
 var ids = {}
 
-describe('decomutilsTests', () => {
+export const decomutilsTest = () => describe('decomutilsTest', () => {
   beforeAll(done => {
     addInitialAssets(() => {
       firebaseutils.testDB.goOnline()

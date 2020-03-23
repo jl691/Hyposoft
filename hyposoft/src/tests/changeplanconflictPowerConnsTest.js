@@ -6,7 +6,7 @@ import * as firebaseutils from '../utils/firebaseutils'
 var ids = {}
 jest.setTimeout(60000);
 
-describe('change plan add asset: power connections test', () => {
+export const changeplanconflictPowerConnsTest = () => describe('change plan add asset: power connections test', () => {
     beforeAll(done => {
         conflictSetup(() => {
             firebaseutils.testDB.goOnline()
@@ -28,7 +28,7 @@ describe('change plan add asset: power connections test', () => {
         changeplanconflictutils.powerConnectionConflict(ids['changePlan'], ids['changePlanStep'], powerConnections, 'Test Datacenter3', 'A3', 1, powerConnectionsStatus => {
                 expect(powerConnectionsStatus).toBe(false)
                 done()
-            
+
         })
 
     })
@@ -75,12 +75,12 @@ describe('change plan add asset: power connections test', () => {
                 expect(docRef.data().powerConnections[0]).toBe('powerConnectionConflictErrID')
                 done()
             })
-            
+
         })
 
     })
 
-   
+
 
     afterAll(done => {
         tearDown(() => {
@@ -337,4 +337,3 @@ function makeLoggedInUser(password) {
     }
     return user
 }
-

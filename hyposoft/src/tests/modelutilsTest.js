@@ -4,7 +4,7 @@ import * as firebaseutils from '../utils/firebaseutils'
 // NOTE: please only have one assertion in each test
 var modelIds = []
 
-describe('modelutilsTests', () => {
+export const modelutilsTest = () => describe('modelutilsTest', () => {
   beforeAll(done => {
     addInitialModels(() => {
       firebaseutils.testDB.goOnline()

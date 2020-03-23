@@ -6,7 +6,7 @@ import * as firebaseutils from '../utils/firebaseutils'
 var ids = {}
 jest.setTimeout(60000);
 
-describe('change plan add asset tests: basic test', () => {
+export const changeplanconflictutilsTest = () => describe('change plan add asset tests: basic test', () => {
     beforeAll(done => {
         conflictSetup(() => {
             firebaseutils.testDB.goOnline()
@@ -68,7 +68,7 @@ describe('change plan add asset tests: basic test', () => {
         })
 
     })
-    
+
     test('changeplan add asset conflicts: model', done => {
         changeplanconflictutils.modelConflict(ids['changePlan'], ids['changePlanStep'], 'Test Model1', modelStatus => {
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {

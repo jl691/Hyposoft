@@ -6,7 +6,7 @@ import * as firebaseutils from '../utils/firebaseutils'
 var ids = {}
 jest.setTimeout(60000);
 
-describe('change plan add asset: rackU test', () => {
+export const changeplanconflictsRackUTest = () => describe('change plan add asset: rackU test', () => {
     beforeAll(done => {
         conflictSetup(() => {
             firebaseutils.testDB.goOnline()
@@ -34,7 +34,7 @@ describe('change plan add asset: rackU test', () => {
             })
         })
     })
-   
+
     afterAll(done => {
         tearDown(() => {
             console.log("Deleting all created database documents")
@@ -263,4 +263,3 @@ function makeLoggedInUser(password) {
     }
     return user
 }
-
