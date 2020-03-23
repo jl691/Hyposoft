@@ -95,7 +95,7 @@ function getStepDocID(changePlanID,stepNum, callback){
 
         // if(doc.exists){
         //     console.log(doc.id)
-            
+
         //     callback(doc.id)
         // }
     })
@@ -122,25 +122,25 @@ function deleteChangePlan(id, callback) {
                 })
             })
         }
-    }).catch(function () {
-        callback(null);
-    });
-    firebaseutils.changeplansRef.doc(id).collection("conflicts").get().then(function (querySnapshot) {
-        if (!querySnapshot.empty) {
-            querySnapshot.docs.forEach(doc => {
-                firebaseutils.changeplansRef.doc(id).collection("conflicts").doc(doc.id).delete().catch(function () {
-                    callback(null);
+        firebaseutils.changeplansRef.doc(id).collection("conflicts").get().then(function (querySnapshot) {
+            if (!querySnapshot.empty) {
+                querySnapshot.docs.forEach(doc => {
+                    firebaseutils.changeplansRef.doc(id).collection("conflicts").doc(doc.id).delete().catch(function () {
+                        callback(null);
+                    })
                 })
+            }
+            firebaseutils.changeplansRef.doc(id).delete().then(function () {
+                callback(true);
+            }).catch(function () {
+                callback(null);
             })
-        }
+        }).catch(function () {
+            callback(null);
+        });
     }).catch(function () {
         callback(null);
     });
-    firebaseutils.changeplansRef.doc(id).delete().then(function () {
-        callback(true);
-    }).catch(function () {
-        callback(null);
-    })
 }
 
 function editChangePlan(id, newName, callback) {

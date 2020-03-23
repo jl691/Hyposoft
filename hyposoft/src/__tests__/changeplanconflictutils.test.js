@@ -79,8 +79,8 @@ describe('change plan add asset tests: basic test', () => {
         })
 
     })
-  
-    
+
+
 
 
     afterAll(done => {
@@ -335,4 +335,3 @@ function makeUser() {
 
 
 }
-
