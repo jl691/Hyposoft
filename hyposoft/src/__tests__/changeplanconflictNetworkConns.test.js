@@ -24,7 +24,7 @@ describe('change plan add asset: network connections test', () => {
         ]
         changeplanconflictutils.networkConnectionConflict(ids['changePlan'], ids['changePlanStep'], networkConnections, null, networkConnectionsStatus => {
                 expect(networkConnectionsStatus).toBe(false)
-                done()     
+                done()
         })
     })
 
@@ -139,7 +139,9 @@ function conflictSetup(callback) {
 //TODO: delete all the assets you made
 function tearDown(callback) {
 
-    firebaseutils.assetRef.doc(ids['asset']).delete().then(docRef => {
+    firebaseutils.assetRef.doc(ids['assetA']).delete().then(docRef => {
+        firebaseutils.assetRef.doc(ids['assetB']).delete().then(docRef => {
+        firebaseutils.assetRef.doc(ids['assetC']).delete().then(docRef => {
         changeplanutils.deleteChangePlan(ids['changePlan'], status => {
             firebaseutils.modelsRef.doc(ids['model']).delete().then(docRef => {
                 firebaseutils.datacentersRef.doc(ids['datacenter']).delete().then(docRef => {
@@ -151,7 +153,8 @@ function tearDown(callback) {
                 })
             })
         })
-
+      })
+      })
     })
 }
 
@@ -372,7 +375,7 @@ function makeLoggedInUser(password) {
     }
     return user
 }
-//assetC (makeAssetType2) trying to make a connection to 
+//assetC (makeAssetType2) trying to make a connection to
 function simulateSymmConnection(assetID, callback) {
     firebaseutils.assetRef.doc(assetID).update({
 
@@ -413,4 +416,3 @@ function simulateSymmConnection(assetID, callback) {
 
     })
 }
-
