@@ -41,6 +41,8 @@ class DetailedChangeScreen extends React.Component {
                     change: result,
                     executed: executed,
                     timestamp: timestamp
+                }, function () {
+                    this.generateConflict();
                 });
             } else {
                 console.log(result)
@@ -282,9 +284,9 @@ class DetailedChangeScreen extends React.Component {
     }
 
     generateConflict() {
+        console.log("in generate conflict", this.props.match.params.changePlanID, this.props.match.params.stepID)
         changeplanutils.getStepDocID(this.props.match.params.changePlanID, this.props.match.params.stepID, stepIDcallback => {
             if (stepIDcallback) {
-
                 changeplanconflictutils.addAssetChangePlanPackage(
                     this.props.match.params.changePlanID,
                     stepIDcallback,
@@ -299,9 +301,11 @@ class DetailedChangeScreen extends React.Component {
                     this.state.change.changes.networkConnections.new,
                     status => {
                         changeplanconflictutils.getErrorMessages(this.props.match.params.changePlanID, parseInt(this.props.match.params.stepID), errorMessages => {
-                            
-                            this.conflictMessages = errorMessages;
-                            console.log(this.conflictMessages)
+                            this.setState({
+                                conflictMessages: errorMessages
+                            })
+                            //this.conflictMessages = errorMessages;
+                            console.log(errorMessages)
 
                         })
 
@@ -366,7 +370,7 @@ class DetailedChangeScreen extends React.Component {
                             }}>{this.props.match.params.assetID}</Heading>
                             <UserMenu alignSelf='end' this={this} />
                         </AppBar>
-                        {this.generateConflict()}
+                        {/*{this.generateConflict()}*/}
                         {this.state.executed && <Box style={{
                             borderRadius: 10
                         }} width={"large"} background={"status-ok"} align={"center"} alignSelf={"center"}
@@ -375,14 +379,14 @@ class DetailedChangeScreen extends React.Component {
                             <Box>This change plan was executed on {decommissionutils.getDate(this.state.timestamp)}. Thus, no further changes can be made.</Box>
                         </Box>}
 
-                        { this.conflictMessages !== "" && <Box style={{
+                        { this.state.conflictMessages !== "" && <Box style={{
                             borderRadius: 10
                         }} width={"large"} background={"status-error"} align={"center"} alignSelf={"center"}
                             margin={{ top: "medium" }}>
                             <Heading level={"3"} margin={"small"}>Conflict</Heading>
                             <Box>
-                                {console.log(this.conflictMessages)}
-                                    {this.conflictMessages}
+                                {/*{console.log(this.conflictMessages)}*/}
+                                    {this.state.conflictMessages}
                                 
                             </Box>
                             <Box align={"center"} width={"small"}>

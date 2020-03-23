@@ -84,7 +84,9 @@ function getChangeDetails(changePlanID, stepID, username, callback) {
 }
 
 function getStepDocID(changePlanID,stepNum, callback){
+    console.log(changePlanID, stepNum)
     firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepNum)).get().then(function (querySnapshot) {
+        console.log(querySnapshot.empty)
         querySnapshot.forEach(function(doc) {
             // doc.data() is never undefined for query doc snapshots
             //for some reason only this works to get the document id?? whatever fuck it i don't care anymore
