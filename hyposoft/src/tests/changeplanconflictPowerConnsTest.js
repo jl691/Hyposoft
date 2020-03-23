@@ -9,7 +9,6 @@ jest.setTimeout(60000);
 export const changeplanconflictPowerConnsTest = () => describe('change plan add asset: power connections test', () => {
     beforeAll(done => {
         conflictSetup(() => {
-            firebaseutils.testDB.goOnline()
             done()
         })
     })
@@ -85,7 +84,6 @@ export const changeplanconflictPowerConnsTest = () => describe('change plan add 
     afterAll(done => {
         tearDown(() => {
             console.log("Deleting all created database documents")
-            firebaseutils.testDB.goOffline()
             done()
         })
     })

@@ -7,7 +7,6 @@ var modelIds = []
 export const modelutilsTest = () => describe('modelutilsTest', () => {
   beforeAll(done => {
     addInitialModels(() => {
-      firebaseutils.testDB.goOnline()
       done()
     })
   })
@@ -29,7 +28,6 @@ export const modelutilsTest = () => describe('modelutilsTest', () => {
 
   afterAll(done => {
     tearDownModels(() => {
-      firebaseutils.testDB.goOffline()
       done()
     })
   })

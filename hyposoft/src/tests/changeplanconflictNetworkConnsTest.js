@@ -9,7 +9,6 @@ var ids = {}
 export const changeplanconflictNetworkConnsTest = () => describe('change plan add asset: network connections test', () => {
     beforeAll(done => {
         conflictSetup(() => {
-            firebaseutils.testDB.goOnline()
             done()
         })
     })
@@ -79,7 +78,6 @@ export const changeplanconflictNetworkConnsTest = () => describe('change plan ad
     afterAll(done => {
         tearDown(() => {
             console.log("Deleting all created database documents")
-            firebaseutils.testDB.goOffline()
             done()
         })
     })

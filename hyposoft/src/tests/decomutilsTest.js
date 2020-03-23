@@ -8,7 +8,6 @@ var ids = {}
 export const decomutilsTest = () => describe('decomutilsTest', () => {
   beforeAll(done => {
     addInitialAssets(() => {
-      firebaseutils.testDB.goOnline()
       done()
     })
   })
@@ -51,7 +50,6 @@ export const decomutilsTest = () => describe('decomutilsTest', () => {
 
   afterAll(done => {
     tearDownAssets(() => {
-      firebaseutils.testDB.goOffline()
       done()
     })
   })

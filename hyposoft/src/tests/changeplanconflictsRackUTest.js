@@ -9,7 +9,6 @@ jest.setTimeout(60000);
 export const changeplanconflictsRackUTest = () => describe('change plan add asset: rackU test', () => {
     beforeAll(done => {
         conflictSetup(() => {
-            firebaseutils.testDB.goOnline()
             done()
         })
     })
@@ -38,7 +37,6 @@ export const changeplanconflictsRackUTest = () => describe('change plan add asse
     afterAll(done => {
         tearDown(() => {
             console.log("Deleting all created database documents")
-            firebaseutils.testDB.goOffline()
             done()
         })
     })
