@@ -367,9 +367,10 @@ export default class AssetTable extends Component {
                 columns={[
                     {
                         property: 'checked',
-                        header: <Text size='small' onClick={() => {
+                        // todo somehow change size to small
+                        header: <Text size='xsmall' onClick={() => {
                             this.handleSelectAllOrNone()
-                        }} style={{cursor: "pointer"}}>Select All{(this.updateSelectAll() ? <CheckboxSelected /> : <Checkbox />)}</Text>,
+                        }} style={{cursor: "pointer"}}>{this.updateSelectAll() ? 'Select None' : 'Select All'}{(this.selectAll ? <CheckboxSelected/> : <Checkbox/>)}</Text>,
                         render: datum => this.handleSelect(datum),
                         sortable: false
                     },

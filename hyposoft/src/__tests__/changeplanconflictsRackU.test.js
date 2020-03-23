@@ -34,7 +34,7 @@ describe('change plan add asset: rackU test', () => {
             })
         })
     })
-   
+
     afterAll(done => {
         tearDown(() => {
             console.log("Deleting all created database documents")
@@ -263,4 +263,3 @@ function makeLoggedInUser(password) {
     }
     return user
 }
-

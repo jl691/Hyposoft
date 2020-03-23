@@ -66,7 +66,7 @@ describe('change plan add asset tests: basic test', () => {
         })
 
     })
-    
+
     test('changeplan add asset conflicts: model', done => {
         changeplanconflictutils.modelConflict(ids['changePlan'], ids['changePlanStep'], 'Test Model1', modelStatus => {
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
@@ -77,8 +77,8 @@ describe('change plan add asset tests: basic test', () => {
         })
 
     })
-  
-    
+
+
 
 
     afterAll(done => {
@@ -333,4 +333,3 @@ function makeUser() {
 
 
 }
-
