@@ -281,8 +281,8 @@ class DetailedChangeScreen extends React.Component {
         return (
             <Box style={{
                 borderRadius: 10
-            }} width={"large"} background={"status-error"} align={"center"} alignSelf={"center"}
-                 margin={{top: "medium"}}>
+            }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
+                 margin={{top: "medium"}} height={"small"}>
                 <Heading level={"3"} margin={"small"}>Conflict</Heading>
                 <Box>This step is conflicted: the new hostname already exists.</Box>
                 <Box align={"center"} width={"small"}>
@@ -319,7 +319,7 @@ class DetailedChangeScreen extends React.Component {
         return (
             <React.Fragment>
                 <Grommet theme={theme} full className='fade'>
-                    <Box fill background='light-2'>
+                    <Box fill background='light-2' overflow={"auto"}>
                         <AppBar>
                             <BackButton alignSelf='start' this={this}/>
                             <Heading alignSelf='center' level='4' margin={{
@@ -330,25 +330,25 @@ class DetailedChangeScreen extends React.Component {
                         {this.generateConflict()}
                         {this.state.executed && <Box style={{
                             borderRadius: 10
-                        }} width={"large"} background={"status-ok"} align={"center"} alignSelf={"center"}
+                        }} width={"xlarge"} background={"status-ok"} align={"center"} alignSelf={"center"}
                                                      margin={{top: "medium"}}>
                             <Heading level={"3"} margin={"small"}>Change Plan Executed</Heading>
                             <Box>This change plan was executed on {decommissionutils.getDate(this.state.timestamp)}. Thus, no further changes can be made.</Box>
                         </Box>}
                         <Box
                             align='center'
-                            direction='row'
                             margin={{left: 'medium', right: 'medium'}}
-                            justify='center'>
+                            justify='center' overflow={"auto"}>
                             <Box style={{
                                 borderRadius: 10,
                                 borderColor: '#EDEDED'
                             }}
                                  direction='row'
                                  background='#FFFFFF'
-                                 width={'large'}
+                                 width={'xlarge'}
                                  margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                                 pad='small'>
+                                 pad='small'
+                            overflow={"auto"}>
                                 <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
                                      direction='column' justify='start'>
                                     <Heading level='4' margin='none'>Step #{this.stepID} Details</Heading>
