@@ -224,16 +224,12 @@ class DetailedChangePlanScreen extends React.Component {
                     onClickRow={({ datum }) => {
                         this.props.history.push('/changeplans/' + this.changePlanID + '/' + datum.id)
 
-                        //console.log(datum.changes.modelNumber.new)
-                        changeplanutils.getStepDocID(this.changePlanID, datum.id, status => {
-                            if (status) {
-
-                                changeplanconflictutils.addAssetChangePlanPackage(this.changePlanID, status, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new)
-                            }
-                            else {
-                                console.log("tried to somehow click on a nonexistent step?")
-                            }
-                        })
+                        // changeplanutils.getStepDocID(this.changePlanID, datum.id, status => {
+                        //     if (status) {
+                        //         changeplanconflictutils.addAssetChangePlanPackage(this.changePlanID, status, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new)
+                        //     }
+                        
+                        // })
 
                     }}
                     columns={this.generateColumns()} data={this.state.changes} size={"large"} />

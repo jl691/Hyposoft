@@ -5,6 +5,7 @@ import * as assetIDutils from './assetidutils'
 import * as datacenterutils from './datacenterutils'
 import * as assetnetworkportutils from './assetnetworkportutils'
 import * as assetpowerportutils from './assetpowerportutils'
+import * as changeplanutils from './changeplanutils'
 //for testing/console logging purposes:
 import errorStrings from '../res/errorMessages.json'
 
@@ -288,6 +289,9 @@ const powerConnectionOccupied = (datacenter, rack, rackU, pduSide, port, errorID
 const powerConnectionConflict = (changePlanID, stepID, powerConnections, datacenter, rack, rackU, callback) => {
 
     let errorIDSet = new Set()
+    if(!powerConnections.length){
+        callback(false)
+    }
     for (let i = 0; i < powerConnections.length; i++) {
         let pduSide = powerConnections[i].pduSide;
         let port = powerConnections[i].port;
@@ -303,8 +307,12 @@ const powerConnectionConflict = (changePlanID, stepID, powerConnections, datacen
     // console.log("These are the error IDs for this change plan set for power connections: " + [...errorIDSet.entries()])
 }
 
-const networkConnectionConflict = async (changePlanID, stepID, networkConnections, oldNetworkConnections, callback) => {
+//networkConnections is an array
+const networkConnectionConflict = (changePlanID, stepID, networkConnections, oldNetworkConnections, callback) => {
     let errorIDSet = new Set()
+    if(!networkConnections.length){
+        callback(false)
+    }
     for (let i = 0; i < networkConnections.length; i++) {
         let thisPort = networkConnections[i].thisPort
         let otherAssetID = networkConnections[i].otherAssetID
@@ -375,24 +383,43 @@ function networkConnectionOtherAssetID(otherAssetID, errorIDSet, callback) {
 }
 
 
-//NEED TO REWRITE THIS AND INTEGRATE AGAIN
-async function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections) {
+function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections,callback) {
 
     let oldNetworkConnections = null;
     assetID = assetID.toString()
 
-    // await rackNonExistent(changePlanID, stepID, rack, datacenter)
-    // await datacenterNonExistent(changePlanID, stepID, datacenter)
-    // await hostnameConflict(changePlanID, stepID, hostname)
-    // await ownerConflict(changePlanID, stepID, owner)
-    // await assetIDConflict(changePlanID, stepID, assetID)
-    // await modelConflict(changePlanID, stepID, model)
+    rackNonExistent(changePlanID, stepID, rack, datacenter, status1 => {
+  
+        datacenterNonExistent(changePlanID, stepID, datacenter, status2 => {
+       
+            hostnameConflict(changePlanID, stepID, hostname, status3 => {
+  
+                ownerConflict(changePlanID, stepID, owner, status4 => {
 
-    //need to to test that all possible errors are caught at once
-    // await rackUConflict(changePlanID, stepID, model, datacenter, rack, rackU)
-    // await networkConnectionConflict(networkConnections, oldNetworkConnections, model)
-    // await powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, model, assetID)
+                    assetIDConflict(changePlanID, stepID, assetID, status5 => {
+    
+                        modelConflict(changePlanID, stepID, model, status6 => {
+         
+                            rackUConflict(changePlanID, stepID, model, datacenter, rack, rackU, status7 => {
+                    
+                                networkConnectionConflict(changePlanID, stepID, networkConnections, oldNetworkConnections, status8 => {
+                                 
+                                    powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, status9 => {
+                                        console.log("9 layered cake bitch!")
+                                        callback()
+                                    })
+                                })
 
+                            })
+
+                        })
+                    })
+
+                })
+            })
+        })
+
+    })
 }
 
 function addConflictToDB(changePlanID, stepID, fieldName, errorIDSet, callback) {
@@ -425,6 +452,30 @@ function addConflictToDB(changePlanID, stepID, fieldName, errorIDSet, callback) 
     }
 }
 
+function getErrorMessages(changePlanID, stepNum, callback) {
+    
+    changeplanutils.getStepDocID(changePlanID, stepNum, stepID =>{
+        changeplansRef.doc(changePlanID).collection('conflicts').doc(stepID).get().then(function (conflictDoc) {
+            let errMessage = ""
+            const data = conflictDoc.data();
+            //console.log(data)
+        
+            for (const key in data) {
+                const value = data[key];
+                let message = errorStrings[value]
+                //console.log(message)
+                errMessage = errMessage + "\n" + message
+        
+            }    
+                callback(errMessage)
+
+           
+        }).catch(error => console.log(error))
+    
+    })
+    
+}
+
 export {
 
     addAssetChangePlanPackage,
@@ -436,7 +487,8 @@ export {
     modelConflict,
     rackUConflict,
     powerConnectionConflict,
-    networkConnectionConflict
+    networkConnectionConflict,
+    getErrorMessages
 
 
 
