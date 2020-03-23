@@ -42,6 +42,8 @@ class DetailedChangeScreen extends React.Component {
                     change: result,
                     executed: executed,
                     timestamp: timestamp
+                }, function () {
+                    this.generateConflict();
                 });
             } else {
                 console.log(result)
@@ -287,6 +289,7 @@ class DetailedChangeScreen extends React.Component {
         changeplanutils.getStepDocID(this.props.match.params.changePlanID, this.props.match.params.stepID, stepIDcallback => {
            // changeplansRef.doc(this.props.match.params.changePlanID).collection('changes').doc(this.props.match.params.stepID).get().then(stepDoc => {
 
+           //if(stepIDCallback)
                // let changeType = stepDoc.data().change
                 //if (changeType === "add") { TODO  
                     changeplanconflictutils.addAssetChangePlanPackage(

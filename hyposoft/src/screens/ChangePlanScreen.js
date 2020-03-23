@@ -141,13 +141,13 @@ class ChangePlanScreen extends React.Component {
                 property: "name",
                 header: <Text size='small'>Name</Text>,
                 render: datum => (
-                    <Text size='small'>{datum.name}</Text>)
+                    <Text size='small' wordBreak={"break-all"}>{datum.name}</Text>)
             },
             {
                 property: "owner",
                 header: <Text size='small'>Owner</Text>,
                 render: datum => (
-                    <Text size='small'>{datum.owner}</Text>)
+                    <Text size='small' wordBreak={"break-all"}>{datum.owner}</Text>)
             },
             {
                 property: "executed",
