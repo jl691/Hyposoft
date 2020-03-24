@@ -370,7 +370,7 @@ export default class AssetTable extends Component {
                         // todo somehow change size to small
                         header: <Text size='xsmall' onClick={() => {
                             this.handleSelectAllOrNone()
-                        }} style={{cursor: "pointer"}}>{this.updateSelectAll() ? 'Select None' : 'Select All'}{(this.selectAll ? <CheckboxSelected/> : <Checkbox/>)}</Text>,
+                        }} style={{cursor: "pointer"}}>{(this.updateSelectAll() ? <CheckboxSelected/> : <Checkbox/>)}</Text>,
                         render: datum => this.handleSelect(datum),
                         sortable: false
                     },
