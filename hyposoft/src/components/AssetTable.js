@@ -311,7 +311,8 @@ export default class AssetTable extends Component {
     }
 
     updateCurrentAssetsBasedOffSelected(selected){
-      var assets = this.props.searchResults || this.state.assets
+      var assets = []
+      assets = assets.concat(this.props.searchResults || this.state.assets)
       for(var index = 0; index < assets.length; index++) {
           assets[index].checked = selected.includes(assets[index].asset_id)
       }
@@ -332,9 +333,6 @@ export default class AssetTable extends Component {
         }
 
         if (!this.state.initialLoaded ) {
-            // this.previousAssets = this.state.assets
-            // this.totalWasAdded = false
-            // this.totalAssetIDs = null
             return (<Box align="center"><Text>Please wait...</Text></Box>);
         }
 
@@ -402,7 +400,17 @@ export default class AssetTable extends Component {
                           }
                         })
                         this.totalWasAdded = false
-                        this.setState({assets: this.updateCurrentAssetsBasedOffSelected(selections), selectedAssets: selections})
+                        if (this.props.searchResults) {
+                          var newResults = this.updateCurrentAssetsBasedOffSelected(selections)
+                          // hacky way of being able to write to props
+                          this.props.searchResults.length = 0
+                          newResults.forEach(result => {
+                            this.props.searchResults.push(result)
+                          })
+                          this.setState({selectedAssets: selections})
+                        } else {
+                          this.setState({assets: this.updateCurrentAssetsBasedOffSelected(selections), selectedAssets: selections})
+                        }
                       }} style={{cursor: "pointer"}}>
                       {'\u00a0' /*non-breaking space*/}Clear selection.</Text>
                     </Box>))

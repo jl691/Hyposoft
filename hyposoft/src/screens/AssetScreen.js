@@ -274,7 +274,13 @@ class AssetScreen extends Component {
                             checked: this.assetTable.current.state.selectedAssets.includes(hits[i].objectID)
                         }]
                     }
-                    console.log(results)
+                    // this is already grabbing all the possible assets so select all should reflect that
+                    this.assetTable.current.totalWasAdded = true
+                    var resultsIds = []
+                    for(var index = 0; index < results.length; index++) {
+                        resultsIds.push(results[index].asset_id)
+                    }
+                    this.assetTable.current.totalAssetIDs = resultsIds
                     this.setState(oldState => ({
                         ...oldState,
                         searchResults: results
