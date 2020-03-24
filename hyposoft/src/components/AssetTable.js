@@ -14,14 +14,16 @@ export default class AssetTable extends Component {
     defaultAssets = [];
     startAfter = null;
     selectAll = false;
+    previousAssets = [];
+    totalWasAdded = false;
+    totalAssetIDs = null;
 
     state = {
         assets: [],
         initialLoaded: false,
         sortField: "",
         sortAscending: "",
-        selectedAssets: [],
-        totalAssetIDs: null
+        selectedAssets: []
     }
 
     constructor(props) {
@@ -214,11 +216,24 @@ export default class AssetTable extends Component {
                 }
             }
         })
-
+        // this is already grabbing all the possible assets so select all should reflect that
+        this.totalWasAdded = true
+        var newAssetsIds = []
+        for(var index = 0; index < newAssets.length; index++) {
+            newAssetsIds.push(newAssets[index].asset_id)
+        }
+        this.totalAssetIDs = newAssetsIds
         this.setState({assets: newAssets})
     }
 
     handleRackRackUSort(sortedAssets) {
+        // this is already grabbing all the possible assets so select all should reflect that
+        this.totalWasAdded = true
+        var sortedAssetsIds = []
+        for(var index = 0; index < sortedAssets.length; index++) {
+            sortedAssetsIds.push(sortedAssets[index].asset_id)
+        }
+        this.totalAssetIDs = sortedAssetsIds
         this.setState({assets: sortedAssets})
     }
 
@@ -295,8 +310,20 @@ export default class AssetTable extends Component {
       this.setState({selectedAssets: updatedSelectedAssets})
     }
 
+    updateCurrentAssetsBasedOffSelected(selected){
+      var assets = this.props.searchResults || this.state.assets
+      for(var index = 0; index < assets.length; index++) {
+          assets[index].checked = selected.includes(assets[index].asset_id)
+      }
+      return assets
+    }
+
     selectAllHyperlink() {
-      assetutils.getAllAssetIDs(result => this.setState({totalAssetIDs: result}), this.state.sortField ? this.state.sortField : null, this.state.sortField ? this.state.sortAscending : null)
+      assetutils.getAllAssetIDs(result => {
+        this.totalAssetIDs = result
+        // need to re-render
+        this.setState(oldState => ({...oldState}))
+      }, this.state.sortField ? this.state.sortField : null, this.state.sortField ? this.state.sortAscending : null)
     }
 
     render() {
@@ -305,9 +332,19 @@ export default class AssetTable extends Component {
         }
 
         if (!this.state.initialLoaded ) {
+            // this.previousAssets = this.state.assets
+            // this.totalWasAdded = false
+            // this.totalAssetIDs = null
             return (<Box align="center"><Text>Please wait...</Text></Box>);
         }
 
+        if (JSON.stringify(this.props.searchResults || this.state.assets)!==JSON.stringify(this.previousAssets)) {
+            this.previousAssets = this.props.searchResults || this.state.assets
+            if (this.totalAssetIDs && this.previousAssets.length !== this.totalAssetIDs.length) {
+              this.totalWasAdded = false
+              this.totalAssetIDs = null
+            }
+        }
 
         return (
 
@@ -337,33 +374,35 @@ export default class AssetTable extends Component {
             //                         <Box align="center" >
             <Box align="center">
             {(this.updateSelectAll()
-              ? (this.state.totalAssetIDs === null
+              ? (this.totalAssetIDs === null
                 ? <Box>{this.selectAllHyperlink()}</Box>
-                : (this.state.assets.length !== this.state.totalAssetIDs.length
+                : (!this.totalWasAdded && (this.props.searchResults || this.state.assets).length !== this.totalAssetIDs.length
                   ?  <Box direction='row' justify='center'>
-                       <Text size='small' textAlign='center'>All {this.state.assets.length} assets on this page are selected.</Text>
+                       <Text size='small' textAlign='center'>All {(this.props.searchResults || this.state.assets).length} assets on this page are selected.</Text>
                        <Text size='small' textAlign='center' color='#0000EE' onClick={() => {
                          var newSelections = []
-                         this.state.totalAssetIDs.forEach(assetId => {
+                         this.totalAssetIDs.forEach(assetId => {
                            if (!this.state.selectedAssets.includes(assetId)) {
                                newSelections.push(assetId)
                            }
                          })
+                         this.totalWasAdded = true
                          this.setState({selectedAssets: this.state.selectedAssets.concat(newSelections)})
                        }} style={{cursor: "pointer"}}>
-                       {'\u00a0' /*non-breaking space*/}Select All {this.state.totalAssetIDs.length} assets.</Text>
+                       {'\u00a0' /*non-breaking space*/}Select All {this.totalAssetIDs.length} assets.</Text>
                      </Box>
                   :  <Box direction='row' justify='center'>
-                      <Text size='small' textAlign='center'>All {this.state.assets.length} assets are selected.</Text>
+                      <Text size='small' textAlign='center'>All {this.totalAssetIDs.length} assets are selected.</Text>
                       <Text size='small' textAlign='center' color='#0000EE' onClick={() => {
                         var selections = this.state.selectedAssets
-                        this.state.totalAssetIDs.forEach(assetId => {
+                        this.totalAssetIDs.forEach(assetId => {
                           const ind = selections.indexOf(assetId)
                           if (selections.includes(assetId) && ind !== -1) {
                               selections = selections.slice(0,ind).concat(selections.slice(ind+1,selections.length))
                           }
                         })
-                        this.setState({selectedAssets: selections})
+                        this.totalWasAdded = false
+                        this.setState({assets: this.updateCurrentAssetsBasedOffSelected(selections), selectedAssets: selections})
                       }} style={{cursor: "pointer"}}>
                       {'\u00a0' /*non-breaking space*/}Clear selection.</Text>
                     </Box>))
