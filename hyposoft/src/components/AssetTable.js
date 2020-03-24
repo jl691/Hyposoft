@@ -1,7 +1,7 @@
 import React, {Component} from 'react'
 import {Redirect} from 'react-router-dom'
-import {DataTable, Text, Box} from 'grommet'
-import {Checkbox, CheckboxSelected, FormEdit, FormTrash, FormClose, Power, Clear, PowerCycle, FormUp, FormDown} from "grommet-icons"
+import {DataTable, Text, Box, Menu} from 'grommet'
+import {Checkbox, CheckboxSelected, Down, FormEdit, FormTrash, FormClose, Power, Clear, PowerCycle, FormUp, FormDown} from "grommet-icons"
 import * as assetutils from '../utils/assetutils'
 import * as assetmacutils from '../utils/assetmacutils'
 import * as powerutils from '../utils/powerutils'
@@ -271,10 +271,10 @@ export default class AssetTable extends Component {
         return selectAll
     }
 
-    handleSelectAllOrNone() {
+    handleSelectAllOrNone(all = null) {
       let assets = this.props.searchResults || this.state.assets
       var updatedSelectedAssets = this.state.selectedAssets
-      if (!this.selectAll) {
+      if (all || (all === null && !this.selectAll)) {
         for(var index = 0; index < assets.length; index++) {
             if (!updatedSelectedAssets.includes(assets[index].asset_id)) {
                 updatedSelectedAssets = updatedSelectedAssets.concat(assets[index].asset_id)
@@ -290,7 +290,7 @@ export default class AssetTable extends Component {
             assets[index].checked = false
         }
       }
-      this.selectAll = !this.selectAll
+      this.selectAll = all !== null ? all : !this.selectAll
       this.setState({selectedAssets: updatedSelectedAssets})
     }
 
@@ -368,9 +368,16 @@ export default class AssetTable extends Component {
                     {
                         property: 'checked',
                         // todo somehow change size to small
-                        header: <Text size='xsmall' onClick={() => {
-                            this.handleSelectAllOrNone()
-                        }} style={{cursor: "pointer"}}>{(this.updateSelectAll() ? <CheckboxSelected/> : <Checkbox/>)}</Text>,
+                        header: <Text size='small' style={{cursor: "pointer"}}>
+                        {(this.updateSelectAll()
+                          ? <CheckboxSelected onClick={() => {this.handleSelectAllOrNone()}}/>
+                          : <Checkbox onClick={() => {this.handleSelectAllOrNone()}}/>
+                        )}{(<Menu icon={<Down size={'small'}/>}
+                            items={[
+                                  {label: 'All', onClick: () => this.handleSelectAllOrNone(true)},
+                                  {label: 'None', onClick: () => this.handleSelectAllOrNone(false)}
+                                  ]}/>
+                          )}</Text>,
                         render: datum => this.handleSelect(datum),
                         sortable: false
                     },
