@@ -20,7 +20,8 @@ export default class AssetTable extends Component {
         initialLoaded: false,
         sortField: "",
         sortAscending: "",
-        selectedAssets: []
+        selectedAssets: [],
+        totalAssetIDs: null
     }
 
     constructor(props) {
@@ -294,13 +295,17 @@ export default class AssetTable extends Component {
       this.setState({selectedAssets: updatedSelectedAssets})
     }
 
+    selectAllHyperlink() {
+      assetutils.getAllAssetIDs(result => this.setState({totalAssetIDs: result}), this.state.sortField ? this.state.sortField : null, this.state.sortField ? this.state.sortAscending : null)
+    }
+
     render() {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/'/>
         }
 
         if (!this.state.initialLoaded ) {
-            return (<Text>Please wait...</Text>);
+            return (<Box align="center"><Text>Please wait...</Text></Box>);
         }
 
 
@@ -330,6 +335,39 @@ export default class AssetTable extends Component {
             //                     <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column'
             //                         justify='start' alignSelf='stretch' flex >
             //                         <Box align="center" >
+            <Box align="center">
+            {(this.updateSelectAll()
+              ? (this.state.totalAssetIDs === null
+                ? <Box>{this.selectAllHyperlink()}</Box>
+                : (this.state.assets.length !== this.state.totalAssetIDs.length
+                  ?  <Box direction='row' justify='center'>
+                       <Text size='small' textAlign='center'>All {this.state.assets.length} assets on this page are selected.</Text>
+                       <Text size='small' textAlign='center' color='#0000EE' onClick={() => {
+                         var newSelections = []
+                         this.state.totalAssetIDs.forEach(assetId => {
+                           if (!this.state.selectedAssets.includes(assetId)) {
+                               newSelections.push(assetId)
+                           }
+                         })
+                         this.setState({selectedAssets: this.state.selectedAssets.concat(newSelections)})
+                       }} style={{cursor: "pointer"}}>
+                       {'\u00a0' /*non-breaking space*/}Select All {this.state.totalAssetIDs.length} assets.</Text>
+                     </Box>
+                  :  <Box direction='row' justify='center'>
+                      <Text size='small' textAlign='center'>All {this.state.assets.length} assets are selected.</Text>
+                      <Text size='small' textAlign='center' color='#0000EE' onClick={() => {
+                        var selections = this.state.selectedAssets
+                        this.state.totalAssetIDs.forEach(assetId => {
+                          const ind = selections.indexOf(assetId)
+                          if (selections.includes(assetId) && ind !== -1) {
+                              selections = selections.slice(0,ind).concat(selections.slice(ind+1,selections.length))
+                          }
+                        })
+                        this.setState({selectedAssets: selections})
+                      }} style={{cursor: "pointer"}}>
+                      {'\u00a0' /*non-breaking space*/}Clear selection.</Text>
+                    </Box>))
+               : <Box></Box>)}
             <DataTable
                 step={25}
                 onMore={() => {
@@ -625,6 +663,7 @@ export default class AssetTable extends Component {
 
 
             />
+            </Box>
             //                         </Box>
             //                     </Box>
             //                 </Box>

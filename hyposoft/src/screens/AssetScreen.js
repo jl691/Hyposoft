@@ -653,7 +653,6 @@ class AssetScreen extends Component {
                                                         right: 'medium'
                                                     }} direction='column'
                                                          justify='start' alignSelf='stretch' flex>
-                                                        <Box align="center">
                                                             <AssetTable
                                                                 deleteButtonCallbackFromParent={this.handleDeleteButton}
                                                                 decommissionButtonCallbackFromParent={this.handleDecommissionButton}
@@ -667,7 +666,6 @@ class AssetScreen extends Component {
                                                                 parent={this}
 
                                                             />
-                                                        </Box>
                                                     </Box>
                                                 </Box>
                                                 {userutils.isLoggedInUserAdmin() && (
