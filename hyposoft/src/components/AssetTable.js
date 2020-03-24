@@ -1,7 +1,7 @@
 import React, {Component} from 'react'
 import {Redirect} from 'react-router-dom'
 import {DataTable, Text, Box, Menu} from 'grommet'
-import {Checkbox, CheckboxSelected, Down, FormEdit, FormTrash, FormClose, Power, Clear, PowerCycle, FormUp, FormDown} from "grommet-icons"
+import {Checkbox, CheckboxSelected, FormEdit, FormTrash, FormClose, Power, Clear, PowerCycle, FormUp, FormDown} from "grommet-icons"
 import * as assetutils from '../utils/assetutils'
 import * as assetmacutils from '../utils/assetmacutils'
 import * as powerutils from '../utils/powerutils'
@@ -372,7 +372,7 @@ export default class AssetTable extends Component {
                         {(this.updateSelectAll()
                           ? <CheckboxSelected onClick={() => {this.handleSelectAllOrNone()}}/>
                           : <Checkbox onClick={() => {this.handleSelectAllOrNone()}}/>
-                        )}{(<Menu icon={<Down size={'small'}/>}
+                        )}{(<Menu icon={<FormDown/>}
                             items={[
                                   {label: 'All', onClick: () => this.handleSelectAllOrNone(true)},
                                   {label: 'None', onClick: () => this.handleSelectAllOrNone(false)}
