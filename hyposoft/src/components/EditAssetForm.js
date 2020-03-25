@@ -1,5 +1,17 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Accordion, AccordionPanel, CheckBox } from 'grommet'
+import {
+    Button,
+    Grommet,
+    Form,
+    FormField,
+    Heading,
+    TextInput,
+    Box,
+    Accordion,
+    AccordionPanel,
+    CheckBox,
+    TextArea
+} from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as assetmacutils from '../utils/assetmacutils'
@@ -531,7 +543,7 @@ export default class EditAssetForm extends Component {
 
                         <FormField name="comment" label="Comment" >
 
-                            <TextInput name="comment" placeholder="Update Comment" onChange={this.handleChange}
+                            <TextArea name="comment" placeholder="Update Comment" onChange={this.handleChange}
                                 value={this.state.comment} />
                         </FormField>
 
