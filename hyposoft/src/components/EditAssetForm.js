@@ -524,7 +524,7 @@ export default class EditAssetForm extends Component {
 
                         <FormField name="asset_id" label="Override Asset ID">
                             <TextInput name="asset_id" placeholder="Update Asset ID" onChange={this.handleChange}
-                                value={this.state.asset_id}
+                                value={this.state.asset_id} disabled={true}
                             />
                         </FormField>
 
