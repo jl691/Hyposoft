@@ -20,7 +20,7 @@ import theme from '../theme'
 import BackButton from '../components/BackButton'
 import AppBar from '../components/AppBar'
 import UserMenu from '../components/UserMenu'
-import {PowerCycle} from "grommet-icons";
+import {FormEdit, Power, Clear, PowerCycle, View, ShareOption} from "grommet-icons"
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import EditAssetForm from "../components/EditAssetForm";
 
@@ -534,25 +534,25 @@ export default class DetailedAssetScreen extends Component {
                                             {this.connectedPDU &&
                                             <Box direction='column' flex alignSelf='stretch'
                                                  gap='small'>
-                                                <Button label="Power Asset On" onClick={() => {
+                                                <Button icon={<Power/>} label="Power Asset On" onClick={() => {
                                                     this.turnAssetOn()
                                                 }}/>
-                                                <Button label="Power Asset Off" onClick={() => {
+                                                <Button icon={<Clear/>} label="Power Asset Off" onClick={() => {
                                                     this.turnAssetOff()
                                                 }}/>
-                                                <Button label="Power Cycle Asset" onClick={() => {
+                                                <Button icon={<PowerCycle/>} label="Power Cycle Asset" onClick={() => {
                                                     this.powerCycleAsset()
                                                 }}/>
                                             </Box>}
-                                            <Button label="Edit Asset" onClick={() => {
+                                            <Button icon={<FormEdit/>} label="Edit Asset" onClick={() => {
                                                 this.setState({
                                                     popupType: "Update"
                                                 })
                                             }}/>
-                                            <Button label="View Model Details" onClick={() => {
+                                            <Button icon={<View/>} label="View Model Details" onClick={() => {
                                                 this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNum)
                                             }}/>
-                                            <Button label="Network Neighborhood" onClick={() => {
+                                            <Button icon={<ShareOption/>} label="Network Neighborhood" onClick={() => {
                                                 this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
                                             }}/>
                                         </Box>
