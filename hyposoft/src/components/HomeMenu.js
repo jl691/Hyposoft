@@ -20,15 +20,15 @@ class HomeMenu extends Component {
                   size={'large'}
                   items={
                     [
-                        {label: 'Dashboard', onClick: () => this.setState({clicked:true, redirect: '/dashboard'})},
-                        {label: 'Users', onClick: () => this.setState({clicked:true, redirect: '/users'})},
-                        {label: 'Models', onClick: () => this.setState({clicked:true, redirect: '/models'})},
                         {label: 'Assets', onClick: () => this.setState({clicked:true, redirect: '/assets'})},
-                        {label: 'Racks', onClick: () => this.setState({clicked:true, redirect: '/racks'})},
-                        {label: 'Import/Export', onClick: () => this.setState({clicked:true, redirect: '/port'})},
-                        {label: 'Datacenters', onClick: () => this.setState({clicked:true, redirect: '/datacenters'})},
-                        {label: 'Logs', onClick: () => this.setState({clicked:true, redirect: '/logs'})},
                         {label: 'Change Plans', onClick: () => this.setState({clicked:true, redirect: '/changeplans'})},
+                        {label: 'Dashboard', onClick: () => this.setState({clicked:true, redirect: '/dashboard'})},
+                        {label: 'Datacenters', onClick: () => this.setState({clicked:true, redirect: '/datacenters'})},
+                        {label: 'Import/Export', onClick: () => this.setState({clicked:true, redirect: '/port'})},
+                        {label: 'Logs', onClick: () => this.setState({clicked:true, redirect: '/logs'})},
+                        {label: 'Models', onClick: () => this.setState({clicked:true, redirect: '/models'})},
+                        {label: 'Racks', onClick: () => this.setState({clicked:true, redirect: '/racks'})},
+                        {label: 'Users', onClick: () => this.setState({clicked:true, redirect: '/users'})},
                     ]
                   }
               />

@@ -1,5 +1,4 @@
 import React, {Component} from 'react'
-import {BrowserRouter as Router, Route} from 'react-router-dom'
 
 import {
     Text,
@@ -23,7 +22,7 @@ import EditAssetForm from '../components/EditAssetForm'
 
 import theme from '../theme'
 import AppBar from '../components/AppBar'
-import HomeButton from '../components/HomeButton'
+import HomeMenu from '../components/HomeMenu'
 import UserMenu from '../components/UserMenu'
 import AssetTable from '../components/AssetTable'
 import * as userutils from "../utils/userutils";
@@ -33,6 +32,7 @@ import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as datacenterutils from "../utils/datacenterutils";
 import * as bulkassetutils from "../utils/bulkassetsutils";
 import * as bulkconnectionstutils from "../utils/bulkconnectionsutils";
+import * as labelutils from "../utils/labelutils";
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
@@ -182,7 +182,7 @@ class AssetScreen extends Component {
 
             }
 
-        })
+        }, this.assetTable.current.state.selectedAssets)
     }
 
     handleCancelRefreshPopupChange() {
@@ -270,10 +270,17 @@ class AssetScreen extends Component {
                             ...hits[i],
                             id: hits[i].objectID,
                             itemNo: itemNo++,
-                            asset_id: hits[i].objectID
+                            asset_id: hits[i].objectID,
+                            checked: this.assetTable.current.state.selectedAssets.includes(hits[i].objectID)
                         }]
                     }
-                    console.log(results)
+                    // this is already grabbing all the possible assets so select all should reflect that
+                    this.assetTable.current.totalWasAdded = true
+                    var resultsIds = []
+                    for(var index = 0; index < results.length; index++) {
+                        resultsIds.push(results[index].asset_id)
+                    }
+                    this.assetTable.current.totalAssetIDs = resultsIds
                     this.setState(oldState => ({
                         ...oldState,
                         searchResults: results
@@ -281,6 +288,7 @@ class AssetScreen extends Component {
                 })
         } else {
             // reset
+            this.assetTable.current.state.assets.forEach(asset => asset.checked = this.assetTable.current.state.selectedAssets.includes(asset.asset_id))
             this.setState(oldState => ({
                 ...oldState,
                 searchResults: undefined
@@ -355,6 +363,19 @@ class AssetScreen extends Component {
                     <AddAssetForm
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
+                        updatePowerConnectionsFromParent={[]}
+                        updateNetworkConnectionsFromParent={[]}
+                        updateMacAddressesFromParent={[]}
+
+                        updateIDFromParent={""}
+                        updateModelFromParent={""}
+                        updateHostnameFromParent={""}
+                        updateRackFromParent={""}
+                        updateRackUFromParent={""}
+                        updateOwnerFromParent={""}
+                        updateCommentFromParent={""}
+                        updateDatacenterFromParent={""}
+                        updateAssetIDFromParent={""}
                     />
 
                 </Layer>
@@ -539,15 +560,18 @@ class AssetScreen extends Component {
                              alignSelf='stretch'
                              background='#FFFFFF'
                              width={"medium"}
-                             margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                             margin={{ top: 'small', left: 'medium', right: 'medium' }}
                              pad='small' >
                             <Box flex margin={{ left: 'medium', top: 'small', right: 'medium' }} direction='column' justify='start'>
                                 {/*<Box direction="column" width={"medium"} margin={{top: 'small'}}>*/}
                                 <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
                                     bulkassetutils.exportFilteredAssets(this.state.searchResults || this.assetTable.current.state.assets);
                                 }} style={{marginBottom: "10px"}}/>
-                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} onClick={() => {
+                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} margin={{bottom: 'medium'}} onClick={() => {
                                     bulkconnectionstutils.exportFilteredConnections(this.state.searchResults || this.assetTable.current.state.assets);
+                                }} style={{marginBottom: "10px"}}/>
+                                <Button icon={<Share/>} label={<Text size="small">Export Selected Barcodes</Text>} onClick={() => {
+                                    labelutils.generateLabelPDF(this.assetTable.current.state.selectedAssets.sort());
                                 }} margin={{bottom: 'medium'}}/>
                                 {/*this.assetTable.current.state*/}
                                 {/*</Box>*/}
@@ -566,17 +590,14 @@ class AssetScreen extends Component {
 
         return (
 
-            <Router>
 
-                <Route
-                    exact path="/assets" render={props => (
                     <React.Fragment>
                         <Grommet theme={theme} full className='fade'>
                             <Box fill background='light-2' overflow={"auto"}>
                                 {popup}
                                 <AppBar>
 
-                                    <HomeButton alignSelf='start' this={this}/>
+                                    <HomeMenu alignSelf='start' this={this}/>
                                     <Heading alignSelf='center' level='4' margin={{
                                         top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                                     }}>Assets</Heading>
@@ -638,7 +659,6 @@ class AssetScreen extends Component {
                                                         right: 'medium'
                                                     }} direction='column'
                                                          justify='start' alignSelf='stretch' flex>
-                                                        <Box align="center">
                                                             <AssetTable
                                                                 deleteButtonCallbackFromParent={this.handleDeleteButton}
                                                                 decommissionButtonCallbackFromParent={this.handleDecommissionButton}
@@ -652,7 +672,6 @@ class AssetScreen extends Component {
                                                                 parent={this}
 
                                                             />
-                                                        </Box>
                                                     </Box>
                                                 </Box>
                                                 {userutils.isLoggedInUserAdmin() && (
@@ -682,11 +701,7 @@ class AssetScreen extends Component {
 
                     </React.Fragment>
 
-                )}
 
-                />
-
-            </Router>
         )
     }
 }
