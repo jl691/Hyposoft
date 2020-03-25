@@ -27,7 +27,7 @@ class AddDatacenterForm extends React.Component {
         } else {
             datacenterutils.addDatacenter(this.state.name.trim(), this.state.abbreviation.trim(), result => {
                 if(result) {
-                    this.props.parentCallback(true);
+                    this.props.parentCallback("Successfully added the datacenter!");
                 } else {
                     ToastsStore.error("Error adding datacenter. Please ensure that the name and abbreviation are unique.");
                 }

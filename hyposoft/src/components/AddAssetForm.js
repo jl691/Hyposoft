@@ -9,7 +9,7 @@ import {
     Box,
     Accordion,
     AccordionPanel,
-    CheckBox, Text
+    CheckBox, Text, TextArea
 } from 'grommet'
 
 
@@ -624,7 +624,7 @@ export default class AddAssetForm extends Component {
 
                             <FormField name="comment" label="Comment">
 
-                                <TextInput name="comment" placeholder="Optional" onChange={this.handleChange}
+                                <TextArea name="comment" placeholder="Optional" onChange={this.handleChange}
                                     value={this.state.comment} />
                             </FormField>
 

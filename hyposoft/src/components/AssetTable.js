@@ -1,12 +1,13 @@
 import React, {Component} from 'react'
 import {Redirect} from 'react-router-dom'
-import {DataTable, Text, Box} from 'grommet'
+import {DataTable, Text, Box, Menu} from 'grommet'
 import {Checkbox, CheckboxSelected, FormEdit, FormTrash, FormClose, Power, Clear, PowerCycle, FormUp, FormDown} from "grommet-icons"
 import * as assetutils from '../utils/assetutils'
 import * as assetmacutils from '../utils/assetmacutils'
 import * as powerutils from '../utils/powerutils'
 import * as userutils from "../utils/userutils";
 import * as assetnetworkportutils from '../utils/assetnetworkportutils'
+import ReactTooltip from 'react-tooltip'
 
 export default class AssetTable extends Component {
 
@@ -14,6 +15,9 @@ export default class AssetTable extends Component {
     defaultAssets = [];
     startAfter = null;
     selectAll = false;
+    previousAssets = [];
+    totalWasAdded = false;
+    totalAssetIDs = null;
 
     state = {
         assets: [],
@@ -213,11 +217,24 @@ export default class AssetTable extends Component {
                 }
             }
         })
-
+        // this is already grabbing all the possible assets so select all should reflect that
+        this.totalWasAdded = true
+        var newAssetsIds = []
+        for(var index = 0; index < newAssets.length; index++) {
+            newAssetsIds.push(newAssets[index].asset_id)
+        }
+        this.totalAssetIDs = newAssetsIds
         this.setState({assets: newAssets})
     }
 
     handleRackRackUSort(sortedAssets) {
+        // this is already grabbing all the possible assets so select all should reflect that
+        this.totalWasAdded = true
+        var sortedAssetsIds = []
+        for(var index = 0; index < sortedAssets.length; index++) {
+            sortedAssetsIds.push(sortedAssets[index].asset_id)
+        }
+        this.totalAssetIDs = sortedAssetsIds
         this.setState({assets: sortedAssets})
     }
 
@@ -271,10 +288,10 @@ export default class AssetTable extends Component {
         return selectAll
     }
 
-    handleSelectAllOrNone() {
+    handleSelectAllOrNone(all = null) {
       let assets = this.props.searchResults || this.state.assets
       var updatedSelectedAssets = this.state.selectedAssets
-      if (!this.selectAll) {
+      if (all || (all === null && !this.selectAll)) {
         for(var index = 0; index < assets.length; index++) {
             if (!updatedSelectedAssets.includes(assets[index].asset_id)) {
                 updatedSelectedAssets = updatedSelectedAssets.concat(assets[index].asset_id)
@@ -290,8 +307,25 @@ export default class AssetTable extends Component {
             assets[index].checked = false
         }
       }
-      this.selectAll = !this.selectAll
+      this.selectAll = all !== null ? all : !this.selectAll
       this.setState({selectedAssets: updatedSelectedAssets})
+    }
+
+    updateCurrentAssetsBasedOffSelected(selected){
+      var assets = []
+      assets = assets.concat(this.props.searchResults || this.state.assets)
+      for(var index = 0; index < assets.length; index++) {
+          assets[index].checked = selected.includes(assets[index].asset_id)
+      }
+      return assets
+    }
+
+    selectAllHyperlink() {
+      assetutils.getAllAssetIDs(result => {
+        this.totalAssetIDs = result
+        // need to re-render
+        this.setState(oldState => ({...oldState}))
+      }, this.state.sortField ? this.state.sortField : null, this.state.sortField ? this.state.sortAscending : null)
     }
 
     render() {
@@ -300,9 +334,16 @@ export default class AssetTable extends Component {
         }
 
         if (!this.state.initialLoaded ) {
-            return (<Text>Please wait...</Text>);
+            return (<Box align="center"><Text>Please wait...</Text></Box>);
         }
 
+        if (JSON.stringify(this.props.searchResults || this.state.assets)!==JSON.stringify(this.previousAssets)) {
+            this.previousAssets = this.props.searchResults || this.state.assets
+            if (this.totalAssetIDs && this.previousAssets.length !== this.totalAssetIDs.length) {
+              this.totalWasAdded = false
+              this.totalAssetIDs = null
+            }
+        }
 
         return (
 
@@ -330,6 +371,51 @@ export default class AssetTable extends Component {
             //                     <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column'
             //                         justify='start' alignSelf='stretch' flex >
             //                         <Box align="center" >
+            <Box align="center">
+            {(this.updateSelectAll()
+              ? (this.totalAssetIDs === null
+                ? <Box>{this.selectAllHyperlink()}</Box>
+                : (!this.totalWasAdded && (this.props.searchResults || this.state.assets).length !== this.totalAssetIDs.length
+                  ?  <Box direction='row' justify='center'>
+                       <Text size='small' textAlign='center'>All {(this.props.searchResults || this.state.assets).length} assets on this page are selected.</Text>
+                       <Text size='small' textAlign='center' color='#0000EE' onClick={() => {
+                         var newSelections = []
+                         this.totalAssetIDs.forEach(assetId => {
+                           if (!this.state.selectedAssets.includes(assetId)) {
+                               newSelections.push(assetId)
+                           }
+                         })
+                         this.totalWasAdded = true
+                         this.setState({selectedAssets: this.state.selectedAssets.concat(newSelections)})
+                       }} style={{cursor: "pointer"}}>
+                       {'\u00a0' /*non-breaking space*/}Select All {this.totalAssetIDs.length} assets.</Text>
+                     </Box>
+                  :  <Box direction='row' justify='center'>
+                      <Text size='small' textAlign='center'>All {this.totalAssetIDs.length} assets are selected.</Text>
+                      <Text size='small' textAlign='center' color='#0000EE' onClick={() => {
+                        var selections = this.state.selectedAssets
+                        this.totalAssetIDs.forEach(assetId => {
+                          const ind = selections.indexOf(assetId)
+                          if (selections.includes(assetId) && ind !== -1) {
+                              selections = selections.slice(0,ind).concat(selections.slice(ind+1,selections.length))
+                          }
+                        })
+                        this.totalWasAdded = false
+                        if (this.props.searchResults) {
+                          var newResults = this.updateCurrentAssetsBasedOffSelected(selections)
+                          // hacky way of being able to write to props
+                          this.props.searchResults.length = 0
+                          newResults.forEach(result => {
+                            this.props.searchResults.push(result)
+                          })
+                          this.setState({selectedAssets: selections})
+                        } else {
+                          this.setState({assets: this.updateCurrentAssetsBasedOffSelected(selections), selectedAssets: selections})
+                        }
+                      }} style={{cursor: "pointer"}}>
+                      {'\u00a0' /*non-breaking space*/}Clear selection.</Text>
+                    </Box>))
+               : <Box></Box>)}
             <DataTable
                 step={25}
                 onMore={() => {
@@ -368,9 +454,16 @@ export default class AssetTable extends Component {
                     {
                         property: 'checked',
                         // todo somehow change size to small
-                        header: <Text size='xsmall' onClick={() => {
-                            this.handleSelectAllOrNone()
-                        }} style={{cursor: "pointer"}}>{this.updateSelectAll() ? 'Select None' : 'Select All'}{(this.selectAll ? <CheckboxSelected/> : <Checkbox/>)}</Text>,
+                        header: <Text size='small' style={{cursor: "pointer"}}>
+                        {(this.updateSelectAll()
+                          ? <CheckboxSelected onClick={() => {this.handleSelectAllOrNone()}}/>
+                          : <Checkbox onClick={() => {this.handleSelectAllOrNone()}}/>
+                        )}{(<Menu icon={<FormDown/>}
+                            items={[
+                                  {label: 'All', onClick: () => this.handleSelectAllOrNone(true)},
+                                  {label: 'None', onClick: () => this.handleSelectAllOrNone(false)}
+                                  ]}/>
+                          )}</Text>,
                         render: datum => this.handleSelect(datum),
                         sortable: false
                     },
@@ -457,7 +550,7 @@ export default class AssetTable extends Component {
 
                                 if ((userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === datum.owner) && datum.datacenterAbbrev.toUpperCase() === "RTP1" && datum.rackRow.charCodeAt(0) >= 65 && datum.rackRow.charCodeAt(0) <= 69 && parseInt(datum.rackNum) >= 1 && parseInt(datum.rackNum) <=19 && datum.powerConnections && datum.powerConnections.length) {
                                 return (<Box direction={"row"} justify={"center"}>
-                                    <Power style={{backgroundColor: this.colors[datum.asset_id+'_on_color']}} onClick={(e) => {
+                                    <Power data-tip="Power on" style={{backgroundColor: this.colors[datum.asset_id+'_on_color']}} onClick={(e) => {
                                         e.persist()
                                         e.nativeEvent.stopImmediatePropagation()
                                         e.stopPropagation()
@@ -492,7 +585,7 @@ export default class AssetTable extends Component {
                                     }
                                            onMouseOver={e => this.colors[datum.asset_id+'_on_color']='#dddddd'}
                                            onMouseLeave={e => this.colors[datum.asset_id+'_on_color']=''}/>
-                                    <Clear style={{backgroundColor: this.colors[datum.asset_id+'_off_color']}} onClick={(e) => {
+                                    <Clear data-tip="Power off" style={{backgroundColor: this.colors[datum.asset_id+'_off_color']}} onClick={(e) => {
                                         e.persist()
                                         e.nativeEvent.stopImmediatePropagation()
                                         e.stopPropagation()
@@ -527,7 +620,7 @@ export default class AssetTable extends Component {
                                     }
                                            onMouseOver={e => this.colors[datum.asset_id+'_off_color']='#dddddd'}
                                            onMouseLeave={e => this.colors[datum.asset_id+'_off_color']=''}/>
-                                    <PowerCycle style={{backgroundColor: this.colors[datum.asset_id+'_cycle_color']}} onClick={(e) => {
+                                    <PowerCycle data-tip="Power cycle" style={{backgroundColor: this.colors[datum.asset_id+'_cycle_color']}} onClick={(e) => {
                                         e.persist()
                                         e.nativeEvent.stopImmediatePropagation()
                                         e.stopPropagation()
@@ -593,7 +686,7 @@ export default class AssetTable extends Component {
                                                 onMouseLeave={e => this.colors[datum.asset_id+'_cycle_color']=''}/>
                                 </Box>)
                             } else {
-                                return (<Text size={"small"}>No options available.</Text>)
+                                return (<Text size={"small"} data-tip="No power options available">-</Text>)
                             }
                         }
                     },
@@ -618,6 +711,8 @@ export default class AssetTable extends Component {
 
 
             />
+                <ReactTooltip />
+            </Box>
             //                         </Box>
             //                     </Box>
             //                 </Box>

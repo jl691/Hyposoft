@@ -11,6 +11,7 @@ import {
     TableCell,
     TableBody
 } from 'grommet'
+import {View, ShareOption} from "grommet-icons"
 import * as decomutils from '../utils/decommissionutils'
 import theme from '../theme'
 import BackButton from '../components/BackButton'
@@ -258,10 +259,10 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                           <Heading level='4' margin='none'>Asset Actions</Heading>
                                           <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
                                                gap='small'>
-                                              <Button label="View Model Details" onClick={() => {
+                                              <Button icon={<View/>} label="View Model Details" onClick={() => {
                                                   this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNumber)
                                               }}/>
-                                              <Button label="Network Neighborhood" onClick={() => {
+                                              <Button icon={<ShareOption/>} label="Network Neighborhood" onClick={() => {
                                                   this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
                                               }}/>
                                           </Box>
