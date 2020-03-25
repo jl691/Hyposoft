@@ -683,7 +683,7 @@ function executeChangePlan(changePlanID, callback) {
                     console.log("add")
                     if (change.data().changes.assetId && change.data().changes.assetId["new"]) {
                         console.log("not generating")
-                        executeAddAsset(change.data().changes.assetId["new"], change, resultAdd => {
+                        executeAddAsset(change.data().changes.assetId["new"], change, changePlanID,resultAdd => {
                             if (resultAdd) {
                                 count++;
                                 if (count === querySnapshot.size) {
@@ -704,7 +704,7 @@ function executeChangePlan(changePlanID, callback) {
                         //generate
                         console.log("generating")
                         assetIDutils.generateAssetID().then(newID => {
-                            executeAddAsset(newID, change, resultAdd => {
+                            executeAddAsset(newID, change, changePlanID, resultAdd => {
                                 if (resultAdd) {
                                     count++;
                                     if (count === querySnapshot.size) {
@@ -771,7 +771,7 @@ function executeChangePlan(changePlanID, callback) {
     })
 }
 
-function executeAddAsset(id, doc, callback) {
+function executeAddAsset(id, doc, changePlanID, callback) {
     console.log(id);
     let assetObject = {
         assetId: id
@@ -786,32 +786,45 @@ function executeAddAsset(id, doc, callback) {
         count++;
         if (count === Object.keys(doc.data().changes).length) {
 
-            //TODO: TEST
             assetRef.doc(id).set(assetObject).then(function (docRef) {
-                if(doc.data().changes.networkConnections){
-                    assetnetworkportutils.symmetricNetworkConnectionsAdd(assetnetworkportutils.networkConnectionsToArray(doc.data().changes.networkConnections["new"]), id);
-                }
-                if (doc.data().changes.powerConnections && doc.data().changes.powerConnections["new"].length != 0) {
-                    racksRef.doc(String(doc.data().changes.rackID["new"])).update({
-                        assets: firebase.firestore.FieldValue.arrayUnion(id),
-                        powerPorts: firebase.firestore.FieldValue.arrayUnion(...doc.data().changes.powerConnections["new"].map(obj => ({
-                            ...obj,
+                changeplansRef.doc(changePlanID.toString()).collection("changes").where("step", "==", parseInt(doc.data().step)).get().then(function (querySnapshot) {
+                    if(!querySnapshot.empty){
+                        changeplansRef.doc(changePlanID.toString()).collection("changes").doc(querySnapshot.docs[0].id).update({
                             assetID: id
-                        })))
-                    }).then(function () {
-                        console.log("Document successfully updated in racks");
-                        logutils.addLog(id, logutils.ASSET(), logutils.CREATE())
-                        callback(true);
-                    })
-                } else {
-                    racksRef.doc(String(doc.data().changes.rackID["new"])).update({
-                        assets: firebase.firestore.FieldValue.arrayUnion(id)
-                    }).then(function () {
-                        console.log("Document successfully updated in racks");
-                        logutils.addLog(id, logutils.ASSET(), logutils.CREATE())
-                        callback(true);
-                    })
-                }
+                        }).then(function () {
+                            if(doc.data().changes.networkConnections){
+                                assetnetworkportutils.symmetricNetworkConnectionsAdd(assetnetworkportutils.networkConnectionsToArray(doc.data().changes.networkConnections["new"]), id);
+                            }
+                            if (doc.data().changes.powerConnections && doc.data().changes.powerConnections["new"].length != 0) {
+                                racksRef.doc(String(doc.data().changes.rackID["new"])).update({
+                                    assets: firebase.firestore.FieldValue.arrayUnion(id),
+                                    powerPorts: firebase.firestore.FieldValue.arrayUnion(...doc.data().changes.powerConnections["new"].map(obj => ({
+                                        ...obj,
+                                        assetID: id
+                                    })))
+                                }).then(function () {
+                                    console.log("Document successfully updated in racks");
+                                    logutils.addLog(id, logutils.ASSET(), logutils.CREATE())
+                                    callback(true);
+                                })
+                            } else {
+                                racksRef.doc(String(doc.data().changes.rackID["new"])).update({
+                                    assets: firebase.firestore.FieldValue.arrayUnion(id)
+                                }).then(function () {
+                                    console.log("Document successfully updated in racks");
+                                    logutils.addLog(id, logutils.ASSET(), logutils.CREATE())
+                                    callback(true);
+                                })
+                            }
+                        }).catch(function () {
+                            callback(null);
+                        })
+                    } else {
+                        callback(null);
+                    }
+                }).catch(function () {
+                    callback(null);
+                });
             }).catch(function (error) {
                 // callback("Error");
                 console.log(error)

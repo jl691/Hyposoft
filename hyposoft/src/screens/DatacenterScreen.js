@@ -188,6 +188,7 @@ class DatacenterScreen extends React.Component {
     }
 
     callbackFunction = (data) => {
+        ToastsStore.success(data);
         this.forceRefresh();
     };
 

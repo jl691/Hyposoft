@@ -20,8 +20,7 @@ class DeleteDatacenterForm extends React.Component {
                             <Button label="Delete" icon={<Trash/>} onClick={() => {
                                 datacenterutils.deleteDatacenter(this.props.name, status => {
                                     if (status) {
-                                        this.props.forceRefresh(true);
-                                        ToastsStore.success('Successfully deleted!');
+                                        this.props.forceRefresh('Successfully deleted the datacenter!');
                                     } else {
                                         ToastsStore.error('Failed to delete datacenter. Please ensure that it contains no racks and try again.');
                                         this.props.cancelPopup(true);
