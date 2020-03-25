@@ -8,6 +8,7 @@ import * as assetnetworkportutils from './assetnetworkportutils'
 import * as assetpowerportutils from './assetpowerportutils'
 import * as logutils from './logutils'
 import * as changeplanutils from './changeplanutils'
+import * as changeplanconflictutils from '../utils/changeplanconflictutils'
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
@@ -103,6 +104,34 @@ function getAssetAt(start, callback, field = null, direction = null, selected = 
 
     }).catch(function (error) {
         callback(null, null);
+    })
+}
+
+function getAllAssetIDs(callback, field = null, direction = null) {
+    let query
+    if (field && direction !== null) {
+        query = direction ? assetRef.orderBy(field) : assetRef.orderBy(field, "desc")
+    } else {
+        query = assetRef
+    }
+    let assetIDs = []
+    let count = 0
+
+    query.get().then(docSnaps => {
+        if (docSnaps.empty) {
+            callback([])
+        } else {
+            docSnaps.docs.forEach(doc => {
+                assetIDs.push(doc.id)
+                count++;
+                if (count === docSnaps.docs.length) {
+                    callback(assetIDs)
+                }
+            })
+        }
+    }).catch(function (error) {
+        console.log(error);
+        callback([])
     })
 }
 
@@ -262,9 +291,14 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                         console.log(error)
                                                                     })
                                                                 } else {
-                                                                    changeplanutils.addAssetChange(assetObject, overrideAssetID, changePlanID, result => {
+                                                                    changeplanutils.addAssetChange(assetObject, overrideAssetID, changePlanID, (result, stepID) => {
                                                                         if(result){
-                                                                            callback(null);
+                                                                            console.log(stepID)
+
+                                                                            changeplanconflictutils.addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, racku, owner, overrideAssetID, powerConnections, networkConnectionsArray, status =>{
+
+                                                                                callback(null);
+                                                                            })
                                                                         } else {
                                                                             callback("Error adding asset to the specified change plan.")
                                                                         }
@@ -387,9 +421,13 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                 })
                                                             } else {
                                                                 delete assetObject["assetId"];
-                                                                changeplanutils.addAssetChange(assetObject, "", changePlanID, result => {
+                                                                changeplanutils.addAssetChange(assetObject, "", changePlanID, (result, stepID) => {
                                                                     if(result){
-                                                                        callback(null);
+                                                                        console.log(stepID)
+                                                                        changeplanconflictutils.addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, racku, owner, overrideAssetID, powerConnections, networkConnectionsArray, status =>{
+
+                                                                            callback(null);
+                                                                        })
                                                                     } else {
                                                                         callback("Error adding asset to the specified change plan.")
                                                                     }
@@ -1443,6 +1481,7 @@ function validateImportedAssets(data, callback) {
 
 export {
     getAsset,
+    getAllAssetIDs,
     addAsset,
     deleteAsset,
     assetFitsOnRack,

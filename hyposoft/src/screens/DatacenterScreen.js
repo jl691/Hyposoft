@@ -137,7 +137,7 @@ class DatacenterScreen extends React.Component {
                 property: "name",
                 header: <Text size='small'>Name</Text>,
                 render: datum => (
-                    <Text size='small'>{datum.name}</Text>)
+                    <Text size='small' wordBreak={"break-all"}>{datum.name}</Text>)
             },
             {
                 property: "abbreviation",

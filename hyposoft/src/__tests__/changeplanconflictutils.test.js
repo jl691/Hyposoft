@@ -16,8 +16,6 @@ describe('change plan add asset tests: basic test', () => {
 
     test('changeplan add asset conflicts: rack', done => {
         //trying to simulate someone clicking on the detail view of the change plan step and retriggering the check
-        // await changeplanconflictutils.addAssetChangePlanPackage(ids['changePlan'], ids['changePlanStep'], 'Test Model1', 'asset1', 'Test Datacenter', 'A1', 1, 'testUser', '999999', [], {});
-
         changeplanconflictutils.rackNonExistent(ids['changePlan'], ids['changePlanStep'], 'A1', 'Test Datacenter', rackStatus => {
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
                 expect(docRef.data().rack[0]).toBe('rackErrID')

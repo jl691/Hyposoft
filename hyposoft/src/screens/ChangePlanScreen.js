@@ -1,6 +1,8 @@
 import React from "react";
 import * as changeplanutils from "../utils/changeplanutils";
 import * as userutils from "../utils/userutils";
+
+import * as changeplanconflictutils from '../utils/changeplanconflictutils'
 import {Box, Button, Grommet, Heading, Text, DataTable, Layer} from "grommet";
 import theme from "../theme";
 import AppBar from "../components/AppBar";
@@ -118,6 +120,8 @@ class ChangePlanScreen extends React.Component {
                            }}
                            onClickRow={({datum}) => {
                                this.props.history.push('/changeplans/' + datum.id)
+                               console.log("Here is the change plan ID: "+ datum.id)
+                               changeplanconflictutils.checkSequentialStepConflicts(datum.id)
                              
                            }}
                            columns={this.generateColumns()} data={this.state.changePlans} size={"large"}/>
@@ -137,13 +141,13 @@ class ChangePlanScreen extends React.Component {
                 property: "name",
                 header: <Text size='small'>Name</Text>,
                 render: datum => (
-                    <Text size='small'>{datum.name}</Text>)
+                    <Text size='small' wordBreak={"break-all"}>{datum.name}</Text>)
             },
             {
                 property: "owner",
                 header: <Text size='small'>Owner</Text>,
                 render: datum => (
-                    <Text size='small'>{datum.owner}</Text>)
+                    <Text size='small' wordBreak={"break-all"}>{datum.owner}</Text>)
             },
             {
                 property: "executed",

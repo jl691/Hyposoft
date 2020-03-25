@@ -84,7 +84,9 @@ function getChangeDetails(changePlanID, stepID, username, callback) {
 }
 
 function getStepDocID(changePlanID,stepNum, callback){
-    firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", stepNum).get().then(function (querySnapshot) {
+    console.log(changePlanID, stepNum)
+    firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepNum)).get().then(function (querySnapshot) {
+        console.log(querySnapshot.empty)
         querySnapshot.forEach(function(doc) {
             // doc.data() is never undefined for query doc snapshots
             //for some reason only this works to get the document id?? whatever fuck it i don't care anymore
@@ -92,13 +94,12 @@ function getStepDocID(changePlanID,stepNum, callback){
             callback(doc.id)
         });
 
-
         // if(doc.exists){
         //     console.log(doc.id)
 
         //     callback(doc.id)
         // }
-    })
+    }).catch(error => console.log(error))
 }
 
 function addChangePlan(name, owner, callback) {
@@ -190,10 +191,12 @@ function addAssetChange(asset, assetID, changePlanID, callback, docID = null) {
         changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
             let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
             assetChangePlanObject.step = changeNumber;
-            changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function () {
+            changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function (doc) {
                 //network ports need to be done at time of execution
                 //so does power port and logging
-                callback(true);
+
+                //added the doc.id for change plan conflict checking: need to know which step we are checking
+                callback(true, doc.id);
             }).catch(function (error) {
                 console.log(error);
                 callback(null);

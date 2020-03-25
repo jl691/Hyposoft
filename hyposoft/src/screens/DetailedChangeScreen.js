@@ -1,25 +1,29 @@
 import React from "react";
 import theme from "../theme";
-import {Box, Button, Grommet, Heading, Table, TableBody, TableCell, TableHeader, TableRow} from "grommet";
+import { Box, Button, Grommet, Heading, Table, TableBody, TableCell, TableHeader, TableRow, Text } from "grommet";
 import AppBar from "../components/AppBar";
 import BackButton from "../components/BackButton";
 import UserMenu from "../components/UserMenu";
-import {ToastsContainer, ToastsStore} from "react-toasts";
+import { ToastsContainer, ToastsStore } from "react-toasts";
 import * as changeplanutils from "../utils/changeplanutils";
 import * as userutils from "../utils/userutils";
 import * as decommissionutils from "../utils/decommissionutils";
 import DeleteChangeForm from "../components/DeleteChangeForm";
+import * as changeplanconflictutils from '../utils/changeplanconflictutils'
+
 
 class DetailedChangeScreen extends React.Component {
 
     changePlanID;
     stepID;
+    conflictMessages = "";
 
     constructor(props) {
         super(props);
         this.state = {
             change: "",
-            popupType: ""
+            popupType: "",
+
         }
     }
 
@@ -27,6 +31,7 @@ class DetailedChangeScreen extends React.Component {
         this.changePlanID = this.props.match.params.changePlanID;
         this.stepID = this.props.match.params.stepID;
         console.log(this.stepID)
+        this.generateConflict()
         this.forceRefresh();
     }
 
@@ -37,6 +42,8 @@ class DetailedChangeScreen extends React.Component {
                     change: result,
                     executed: executed,
                     timestamp: timestamp
+                }, function () {
+                    this.generateConflict();
                 });
             } else {
                 console.log(result)
@@ -44,7 +51,7 @@ class DetailedChangeScreen extends React.Component {
         })
     }
 
-    generateNetworkConnectionRow(old){
+    generateNetworkConnectionRow(old) {
         let thisState = old ? this.state.change.changes.networkConnections.old : this.state.change.changes.networkConnections.new;
         //console.log(this.state.change.changes.networkConnections.new)
         if (thisState && Object.keys(thisState).length) {
@@ -70,7 +77,7 @@ class DetailedChangeScreen extends React.Component {
         }
     }
 
-    generatePowerConnectionRow(old){
+    generatePowerConnectionRow(old) {
         let thisState = old ? this.state.change.changes.powerConnections.old : this.state.change.changes.powerConnections.new;
         if (thisState && Object.keys(thisState).length) {
             return Object.keys(thisState).map((connection) => (
@@ -97,7 +104,7 @@ class DetailedChangeScreen extends React.Component {
         }
     }
 
-    generateMACRow(old){
+    generateMACRow(old) {
         let thisState = old ? this.state.change.changes.macAddresses.old : this.state.change.changes.macAddresses.new;
         if (thisState && Object.keys(thisState).length) {
             return Object.keys(thisState).map((address) => (
@@ -128,7 +135,7 @@ class DetailedChangeScreen extends React.Component {
                             <TableCell scope={"row"}>
                                 {change}
                             </TableCell>
-                            <TableCell style={{backgroundColor: "#ff4040", color: "#ffffff"}}>
+                            <TableCell style={{ backgroundColor: "#ff4040", color: "#ffffff" }}>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -148,7 +155,7 @@ class DetailedChangeScreen extends React.Component {
                                     </TableBody>
                                 </Table>
                             </TableCell>
-                            <TableCell style={{backgroundColor: "#00c781"}}>
+                            <TableCell style={{ backgroundColor: "#00c781" }}>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -176,7 +183,7 @@ class DetailedChangeScreen extends React.Component {
                             <TableCell scope={"row"}>
                                 powerConnections
                             </TableCell>
-                            <TableCell style={{backgroundColor: "#ff4040", color: "#ffffff"}}>
+                            <TableCell style={{ backgroundColor: "#ff4040", color: "#ffffff" }}>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -196,7 +203,7 @@ class DetailedChangeScreen extends React.Component {
                                     </TableBody>
                                 </Table>
                             </TableCell>
-                            <TableCell style={{backgroundColor: "#00c781"}}>
+                            <TableCell style={{ backgroundColor: "#00c781" }}>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -224,7 +231,7 @@ class DetailedChangeScreen extends React.Component {
                             <TableCell scope={"row"}>
                                 macAddresses
                             </TableCell>
-                            <TableCell style={{backgroundColor: "#ff4040", color: "#ffffff"}}>
+                            <TableCell style={{ backgroundColor: "#ff4040", color: "#ffffff" }}>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -241,7 +248,7 @@ class DetailedChangeScreen extends React.Component {
                                     </TableBody>
                                 </Table>
                             </TableCell>
-                            <TableCell style={{backgroundColor: "#00c781"}}>
+                            <TableCell style={{ backgroundColor: "#00c781" }}>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -265,10 +272,10 @@ class DetailedChangeScreen extends React.Component {
                         <TableCell scope={"row"}>
                             {change}
                         </TableCell>
-                        <TableCell style={{backgroundColor: "#ff4040", color: "#ffffff"}}>
+                        <TableCell style={{ backgroundColor: "#ff4040", color: "#ffffff" }}>
                             {this.state.change.changes[change]["old"]}
                         </TableCell>
-                        <TableCell style={{backgroundColor: "#00c781"}}>
+                        <TableCell style={{ backgroundColor: "#00c781" }}>
                             {this.state.change.changes[change]["new"]}
                         </TableCell>
                     </TableRow>)
@@ -278,18 +285,56 @@ class DetailedChangeScreen extends React.Component {
     }
 
     generateConflict() {
+
+        changeplanutils.getStepDocID(this.props.match.params.changePlanID, this.props.match.params.stepID, stepIDcallback => {
+           // changeplansRef.doc(this.props.match.params.changePlanID).collection('changes').doc(this.props.match.params.stepID).get().then(stepDoc => {
+
+           //if(stepIDCallback)
+               // let changeType = stepDoc.data().change
+                //if (changeType === "add") { TODO  
+                    changeplanconflictutils.addAssetChangePlanPackage(
+                        this.props.match.params.changePlanID,
+                        stepIDcallback,
+                        this.state.change.changes.model.new,
+                        this.state.change.changes.hostname.new,
+                        this.state.change.changes.datacenter.new,
+                        this.state.change.changes.rack.new,
+                        this.state.change.changes.rackU.new,
+                        this.state.change.changes.owner.new,
+                        this.state.change.assetID,
+                        this.state.change.changes.powerConnections.new,
+                        this.state.change.changes.networkConnections.new,
+                        status => {
+                            changeplanconflictutils.getErrorMessages(this.props.match.params.changePlanID, parseInt(this.props.match.params.stepID), errorMessages => {
+
+                                this.conflictMessages = errorMessages;
+                                console.log(this.conflictMessages)
+
+                            })
+
+
+                        })
+             //   }
+           //})
+        })
+
         return (
             <Box style={{
                 borderRadius: 10
             }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
                  margin={{top: "medium"}} height={"small"}>
                 <Heading level={"3"} margin={"small"}>Conflict</Heading>
-                <Box>This step is conflicted: the new hostname already exists.</Box>
+                <Box>
+                    <Text>
+                        {console.log(this.conflictMessages)}
+                        {this.conflictMessages}
+                    </Text>
+                </Box>
                 <Box align={"center"} width={"small"}>
-                    <Button primary label="Resolve" color={"light-1"} margin={{top: "small", bottom: "small"}}
-                            size={"small"} onClick={() => {
+                    <Button primary label="Resolve" color={"light-1"} margin={{ top: "small", bottom: "small" }}
+                        size={"small"} onClick={() => {
 
-                    }}/>
+                        }} />
                 </Box>
             </Box>
         )
@@ -306,13 +351,14 @@ class DetailedChangeScreen extends React.Component {
     };
 
     render() {
-        const {popupType} = this.state;
+        const { popupType } = this.state;
         let popup;
+        // this.generateConflict()
 
-        if(popupType === 'Delete'){
+        if (popupType === 'Delete') {
             popup = (
                 <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
-                                  changePlanID={this.props.match.params.changePlanID} stepNumber={this.stepID}/>
+                    changePlanID={this.props.match.params.changePlanID} stepNumber={this.stepID} />
             )
         }
 
@@ -321,21 +367,25 @@ class DetailedChangeScreen extends React.Component {
                 <Grommet theme={theme} full className='fade'>
                     <Box fill background='light-2' overflow={"auto"}>
                         <AppBar>
-                            <BackButton alignSelf='start' this={this}/>
+                            <BackButton alignSelf='start' this={this} />
                             <Heading alignSelf='center' level='4' margin={{
                                 top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                             }}>{this.props.match.params.assetID}</Heading>
-                            <UserMenu alignSelf='end' this={this}/>
+                            <UserMenu alignSelf='end' this={this} />
                         </AppBar>
-                        {this.generateConflict()}
-                        {this.state.executed && <Box style={{
+                        {/* {this.generateConflict()} */}
+                        {this.state.executed && 
+                        <Box 
+                        style={{
                             borderRadius: 10
                         }} width={"xlarge"} background={"status-ok"} align={"center"} alignSelf={"center"}
                                                      margin={{top: "medium"}}>
                             <Heading level={"3"} margin={"small"}>Change Plan Executed</Heading>
                             <Box>This change plan was executed on {decommissionutils.getDate(this.state.timestamp)}. Thus, no further changes can be made.</Box>
-                        </Box>}
+                        </Box>
+                        }
                         <Box
+
                             align='center'
                             margin={{left: 'medium', right: 'medium'}}
                             justify='center' overflow={"auto"}>
@@ -352,20 +402,20 @@ class DetailedChangeScreen extends React.Component {
                                 <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
                                      direction='column' justify='start'>
                                     <Heading level='4' margin='none'>Step #{this.stepID} Details</Heading>
-                                    <table style={{marginTop: '10px', marginBottom: '10px'}}>
+                                    <table style={{ marginTop: '10px', marginBottom: '10px' }}>
                                         <tbody>
-                                        <tr>
-                                            <td><b>Step #</b></td>
-                                            <td style={{textAlign: 'right'}}>{this.stepID}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><b>Asset ID</b></td>
-                                            <td style={{textAlign: 'right'}}>{this.state.change.assetID ? this.state.change.assetID : "TBD"}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><b>Change</b></td>
-                                            <td style={{textAlign: 'right'}}>{this.state.change.change}</td>
-                                        </tr>
+                                            <tr>
+                                                <td><b>Step #</b></td>
+                                                <td style={{ textAlign: 'right' }}>{this.stepID}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Asset ID</b></td>
+                                                <td style={{ textAlign: 'right' }}>{this.state.change.assetID ? this.state.change.assetID : "TBD"}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Change</b></td>
+                                                <td style={{ textAlign: 'right' }}>{this.state.change.change}</td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                     <Table>
@@ -386,22 +436,22 @@ class DetailedChangeScreen extends React.Component {
                                             {this.generateChangeTable()}
                                         </TableBody>
                                     </Table>
-                                    {!this.state.executed && <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
-                                         gap='small'>
+                                    {!this.state.executed && <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
+                                        gap='small'>
                                         <Button label="Edit Change" onClick={() => {
 
-                                        }}/>
+                                        }} />
                                         <Button label="Delete Change" onClick={() => {
                                             this.setState({
                                                 popupType: "Delete"
                                             })
-                                        }}/>
+                                        }} />
                                     </Box>}
                                 </Box>
                             </Box>
                         </Box>
                         {popup}
-                        <ToastsContainer store={ToastsStore}/>
+                        <ToastsContainer store={ToastsStore} />
                     </Box>
                 </Grommet>
             </React.Fragment>
