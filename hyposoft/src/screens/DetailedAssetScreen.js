@@ -532,7 +532,7 @@ export default class DetailedAssetScreen extends Component {
                                         <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
                                              gap='small'>
                                             {this.connectedPDU &&
-                                            <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                            <Box direction='column' flex alignSelf='stretch'
                                                  gap='small'>
                                                 <Button label="Power Asset On" onClick={() => {
                                                     this.turnAssetOn()
