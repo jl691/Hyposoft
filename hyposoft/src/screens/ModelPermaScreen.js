@@ -366,11 +366,11 @@ class ModelPermaScreen extends Component {
                                                     return <div key={key}>{i}</div>
                                                 })}
                                                 </span>
-                                            <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                            {userutils.isLoggedInUserAdmin() && <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
                                                  gap='small'>
                                                 <Button primary label="Edit" onClick={this.showEditDialog}/>
                                                 <Button label="Delete" onClick={this.showDeleteDialog}/>
-                                            </Box>
+                                            </Box>}
                                         </Box>
                                     </Box>
                                 </Box>
