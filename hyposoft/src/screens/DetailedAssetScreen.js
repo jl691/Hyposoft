@@ -10,16 +10,19 @@ import {
     TableHeader,
     TableRow,
     TableCell,
-    TableBody
+    TableBody, Layer
 } from 'grommet'
 import * as assetutils from '../utils/assetutils'
 import * as powerutils from '../utils/powerutils'
+import * as assetmacutils from "../utils/assetmacutils"
+import * as assetnetworkportutils from "../utils/assetnetworkportutils"
 import theme from '../theme'
 import BackButton from '../components/BackButton'
 import AppBar from '../components/AppBar'
 import UserMenu from '../components/UserMenu'
 import {PowerCycle} from "grommet-icons";
 import {ToastsContainer, ToastsStore} from "react-toasts";
+import EditAssetForm from "../components/EditAssetForm";
 
 export default class DetailedAssetScreen extends Component {
 
@@ -30,7 +33,8 @@ export default class DetailedAssetScreen extends Component {
         super(props);
         this.state = {
             asset: "",
-            powerMap: false
+            powerMap: false,
+            popupType: ""
         }
 
         this.generatePDUStatus = this.generatePDUStatus.bind(this);
@@ -41,10 +45,17 @@ export default class DetailedAssetScreen extends Component {
     }
 
     componentDidMount() {
-        console.log("DetailedAssetScreen")
+        this.forceRefresh();
+    }
+
+    forceRefresh(){
         this.setState({
-            asset: ""
+            asset: "",
+            powerMap: false,
+            popupType: ""
         });
+        this.powerPorts = null;
+        this.connectedPDU = null;
         powerutils.checkConnectedToPDU(this.props.match.params.assetID, result => {
             if (!(result === null)) {
                 console.log(result)
@@ -336,8 +347,52 @@ export default class DetailedAssetScreen extends Component {
         }
     }
 
+    handleCancelRefreshPopupChange() {
+        ToastsStore.success("Successfully updated asset.");
+        window.location.reload();
+    }
+
+    handleCancelPopupChange() {
+        this.setState({
+            popupType: ""
+        });
+    }
+
     render() {
-        console.log(this.props.match.params.assetID)
+        const {popupType} = this.state;
+        let popup;
+
+        if (popupType === 'Update') {
+            console.log("In parent: updateID is " + this.state.updateID)
+
+            popup = (
+
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+
+                    <EditAssetForm
+                        parentCallback={this.handleCancelRefreshPopupChange}
+                        cancelCallback={this.handleCancelPopupChange}
+
+                        popupMode={this.state.popupType}
+                        updateIDFromParent={this.state.asset.assetID}
+                        updateModelFromParent={this.state.asset.model}
+                        updateHostnameFromParent={this.state.asset.hostname}
+                        updateRackFromParent={this.state.asset.rack}
+                        updateRackUFromParent={this.state.asset.rackU}
+                        updateOwnerFromParent={this.state.asset.owner}
+                        updateCommentFromParent={this.state.asset.comment}
+                        updateDatacenterFromParent={this.state.asset.datacenter}
+                        updateAssetIDFromParent={this.state.asset.assetID}
+                        updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(this.state.asset.macAddresses)}
+                        updatePowerConnectionsFromParent={this.state.asset.powerConnections}
+                        updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.asset.networkConnections)}
+                    />
+                </Layer>
+            )
+
+        }
+
         return (
 
             <Router>
@@ -348,6 +403,7 @@ export default class DetailedAssetScreen extends Component {
 
                     <Grommet theme={theme} full className='fade'>
                         <Box fill background='light-2'>
+                            {popup}
                             <AppBar>
                                 {/* {this.props.match.params.vendor} {this.props.match.params.modelNumber} */}
                                 <BackButton alignSelf='start' this={this}/>
@@ -487,6 +543,11 @@ export default class DetailedAssetScreen extends Component {
                                                     this.powerCycleAsset()
                                                 }}/>
                                             </Box>}
+                                            <Button label="Edit Asset" onClick={() => {
+                                                this.setState({
+                                                    popupType: "Update"
+                                                })
+                                            }}/>
                                             <Button label="View Model Details" onClick={() => {
                                                 this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNum)
                                             }}/>
