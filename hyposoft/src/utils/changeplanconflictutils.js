@@ -125,17 +125,22 @@ const assetIDConflict = (changePlanID, stepID, assetID, callback) => {
 
 const modelConflict = (changePlanID, stepID, model, callback) => {
     let errorIDSet = new Set()
-    modelsRef.doc(model).get().then(async function (modelDoc) {
-        if (!modelDoc.exists) {
-            errorIDSet.add("modelErrID")
-            addConflictToDBDatabase(changePlanID, stepID, "model", errorIDSet, status => {
-                callback(status)
-            })
-        }
-        else {
-            callback(false)
-        }
+
+    //need to get modelID and pass that into doc
+    modelutils.getModelByModelname(model, modelDoc => {
+        modelsRef.doc(modelDoc.id).get().then(async function (modelDoc) {
+            if (!modelDoc.exists) {
+                errorIDSet.add("modelErrID")
+                addConflictToDBDatabase(changePlanID, stepID, "model", errorIDSet, status => {
+                    callback(status)
+                })
+            }
+            else {
+                callback(false)
+            }
+        })
     })
+
 }
 
 const rackUConflict = (changePlanID, stepID, model, datacenter, rackName, rackU, callback) => {
@@ -154,7 +159,7 @@ const rackUConflict = (changePlanID, stepID, model, datacenter, rackName, rackU,
                     //doc.data().height refers to model height
                     //need to get get model height
                     rackutils.checkAssetFits(rackU, doc.data().height, rackID, async function (status) {
-                        if (status) {
+                        if (status && status.length) {
                             //asset conflicts with other assets
                             errorIDSet.add("rackUConflictErrID")
                             addConflictToDBDatabase(changePlanID, stepID, "rackU", errorIDSet, status => {
@@ -353,7 +358,6 @@ function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datace
 //current step is in a for loop
 function checkSequentialStepConflicts(changePlanID) {
     changeplansRef.doc(changePlanID).collection('changes').get().then(querySnapshot => {
-        console.log(querySnapshot.size)
         for (let i = 0; i < querySnapshot.size; i++) {
             let thisStepID = querySnapshot.docs[i].id
             //console.log(thisStepID)
@@ -362,7 +366,7 @@ function checkSequentialStepConflicts(changePlanID) {
                 console.log("ON CURRENT STEP " + thisStepNum)
                 if (thisStepNum > 1) {
                     checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, status => {
-                        console.log("Finished checkWithPreviousStpes")
+                        /// console.log("Finished checkWithPreviousStpes")
                     })
                 }
             })
@@ -427,8 +431,11 @@ function addChangeCheck(changePlanID, thisStepData, thisStepID, otherStepNum) {
                 })
             }
             else {
+                console.log("The other step is decomm")
                 let thisNetworkConnections = thisStepData.changes.networkConnections.new
-                networkConnectionOtherAssetIDStep(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, thisNetworkConnections, callback1 => {
+                let otherStepAssetID = otherStepDoc.data().assetID
+                networkConnectionOtherAssetIDStep(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, thisNetworkConnections, otherStepAssetID, callback1 => {
+                    console.log("Done with this bithc")
 
                 })
 
@@ -505,21 +512,24 @@ function networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, o
 
 //call this in the else: know that it's a decomm change
 // is the other asset i want to connect to been decomm by a previous /otherstep?
-function networkConnectionOtherAssetIDStep(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, thisNetworkConnections, callback) {
+function networkConnectionOtherAssetIDStep(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, thisNetworkConnections, otherStepAssetID, callback) {
     let errorIDSet = new Set();
 
     if (!thisNetworkConnections.size) {
         callback(false)
     }
     Object.keys(thisNetworkConnections).forEach(thisConnThisPort => {
-        if (thisConnThisPort == thisStepData.assetID) {
+        if (thisNetworkConnections[thisConnThisPort].otherAssetID == otherStepAssetID ) { 
             errorIDSet.add("networkConnectionOtherAssetIDErrID")
             errorIDSet.add("networkConnectionNonExistentOtherPortErrID")
         }
+
     })
-    addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, otherStepID, otherStepNum, errorIDSet, status => {
+
+    addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, null, otherStepNum, errorIDSet, status => {
         callback(status)
     })
+
 }
 
 //TODO: need to test this
@@ -556,7 +566,7 @@ function assetIDStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum
     let errorIDSet = new Set()
     let thisAssetID = thisStepData.assetID
 
-    if (thisAssetID.toString() === otherAssetID.toString()) {
+    if (thisAssetID.toString() === otherAssetID.toString() && thisAssetID !== "" && otherAssetID !== "") {
         errorIDSet.add("assetIDErrID")
         addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, otherStepID, otherStepNum, errorIDSet, status => {
             callback(status)
@@ -583,7 +593,7 @@ function hostnameStepConflict(changePlanID, thisStepID, otherStepID, otherStepNu
 function rackUStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherModel, otherDatacenter, otherRack, otherRackU, callback) {
     let errorIDSet = new Set()
     let thisModel = thisStepData.changes.model.new
-    console.log(thisModel)
+    //console.log(thisModel)
     modelutils.getModelByModelname(thisModel, async function (thisModelDoc) {
         modelutils.getModelByModelname(otherModel, async function (otherModelDoc) {
             let otherModelHeight = otherModelDoc.data().height
@@ -645,7 +655,7 @@ function addConflictToDBDatabase(changePlanID, stepID, fieldName, errorIDSet, ca
             }
 
         }, { merge: true }).then(function () {
-            console.log("Successfully added the conflict to the database.")
+            console.log("Successfully added the conflict to the database: database")
             return (callback(true))
 
         }).catch(error => {
@@ -663,30 +673,27 @@ function addConflictToDBDatabase(changePlanID, stepID, fieldName, errorIDSet, ca
 
 function addConflictToDBSteps(changePlanID, stepID, stepNum, otherStepID, otherStepNum, errorIDSet, callback) {
 
-    //Call this method at each validation function at the end, where appropriate
-    //What if the stepID doc does not exist? Does .set() take care of this for you?
-    //the answer: yes, set with merge will update fields in the document or create it if it doesn't exists
     let errorIDArray = [...errorIDSet]
-
     if (errorIDArray.length) {
 
         console.log("Error ID(s) that will be added to the conflict/stepID doc: " + [...errorIDArray])
         changeplansRef.doc(changePlanID).collection('conflicts').doc(stepID).set({
             steps: {
-                [stepNum]: firebase.firestore.FieldValue.arrayUnion(...errorIDArray)
+                [otherStepNum]: firebase.firestore.FieldValue.arrayUnion(...errorIDArray)
             }
 
         }, { merge: true }).then(function () {
-            //this is for symmetric add of conflicts
+            //this is for symmetric add of conflicts. Decomm check doesn't need a symm add, therefore the if statement below
+
             if (otherStepID) {
                 changeplansRef.doc(changePlanID).collection('conflicts').doc(otherStepID).set({
                     steps: {
-                        [otherStepNum]: firebase.firestore.FieldValue.arrayUnion(...errorIDArray)
+                        [stepNum]: firebase.firestore.FieldValue.arrayUnion(...errorIDArray)
                     }
 
                 }, { merge: true }).then(function () {
 
-                    console.log("Successfully added the conflict to the database.")
+                    console.log("Successfully added the conflict to the database: steps.")
                     return (callback(true))
 
                 })
@@ -712,15 +719,18 @@ function getErrorMessages(changePlanID, stepNum, callback) {
         changeplansRef.doc(changePlanID).collection('conflicts').doc(stepID).get().then(function (conflictDoc) {
             let errMessage = ""
             const data = conflictDoc.data();
-            console.log(data)
 
             for (const conflictType in data) {
                 const conflicts = data[conflictType];
                 for (const key in conflicts) {
+
                     let value = conflicts[key]
-                    let message = errorStrings[value]
-                    console.log(message)
-                    errMessage = errMessage + "\n" + message
+                    value.forEach(errID => {
+                        let message = errorStrings[errID]
+                        errMessage = errMessage + "\n" + message
+
+                    })
+
 
                 }
 
