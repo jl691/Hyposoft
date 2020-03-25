@@ -283,6 +283,9 @@ export default class AssetTable extends Component {
                 break
             }
         }
+        if (assets.length === 0) {
+          selectAll = false
+        }
         // do not put this inside a set state!!!!
         this.selectAll = selectAll
         return selectAll
