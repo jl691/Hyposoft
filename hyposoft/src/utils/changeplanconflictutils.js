@@ -490,12 +490,13 @@ function networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, o
             let thisConnOtherAssetID = thisNetworkConnections[thisConnKey].otherAssetID
             let thisConnOtherPort = thisNetworkConnections[thisConnKey].otherPort
             //2 does my current otherAssetID, otherPort match with another step's assetID and thisPort?
-            if (thisConnOtherAssetID === otherAssetID && thisConnOtherPort === otherConnKey) {
+            //otherAssetID, otherPort conflict check
+            if (thisConnOtherAssetID === otherConnOtherAssetID && thisConnOtherPort === otherConnOtherPort) {
                 errorIDSet.add("networkConnectionConflictErrID")
 
             }
             //3 does my current thisPort match with another step's otherport? 
-            else if (thisConnKey === otherConnOtherPort) {
+            else if (thisConnKey === otherConnKey && otherAssetID === thisStepData.assetID && otherAssetID !== "" && thisStepData.assetID !== "") { 
                 errorIDSet.add("networkConnectionThisPortConflictErrID")
             }
 
