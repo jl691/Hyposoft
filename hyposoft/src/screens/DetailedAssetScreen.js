@@ -38,6 +38,7 @@ export default class DetailedAssetScreen extends Component {
         }
 
         this.generatePDUStatus = this.generatePDUStatus.bind(this);
+        this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
     }
 
     static contextTypes = {
