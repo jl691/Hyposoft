@@ -1,5 +1,5 @@
 import React, {Component} from 'react'
-import {BrowserRouter as Router, Route} from 'react-router-dom'
+import {BrowserRouter as Router, Link, Redirect, Route} from 'react-router-dom'
 import {
     Button,
     Grommet,
@@ -83,7 +83,10 @@ export default class DetailedAssetScreen extends Component {
         if (this.state.asset.networkConnections && Object.keys(this.state.asset.networkConnections).length) {
             console.log(this.state.asset.networkConnections)
             return Object.keys(this.state.asset.networkConnections).map((connection) => (
-                <TableRow>
+                <TableRow
+                          style={{ cursor: 'pointer' }} onClick={() => {
+                              window.location.href = '/assets/' + this.state.asset.networkConnections[connection].otherAssetID;
+                }}>
                     <TableCell scope="row">
                         {connection}
                     </TableCell>
@@ -481,13 +484,13 @@ export default class DetailedAssetScreen extends Component {
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableCell scope="col" border="bottom">
-                                                        <strong>Power Port</strong>
+                                                        <strong>Power Port Name</strong>
                                                     </TableCell>
                                                     <TableCell scope="col" border="bottom">
-                                                        <strong>PDU Side</strong>
+                                                        <strong>Connected PDU Side</strong>
                                                     </TableCell>
                                                     <TableCell scope="col" border="bottom">
-                                                        <strong>PDU Port</strong>
+                                                        <strong>Connected PDU Port</strong>
                                                     </TableCell>
                                                 </TableRow>
                                             </TableHeader>
