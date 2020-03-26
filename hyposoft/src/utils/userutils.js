@@ -27,6 +27,10 @@ function doesLoggedInUserHaveModelPerm() {
 }
 
 function doesLoggedInUserHaveAssetPerm(dcAbbrev) {
+    // If dcAbbrev is null, check for global permissions
+    if (!dcAbbrev) {
+        return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_GLOBAL')))
+    }
     return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_GLOBAL')) || (JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_'+dcAbbrev)))
 }
 
