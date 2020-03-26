@@ -1,6 +1,6 @@
 import React from "react";
 import theme from "../theme";
-import { Box, Button, Grommet, Heading, Table, TableBody, TableCell, TableHeader, TableRow, Text } from "grommet";
+import { Box, Button, Grommet, Heading, Table, TableBody, TableCell, TableHeader, TableRow } from "grommet";
 import AppBar from "../components/AppBar";
 import BackButton from "../components/BackButton";
 import UserMenu from "../components/UserMenu";
@@ -11,19 +11,19 @@ import * as decommissionutils from "../utils/decommissionutils";
 import DeleteChangeForm from "../components/DeleteChangeForm";
 import * as changeplanconflictutils from '../utils/changeplanconflictutils'
 
-
 class DetailedChangeScreen extends React.Component {
 
     changePlanID;
     stepID;
     conflictMessages = "";
+    forceRefreshCount = 0;
+
 
     constructor(props) {
         super(props);
         this.state = {
             change: "",
-            popupType: "",
-
+            popupType: ""
         }
     }
 
@@ -31,7 +31,6 @@ class DetailedChangeScreen extends React.Component {
         this.changePlanID = this.props.match.params.changePlanID;
         this.stepID = this.props.match.params.stepID;
         console.log(this.stepID)
-        this.generateConflict()
         this.forceRefresh();
     }
 
@@ -42,8 +41,6 @@ class DetailedChangeScreen extends React.Component {
                     change: result,
                     executed: executed,
                     timestamp: timestamp
-                }, function () {
-                    this.generateConflict();
                 });
             } else {
                 console.log(result)
@@ -287,57 +284,72 @@ class DetailedChangeScreen extends React.Component {
     generateConflict() {
 
         changeplanutils.getStepDocID(this.props.match.params.changePlanID, this.props.match.params.stepID, stepIDcallback => {
-           // changeplansRef.doc(this.props.match.params.changePlanID).collection('changes').doc(this.props.match.params.stepID).get().then(stepDoc => {
+            // changeplansRef.doc(this.props.match.params.changePlanID).collection('changes').doc(this.props.match.params.stepID).get().then(stepDoc => {
 
-           //if(stepIDCallback)
-               // let changeType = stepDoc.data().change
-                //if (changeType === "add") { TODO  
-                    changeplanconflictutils.addAssetChangePlanPackage(
-                        this.props.match.params.changePlanID,
-                        stepIDcallback,
-                        this.state.change.changes.model.new,
-                        this.state.change.changes.hostname.new,
-                        this.state.change.changes.datacenter.new,
-                        this.state.change.changes.rack.new,
-                        this.state.change.changes.rackU.new,
-                        this.state.change.changes.owner.new,
-                        this.state.change.assetID,
-                        this.state.change.changes.powerConnections.new,
-                        this.state.change.changes.networkConnections.new,
-                        status => {
-                            changeplanconflictutils.getErrorMessages(this.props.match.params.changePlanID, parseInt(this.props.match.params.stepID), errorMessages => {
+            //if(stepIDCallback)
+            // let changeType = stepDoc.data().change
+            //if (changeType === "add") { TODO  
+            changeplanconflictutils.addAssetChangePlanPackage(
+                this.props.match.params.changePlanID,
+                stepIDcallback,
+                this.state.change.changes.model.new,
+                this.state.change.changes.hostname.new,
+                this.state.change.changes.datacenter.new,
+                this.state.change.changes.rack.new,
+                this.state.change.changes.rackU.new,
+                this.state.change.changes.owner.new,
+                this.state.change.assetID,
+                this.state.change.changes.powerConnections.new,
+                this.state.change.changes.networkConnections.new,
+                status => {
+                    changeplanconflictutils.getErrorMessages(this.props.match.params.changePlanID, parseInt(this.props.match.params.stepID), errorMessages => {
+                        this.forceRefreshCount++;
 
-                                this.conflictMessages = errorMessages;
-                                console.log(this.conflictMessages)
+                        this.conflictMessages = errorMessages;
+                        //console.log(this.conflictMessages)
+                        if (this.forceRefreshCount === 1) {
+                            this.forceRefresh()
 
-                            })
+                        }
+
+                        //need to only forceRefresh once
+
+                    })
 
 
-                        })
-             //   }
-           //})
+                })
+            //   }
+            //})
         })
+        if (this.conflictMessages !== "") {
+            return (
 
-        return (
-            <Box style={{
-                borderRadius: 10
-            }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
-                 margin={{top: "medium"}} height={"small"}>
-                <Heading level={"3"} margin={"small"}>Conflict</Heading>
-                <Box>
-                    <Text>
-                        {console.log(this.conflictMessages)}
-                        {this.conflictMessages}
-                    </Text>
-                </Box>
-                <Box align={"center"} width={"small"}>
-                    <Button primary label="Resolve" color={"light-1"} margin={{ top: "small", bottom: "small" }}
-                        size={"small"} onClick={() => {
+                <Box style={{
+                    borderRadius: 10
+                }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
+                    margin={{ top: "medium" }} height={"small"} overflow="auto" direction="column">
+                    <Heading level={"3"} margin={"small"}>Conflict</Heading>
+                    <Box overflow="scroll">
+                        <span style={{}}>
+                            {this.conflictMessages.split('\n').map((i, key) => {
+                                return <div key={key}>{i}</div>
+                            })}
+                        </span>
+                    </Box>
+                    <Box align={"center"} width={"small"}>
 
-                        }} />
+                        <Button primary label="Resolve" color={"light-1"} margin={{ top: "small", bottom: "small" }}
+                            size={"small"} onClick={() => {
+                                //TODO HERE
+
+                            }} />
+                    </Box>
                 </Box>
-            </Box>
-        )
+            )
+
+
+        }
+
     }
 
     cancelPopup = (data) => {
@@ -353,7 +365,6 @@ class DetailedChangeScreen extends React.Component {
     render() {
         const { popupType } = this.state;
         let popup;
-        // this.generateConflict()
 
         if (popupType === 'Delete') {
             popup = (
@@ -373,34 +384,30 @@ class DetailedChangeScreen extends React.Component {
                             }}>{this.props.match.params.assetID}</Heading>
                             <UserMenu alignSelf='end' this={this} />
                         </AppBar>
-                        {/* {this.generateConflict()} */}
-                        {this.state.executed && 
-                        <Box 
-                        style={{
+                        {this.generateConflict()}
+                        {this.state.executed && <Box style={{
                             borderRadius: 10
                         }} width={"xlarge"} background={"status-ok"} align={"center"} alignSelf={"center"}
-                                                     margin={{top: "medium"}}>
+                            margin={{ top: "medium" }}>
                             <Heading level={"3"} margin={"small"}>Change Plan Executed</Heading>
                             <Box>This change plan was executed on {decommissionutils.getDate(this.state.timestamp)}. Thus, no further changes can be made.</Box>
-                        </Box>
-                        }
+                        </Box>}
                         <Box
-
                             align='center'
-                            margin={{left: 'medium', right: 'medium'}}
+                            margin={{ left: 'medium', right: 'medium' }}
                             justify='center' overflow={"auto"}>
                             <Box style={{
                                 borderRadius: 10,
                                 borderColor: '#EDEDED'
                             }}
-                                 direction='row'
-                                 background='#FFFFFF'
-                                 width={'xlarge'}
-                                 margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                                 pad='small'
-                            overflow={"auto"}>
-                                <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                     direction='column' justify='start'>
+                                direction='row'
+                                background='#FFFFFF'
+                                width={'xlarge'}
+                                margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                                pad='small'
+                                overflow={"auto"}>
+                                <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
+                                    direction='column' justify='start'>
                                     <Heading level='4' margin='none'>Step #{this.stepID} Details</Heading>
                                     <table style={{ marginTop: '10px', marginBottom: '10px' }}>
                                         <tbody>
