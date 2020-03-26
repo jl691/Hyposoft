@@ -43,6 +43,7 @@ class AssetScreen extends Component {
     rackSort;
     rackUSort;
     datacenters = [];
+    activeFilters = false;
 
     constructor(props) {
         super(props);
@@ -131,8 +132,12 @@ class AssetScreen extends Component {
     checkFilterDone(){
         if (/[A-Z]\d+/.test(this.state.rangeStart) && /[A-Z]\d+/.test(this.state.rangeEnd) && this.state.datacenter) {
             console.log("passed")
+            // activeFilters flag is for selectAll feature
+            this.activeFilters = true
             this.assetTable.current.handleFilter(this.state.rangeStart, this.state.rangeEnd, this.state.datacenter);
         } else {
+            // activeFilters flag is for selectAll feature
+            this.activeFilters = false
             this.assetTable.current.restoreDefault();
         }
     }
@@ -277,8 +282,8 @@ class AssetScreen extends Component {
                     // this is already grabbing all the possible assets so select all should reflect that
                     this.assetTable.current.totalWasAdded = true
                     var resultsIds = []
-                    for(var index = 0; index < results.length; index++) {
-                        resultsIds.push(results[index].asset_id)
+                    for(var ind = 0; ind < results.length; ind++) {
+                        resultsIds.push(results[ind].asset_id)
                     }
                     this.assetTable.current.totalAssetIDs = resultsIds
                     this.setState(oldState => ({
@@ -289,6 +294,15 @@ class AssetScreen extends Component {
         } else {
             // reset
             this.assetTable.current.state.assets.forEach(asset => asset.checked = this.assetTable.current.state.selectedAssets.includes(asset.asset_id))
+            if (this.activeFilters) {
+              // this is already grabbing all the possible assets so select all should reflect that
+              this.assetTable.current.totalWasAdded = true
+              var resultsIds = []
+              for(var ind = 0; ind < this.assetTable.current.state.assets.length; ind++) {
+                  resultsIds.push(this.assetTable.current.state.assets[ind].asset_id)
+              }
+              this.assetTable.current.totalAssetIDs = resultsIds
+            }
             this.setState(oldState => ({
                 ...oldState,
                 searchResults: undefined
