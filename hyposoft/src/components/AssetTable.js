@@ -217,24 +217,12 @@ export default class AssetTable extends Component {
                 }
             }
         })
-        // this is already grabbing all the possible assets so select all should reflect that
-        this.totalWasAdded = true
-        var newAssetsIds = []
-        for(var index = 0; index < newAssets.length; index++) {
-            newAssetsIds.push(newAssets[index].asset_id)
-        }
-        this.totalAssetIDs = newAssetsIds
+        this.presetTotalAssetIdsForSelectAll(newAssets)
         this.setState({assets: newAssets})
     }
 
     handleRackRackUSort(sortedAssets) {
-        // this is already grabbing all the possible assets so select all should reflect that
-        this.totalWasAdded = true
-        var sortedAssetsIds = []
-        for(var index = 0; index < sortedAssets.length; index++) {
-            sortedAssetsIds.push(sortedAssets[index].asset_id)
-        }
-        this.totalAssetIDs = sortedAssetsIds
+        this.presetTotalAssetIdsForSelectAll(sortedAssets)
         this.setState({assets: sortedAssets})
     }
 
@@ -321,6 +309,16 @@ export default class AssetTable extends Component {
           assets[index].checked = selected.includes(assets[index].asset_id)
       }
       return assets
+    }
+
+    presetTotalAssetIdsForSelectAll(assets) {
+      // this is already grabbing all the possible assets so select all should reflect that
+      this.totalWasAdded = true
+      var ids = []
+      for(var ind = 0; ind < assets.length; ind++) {
+          ids.push(assets[ind].asset_id)
+      }
+      this.totalAssetIDs = ids
     }
 
     selectAllHyperlink() {

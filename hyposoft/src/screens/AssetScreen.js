@@ -279,13 +279,7 @@ class AssetScreen extends Component {
                             checked: this.assetTable.current.state.selectedAssets.includes(hits[i].objectID)
                         }]
                     }
-                    // this is already grabbing all the possible assets so select all should reflect that
-                    this.assetTable.current.totalWasAdded = true
-                    var resultsIds = []
-                    for(var ind = 0; ind < results.length; ind++) {
-                        resultsIds.push(results[ind].asset_id)
-                    }
-                    this.assetTable.current.totalAssetIDs = resultsIds
+                    this.assetTable.current.presetTotalAssetIdsForSelectAll(results)
                     this.setState(oldState => ({
                         ...oldState,
                         searchResults: results
@@ -295,13 +289,7 @@ class AssetScreen extends Component {
             // reset
             this.assetTable.current.state.assets.forEach(asset => asset.checked = this.assetTable.current.state.selectedAssets.includes(asset.asset_id))
             if (this.activeFilters) {
-              // this is already grabbing all the possible assets so select all should reflect that
-              this.assetTable.current.totalWasAdded = true
-              var resultsIds = []
-              for(var ind = 0; ind < this.assetTable.current.state.assets.length; ind++) {
-                  resultsIds.push(this.assetTable.current.state.assets[ind].asset_id)
-              }
-              this.assetTable.current.totalAssetIDs = resultsIds
+              this.assetTable.current.presetTotalAssetIdsForSelectAll(this.assetTable.current.state.assets)
             }
             this.setState(oldState => ({
                 ...oldState,
