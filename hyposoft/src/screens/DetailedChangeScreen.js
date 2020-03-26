@@ -30,7 +30,6 @@ class DetailedChangeScreen extends React.Component {
     componentDidMount() {
         this.changePlanID = this.props.match.params.changePlanID;
         this.stepID = this.props.match.params.stepID;
-        console.log(this.stepID)
         this.forceRefresh();
     }
 
@@ -283,44 +282,21 @@ class DetailedChangeScreen extends React.Component {
 
     generateConflict() {
 
-        changeplanutils.getStepDocID(this.props.match.params.changePlanID, this.props.match.params.stepID, stepIDcallback => {
-            // changeplansRef.doc(this.props.match.params.changePlanID).collection('changes').doc(this.props.match.params.stepID).get().then(stepDoc => {
+        changeplanconflictutils.getErrorMessages(this.props.match.params.changePlanID, parseInt(this.props.match.params.stepID), errorMessages => {
+            this.forceRefreshCount++;
 
-            //if(stepIDCallback)
-            // let changeType = stepDoc.data().change
-            //if (changeType === "add") { TODO  
-            changeplanconflictutils.addAssetChangePlanPackage(
-                this.props.match.params.changePlanID,
-                stepIDcallback,
-                this.state.change.changes.model.new,
-                this.state.change.changes.hostname.new,
-                this.state.change.changes.datacenter.new,
-                this.state.change.changes.rack.new,
-                this.state.change.changes.rackU.new,
-                this.state.change.changes.owner.new,
-                this.state.change.assetID,
-                this.state.change.changes.powerConnections.new,
-                this.state.change.changes.networkConnections.new,
-                status => {
-                    changeplanconflictutils.getErrorMessages(this.props.match.params.changePlanID, parseInt(this.props.match.params.stepID), errorMessages => {
-                        this.forceRefreshCount++;
+            this.conflictMessages = errorMessages;
+            //console.log(this.conflictMessages)
+            if (this.forceRefreshCount === 1) {
+                //need to only forceRefresh once, when we construct the message
+                //Take this out if i figure out a bette timing issue
+                this.forceRefresh()
 
-                        this.conflictMessages = errorMessages;
-                        //console.log(this.conflictMessages)
-                        if (this.forceRefreshCount === 1) {
-                            this.forceRefresh()
-
-                        }
-
-                        //need to only forceRefresh once
-
-                    })
+            }
 
 
-                })
-            //   }
-            //})
         })
+
         if (this.conflictMessages !== "") {
             return (
 

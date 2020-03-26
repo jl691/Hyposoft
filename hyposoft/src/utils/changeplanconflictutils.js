@@ -8,6 +8,7 @@ import * as assetpowerportutils from './assetpowerportutils'
 import * as changeplanutils from './changeplanutils'
 //for testing/console logging purposes:
 import errorStrings from '../res/errorMessages.json'
+import { addAsset } from './assetutils'
 
 //check add asset change plan edits
 
@@ -300,7 +301,7 @@ function networkConnectionOtherAssetID(otherAssetID, errorIDSet, callback) {
 function decommissionAssetChangePlanPackage(changePlanID, stepID, callback) {
     changeplansRef.doc(changePlanID).collection('changes').doc(stepID).get().then(stepDoc => {
         let errorIDSet = new Set()
-        let decommAssetID = stepDoc.data().assetID
+        let decommAssetID = stepDoc.data().assetID.toString()
 
         assetRef.doc(decommAssetID).get().then(assetDoc => {
             if (!assetDoc.exists) {
@@ -313,6 +314,36 @@ function decommissionAssetChangePlanPackage(changePlanID, stepID, callback) {
 
             }
         })
+    })
+}
+
+//might move this up a level: to when you click on a changeplan
+function checkLiveDBConflicts(changePlanID, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, callback ){
+    changeplansRef.doc(changePlanID).collection('changes').get().then( querySnapshot =>{ //querySnapshot is all docs in changes
+        for (let i = 0; i < querySnapshot.size; i++) {
+            let thisStepID = querySnapshot.docs[i].id
+            //console.log(thisStepID)
+            changeplansRef.doc(changePlanID).collection('changes').doc(thisStepID).get().then(docSnap => {
+                //let thisStepNum = docSnap.data().step
+                let changeType = docSnap.data().change
+                if(changeType==="add"){
+                    addAssetChangePlanPackage(changePlanID, thisStepID, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, status =>{
+                        console.log("Add live db check status: "+ status)
+                    })
+                }
+                else if(changeType==="edit"){
+                    console.log("Edit live db check. to be implemented")
+                }
+                else{
+                    decommissionAssetChangePlanPackage(changePlanID, thisStepID, status =>{
+                        console.log("Decomm live db check status: "+ status)
+                    })
+
+                }
+               
+            })
+        }
+
     })
 }
 
@@ -459,11 +490,11 @@ function decommissionChangeCheck(changePlanID, thisStepID, otherStepNum, thisSte
                 let decommOtherAsset = otherStepDoc.data().assetID
 
                 if (decommThisAsset === decommOtherAsset) {
-                    console.log("up in this bitch rn")
+                    //console.log("up in this bitch rn")
                     errorIDSet.add("decommissionStepErrID")
 
                     //TODO: is it necessary to have symmetric conflicts here? So if you want to decommission asset X in step 4, and you check previous steps and found that asset X has been decommissioned in step 2, then is it necessary for step 2 to also show the conflict too?
-                    addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, otherStepID, otherStepNum, errorIDSet, status => {
+                    addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, null, otherStepNum, errorIDSet, status => {
                         callback(status)
                     })
                 }
@@ -714,6 +745,47 @@ function addConflictToDBSteps(changePlanID, stepID, stepNum, otherStepID, otherS
     }
 }
 
+//this will delete tthe entire doc if necessary. This is so DetailedChangePlanScreen will know whether or not there are conflicts
+//in the entire change plan
+function deleteConflictFromDB(changePlanID, thisStepID){
+    changeplansRef.doc(changePlanID).collection('conflicts').doc(thisStepID).get().then(deleteStepDoc =>{
+        if(deleteStepDoc.steps){
+            
+
+        }
+        if(deleteStepDoc.database){
+            changeplansRef.doc(changePlanID).collection('conflicts').doc(thisStepID).delete().then( function(){
+                console.log("Conflict live db doc deleted successfully")
+            }).catch(error => console.log(error))
+        }
+    })
+
+}
+
+function symmetricDelete(changePlanID, deleteStepNum, deleteStepDoc){
+
+    //instead of passing in deleteStepErr, it's every error in the stepDoc
+    let conflictingOtherSteps=Object.keys(deleteStepDoc.steps) //steps is a map object
+    for(const otherStepNum in conflictingOtherSteps){ //In the map//gets all the arrays that correspond with each step number in steps object
+        for(const errID in otherStepNum)
+        changeplanutils.getStepDocID(changePlanID, otherStepNum, otherStepDocID =>{
+            changeplansRef.doc(changePlanID).collection('conflicts').doc(otherStepDocID).get().then(otherStepDoc =>{
+
+                otherStepDoc.update({
+                    [deleteStepNum]:firebase.firestore.FieldValue.arrayRemove(errID)
+                })
+
+            })
+        })
+
+    }
+
+}
+
+function recursiveDelete(changePlanID, deleteStepID){
+
+}
+
 function getErrorMessages(changePlanID, stepNum, callback) {
 
     changeplanutils.getStepDocID(changePlanID, stepNum, stepID => {
@@ -746,7 +818,6 @@ function getErrorMessages(changePlanID, stepNum, callback) {
 }
 
 export {
-
     addAssetChangePlanPackage,
     rackNonExistent,
     datacenterNonExistent,
@@ -759,7 +830,7 @@ export {
     networkConnectionConflict,
     getErrorMessages,
     checkSequentialStepConflicts,
-    decommissionAssetChangePlanPackage
+    checkLiveDBConflicts,
 
 
 
