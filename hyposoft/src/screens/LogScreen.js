@@ -141,7 +141,7 @@ class LogScreen extends Component {
     }
 
     render() {
-        if (!userutils.isUserLoggedIn()) {
+        if (!userutils.doesLoggedInUserHaveAuditPerm()) {
             return <Redirect to='/'/>
         }
 
