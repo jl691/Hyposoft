@@ -1,17 +1,16 @@
 import * as firebaseutils from './firebaseutils'
 import * as logutils from './logutils'
 
-const USER_ROLE = 'USER_ROLE'
-const ADMIN_ROLE = 'ADMIN_ROLE'
+const ADMIN_PERMISSION = 'ADMIN_PERMISSION'
 
 function isUserLoggedIn() {
     var loginCheck = localStorage.getItem('userLoginCheck')
     var displayName = localStorage.getItem('displayName')
     var username = localStorage.getItem('username')
     var email = localStorage.getItem('email')
-    var role = localStorage.getItem('role')
+    var permissions = localStorage.getItem('permissions')
 
-    return firebaseutils.hashAndSalt(displayName+username+email+role) === loginCheck
+    return firebaseutils.hashAndSalt(displayName+username+email+permissions) === loginCheck
 }
 
 function validEmail(email) {
@@ -19,9 +18,24 @@ function validEmail(email) {
     return re.test(String(email).toLowerCase());
 }
 
-//probably need to switch this over to a role-based check at some point for multiple admins
 function isLoggedInUserAdmin() {
-    return isUserLoggedIn() && ((localStorage.getItem('username') === 'admin') || (localStorage.getItem('role') === ADMIN_ROLE))
+    return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes(ADMIN_PERMISSION)))
+}
+
+function doesLoggedInUserHaveModelPerm() {
+    return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('MODEL_PERMISSION')))
+}
+
+function doesLoggedInUserHaveAssetPerm(dcAbbrev) {
+    return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_GLOBAL')) || (JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_'+dcAbbrev)))
+}
+
+function doesLoggedInUserHaveAuditPerm() {
+    return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('AUDIT_PERMISSION')))
+}
+
+function doesLoggedInUserHavePowerPerm() {
+    return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('POWER_PERMISSION')))
 }
 
 function isLoggedInUserNetID() {
@@ -34,7 +48,7 @@ function packageUser(displayName, username, email, password) {
         username: username.trim(),
         email: email.trim(),
         password: (password !== null ? firebaseutils.hashAndSalt2(password) : ''),
-        role: USER_ROLE
+        permissions: []
     }
 
     return user
@@ -76,12 +90,12 @@ function updateUsername(oldUsername, newUsername, callback) {
     })
 }
 
-function updateUserRole(username, newRole, callback) {
+function updateUserPermissions(username, newPermissions, callback) {
     firebaseutils.usersRef.where('username', '==', username).get().then(qs => {
         if (!qs.empty) {
             logutils.getObjectData(qs.docs[0].id,logutils.USER(),data => {
               qs.docs[0].ref.update({
-                  role: newRole
+                  permissions: newPermissions
               }).then(() => {
                 logutils.addLog(qs.docs[0].id,logutils.USER(),logutils.MODIFY(),data)
                 callback()
@@ -140,13 +154,13 @@ function isLoginValid(username, password, callback) {
 
 function logUserIn(userObject) {
     localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(
-        userObject.displayName+userObject.username+userObject.email+userObject.role))
+        userObject.displayName+userObject.username+userObject.email+JSON.stringify(userObject.permissions)))
     localStorage.setItem('displayName', userObject.displayName)
     localStorage.setItem('username', userObject.username)
     localStorage.setItem('email', userObject.email)
     localStorage.setItem('userDocId', userObject.docId)
     localStorage.setItem('isNetIDAccount', userObject.password.trim() === '' ? 'yes' : 'no')
-    localStorage.setItem('role', userObject.role)
+    localStorage.setItem('permissions', JSON.stringify(userObject.permissions))
 }
 
 function getLoggedInUser() {
@@ -192,7 +206,7 @@ function loadUsers(startAfter, callback) {
 
         const users = docSnaps.docs.map(doc => (
             {dummy: true, username: doc.data().username, name: doc.data().displayName,
-                 role: (doc.data().username === 'admin' ? 'Admin' : 'User')}
+                 permissions: doc.data().permissions}
         ))
         callback(users, newStartAfter)
     })
@@ -281,8 +295,22 @@ function getAllUsers (callback) {
     })
 }
 
+function getAllDataCenterAbbrevs(callback) {
+    // yes this is not suited for this file, but i don't wanna touch other people's code
+    var results = []
+
+    firebaseutils.datacentersRef.get().then(querySnapshot => {
+        for (var i = 0; i < querySnapshot.size; i++) {
+            results.push(querySnapshot.docs[i].data().abbreviation)
+        }
+        callback(results)
+    })
+}
+
 export { isUserLoggedIn, createUser, modifyUser, deleteUser, isLoggedInUserAdmin,
 isLoginValid, logUserIn, logout, getUser, changePassword, loadUsers, addClaim,
 fetchClaim, usernameTaken, validEmail, removeClaim, updateUsername, sendRecoveryEmail,
 fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers, getLoggedInUser,
-USER_ROLE, ADMIN_ROLE, isLoggedInUserNetID, updateUserRole, getLoggedInUserUsername }
+ ADMIN_PERMISSION, isLoggedInUserNetID, getLoggedInUserUsername, getAllDataCenterAbbrevs,
+updateUserPermissions, doesLoggedInUserHaveModelPerm, doesLoggedInUserHaveAssetPerm,
+doesLoggedInUserHaveAuditPerm, doesLoggedInUserHavePowerPerm }
