@@ -254,7 +254,7 @@ class DetailedChangePlanScreen extends React.Component {
                                 //networkConnections needs to be an array what is it in assetData?
                                 //console.log(assetData)
                             
-                                changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.id,model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, status =>{
+                                changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.id, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, status =>{
                                     console.log("Done with live db checks for edit changes.")
                                 })
 
