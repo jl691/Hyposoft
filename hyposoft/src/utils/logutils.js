@@ -26,6 +26,10 @@ function CHANGEPLAN() {
     return 'change plan'
 }
 
+function PDU() {
+    return 'pdu'
+}
+
 // ACTIONS
 function CREATE() {
     return 'created'
@@ -49,6 +53,14 @@ function EXECUTE() {
 
 function COMPLETE() {
     return 'completed'
+}
+
+function POWER_ON() {
+    return 'powered on'
+}
+
+function POWER_OFF() {
+    return 'powered off'
 }
 
 // only optional is objectId and objectType
@@ -87,6 +99,9 @@ function addLog(objectId, objectType, action, data = null) {
             break
         case CHANGEPLAN():
             getChangePlanName(objectId,data,action,changeplan => finishAddingLog(changeplan, objectId, objectType, action))
+            break
+        case PDU():
+            getPDUName(data,action,(pdu,assetId) => finishAddingLog(pdu, assetId, objectType, action))
             break
         default:
             console.log("Could not create log due to unknown type: " + objectType)
@@ -220,7 +235,7 @@ function buildLog(data) {
     var log = data.userName + ' '
               + data.action + (data.action === MODIFY() && data.previousData ? buildDiff(data) : ' ')
               + data.objectType + ' ' + data.objectName
-              + (data.objectType === RACK() || data.objectType === ASSET() ? (' in datacenter ' + data.datacenter + '.') : '.')
+              + (data.objectType === RACK() || data.objectType === ASSET() || data.objectType === PDU() ? (' in datacenter ' + data.datacenter + '.') : '.')
     return log
 }
 
@@ -343,6 +358,43 @@ function getChangePlanName(id,data,action,callback) {
           callback(null)
         })
     }
+}
+
+function getPDUName(data,action,callback) {
+    firebaseutils.assetRef.get().then(docSnaps => {
+        var assetId = null
+        var asset;
+        for (var i = 0; i < docSnaps.docs.length; i++) {
+            asset = docSnaps.docs[i].data()
+            let formattedNum;
+            if (asset.rackNum.toString().length === 1) {
+                formattedNum = "0" + asset.rackNum;
+            } else {
+                formattedNum = asset.rackNum;
+            }
+            if (asset.powerConnections) {
+                for (var j = 0; j < asset.powerConnections.length; j++) {
+                    const assetPDU = "hpdu-rtp1-" + asset.rackRow + formattedNum + asset.powerConnections[j].pduSide.charAt(0) + ":" + asset.powerConnections[j].port
+                    if (assetPDU === data.pdu+':'+data.portNumber) {
+                        assetId = asset.assetId
+                        break
+                    }
+                }
+                if (assetId) {
+                    break
+                }
+            }
+        }
+        if (assetId) {
+            callback({name: data.pdu+':'+data.portNumber+' connected to asset '+asset.model+' '+asset.hostname, data: {...data,asset: asset}, previousData: null, datacenter: asset.datacenter}, assetId)
+            return
+        }
+        callback(null,null)
+    })
+    .catch( error => {
+      console.log("Error getting documents: ", error)
+      callback(null,null)
+    })
 }
 
 function assetDiff(data,field) {
@@ -529,4 +581,4 @@ var isEqual = function (value, other, name) {
 	return true;
 };
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }
+export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, PDU, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, POWER_ON, POWER_OFF, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }
