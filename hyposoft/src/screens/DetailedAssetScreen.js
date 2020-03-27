@@ -24,6 +24,7 @@ import UserMenu from '../components/UserMenu'
 import {FormEdit, Power, Clear, PowerCycle, View, ShareOption} from "grommet-icons"
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import EditAssetForm from "../components/EditAssetForm";
+import ReactTooltip from "react-tooltip";
 
 export default class DetailedAssetScreen extends Component {
 
@@ -323,7 +324,9 @@ export default class DetailedAssetScreen extends Component {
                                               }
                                           })
                                       }
-                                  }}/><PowerCycle
+                                  }}/>{(userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner) &&
+                    <PowerCycle
+                        data-tip="Power cycle"
                         size={"medium"} style={{marginLeft: "10px", cursor: "pointer"}} onClick={(e) => {
                         ToastsStore.success("Power cycling " + connection.name + ":" + connection.port + ". Please wait!");
                         powerutils.powerPortOff(connection.name, connection.port, result => {
@@ -347,7 +350,7 @@ export default class DetailedAssetScreen extends Component {
                                 ToastsStore.error("Could not power cycle due to network connectivity issues.")
                             }
                         })
-                    }}/></Box></td>
+                    }}/>}<ReactTooltip /></Box></td>
                 </tr>
             ))
         }
