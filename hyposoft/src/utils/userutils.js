@@ -34,6 +34,18 @@ function doesLoggedInUserHaveAssetPerm(dcAbbrev) {
     return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_GLOBAL')) || (JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_'+dcAbbrev)))
 }
 
+function getAllowedDCsString() {
+    var result = ""
+    for (var x = 0; x < JSON.parse(localStorage.getItem('permissions')).length; x++){
+        var item = JSON.parse(localStorage.getItem('permissions'))[x]
+        if (item.startsWith('ASSET_PERMISSION') && item !== 'ASSET_PERMISSION_GLOBAL') {
+            var abbrev = item.substring(item.lastIndexOf('_')+1)
+            result = result.concat(abbrev+', ')
+        }
+    }
+    return result.substring(0, result.length-2)
+}
+
 function doesLoggedInUserHaveAnyAssetPermsAtAll() {
     var perms = JSON.parse(localStorage.getItem('permissions'))
     for (var x = 0; x < perms.length; x++) {
@@ -327,4 +339,4 @@ fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers, getLoggedInUs
  ADMIN_PERMISSION, isLoggedInUserNetID, getLoggedInUserUsername, getAllDataCenterAbbrevs,
 updateUserPermissions, doesLoggedInUserHaveModelPerm, doesLoggedInUserHaveAssetPerm,
 doesLoggedInUserHaveAuditPerm, doesLoggedInUserHavePowerPerm,
-doesLoggedInUserHaveAnyAssetPermsAtAll }
+doesLoggedInUserHaveAnyAssetPermsAtAll, getAllowedDCsString }
