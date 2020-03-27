@@ -1,4 +1,4 @@
-import { assetRef, racksRef, modelsRef, usersRef, firebase, datacentersRef, changeplansRef } from './firebaseutils'
+import { assetRef, racksRef, modelsRef, usersRef, firebase, datacentersRef, changeplansRef, decommissionRef } from './firebaseutils'
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
 import * as assetIDutils from './assetidutils'
@@ -9,12 +9,6 @@ import * as changeplanutils from './changeplanutils'
 //for testing/console logging purposes:
 import errorStrings from '../res/errorMessages.json'
 import { addAsset } from './assetutils'
-
-//check add asset change plan edits
-
-//check edit asset change plan edits
-
-//check decomm asset change plan edits
 
 //the callback(false) ight not serve any purpose, was thinking of using it in unit testing or as a return val?
 
@@ -297,6 +291,51 @@ function networkConnectionOtherAssetID(otherAssetID, errorIDSet, callback) {
 
 }
 
+//This is a check against the live db. If there is an edit step, and it's editing an asset that has been recently deleted or decomm
+//assetID refers to assetID of the edit step we are checking
+function editCheckAssetDeleted(changePlanID, stepID, assetID, callback) {
+    let errorIDSet = new Set()
+    if (assetID !== "") {
+        console.log(assetID) //is this the actual stepID or the ID of the asset doc? 
+        assetRef.doc(assetID).get().then(async function (assetDoc) {
+            if (assetDoc.exists) {
+                errorIDSet.add("editDeletedErrID")
+                addConflictToDBDatabase(changePlanID, stepID, "delete", errorIDSet, status => {
+                    callback(status)
+                })
+            }
+
+            else {
+                callback(false)
+            }
+        })
+
+    }
+    else { callback(false) }
+}
+
+//trying to edit one that was decommissioned
+function editCheckAssetDecommissioned(changePlanID, stepID, assetID, callback) {
+    let errorIDSet = new Set()
+    if (assetID !== "") {
+        console.log(assetID) //is this the actual stepID or the ID of the asset doc? 
+        decommissionRef.where("assetId", "==", assetID).get().then(async function (decommDoc) {
+            if (decommDoc.exists) {
+                errorIDSet.add("editDecommissionedErrID")
+                addConflictToDBDatabase(changePlanID, stepID, "decommission", errorIDSet, status => {
+                    callback(status)
+                })
+            }
+            else {
+                callback(false)
+            }
+        })
+    }
+    else { callback(false) }
+}
+
+
+
 //rename package to db
 function decommissionAssetChangePlanPackage(changePlanID, stepID, callback) {
     changeplansRef.doc(changePlanID).collection('changes').doc(stepID).get().then(stepDoc => {
@@ -333,6 +372,9 @@ function checkLiveDBConflicts(changePlanID, model, hostname, datacenter, rack, r
                 }
                 else if (changeType === "edit") {
                     console.log("Edit live db check. to be implemented")
+                    //the current step that we're on is an edit, and need to check all of its fields fo live conflcit db checks
+                    //first, check out which functions in adAssetChangePlanPackage can be reused
+                    //editAssetChangePlanPackage()
                 }
                 else {
                     decommissionAssetChangePlanPackage(changePlanID, thisStepID, status => {
@@ -354,21 +396,13 @@ function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datace
     assetID = assetID.toString()
 
     rackNonExistent(changePlanID, stepID, rack, datacenter, status1 => {
-
         datacenterNonExistent(changePlanID, stepID, datacenter, status2 => {
-
             hostnameConflict(changePlanID, stepID, hostname, status3 => {
-
                 ownerConflict(changePlanID, stepID, owner, status4 => {
-
                     assetIDConflict(changePlanID, stepID, assetID, status5 => {
-
                         modelConflict(changePlanID, stepID, model, status6 => {
-
                             rackUConflict(changePlanID, stepID, model, datacenter, rack, rackU, status7 => {
-
                                 networkConnectionConflict(changePlanID, stepID, networkConnections, oldNetworkConnections, status8 => {
-
                                     powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, status9 => {
                                         console.log("9 layered cake bitch!")
                                         callback()
@@ -420,7 +454,7 @@ function checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, callback)
             }
             else if (thisChangeType == "edit") {
                 console.log("This step is an edit. Checking previous steps against this step for any conflicts")
-                //editChangeCheck()
+                editChangeCheck(changePlanID, thisStepData, thisStepID, otherStepNum)
             }
             else {
                 //decommission
@@ -433,13 +467,107 @@ function checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, callback)
     })
 }
 
+//If the current step is an edit step, and we need to check it against all the previous steps
+function editChangeCheck(changePlanID, thisStepData, thisStepID, thisStepNum, otherStepNum) {
+    //getMergedAssetAndChange
+    changeplanutils.getMergedAssetAndChange(changePlanID, thisStepNum, thisAssetData => {
+        if (thisAssetData) {
+
+            console.log(thisAssetData)
+            //loop over and check
+            changeplanutils.getStepDocID(changePlanID, otherStepNum, otherStepID => {
+                changeplansRef.doc(changePlanID).collection('changes').doc(otherStepID).get().then(otherStepDoc => {
+                    if (otherStepDoc.data().change === "add") {
+                        let otherRack = otherStepDoc.data().changes.rack.new
+                        let otherRackU = otherStepDoc.data().changes.rackU.new
+                        let otherDatacenter = otherStepDoc.data().changes.datacenter.new
+                        let otherModel = otherStepDoc.data().changes.model.new
+                        let otherAssetID = otherStepDoc.data().assetID
+                        let otherHostname = otherStepDoc.data().changes.hostname.new
+                        let otherPowerConnections = otherStepDoc.data().changes.powerConnections.new
+                        let otherNetworkConnections = otherStepDoc.data().changes.networkConnections.new
+                        rackUStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherModel, otherDatacenter, otherRack, otherRackU, callback1 => {
+                            assetIDStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherAssetID, callback2 => {
+                                hostnameStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherHostname, callback3 => {
+                                    powerConnectionsStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherPowerConnections, otherDatacenter, otherRack, callback4 => {
+                                        networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherNetworkConnections, otherAssetID, callback5 => {
+                                            console.log("x layered cake again !")
+
+                                        })
+                                    })
+                                })
+                            })
+                        })
+
+                    }
+                    else if (otherStepDoc.data().change === "edit") {
+                        changeplanutils.getMergedAssetAndChange(changePlanID, otherStepNum, otherAssetData => {
+                            //this gets all the fields, not just the changes
+                            console.log(otherAssetData)
+                            let otherAssetID = otherAssetData.assetId
+                            let otherRack = otherAssetData.rack
+                            let otherRackU = otherAssetData.rackU
+                            let otherDatacenter = otherAssetData.datacenter
+                            let otherModel = otherAssetData.model
+                            let otherHostname = otherAssetData.hostname
+                            let otherPowerConnections = otherAssetData.powerConnections
+                            let otherNetworkConnections = otherAssetData.networkConnections
+                            rackUStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherModel, otherDatacenter, otherRack, otherRackU, callback1 => {
+                                assetIDStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherAssetID, callback2 => {
+                                    hostnameStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherHostname, callback3 => {
+                                        powerConnectionsStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherPowerConnections, otherDatacenter, otherRack, callback4 => {
+
+                                            networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherNetworkConnections, otherAssetID, callback5 => {
+                                                console.log("x layered cake again !")
+
+                                            })
+                                        })
+                                    })
+                                })
+                            })
+
+
+                        })
+
+                    }
+                    else {
+                        //trying to edit an asset that was decomm in a previous step
+                        let errorIDSet = new Set()
+                        let otherAssetID = otherStepDoc.data().assetID
+                        let thisAssetID = thisStepData.assetID
+                        console.log(otherAssetID, thisAssetID)
+                        if (otherAssetID == thisAssetID && otherAssetID !== "" && thisAssetID !== "") {
+                            errorIDSet.add("decommissionStepErrID")
+                            addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, null, otherStepNum, errorIDSet, status => {
+                                console.log("innter loop check")
+                                let thisNetworkConnections = thisStepData.changes.networkConnections.new
+                                let otherStepAssetID = otherStepDoc.data().assetID
+                                networkConnectionOtherAssetIDStep(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, thisNetworkConnections, otherStepAssetID, callback1 => {
+                                    console.log("Done with this shit")
+
+                                })
+                            })
+                        }
+                    }
+
+                }).catch(error => console.log(error))
+            })
+
+
+        }
+    })
+
+}
+
 //at the level of checking step against step
 function addChangeCheck(changePlanID, thisStepData, thisStepID, otherStepNum) {
     changeplanutils.getStepDocID(changePlanID, otherStepNum, otherStepID => {
         changeplansRef.doc(changePlanID).collection('changes').doc(otherStepID).get().then(otherStepDoc => {
             //be careful with what you are comparing
             //since otherStepNum changes
-            if (otherStepDoc.data().change === "add" || otherStepDoc.data().change === "edit") {
+
+            //TODO: separate this out into own if (add) else if(edit)
+            if (otherStepDoc.data().change === "add") {
                 let otherRack = otherStepDoc.data().changes.rack.new
                 let otherRackU = otherStepDoc.data().changes.rackU.new
                 let otherDatacenter = otherStepDoc.data().changes.datacenter.new
@@ -459,6 +587,36 @@ function addChangeCheck(changePlanID, thisStepData, thisStepID, otherStepNum) {
                             })
                         })
                     })
+                })
+            }
+            else if (otherStepDoc.data().change === "edit") {
+                //want to get all possible data from the other edit step to compare this step against
+                changeplanutils.getMergedAssetAndChange(changePlanID, otherStepNum, otherAssetData => {
+                    //this gets all the fields, not just the changes
+                    console.log(otherAssetData)
+                    let otherAssetID = otherAssetData.assetId
+                    let otherRack = otherAssetData.rack
+                    let otherRackU = otherAssetData.rackU
+                    let otherDatacenter = otherAssetData.datacenter
+                    let otherModel = otherAssetData.model
+                    let otherHostname = otherAssetData.hostname
+                    let otherPowerConnections = otherAssetData.powerConnections
+                    let otherNetworkConnections = otherAssetData.networkConnections
+                    rackUStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherModel, otherDatacenter, otherRack, otherRackU, callback1 => {
+                        assetIDStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherAssetID, callback2 => {
+                            hostnameStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherHostname, callback3 => {
+                                powerConnectionsStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherPowerConnections, otherDatacenter, otherRack, callback4 => {
+
+                                    networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherNetworkConnections, otherAssetID, callback5 => {
+                                        console.log("x layered cake again !")
+
+                                    })
+                                })
+                            })
+                        })
+                    })
+
+
                 })
             }
             else {
@@ -1011,17 +1169,17 @@ function changePlanHasConflicts(changePlanID, callback) {
         if (query.docs.length) {
 
             //if there are conflicts
-            console.log(query.docs)  
-            
-            for(let i = 0; i < query.docs.length; i++){
-            
+            console.log(query.docs)
+
+            for (let i = 0; i < query.docs.length; i++) {
+
                 changeplansRef.doc(changePlanID).collection('changes').doc(query.docs[i].id).get().then(stepDoc => {
 
                     let stepNum = stepDoc.data().step
                     result.add(stepNum)
                     count--;
                     if (count == 0) {
-                        console.log("This is the result set size: "+result.size)
+                        console.log("This is the result set size: " + result.size)
 
                         callback(result)
                     }
