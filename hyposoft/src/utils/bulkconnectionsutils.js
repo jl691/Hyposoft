@@ -1,4 +1,5 @@
 import * as firebaseutils from './firebaseutils'
+import * as userutils from './userutils'
 import * as logutils from './logutils'
 import { saveAs } from 'file-saver'
 
@@ -18,6 +19,7 @@ function validateImportedConnections (data, callback) {
         for (var i = 0; i < data.length; i++) {
             var datum = data[i]
             console.log(fetchedAssets)
+
             if (!fetchedAssets[datum.src_hostname]) {
                 errors = [...errors, [i+1, 'No asset with provided source hostname found']]
             } else if (!existingModels[fetchedAssets[datum.src_hostname].vendor][fetchedAssets[datum.src_hostname].modelNumber].networkPorts.includes(datum.src_port)) {
@@ -36,6 +38,10 @@ function validateImportedConnections (data, callback) {
                 errors = [...errors, [i+1, 'Bad MAC address']]
             } else {
                 datum.src_mac = datum.src_mac.replace((/[\W_]/g), "").toLowerCase().replace(/(.{2})(?!$)/g,"$1:")
+            }
+
+            if (!userutils.doesLoggedInUserHaveAssetPerm((fetchedAssets[datum.src_hostname].datacenterAbbrev+'').trim())) {
+                errors = [...errors, [i + 1, "You don't have asset management permissions for this datacenter"]]
             }
 
             if (errors.length === 0) {
