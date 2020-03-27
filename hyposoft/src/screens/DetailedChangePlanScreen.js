@@ -238,7 +238,28 @@ class DetailedChangePlanScreen extends React.Component {
                             })
                         }
                         else if (this.state.changes[datum.id - 1].change === "edit") {
-                            console.log("Bitch")
+                            
+                            changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, assetData =>{
+                                
+                                let model= assetData.model
+                                let hostname = assetData.hostname
+                                let datacenter= assetData.datacenter
+                                let rack = assetData.rack
+                                let rackU = assetData.rackU
+                                let owner = assetData.owner
+                                let assetID = assetData.assetId
+                                let powerConnections= assetData.powerConnections
+                                let networkConnections= assetData.networkConnections
+                                //networkConnections needs to be an array what is it in assetData?
+                                console.log(assetData)
+                            
+                                changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, status =>{
+                                    console.log("Done with live db checks for edit changes.")
+                                })
+
+
+                            })
+
                         }
                         else {
                             changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, null, null, null, null, null, null, datum.assetID, null, null, status => {
