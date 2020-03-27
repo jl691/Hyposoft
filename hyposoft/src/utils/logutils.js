@@ -216,6 +216,7 @@ function includesAssetInPDUName(name,searchName) {
 function doesObjectStillExist(objectType,objectId,callback) {
     switch (objectType) {
         case ASSET():
+        case PDU():
             firebaseutils.assetRef.doc(objectId).get().then(doc => {
                 if (doc.exists) {
                     callback(true,true)
