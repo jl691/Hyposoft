@@ -94,7 +94,7 @@ class DetailedChangePlanScreen extends React.Component {
     };
 
     AdminTools() {
-        if (userutils.isLoggedInUserAdmin() || true) {
+        if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) {
             if (!this.state.executed) {
                 return (
                     <Box
@@ -273,59 +273,61 @@ class DetailedChangePlanScreen extends React.Component {
                 header: <Text size='small'>Change</Text>,
                 render: datum => (
                     <Text size='small'>{datum.change}</Text>)
-            },
-            {
-                property: "edit",
-                header: <Text size='small'>Edit</Text>,
-                render: datum => (
-                    !this.state.executed && <Edit onClick={(e) => {
-                        e.persist();
-                        e.nativeEvent.stopImmediatePropagation();
-                        e.stopPropagation();
-                        if (datum.change === "edit") {
-                            changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, mergedAsset => {
-                                if (mergedAsset) {
-                                    this.setState({
-                                        popupType: "Edit" + datum.change,
-                                        stepID: datum.id,
-                                        currentChange: mergedAsset
-                                    });
-                                }
-                            });
-                        } else if (datum.change === "add") {
-                            changeplanutils.getAssetFromAddAsset(this.changePlanID, datum.id, asset => {
-                                if (asset) {
-                                    this.setState({
-                                        popupType: "Edit" + datum.change,
-                                        stepID: datum.id,
-                                        currentChange: asset
-                                    });
-                                }
-                            })
-                        } else if (datum.change === "decommission") {
-                            this.setState({
-                                popupType: "Edit" + datum.change,
-                                stepID: datum.id,
-                            });
-                        }
-
-                    }} />)
-            },
-            {
-                property: "delete",
-                header: <Text size='small'>Delete</Text>,
-                render: datum => (
-                    !this.state.executed && <Trash onClick={(e) => {
-                        e.persist();
-                        e.nativeEvent.stopImmediatePropagation();
-                        e.stopPropagation();
-                        this.setState({
-                            deleteStepNumber: datum.id,
-                            popupType: "Delete"
-                        })
-                    }} />)
             }
         ];
+        if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()){
+            cols.push({
+                    property: "edit",
+                    header: <Text size='small'>Edit</Text>,
+                    render: datum => (
+                        !this.state.executed && <Edit onClick={(e) => {
+                            e.persist();
+                            e.nativeEvent.stopImmediatePropagation();
+                            e.stopPropagation();
+                            if (datum.change === "edit") {
+                                changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, mergedAsset => {
+                                    if (mergedAsset) {
+                                        this.setState({
+                                            popupType: "Edit" + datum.change,
+                                            stepID: datum.id,
+                                            currentChange: mergedAsset
+                                        });
+                                    }
+                                });
+                            } else if (datum.change === "add") {
+                                changeplanutils.getAssetFromAddAsset(this.changePlanID, datum.id, asset => {
+                                    if (asset) {
+                                        this.setState({
+                                            popupType: "Edit" + datum.change,
+                                            stepID: datum.id,
+                                            currentChange: asset
+                                        });
+                                    }
+                                })
+                            } else if (datum.change === "decommission") {
+                                this.setState({
+                                    popupType: "Edit" + datum.change,
+                                    stepID: datum.id,
+                                });
+                            }
+
+                        }} />)
+                },
+                {
+                    property: "delete",
+                    header: <Text size='small'>Delete</Text>,
+                    render: datum => (
+                        !this.state.executed && <Trash onClick={(e) => {
+                            e.persist();
+                            e.nativeEvent.stopImmediatePropagation();
+                            e.stopPropagation();
+                            this.setState({
+                                deleteStepNumber: datum.id,
+                                popupType: "Delete"
+                            })
+                        }} />)
+                })
+        }
         return cols;
     }
 
