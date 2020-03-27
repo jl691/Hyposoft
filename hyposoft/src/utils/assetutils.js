@@ -425,6 +425,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                     changeplanutils.addAssetChange(assetObject, "", changePlanID, (result, stepID) => {
                                                                         if(result){
                                                                             console.log(stepID)
+                                                                            //Janice: added this here as a retrigger of the live db checks
                                                                             changeplanconflictutils.addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, racku, owner, overrideAssetID, powerConnections, networkConnectionsArray, status =>{
 
                                                                                 callback(null);
@@ -1132,7 +1133,7 @@ function getSuggestedDatacenters(userInput, callback) {
     datacentersRef.orderBy('name').orderBy('abbreviation').get().then(querySnapshot => {
         querySnapshot.forEach(doc => {
             const data = doc.data().name;
-            if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
+            if (userutils.doesLoggedInUserHaveAssetPerm(doc.data().abbreviation) && shouldAddToSuggestedItems(modelArray, data, userInput)) {
                 modelArray.push(data)
             }
         })

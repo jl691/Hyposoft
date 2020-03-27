@@ -26,6 +26,10 @@ function CHANGEPLAN() {
     return 'change plan'
 }
 
+function PDU() {
+    return 'pdu'
+}
+
 // ACTIONS
 function CREATE() {
     return 'created'
@@ -49,6 +53,14 @@ function EXECUTE() {
 
 function COMPLETE() {
     return 'completed'
+}
+
+function POWER_ON() {
+    return 'powered on'
+}
+
+function POWER_OFF() {
+    return 'powered off'
 }
 
 // only optional is objectId and objectType
@@ -87,6 +99,9 @@ function addLog(objectId, objectType, action, data = null) {
             break
         case CHANGEPLAN():
             getChangePlanName(objectId,data,action,changeplan => finishAddingLog(changeplan, objectId, objectType, action))
+            break
+        case PDU():
+            getPDUName(data,action,(pdu,assetId) => finishAddingLog(pdu, assetId, objectType, action))
             break
         default:
             console.log("Could not create log due to unknown type: " + objectType)
@@ -177,8 +192,9 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
             const user = doc.data().userName.toLowerCase()
             const object = doc.data().objectName.toLowerCase()
             const includesAsset = doc.data().objectType === ASSET() && object.includes(searchName)
+            const includesPDUAsset = doc.data().objectType === PDU() && includesAssetInPDUName(object,searchName)
             const includesUser = user.includes(searchName) || (doc.data().objectType === USER() && object.includes(searchName))
-            if (!search || includesAsset || includesUser) {
+            if (!search || includesAsset || includesPDUAsset || includesUser) {
                 logs = [...logs,{...doc.data(), log: buildLog(doc.data()), date: getDate(doc.data().timestamp), itemNo: itemNo++}]
                 newStartAfter = doc
             }
@@ -191,9 +207,16 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
     })
 }
 
+function includesAssetInPDUName(name,searchName) {
+    var splitName = name.split(" ")
+    const ind = splitName.indexOf(ASSET())
+    return ind !== -1 ? splitName.slice(ind+1).join(' ').includes(searchName) : false
+}
+
 function doesObjectStillExist(objectType,objectId,callback) {
     switch (objectType) {
         case ASSET():
+        case PDU():
             firebaseutils.assetRef.doc(objectId).get().then(doc => {
                 if (doc.exists) {
                     callback(true,true)
@@ -220,7 +243,7 @@ function buildLog(data) {
     var log = data.userName + ' '
               + data.action + (data.action === MODIFY() && data.previousData ? buildDiff(data) : ' ')
               + data.objectType + ' ' + data.objectName
-              + (data.objectType === RACK() || data.objectType === ASSET() ? (' in datacenter ' + data.datacenter + '.') : '.')
+              + (data.objectType === RACK() || data.objectType === ASSET() || data.objectType === PDU() ? (' in datacenter ' + data.datacenter + '.') : '.')
     return log
 }
 
@@ -345,6 +368,43 @@ function getChangePlanName(id,data,action,callback) {
     }
 }
 
+function getPDUName(data,action,callback) {
+    firebaseutils.assetRef.get().then(docSnaps => {
+        var assetId = null
+        var asset;
+        for (var i = 0; i < docSnaps.docs.length; i++) {
+            asset = docSnaps.docs[i].data()
+            let formattedNum;
+            if (asset.rackNum.toString().length === 1) {
+                formattedNum = "0" + asset.rackNum;
+            } else {
+                formattedNum = asset.rackNum;
+            }
+            if (asset.powerConnections) {
+                for (var j = 0; j < asset.powerConnections.length; j++) {
+                    const assetPDU = "hpdu-rtp1-" + asset.rackRow + formattedNum + asset.powerConnections[j].pduSide.charAt(0) + ":" + asset.powerConnections[j].port
+                    if (assetPDU === data.pdu+':'+data.portNumber) {
+                        assetId = asset.assetId
+                        break
+                    }
+                }
+                if (assetId) {
+                    break
+                }
+            }
+        }
+        if (assetId) {
+            callback({name: data.pdu+':'+data.portNumber+' connected to asset '+asset.model+' '+asset.hostname, data: {...data,asset: asset}, previousData: null, datacenter: asset.datacenter}, assetId)
+            return
+        }
+        callback(null,null)
+    })
+    .catch( error => {
+      console.log("Error getting documents: ", error)
+      callback(null,null)
+    })
+}
+
 function assetDiff(data,field) {
     switch (field) {
       case 'networkConnections':
@@ -386,6 +446,8 @@ function userDiff(data,field) {
     switch (field) {
       case 'password':
         return field
+      case 'permissions':
+        return field + findArrayDiffForPermissions(data.previousData[field],data.currentData[field])
       default:
         return defaultDiff(data,field)
     }
@@ -402,6 +464,36 @@ function datacenterDiff(data,field) {
 
 function defaultDiff(data,field) {
     return field + ' from ' + (data.previousData[field] ? data.previousData[field] : 'none') + ' to ' + (data.currentData[field] ? data.currentData[field] : 'none')
+}
+
+function findArrayDiffForPermissions(a,b) {
+    var result = ''
+    var c, other, act;
+    for (var i = 0; i < 2; i++) {
+      var permDiff = []
+      if (i === 0) {
+        c = a
+        other = b
+        act = ' by removing '
+      } else {
+        c = b
+        other = a
+        act = ' by adding '
+      }
+      for (var ind = 0; ind < c.length; ind++) {
+          const of = other.indexOf(c[ind])
+          if (of === -1) {
+              permDiff.push(c[ind])
+          }
+      }
+      if (permDiff.length !== 0) {
+        if (result) {
+          result = result + ' and'
+        }
+        result = result + act + permDiff.join(', ')
+      }
+    }
+    return result
 }
 
 var complexDiffString = ''
@@ -497,4 +589,4 @@ var isEqual = function (value, other, name) {
 	return true;
 };
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }
+export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, PDU, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, POWER_ON, POWER_OFF, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }
