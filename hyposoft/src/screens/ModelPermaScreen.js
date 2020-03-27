@@ -56,8 +56,8 @@ class ModelPermaScreen extends Component {
     }
 
     showEditDialog(itemNo) {
-        if (!userutils.isLoggedInUserAdmin()) {
-            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+        if (!userutils.doesLoggedInUserHaveModelPerm()) {
+            ToastsStore.info('Only users with model management permission can do this', 3000, 'burntToast')
             return
         }
 
@@ -73,8 +73,8 @@ class ModelPermaScreen extends Component {
     }
 
     showDeleteDialog(itemNo) {
-        if (!userutils.isLoggedInUserAdmin()) {
-            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+        if (!userutils.doesLoggedInUserHaveModelPerm()) {
+            ToastsStore.info('Only users with model management permission can do this', 3000, 'burntToast')
             return
         }
 
@@ -90,8 +90,8 @@ class ModelPermaScreen extends Component {
     }
 
     deleteModel() {
-        if (!userutils.isLoggedInUserAdmin()) {
-            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+        if (!userutils.doesLoggedInUserHaveModelPerm()) {
+            ToastsStore.info('Only users with model management permission can do this', 3000, 'burntToast')
             return
         } else {
             modelutils.deleteModel(this.state.id, () => {
@@ -366,7 +366,7 @@ class ModelPermaScreen extends Component {
                                                     return <div key={key}>{i}</div>
                                                 })}
                                                 </span>
-                                            {userutils.isLoggedInUserAdmin() && <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                            {userutils.doesLoggedInUserHaveModelPerm() && <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
                                                  gap='small'>
                                                 <Button primary label="Edit" onClick={this.showEditDialog}/>
                                                 <Button label="Delete" onClick={this.showDeleteDialog}/>

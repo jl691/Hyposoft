@@ -205,7 +205,7 @@ class ModelsScreen extends React.Component {
 
     showEditDialog(itemNo) {
         if (!userutils.doesLoggedInUserHaveModelPerm()) {
-            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+            ToastsStore.info('Only users with model management permission can do this', 3000, 'burntToast')
             return
         }
 
@@ -224,7 +224,7 @@ class ModelsScreen extends React.Component {
 
     showDeleteDialog(itemNo) {
         if (!userutils.doesLoggedInUserHaveModelPerm()) {
-            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+            ToastsStore.info('Only users with model management permission can do this', 3000, 'burntToast')
             return
         }
 
@@ -243,7 +243,7 @@ class ModelsScreen extends React.Component {
 
     deleteModel() {
         if (!userutils.doesLoggedInUserHaveModelPerm()) {
-            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+            ToastsStore.info('Only users with model management permission can do this', 3000, 'burntToast')
             return
         }
 
