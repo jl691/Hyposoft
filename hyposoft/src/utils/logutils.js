@@ -386,6 +386,8 @@ function userDiff(data,field) {
     switch (field) {
       case 'password':
         return field
+      case 'permissions':
+        return field + findArrayDiffForPermissions(data.previousData[field],data.currentData[field])
       default:
         return defaultDiff(data,field)
     }
@@ -402,6 +404,36 @@ function datacenterDiff(data,field) {
 
 function defaultDiff(data,field) {
     return field + ' from ' + (data.previousData[field] ? data.previousData[field] : 'none') + ' to ' + (data.currentData[field] ? data.currentData[field] : 'none')
+}
+
+function findArrayDiffForPermissions(a,b) {
+    var result = ''
+    var c, other, act;
+    for (var i = 0; i < 2; i++) {
+      var permDiff = []
+      if (i === 0) {
+        c = a
+        other = b
+        act = ' by removing '
+      } else {
+        c = b
+        other = a
+        act = ' by adding '
+      }
+      for (var ind = 0; ind < c.length; ind++) {
+          const of = other.indexOf(c[ind])
+          if (of === -1) {
+              permDiff.push(c[ind])
+          }
+      }
+      if (permDiff.length !== 0) {
+        if (result) {
+          result = result + ' and'
+        }
+        result = result + act + permDiff.join(', ')
+      }
+    }
+    return result
 }
 
 var complexDiffString = ''

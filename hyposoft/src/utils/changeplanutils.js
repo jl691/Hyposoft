@@ -431,26 +431,105 @@ function generateWorkOrder(changePlanID, callback) {
                 if (change === "decommission") {
                     console.log("decommission", count)
                     assetRef.doc(doc.data().assetID.toString()).get().then(function (documentSnapshot) {
-                        console.log(documentSnapshot);
-                        steps.set(doc.data().step, ["Decommission asset #" + doc.data().assetID + " from datacenter " + documentSnapshot.data().datacenter + " at rack " + documentSnapshot.data().rack + " at height " + documentSnapshot.data().rackU + " U"])
-                        count++;
-                        console.log("3", count, querySnapshot.size)
-                        if (count === querySnapshot.size) {
-                            callback(steps);
-                        }
+                        let decommissionText = "Decommission asset #" + doc.data().assetID + " from datacenter " + documentSnapshot.data().datacenter + " at rack " + documentSnapshot.data().rack + " at height " + documentSnapshot.data().rackU + " U.";
+                        let networkPromise = new Promise(function (resolve, reject) {
+                            if(documentSnapshot.data().networkConnections && Object.keys(documentSnapshot.data().networkConnections).length){
+                                decommissionText += " Remove the following network connections: ";
+                                let countInner = 0;
+                                Object.keys(documentSnapshot.data().networkConnections).forEach(networkPort => {
+                                    decommissionText += "port " + networkPort + " connected to asset #" + documentSnapshot.data().networkConnections[networkPort].otherAssetID + " on port " + documentSnapshot.data().networkConnections[networkPort].otherPort;
+                                    countInner++;
+                                    if(countInner === Object.keys(documentSnapshot.data().networkConnections).length){
+                                        decommissionText += ".";
+                                        resolve();
+                                    } else {
+                                        decommissionText += ", ";
+                                    }
+                                });
+                            } else {
+                                resolve();
+                            }
+                        });
+                        let powerPromise = new Promise(function (resolve, reject) {
+                            if(documentSnapshot.data().powerConnections && Object.keys(documentSnapshot.data().powerConnections).length){
+                                decommissionText += " Remove the following power connections: ";
+                                let countInner = 0;
+                                Object.keys(documentSnapshot.data().powerConnections).forEach(powerPort => {
+                                    decommissionText += "port " + powerPort + " connected to the PDU " + documentSnapshot.data().powerConnections[powerPort].pduSide.toLowerCase() + " side on port " + documentSnapshot.data().powerConnections[powerPort].port;
+                                    countInner++;
+                                    if(countInner === documentSnapshot.data().powerConnections.length){
+                                        decommissionText += ".";
+                                        resolve();
+                                    } else {
+                                        decommissionText += ", ";
+                                    }
+                                });
+                            } else {
+                                resolve();
+                            }
+                        });
+                        let promiseArray = [networkPromise, powerPromise];
+                        Promise.all(promiseArray).then(function () {
+                            steps.set(doc.data().step, [decommissionText])
+                            count++;
+                            console.log("3", count, querySnapshot.size)
+                            if (count === querySnapshot.size) {
+                                callback(steps);
+                            }
+                        });
                     }).catch(function () {
                         callback(null)
                     });
                 } else if (change === "add") {
                     let assetID = doc.data().assetID ? doc.data().assetID : "TBD";
-                    console.log(doc.data().changes.datacenter["new"]);
-                    steps.set(doc.data().step, ["Add asset #" + assetID + " to datacenter " + doc.data().changes.datacenter["new"] + " on rack " + doc.data().changes.rack["new"] + " at height " + doc.data().changes.rackU["new"] + " U."]);
-                    count++;
-                    console.log("1", count, querySnapshot.size)
-                    if (count === querySnapshot.size) {
-                        console.log(steps);
-                        callback(steps);
-                    }
+
+                    let addText = "Add asset #" + assetID + " to datacenter " + doc.data().changes.datacenter["new"] + " on rack " + doc.data().changes.rack["new"] + " at height " + doc.data().changes.rackU["new"] + " U.";
+                    let networkPromise = new Promise(function (resolve, reject) {
+                        if(doc.data().changes.networkConnections && Object.keys(doc.data().changes.networkConnections["new"]).length){
+                            addText += " Add the following network connections: ";
+                            let countInner = 0;
+                            Object.keys(doc.data().changes.networkConnections["new"]).forEach(networkPort => {
+                                addText += "port " + networkPort + " connected to asset #" + doc.data().changes.networkConnections["new"][networkPort].otherAssetID + " on port " + doc.data().changes.networkConnections["new"][networkPort].otherPort;
+                                countInner++;
+                                if(countInner === Object.keys(doc.data().changes.networkConnections["new"]).length){
+                                    addText += ".";
+                                    resolve();
+                                } else {
+                                    addText += ", ";
+                                }
+                            });
+                        } else {
+                            resolve();
+                        }
+                    });
+                    let powerPromise = new Promise(function (resolve, reject) {
+                        if(doc.data().changes.powerConnections && Object.keys(doc.data().changes.powerConnections["new"]).length){
+                            addText += " Add the following power connections: ";
+                            let countInner = 0;
+                            Object.keys(doc.data().changes.powerConnections["new"]).forEach(powerPort => {
+                                addText += "port " + powerPort + " connected to the PDU " + doc.data().changes.powerConnections["new"][powerPort].pduSide.toLowerCase() + " side on port " + doc.data().changes.powerConnections["new"][powerPort].port;
+                                countInner++;
+                                if(countInner === doc.data().changes.powerConnections["new"].length){
+                                    addText += ".";
+                                    resolve();
+                                } else {
+                                    addText += ", ";
+                                }
+                            });
+                        } else {
+                            resolve();
+                        }
+                    });
+                    let promiseArray = [networkPromise, powerPromise];
+                    Promise.all(promiseArray).then(function () {
+                        steps.set(doc.data().step, [addText]);
+                        count++;
+                        console.log("1", count, querySnapshot.size)
+                        if (count === querySnapshot.size) {
+                            console.log(steps);
+                            callback(steps);
+                        }
+                    });
                 } else if (change === "edit") {
                     generateEditWorkOrderMessage(doc, result => {
                         steps.set(doc.data().step, result);
