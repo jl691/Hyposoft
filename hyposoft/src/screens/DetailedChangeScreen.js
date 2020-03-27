@@ -511,7 +511,7 @@ class DetailedChangeScreen extends React.Component {
                                             {this.generateChangeTable()}
                                         </TableBody>
                                     </Table>
-                                    {!this.state.executed && <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
+                                    {(!this.state.executed && (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll())) && <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
                                         gap='small'>
                                         <Button label="Edit Change" onClick={() => {
                                             if(this.state.change.change === "edit") {
