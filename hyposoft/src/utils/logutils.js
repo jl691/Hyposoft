@@ -192,8 +192,9 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
             const user = doc.data().userName.toLowerCase()
             const object = doc.data().objectName.toLowerCase()
             const includesAsset = doc.data().objectType === ASSET() && object.includes(searchName)
+            const includesPDUAsset = doc.data().objectType === PDU() && includesAssetInPDUName(object,searchName)
             const includesUser = user.includes(searchName) || (doc.data().objectType === USER() && object.includes(searchName))
-            if (!search || includesAsset || includesUser) {
+            if (!search || includesAsset || includesPDUAsset || includesUser) {
                 logs = [...logs,{...doc.data(), log: buildLog(doc.data()), date: getDate(doc.data().timestamp), itemNo: itemNo++}]
                 newStartAfter = doc
             }
@@ -204,6 +205,12 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
         console.log("Error getting documents: ", error)
         callback(null,null,null)
     })
+}
+
+function includesAssetInPDUName(name,searchName) {
+    var splitName = name.split(" ")
+    const ind = splitName.indexOf(ASSET())
+    return ind !== -1 ? splitName.slice(ind+1).join(' ').includes(searchName) : false
 }
 
 function doesObjectStillExist(objectType,objectId,callback) {
