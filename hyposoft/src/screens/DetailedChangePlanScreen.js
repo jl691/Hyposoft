@@ -29,6 +29,9 @@ class DetailedChangePlanScreen extends React.Component {
 
     startAfter = null;
     changePlanID;
+    hasConflicts = false;
+    errMessage = "This change plan has conflicts in steps "
+    generateConflictCount = 0;
 
     constructor(props) {
         super(props);
@@ -46,6 +49,7 @@ class DetailedChangePlanScreen extends React.Component {
     componentDidMount() {
         this.changePlanID = this.props.match.params.changePlanID;
         firebaseutils.changeplansRef.doc(this.changePlanID).get().then(documentSnapshot => {
+
             if (documentSnapshot.exists) {
                 this.setState({
                     name: documentSnapshot.data().name,
@@ -209,6 +213,7 @@ class DetailedChangePlanScreen extends React.Component {
         } else {
             return (
                 <DataTable step={25}
+
                     onMore={() => {
                         if (this.startAfter) {
                             changeplanutils.getChanges(this.changePlanID, userutils.getLoggedInUserUsername(), (newStart, changes, empty) => {
@@ -227,21 +232,21 @@ class DetailedChangePlanScreen extends React.Component {
                         //what if it's an edit or decomm and there arent these fields?
                         console.log(datum)
                         console.log([...this.state.changes])
-                        if(this.state.changes[datum.id-1].change==="add"){
-                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new, status=>{
+                        if (this.state.changes[datum.id - 1].change === "add") {
+                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new, status => {
                                 console.log("Done with live db checks for change plan conflicts. Add")
                             })
                         }
-                        else if(this.state.changes[datum.id-1].change==="edit"){
+                        else if (this.state.changes[datum.id - 1].change === "edit") {
                             console.log("Bitch")
                         }
-                        else{
-                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, null, null, null, null, null, null, datum.assetID, null, null, status=>{
+                        else {
+                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, null, null, null, null, null, null, datum.assetID, null, null, status => {
                                 console.log("Done with live db checks for change plan conflicts. Decomms")
                             })
 
                         }
-                    
+
 
                     }}
                     columns={this.generateColumns()} data={this.state.changes} size={"large"} />
@@ -345,6 +350,54 @@ class DetailedChangePlanScreen extends React.Component {
         ToastsStore.success(data);
     }
 
+    generateConflict() {
+        this.generateConflictCount++
+        if (this.generateConflictCount === 1) {
+            changeplanconflictutils.changePlanHasConflicts(this.props.match.params.changePlanID, conflicts => {
+                let conflictsArray = [...conflicts]
+                if (conflictsArray.length) {
+                    console.log(...conflictsArray)
+
+                    for (let i = 0; i < conflictsArray.length; i++) {
+                        if(i === conflictsArray.length - 1){
+                            //last conflicting step, don't want to have a , at the end
+                            this.errMessage = this.errMessage + conflictsArray[i] +"."
+
+                        }
+                        else{
+                        this.errMessage = this.errMessage + conflictsArray[i] + ", "
+                        }
+                    }
+
+
+                    this.hasConflicts = true;
+
+                }
+            })
+
+
+        }
+
+
+        if (this.hasConflicts) {
+            console.log(this.errMessage)
+            return (
+                <Box style={{
+                    borderRadius: 10
+                }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
+                    margin={{ top: "medium" }} height={"small"} overflow="auto" direction="column">
+                    <Heading level={"3"} margin={"small"}>Conflict</Heading>
+                    <Box overflow="scroll">
+                        <Text weight="bold"> {this.errMessage}</Text>
+                    </Box>
+                    <Box align={"center"} width={"small"}>
+                    </Box>
+                </Box>
+
+            )
+        }
+    }
+
     render() {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
@@ -445,6 +498,7 @@ class DetailedChangePlanScreen extends React.Component {
                             <Heading level={"3"} margin={"small"}>Change Plan Executed</Heading>
                             <Box>This change plan was executed on {decommissionutils.getDate(this.state.timestamp)}. Thus, no further changes can be made.</Box>
                         </Box>}
+                        {this.generateConflict()}
                         <Box direction='row' justify='center' overflow={{ horizontal: 'hidden' }}>
                             <Box direction='row' justify='center'>
                                 <Box width='large' direction='column' align='stretch' justify='start'>

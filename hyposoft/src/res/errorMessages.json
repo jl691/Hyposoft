@@ -5,7 +5,7 @@
     "ownerErrID": "The owner for this asset does not exist.",
     "hostnameErrID": "The hostname in this change plan step is already taken.",
     "assetIDErrID": "The asset ID in this change plan step is already taken.",
-    "modelErrID": "The model in this change plan step does not exist.",
+    "modelErrID": "The model in this change plan step does not exist.", 
     "powerConnectionConflictErrID": "The power connections in this change plan step are conflicting.",
     "powerConnectionsIncompleteFormErrID": "The power connections in this change plan step were not filled out correctly in the form.",
     "powerConnectionsInvalidPortErrID": "The power connections in this change plan step have an invalid port number.",
