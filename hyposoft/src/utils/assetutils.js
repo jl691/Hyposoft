@@ -1133,7 +1133,7 @@ function getSuggestedDatacenters(userInput, callback) {
     datacentersRef.orderBy('name').orderBy('abbreviation').get().then(querySnapshot => {
         querySnapshot.forEach(doc => {
             const data = doc.data().name;
-            if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
+            if (userutils.doesLoggedInUserHaveAssetPerm(doc.data().abbreviation) && shouldAddToSuggestedItems(modelArray, data, userInput)) {
                 modelArray.push(data)
             }
         })
