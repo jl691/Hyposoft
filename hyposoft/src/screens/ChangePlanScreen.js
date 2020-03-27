@@ -63,7 +63,7 @@ class ChangePlanScreen extends React.Component {
     }
 
     AdminTools() {
-        if (userutils.isLoggedInUserAdmin()) {
+        if (userutils.isLoggedInUserAdmin() || true) {
             return (
                 <Box
                     width='medium'

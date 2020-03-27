@@ -33,6 +33,7 @@ class RackView extends React.Component {
 
     startAfter = null;
     datacenters = [];
+    datacenterAbbrevs = new Map();
     itemCounts = new Map();
 
     constructor(props) {
@@ -52,6 +53,7 @@ class RackView extends React.Component {
             numberEnd: "",
             elevation: "",
             datacenter: "",
+            datacenterAbbrev: "",
             datacentersLoaded: false
         }
 
@@ -113,7 +115,6 @@ class RackView extends React.Component {
                     this.itemCounts.set(name, 1)
                     count++;
                     if (count === names.length) {
-                        //this.datacenters.push(name);
                         this.setState({
                             datacentersLoaded: true
                         });
@@ -142,11 +143,16 @@ class RackView extends React.Component {
                     options={this.datacenters}
                     value={this.state.datacenter}
                     onChange={(option) => {
-                        this.setState({
-                            datacenter: option.value
-                        });
-                        this.itemCounts.set(option.value, 1)
-                        this.forceRefresh(option.value)
+                        datacenterutils.getAbbreviationFromName(option.value, result => {
+                            if(result){
+                                this.setState({
+                                    datacenter: option.value,
+                                    datacenterAbbrev: result
+                                });
+                                this.itemCounts.set(option.value, 1);
+                                this.forceRefresh(option.value);
+                            }
+                        })
                     }}
                 />
             )
@@ -154,7 +160,7 @@ class RackView extends React.Component {
     }
 
     AdminTools() {
-        if (userutils.isLoggedInUserAdmin()) {
+        if (userutils.doesLoggedInUserHaveAssetPerm(null) || (this.state.datacenterAbbrev && userutils.doesLoggedInUserHaveAssetPerm(this.state.datacenterAbbrev)) || userutils.isLoggedInUserAdmin()) {
             return (
                 <Box
                     width='medium'
@@ -370,7 +376,7 @@ class RackView extends React.Component {
     }
 
     RackDeleteButton(datum) {
-        if (userutils.isLoggedInUserAdmin()) {
+        if (userutils.doesLoggedInUserHaveAssetPerm(null) || (this.state.datacenterAbbrev && userutils.doesLoggedInUserHaveAssetPerm(this.state.datacenterAbbrev)) || userutils.isLoggedInUserAdmin()) {
             return (
                 <Trash
                     style={{cursor: 'pointer'}}
@@ -439,7 +445,7 @@ class RackView extends React.Component {
                     }}/>)
             }
         ];
-        if (userutils.isLoggedInUserAdmin()) {
+        if (userutils.doesLoggedInUserHaveAssetPerm(null) || (this.state.datacenterAbbrev && userutils.doesLoggedInUserHaveAssetPerm(this.state.datacenterAbbrev)) || userutils.isLoggedInUserAdmin()) {
             cols.push({
                 property: "delete",
                 header: <Text size='small'>Delete</Text>,
