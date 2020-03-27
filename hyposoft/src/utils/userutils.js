@@ -34,6 +34,15 @@ function doesLoggedInUserHaveAssetPerm(dcAbbrev) {
     return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_GLOBAL')) || (JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_'+dcAbbrev)))
 }
 
+function doesLoggedInUserHaveAnyAssetPermsAtAll() {
+    var perms = JSON.parse(localStorage.getItem('permissions'))
+    for (var x = 0; x < perms.length; x++) {
+        if (perms[x].startsWith('ASSET_PERMISSION'))
+            return true
+    }
+    return false
+}
+
 function doesLoggedInUserHaveAuditPerm() {
     return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('AUDIT_PERMISSION')))
 }
@@ -317,4 +326,5 @@ fetchClaim, usernameTaken, validEmail, removeClaim, updateUsername, sendRecovery
 fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers, getLoggedInUser,
  ADMIN_PERMISSION, isLoggedInUserNetID, getLoggedInUserUsername, getAllDataCenterAbbrevs,
 updateUserPermissions, doesLoggedInUserHaveModelPerm, doesLoggedInUserHaveAssetPerm,
-doesLoggedInUserHaveAuditPerm, doesLoggedInUserHavePowerPerm }
+doesLoggedInUserHaveAuditPerm, doesLoggedInUserHavePowerPerm,
+doesLoggedInUserHaveAnyAssetPermsAtAll }

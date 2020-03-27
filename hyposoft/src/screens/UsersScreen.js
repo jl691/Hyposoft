@@ -447,7 +447,7 @@ class UsersScreen extends Component {
                                         onChange={(event) => {
                                             if (event.target.checked && !this.state.editPermissions.includes('ADMIN_PERMISSION')){
                                                 this.setState(oldState => ({
-                                                    ...oldState, editPermissions: [...oldState.editPermissions, 'ADMIN_PERMISSION']
+                                                    ...oldState, editPermissions: ['ADMIN_PERMISSION', 'AUDIT_PERMISSION', 'MODEL_PERMISSION', 'POWER_PERMISSION', 'ASSET_PERMISSION_GLOBAL', ...this.state.datacenterAbbrevs.map(dc => 'ASSET_PERMISSION_'+dc)]
                                                 }))
                                             } else if (!event.target.checked && this.state.editPermissions.includes('ADMIN_PERMISSION')) {
                                                 this.setState(oldState => {
@@ -473,6 +473,8 @@ class UsersScreen extends Component {
                                                 this.setState(oldState => {
                                                     var newPermissions = [...oldState.editPermissions]
                                                     newPermissions.splice(newPermissions.indexOf('AUDIT_PERMISSION'), 1)
+                                                    if (newPermissions.indexOf('ADMIN_PERMISSION') !== -1)
+                                                        newPermissions.splice(newPermissions.indexOf('ADMIN_PERMISSION'), 1)
                                                     return ({
                                                         ...oldState, editPermissions: newPermissions
                                                     })
@@ -492,6 +494,8 @@ class UsersScreen extends Component {
                                                 this.setState(oldState => {
                                                     var newPermissions = [...oldState.editPermissions]
                                                     newPermissions.splice(newPermissions.indexOf('MODEL_PERMISSION'), 1)
+                                                    if (newPermissions.indexOf('ADMIN_PERMISSION') !== -1)
+                                                        newPermissions.splice(newPermissions.indexOf('ADMIN_PERMISSION'), 1)
                                                     return ({
                                                         ...oldState, editPermissions: newPermissions
                                                     })
@@ -511,6 +515,8 @@ class UsersScreen extends Component {
                                                 this.setState(oldState => {
                                                     var newPermissions = [...oldState.editPermissions]
                                                     newPermissions.splice(newPermissions.indexOf('POWER_PERMISSION'), 1)
+                                                    if (newPermissions.indexOf('ADMIN_PERMISSION') !== -1)
+                                                        newPermissions.splice(newPermissions.indexOf('ADMIN_PERMISSION'), 1)
                                                     return ({
                                                         ...oldState, editPermissions: newPermissions
                                                     })
@@ -555,6 +561,8 @@ class UsersScreen extends Component {
                                                             newPermissions.push(item)
                                                         }
                                                     })
+                                                    if (newPermissions.indexOf('ADMIN_PERMISSION') !== -1)
+                                                        newPermissions.splice(newPermissions.indexOf('ADMIN_PERMISSION'), 1)
 
                                                     return ({
                                                         ...oldState, editPermissions: newPermissions
@@ -577,6 +585,8 @@ class UsersScreen extends Component {
                                                         var newPermissions = [...oldState.editPermissions]
                                                         if (newPermissions.indexOf('ASSET_PERMISSION_GLOBAL') !== -1)
                                                             newPermissions.splice(newPermissions.indexOf('ASSET_PERMISSION_GLOBAL'), 1)
+                                                        if (newPermissions.indexOf('ADMIN_PERMISSION') !== -1)
+                                                            newPermissions.splice(newPermissions.indexOf('ADMIN_PERMISSION'), 1)
                                                         newPermissions.splice(newPermissions.indexOf('ASSET_PERMISSION_'+dcAbbrev), 1)
                                                         return ({
                                                             ...oldState, editPermissions: newPermissions
