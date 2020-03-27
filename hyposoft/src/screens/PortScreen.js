@@ -394,7 +394,7 @@ class PortScreen extends Component {
                                 align="center"
                                 justify="start" >
                                 <span>
-                                    You have custom asset management permissions, which means you can only alter assets in a few specific datacenters ({userutils.getAllowedDCsString()}). Any entries you import that affect other datacenters will be ignored.
+                                    You have custom asset management permissions, which means you can only alter assets in a few specific datacenters ({userutils.getAllowedDCsString()}). Any entries you import that affect other datacenters will be reported as errors and abort the import process.
                                 </span>
                             </Box>
                             <Box
