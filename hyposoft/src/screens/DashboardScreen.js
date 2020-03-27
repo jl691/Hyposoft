@@ -21,17 +21,24 @@ class DashboardScreen extends Component {
         classes: []
     }
 
-    actions = [
-        {id: 0, title: 'Users', desc: 'View and manage users'},
-        {id: 1, title: 'Models', desc: 'View and manage models'},
-        {id: 2, title: 'Assets', desc: 'View and manage assets'},
-        {id: 3, title: 'Racks', desc: 'View and manage racks'},
-        {id: 4, title: 'Import / Export', desc: 'Import and export models and assets'},
-        {id: 5, title: 'Datacenters', desc: 'View and manage datacenters'},
-        {id: 6, title: 'Logs', desc: 'View global logs'},
-        {id: 7, title: 'Change Plans', desc: 'View change plans'}
-        //{id: 5, title: 'Reports', desc: 'Generate rack usage reports'}
-    ]
+    generateActions() {
+      var actions = []
+      actions = actions.concat(
+        [
+            {id: 0, title: 'Users', desc: 'View and manage users'},
+            {id: 1, title: 'Models', desc: 'View and manage models'},
+            {id: 2, title: 'Assets', desc: 'View and manage assets'},
+            {id: 3, title: 'Racks', desc: 'View and manage racks'},
+            {id: 4, title: 'Import / Export', desc: 'Import and export models and assets'},
+            {id: 5, title: 'Datacenters', desc: 'View and manage datacenters'},
+        ]
+      )
+      if (userutils.doesLoggedInUserHaveAuditPerm()) {
+        actions.push({id: 6, title: 'Logs', desc: 'View global logs'})
+      }
+      actions.push({id: 7, title: 'Change Plans', desc: 'View change plans'})
+      return actions
+    }
 
     doAction (action) {
         switch(action) {
@@ -73,7 +80,7 @@ class DashboardScreen extends Component {
             return <Redirect to='/' />
         }
 
-        var content = this.actions.map(element => (
+        var content = this.generateActions().map(element => (
                     <ItemCard
                         key={element.id}
                         title={element.title}

@@ -4,10 +4,11 @@ import * as logutils from "./logutils"
 import * as assetutils from "./assetutils"
 import * as rackutils from "./rackutils"
 import * as decommissionutils from "./decommissionutils"
-import {changeplansRef} from "./firebaseutils";
-import {assetRef} from "./firebaseutils";
-import {racksRef} from "./firebaseutils";
-import {firebase} from "./firebaseutils";
+import * as changeplanconflictutils from './changeplanconflictutils'
+import { changeplansRef } from "./firebaseutils";
+import { assetRef } from "./firebaseutils";
+import { racksRef } from "./firebaseutils";
+import { firebase } from "./firebaseutils";
 import * as assetIDutils from "./assetidutils";
 
 function getChangePlans(itemCount, username, callback, start = null) {
@@ -21,7 +22,7 @@ function getChangePlans(itemCount, username, callback, start = null) {
             let count = 0;
             let changePlans = [];
             querySnapshot.docs.forEach(changePlan => {
-                changePlans.push({id: changePlan.id, count: itemCount++, ...changePlan.data()});
+                changePlans.push({ id: changePlan.id, count: itemCount++, ...changePlan.data() });
                 count++;
                 if (count === querySnapshot.size) {
                     callback(itemCount, newStart, changePlans, false);
@@ -43,7 +44,7 @@ function getChanges(changePlanID, username, callback) {
                     let count = 0;
                     querySnapshot.docs.forEach(change => {
                         let newStart = querySnapshot.docs[querySnapshot.docs.length - 1];
-                        changes.push({id: change.data().step, ...change.data()})
+                        changes.push({ id: change.data().step, ...change.data() })
                         count++;
                         if (count === querySnapshot.size) {
                             callback(newStart, changes, false)
@@ -83,11 +84,11 @@ function getChangeDetails(changePlanID, stepID, username, callback) {
     })
 }
 
-function getStepDocID(changePlanID,stepNum, callback){
+function getStepDocID(changePlanID, stepNum, callback) {
     console.log(changePlanID, stepNum)
     firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepNum)).get().then(function (querySnapshot) {
         console.log(querySnapshot.empty)
-        querySnapshot.forEach(function(doc) {
+        querySnapshot.forEach(function (doc) {
             // doc.data() is never undefined for query doc snapshots
             //for some reason only this works to get the document id?? whatever fuck it i don't care anymore
             console.log(doc.id);
@@ -171,9 +172,9 @@ function addAssetChange(asset, assetID, changePlanID, callback, docID = null) {
             }
         }
     });
-    if(docID){
+    if (docID) {
         changeplansRef.doc(changePlanID).collection("changes").doc(docID).get().then(function (docSnapInner) {
-            if(docSnapInner.exists){
+            if (docSnapInner.exists) {
                 assetChangePlanObject.step = docSnapInner.data().step;
                 changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject).then(function () {
                     callback(true);
@@ -211,7 +212,7 @@ function addAssetChange(asset, assetID, changePlanID, callback, docID = null) {
 function editAssetChange(newAsset, assetID, changePlanID, callback, docID = null) {
     console.log(docID)
     assetRef.doc(assetID).get().then(function (documentSnapshot) {
-        if(documentSnapshot.exists){
+        if (documentSnapshot.exists) {
             let assetChangePlanObject = {
                 assetID: parseInt(assetID),
                 change: "edit",
@@ -229,9 +230,9 @@ function editAssetChange(newAsset, assetID, changePlanID, callback, docID = null
                     }
                 }
             });
-            if(docID){
+            if (docID) {
                 changeplansRef.doc(changePlanID).collection("changes").doc(docID).get().then(function (docSnapInner) {
-                    if(docSnapInner.exists){
+                    if (docSnapInner.exists) {
                         assetChangePlanObject.step = docSnapInner.data().step;
                         changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject).then(function () {
                             callback(true);
@@ -267,12 +268,12 @@ function editAssetChange(newAsset, assetID, changePlanID, callback, docID = null
     });
 }
 
-function decommissionAssetChange(assetID, changePlanID, callback, stepID = null){
+function decommissionAssetChange(assetID, changePlanID, callback, stepID = null) {
     assetRef.doc(assetID).get().then(function (documentSnapshot) {
-        if(documentSnapshot.exists){
-            if(stepID){
+        if (documentSnapshot.exists) {
+            if (stepID) {
                 changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepID)).get().then(function (querySnapshot) {
-                    if(!querySnapshot.empty){
+                    if (!querySnapshot.empty) {
                         let docID = querySnapshot.docs[0].id;
                         changeplansRef.doc(changePlanID).collection("changes").doc(docID).update({
                             assetID: parseInt(assetID)
@@ -320,6 +321,7 @@ function deleteChange(changePlanID, stepNum, callback) {
         if (querySnapshot.empty) {
             callback(null);
         } else {
+            let deleteID = querySnapshot.docs[0].id;
             changeplansRef.doc(changePlanID).collection("changes").doc(querySnapshot.docs[0].id).delete().then(function () {
                 cascadeUpStepNumbers(changePlanID, stepNum, result => {
                     if (result) {
@@ -327,6 +329,12 @@ function deleteChange(changePlanID, stepNum, callback) {
                     } else {
                         callback(null);
                     }
+                })
+            }).then(function () {
+                changeplanconflictutils.deleteConflictFromDB(changePlanID, deleteID, stepNum, status => {
+                    //if successfully deleted documents, then will callback true
+                    console.log("Also succeeded in deleting from conflicts subcolllection")
+                    //callback(status)
                 })
             }).catch(function () {
                 callback(null);
@@ -423,26 +431,105 @@ function generateWorkOrder(changePlanID, callback) {
                 if (change === "decommission") {
                     console.log("decommission", count)
                     assetRef.doc(doc.data().assetID.toString()).get().then(function (documentSnapshot) {
-                        console.log(documentSnapshot);
-                        steps.set(doc.data().step, ["Decommission asset #" + doc.data().assetID + " from datacenter " + documentSnapshot.data().datacenter + " at rack " + documentSnapshot.data().rack + " at height " + documentSnapshot.data().rackU + " U"])
-                        count++;
-                        console.log("3", count, querySnapshot.size)
-                        if (count === querySnapshot.size) {
-                            callback(steps);
-                        }
+                        let decommissionText = "Decommission asset #" + doc.data().assetID + " from datacenter " + documentSnapshot.data().datacenter + " at rack " + documentSnapshot.data().rack + " at height " + documentSnapshot.data().rackU + " U.";
+                        let networkPromise = new Promise(function (resolve, reject) {
+                            if(documentSnapshot.data().networkConnections && Object.keys(documentSnapshot.data().networkConnections).length){
+                                decommissionText += " Remove the following network connections: ";
+                                let countInner = 0;
+                                Object.keys(documentSnapshot.data().networkConnections).forEach(networkPort => {
+                                    decommissionText += "port " + networkPort + " connected to asset #" + documentSnapshot.data().networkConnections[networkPort].otherAssetID + " on port " + documentSnapshot.data().networkConnections[networkPort].otherPort;
+                                    countInner++;
+                                    if(countInner === Object.keys(documentSnapshot.data().networkConnections).length){
+                                        decommissionText += ".";
+                                        resolve();
+                                    } else {
+                                        decommissionText += ", ";
+                                    }
+                                });
+                            } else {
+                                resolve();
+                            }
+                        });
+                        let powerPromise = new Promise(function (resolve, reject) {
+                            if(documentSnapshot.data().powerConnections && Object.keys(documentSnapshot.data().powerConnections).length){
+                                decommissionText += " Remove the following power connections: ";
+                                let countInner = 0;
+                                Object.keys(documentSnapshot.data().powerConnections).forEach(powerPort => {
+                                    decommissionText += "port " + powerPort + " connected to the PDU " + documentSnapshot.data().powerConnections[powerPort].pduSide.toLowerCase() + " side on port " + documentSnapshot.data().powerConnections[powerPort].port;
+                                    countInner++;
+                                    if(countInner === documentSnapshot.data().powerConnections.length){
+                                        decommissionText += ".";
+                                        resolve();
+                                    } else {
+                                        decommissionText += ", ";
+                                    }
+                                });
+                            } else {
+                                resolve();
+                            }
+                        });
+                        let promiseArray = [networkPromise, powerPromise];
+                        Promise.all(promiseArray).then(function () {
+                            steps.set(doc.data().step, [decommissionText])
+                            count++;
+                            console.log("3", count, querySnapshot.size)
+                            if (count === querySnapshot.size) {
+                                callback(steps);
+                            }
+                        });
                     }).catch(function () {
                         callback(null)
                     });
                 } else if (change === "add") {
                     let assetID = doc.data().assetID ? doc.data().assetID : "TBD";
-                    console.log(doc.data().changes.datacenter["new"]);
-                    steps.set(doc.data().step, ["Add asset #" + assetID + " to datacenter " + doc.data().changes.datacenter["new"] + " on rack " + doc.data().changes.rack["new"] + " at height " + doc.data().changes.rackU["new"] + " U."]);
-                    count++;
-                    console.log("1", count, querySnapshot.size)
-                    if (count === querySnapshot.size) {
-                        console.log(steps);
-                        callback(steps);
-                    }
+
+                    let addText = "Add asset #" + assetID + " to datacenter " + doc.data().changes.datacenter["new"] + " on rack " + doc.data().changes.rack["new"] + " at height " + doc.data().changes.rackU["new"] + " U.";
+                    let networkPromise = new Promise(function (resolve, reject) {
+                        if(doc.data().changes.networkConnections && Object.keys(doc.data().changes.networkConnections["new"]).length){
+                            addText += " Add the following network connections: ";
+                            let countInner = 0;
+                            Object.keys(doc.data().changes.networkConnections["new"]).forEach(networkPort => {
+                                addText += "port " + networkPort + " connected to asset #" + doc.data().changes.networkConnections["new"][networkPort].otherAssetID + " on port " + doc.data().changes.networkConnections["new"][networkPort].otherPort;
+                                countInner++;
+                                if(countInner === Object.keys(doc.data().changes.networkConnections["new"]).length){
+                                    addText += ".";
+                                    resolve();
+                                } else {
+                                    addText += ", ";
+                                }
+                            });
+                        } else {
+                            resolve();
+                        }
+                    });
+                    let powerPromise = new Promise(function (resolve, reject) {
+                        if(doc.data().changes.powerConnections && Object.keys(doc.data().changes.powerConnections["new"]).length){
+                            addText += " Add the following power connections: ";
+                            let countInner = 0;
+                            Object.keys(doc.data().changes.powerConnections["new"]).forEach(powerPort => {
+                                addText += "port " + powerPort + " connected to the PDU " + doc.data().changes.powerConnections["new"][powerPort].pduSide.toLowerCase() + " side on port " + doc.data().changes.powerConnections["new"][powerPort].port;
+                                countInner++;
+                                if(countInner === doc.data().changes.powerConnections["new"].length){
+                                    addText += ".";
+                                    resolve();
+                                } else {
+                                    addText += ", ";
+                                }
+                            });
+                        } else {
+                            resolve();
+                        }
+                    });
+                    let promiseArray = [networkPromise, powerPromise];
+                    Promise.all(promiseArray).then(function () {
+                        steps.set(doc.data().step, [addText]);
+                        count++;
+                        console.log("1", count, querySnapshot.size)
+                        if (count === querySnapshot.size) {
+                            console.log(steps);
+                            callback(steps);
+                        }
+                    });
                 } else if (change === "edit") {
                     generateEditWorkOrderMessage(doc, result => {
                         steps.set(doc.data().step, result);
@@ -683,7 +770,7 @@ function executeChangePlan(changePlanID, callback) {
                     console.log("add")
                     if (change.data().changes.assetId && change.data().changes.assetId["new"]) {
                         console.log("not generating")
-                        executeAddAsset(change.data().changes.assetId["new"], change, changePlanID,resultAdd => {
+                        executeAddAsset(change.data().changes.assetId["new"], change, changePlanID, resultAdd => {
                             if (resultAdd) {
                                 count++;
                                 if (count === querySnapshot.size) {
@@ -746,7 +833,7 @@ function executeChangePlan(changePlanID, callback) {
                     //decomission
                     console.log("decomm")
                     decommissionutils.decommissionAsset(change.data().assetID.toString(), resultDecom => {
-                        if(resultDecom){
+                        if (resultDecom) {
                             count++;
                             if (count === querySnapshot.size) {
                                 changeplansRef.doc(changePlanID.toString()).update({
@@ -788,11 +875,11 @@ function executeAddAsset(id, doc, changePlanID, callback) {
 
             assetRef.doc(id).set(assetObject).then(function (docRef) {
                 changeplansRef.doc(changePlanID.toString()).collection("changes").where("step", "==", parseInt(doc.data().step)).get().then(function (querySnapshot) {
-                    if(!querySnapshot.empty){
+                    if (!querySnapshot.empty) {
                         changeplansRef.doc(changePlanID.toString()).collection("changes").doc(querySnapshot.docs[0].id).update({
                             assetID: id
                         }).then(function () {
-                            if(doc.data().changes.networkConnections){
+                            if (doc.data().changes.networkConnections) {
                                 assetnetworkportutils.symmetricNetworkConnectionsAdd(assetnetworkportutils.networkConnectionsToArray(doc.data().changes.networkConnections["new"]), id);
                             }
                             if (doc.data().changes.powerConnections && doc.data().changes.powerConnections["new"].length != 0) {
@@ -849,7 +936,7 @@ function executeEditAsset(doc, callback) {
             assetnetworkportutils.symmetricNetworkConnectionsDelete(doc.data().assetID.toString(), deleteResult => {
                 if (deleteResult) {
                     logutils.getObjectData(String(doc.data().assetID), logutils.ASSET(), assetData => {
-                        if(doc.data().changes.networkConnections){
+                        if (doc.data().changes.networkConnections) {
                             assetnetworkportutils.symmetricNetworkConnectionsAdd(assetnetworkportutils.networkConnectionsToArray(doc.data().changes.networkConnections["new"]), doc.data().assetID);
                         }
                         assetRef.doc(doc.data().assetID.toString()).get().then(function (documentSnapshot) {
@@ -885,20 +972,20 @@ function executeEditAsset(doc, callback) {
     })
 }
 
-function getMergedAssetAndChange(changePlanID, step, callback){
+function getMergedAssetAndChange(changePlanID, step, callback) {
     changeplansRef.doc(changePlanID.toString()).collection("changes").where("step", "==", parseInt(step)).get().then(function (querySnapshot) {
-        if(!querySnapshot.empty){
+        if (!querySnapshot.empty) {
             let changeData = querySnapshot.docs[0].data().changes;
             let assetID = querySnapshot.docs[0].data().assetID;
             assetRef.doc(assetID.toString()).get().then(function (documentSnapshot) {
-                if(documentSnapshot.exists){
+                if (documentSnapshot.exists) {
                     let assetData = documentSnapshot.data();
                     assetData.changeDocID = querySnapshot.docs[0].id;
                     let count = 0;
                     Object.keys(changeData).forEach(change => {
                         assetData[change] = changeData[change]["new"];
                         count++;
-                        if(count === Object.keys(changeData).length){
+                        if (count === Object.keys(changeData).length) {
                             callback(assetData);
                         }
                     });
@@ -912,9 +999,9 @@ function getMergedAssetAndChange(changePlanID, step, callback){
     });
 }
 
-function getAssetFromAddAsset(changePlanID, step, callback){
+function getAssetFromAddAsset(changePlanID, step, callback) {
     changeplansRef.doc(changePlanID.toString()).collection("changes").where("step", "==", parseInt(step)).get().then(function (querySnapshot) {
-        if(!querySnapshot.empty){
+        if (!querySnapshot.empty) {
             let changeData = querySnapshot.docs[0].data().changes;
             let asset = {
                 changeDocID: querySnapshot.docs[0].id
@@ -923,7 +1010,7 @@ function getAssetFromAddAsset(changePlanID, step, callback){
             Object.keys(changeData).forEach(change => {
                 asset[change] = changeData[change]["new"];
                 count++;
-                if(count === Object.keys(changeData).length){
+                if (count === Object.keys(changeData).length) {
                     callback(asset);
                 }
             });

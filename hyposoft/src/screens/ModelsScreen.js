@@ -22,7 +22,7 @@ import {
     RangeSelector,
     Stack } from 'grommet'
 
-import { Add, FormEdit, FormTrash, FormUp, FormDown } from "grommet-icons"
+import { Add, FormEdit, FormTrash, FormUp, FormDown, Share } from "grommet-icons"
 import theme from '../theme'
 
 const algoliasearch = require('algoliasearch')
@@ -187,8 +187,8 @@ class ModelsScreen extends React.Component {
     }
 
     showAddModelDialog() {
-        if (!userutils.isLoggedInUserAdmin()) {
-            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+        if (!userutils.doesLoggedInUserHaveModelPerm()) {
+            ToastsStore.info('Only users with model management permission can do this', 3000, 'burntToast')
             return
         }
 
@@ -204,7 +204,7 @@ class ModelsScreen extends React.Component {
     }
 
     showEditDialog(itemNo) {
-        if (!userutils.isLoggedInUserAdmin()) {
+        if (!userutils.doesLoggedInUserHaveModelPerm()) {
             ToastsStore.info('Only admins can do this', 3000, 'burntToast')
             return
         }
@@ -223,7 +223,7 @@ class ModelsScreen extends React.Component {
     }
 
     showDeleteDialog(itemNo) {
-        if (!userutils.isLoggedInUserAdmin()) {
+        if (!userutils.doesLoggedInUserHaveModelPerm()) {
             ToastsStore.info('Only admins can do this', 3000, 'burntToast')
             return
         }
@@ -242,7 +242,7 @@ class ModelsScreen extends React.Component {
     }
 
     deleteModel() {
-        if (!userutils.isLoggedInUserAdmin()) {
+        if (!userutils.doesLoggedInUserHaveModelPerm()) {
             ToastsStore.info('Only admins can do this', 3000, 'burntToast')
             return
         }
@@ -267,7 +267,7 @@ class ModelsScreen extends React.Component {
     colors={}
 
     getDatatable(){
-        const adminColumns = userutils.isLoggedInUserAdmin() ? [{
+        const adminColumns = userutils.doesLoggedInUserHaveModelPerm() ? [{
             property: 'dummy',
             render: datum => (
                 <FormEdit style={{cursor: 'pointer', backgroundColor: this.colors[datum.itemNo+'_edit_color']}} onClick={(e) => {
@@ -500,14 +500,14 @@ class ModelsScreen extends React.Component {
                                                 </Box>
                                            </Box>
                                        </Box>
-                                       {userutils.isLoggedInUserAdmin() && (
+                                       {userutils.doesLoggedInUserHaveModelPerm() && (
                                            <Box
                                             direction='row'
                                             alignSelf='stretch'
                                             justify='center'
                                             gap='small' >
                                                 <Button primary icon={<Add />} label="Add model" alignSelf='center' onClick={this.showAddModelDialog} />
-                                                <Button label="Export currently filtered entries" alignSelf='center' onClick={() => {modelutils.exportFilteredModels(this.state.models)}} />
+                                                <Button icon={<Share/>} label="Export currently filtered entries" alignSelf='center' onClick={() => {modelutils.exportFilteredModels(this.state.models)}} />
                                             </Box>
                                        )}
                                    </Box>

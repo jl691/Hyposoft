@@ -67,7 +67,7 @@ class DatacenterScreen extends React.Component {
     }
 
     AdminTools() {
-        if (userutils.isLoggedInUserAdmin()) {
+        if (userutils.doesLoggedInUserHaveAssetPerm() || userutils.isLoggedInUserAdmin()) {
             return (
                 <Box
                     width='medium'
@@ -152,7 +152,7 @@ class DatacenterScreen extends React.Component {
                     <Text size='small'>{datum.rackCount}</Text>)
             }
         ];
-        if (userutils.isLoggedInUserAdmin()) {
+        if (userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.isLoggedInUserAdmin()) {
             cols.push({
                     property: "delete",
                     header: <Text size='small'>Delete</Text>,
@@ -199,6 +199,7 @@ class DatacenterScreen extends React.Component {
     }
 
     render() {
+        console.log(userutils.doesLoggedInUserHaveAssetPerm(null))
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/'/>
         }

@@ -63,7 +63,7 @@ class ChangePlanScreen extends React.Component {
     }
 
     AdminTools() {
-        if (userutils.isLoggedInUserAdmin()) {
+        if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) {
             return (
                 <Box
                     width='medium'
@@ -156,52 +156,6 @@ class ChangePlanScreen extends React.Component {
                     <Text size='small'>{datum.executed.toString()}</Text>)
             },
             {
-                property: "Edit",
-                header: <Text size='small'>Edit</Text>,
-                render: datum => (
-                    !datum.executed && <Edit onClick={(e) => {
-                        e.persist();
-                        e.nativeEvent.stopImmediatePropagation();
-                        e.stopPropagation();
-                        this.setState({
-                            editName: datum.name,
-                            editID: datum.id,
-                            popupType: "Edit"
-                        })
-                    }}/>)
-            },
-            {
-                property: "execute",
-                header: <Text size='small'>Execute</Text>,
-                render: datum => (
-                    !datum.executed && <Checkmark onClick={(e) => {
-                        e.persist();
-                        e.nativeEvent.stopImmediatePropagation();
-                        e.stopPropagation();
-                        console.log(datum.id)
-                        this.setState({
-                            executeName: datum.name,
-                            executeID: datum.id,
-                            popupType: "Execute"
-                        })
-                    }}/>)
-            },
-            {
-                property: "delete",
-                header: <Text size='small'>Delete</Text>,
-                render: datum => (
-                    !datum.executed && <Trash onClick={(e) => {
-                        e.persist();
-                        e.nativeEvent.stopImmediatePropagation();
-                        e.stopPropagation();
-                        this.setState({
-                            deleteName: datum.name,
-                            deleteID: datum.id,
-                            popupType: "Delete"
-                        })
-                    }}/>)
-            },
-            {
                 property: "workorder",
                 header: <Text size='small'>Work Order</Text>,
                 render: datum => (
@@ -213,6 +167,54 @@ class ChangePlanScreen extends React.Component {
                     }}/>)
             }
         ];
+        if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()){
+            cols.push({
+                    property: "Edit",
+                    header: <Text size='small'>Edit</Text>,
+                    render: datum => (
+                        !datum.executed && <Edit onClick={(e) => {
+                            e.persist();
+                            e.nativeEvent.stopImmediatePropagation();
+                            e.stopPropagation();
+                            this.setState({
+                                editName: datum.name,
+                                editID: datum.id,
+                                popupType: "Edit"
+                            })
+                        }}/>)
+                },
+                {
+                    property: "execute",
+                    header: <Text size='small'>Execute</Text>,
+                    render: datum => (
+                        !datum.executed && <Checkmark onClick={(e) => {
+                            e.persist();
+                            e.nativeEvent.stopImmediatePropagation();
+                            e.stopPropagation();
+                            console.log(datum.id)
+                            this.setState({
+                                executeName: datum.name,
+                                executeID: datum.id,
+                                popupType: "Execute"
+                            })
+                        }}/>)
+                },
+                {
+                    property: "delete",
+                    header: <Text size='small'>Delete</Text>,
+                    render: datum => (
+                        !datum.executed && <Trash onClick={(e) => {
+                            e.persist();
+                            e.nativeEvent.stopImmediatePropagation();
+                            e.stopPropagation();
+                            this.setState({
+                                deleteName: datum.name,
+                                deleteID: datum.id,
+                                popupType: "Delete"
+                            })
+                        }}/>)
+                })
+        }
         return cols;
     }
 

@@ -1,5 +1,5 @@
 import React, {Component} from 'react'
-import {BrowserRouter as Router, Route} from 'react-router-dom'
+import {BrowserRouter as Router, Link, Redirect, Route} from 'react-router-dom'
 import {
     Button,
     Grommet,
@@ -13,6 +13,7 @@ import {
     TableBody, Layer
 } from 'grommet'
 import * as assetutils from '../utils/assetutils'
+import * as userutils from '../utils/userutils'
 import * as powerutils from '../utils/powerutils'
 import * as assetmacutils from "../utils/assetmacutils"
 import * as assetnetworkportutils from "../utils/assetnetworkportutils"
@@ -23,6 +24,7 @@ import UserMenu from '../components/UserMenu'
 import {FormEdit, Power, Clear, PowerCycle, View, ShareOption} from "grommet-icons"
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import EditAssetForm from "../components/EditAssetForm";
+import ReactTooltip from "react-tooltip";
 
 export default class DetailedAssetScreen extends Component {
 
@@ -83,7 +85,10 @@ export default class DetailedAssetScreen extends Component {
         if (this.state.asset.networkConnections && Object.keys(this.state.asset.networkConnections).length) {
             console.log(this.state.asset.networkConnections)
             return Object.keys(this.state.asset.networkConnections).map((connection) => (
-                <TableRow>
+                <TableRow
+                          style={{ cursor: 'pointer' }} onClick={() => {
+                              window.location.href = '/assets/' + this.state.asset.networkConnections[connection].otherAssetID;
+                }}>
                     <TableCell scope="row">
                         {connection}
                     </TableCell>
@@ -287,6 +292,7 @@ export default class DetailedAssetScreen extends Component {
                     <td><b>{connection.name}:{connection.port}</b></td>
                     <td style={{float: "right"}}><Box direction={"row"} alignSelf={"end"}>
                         <CheckBox toggle={true}
+                                  disabled={!(userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)}
                                   checked={this.state[connection.name + ":" + connection.port]}
                                   onChange={(e) => {
                                       if (this.state[connection.name + ":" + connection.port]) {
@@ -318,7 +324,9 @@ export default class DetailedAssetScreen extends Component {
                                               }
                                           })
                                       }
-                                  }}/><PowerCycle
+                                  }}/>{(userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner) &&
+                    <PowerCycle
+                        data-tip="Power cycle"
                         size={"medium"} style={{marginLeft: "10px", cursor: "pointer"}} onClick={(e) => {
                         ToastsStore.success("Power cycling " + connection.name + ":" + connection.port + ". Please wait!");
                         powerutils.powerPortOff(connection.name, connection.port, result => {
@@ -342,7 +350,7 @@ export default class DetailedAssetScreen extends Component {
                                 ToastsStore.error("Could not power cycle due to network connectivity issues.")
                             }
                         })
-                    }}/></Box></td>
+                    }}/>}<ReactTooltip /></Box></td>
                 </tr>
             ))
         }
@@ -481,13 +489,13 @@ export default class DetailedAssetScreen extends Component {
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableCell scope="col" border="bottom">
-                                                        <strong>Power Port</strong>
+                                                        <strong>Power Port Name</strong>
                                                     </TableCell>
                                                     <TableCell scope="col" border="bottom">
-                                                        <strong>PDU Side</strong>
+                                                        <strong>Connected PDU Side</strong>
                                                     </TableCell>
                                                     <TableCell scope="col" border="bottom">
-                                                        <strong>PDU Port</strong>
+                                                        <strong>Connected PDU Port</strong>
                                                     </TableCell>
                                                 </TableRow>
                                             </TableHeader>
@@ -531,7 +539,7 @@ export default class DetailedAssetScreen extends Component {
                                         <Heading level='4' margin='none'>Asset Actions</Heading>
                                         <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
                                              gap='small'>
-                                            {this.connectedPDU &&
+                                            {(this.connectedPDU && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
                                             <Box direction='column' flex alignSelf='stretch'
                                                  gap='small'>
                                                 <Button icon={<Power/>} label="Power Asset On" onClick={() => {
@@ -544,11 +552,12 @@ export default class DetailedAssetScreen extends Component {
                                                     this.powerCycleAsset()
                                                 }}/>
                                             </Box>}
+                                            {(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.doesLoggedInUserHaveAssetPerm(this.state.asset.datacenterAbbrev)) &&
                                             <Button icon={<FormEdit/>} label="Edit Asset" onClick={() => {
                                                 this.setState({
                                                     popupType: "Update"
                                                 })
-                                            }}/>
+                                            }}/>}
                                             <Button icon={<View/>} label="View Model Details" onClick={() => {
                                                 this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNum)
                                             }}/>

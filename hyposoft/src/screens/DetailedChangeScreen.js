@@ -1,6 +1,6 @@
 import React from "react";
 import theme from "../theme";
-import { Box, Button, Grommet, Heading, Table, TableBody, TableCell, TableHeader, TableRow } from "grommet";
+import {Box, Button, Grommet, Heading, Layer, Table, TableBody, TableCell, TableHeader, TableRow} from "grommet";
 import AppBar from "../components/AppBar";
 import BackButton from "../components/BackButton";
 import UserMenu from "../components/UserMenu";
@@ -10,6 +10,11 @@ import * as userutils from "../utils/userutils";
 import * as decommissionutils from "../utils/decommissionutils";
 import DeleteChangeForm from "../components/DeleteChangeForm";
 import * as changeplanconflictutils from '../utils/changeplanconflictutils'
+import EditDecommissionChangeForm from "../components/EditDecommissionChangeForm";
+import EditAssetForm from "../components/EditAssetForm";
+import * as assetmacutils from "../utils/assetmacutils";
+import * as assetnetworkportutils from "../utils/assetnetworkportutils";
+import AddAssetForm from "../components/AddAssetForm";
 
 class DetailedChangeScreen extends React.Component {
 
@@ -30,7 +35,6 @@ class DetailedChangeScreen extends React.Component {
     componentDidMount() {
         this.changePlanID = this.props.match.params.changePlanID;
         this.stepID = this.props.match.params.stepID;
-        console.log(this.stepID)
         this.forceRefresh();
     }
 
@@ -283,44 +287,21 @@ class DetailedChangeScreen extends React.Component {
 
     generateConflict() {
 
-        changeplanutils.getStepDocID(this.props.match.params.changePlanID, this.props.match.params.stepID, stepIDcallback => {
-            // changeplansRef.doc(this.props.match.params.changePlanID).collection('changes').doc(this.props.match.params.stepID).get().then(stepDoc => {
+        changeplanconflictutils.getErrorMessages(this.props.match.params.changePlanID, parseInt(this.props.match.params.stepID), errorMessages => {
+            this.forceRefreshCount++;
 
-            //if(stepIDCallback)
-            // let changeType = stepDoc.data().change
-            //if (changeType === "add") { TODO  
-            changeplanconflictutils.addAssetChangePlanPackage(
-                this.props.match.params.changePlanID,
-                stepIDcallback,
-                this.state.change.changes.model.new,
-                this.state.change.changes.hostname.new,
-                this.state.change.changes.datacenter.new,
-                this.state.change.changes.rack.new,
-                this.state.change.changes.rackU.new,
-                this.state.change.changes.owner.new,
-                this.state.change.assetID,
-                this.state.change.changes.powerConnections.new,
-                this.state.change.changes.networkConnections.new,
-                status => {
-                    changeplanconflictutils.getErrorMessages(this.props.match.params.changePlanID, parseInt(this.props.match.params.stepID), errorMessages => {
-                        this.forceRefreshCount++;
+            this.conflictMessages = errorMessages;
+            //console.log(this.conflictMessages)
+            if (this.forceRefreshCount === 1) {
+                //need to only forceRefresh once, when we construct the message
+                //Take this out if i figure out a bette timing issue
+                this.forceRefresh()
 
-                        this.conflictMessages = errorMessages;
-                        //console.log(this.conflictMessages)
-                        if (this.forceRefreshCount === 1) {
-                            this.forceRefresh()
-
-                        }
-
-                        //need to only forceRefresh once
-
-                    })
+            }
 
 
-                })
-            //   }
-            //})
         })
+
         if (this.conflictMessages !== "") {
             return (
 
@@ -329,7 +310,7 @@ class DetailedChangeScreen extends React.Component {
                 }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
                     margin={{ top: "medium" }} height={"small"} overflow="auto" direction="column">
                     <Heading level={"3"} margin={"small"}>Conflict</Heading>
-                    <Box overflow="scroll">
+                    <Box overflow="auto">
                         <span style={{}}>
                             {this.conflictMessages.split('\n').map((i, key) => {
                                 return <div key={key}>{i}</div>
@@ -341,7 +322,29 @@ class DetailedChangeScreen extends React.Component {
                         <Button primary label="Resolve" color={"light-1"} margin={{ top: "small", bottom: "small" }}
                             size={"small"} onClick={() => {
                                 //TODO HERE
-
+                            if(this.state.change.change === "edit") {
+                                changeplanutils.getMergedAssetAndChange(this.changePlanID, this.stepID, mergedAsset => {
+                                    if(mergedAsset){
+                                        this.setState({
+                                            popupType: this.state.change.change,
+                                            currentChange: mergedAsset
+                                        });
+                                    }
+                                });
+                            } else if(this.state.change.change === "add") {
+                                changeplanutils.getAssetFromAddAsset(this.changePlanID, this.stepID, asset => {
+                                    if(asset){
+                                        this.setState({
+                                            popupType: this.state.change.change,
+                                            currentChange: asset
+                                        });
+                                    }
+                                })
+                            } else if(this.state.change.change === "decommission") {
+                                this.setState({
+                                    popupType: this.state.change.change,
+                                });
+                            }
                             }} />
                     </Box>
                 </Box>
@@ -358,6 +361,14 @@ class DetailedChangeScreen extends React.Component {
         })
     };
 
+    successfulEdit = (data) => {
+        this.setState({
+            popupType: ""
+        });
+        this.forceRefresh();
+        ToastsStore.success(data);
+    }
+
     callbackFunction = (data) => {
         window.location.href = "/changeplans/" + this.props.match.params.changePlanID;
     };
@@ -370,6 +381,63 @@ class DetailedChangeScreen extends React.Component {
             popup = (
                 <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
                     changePlanID={this.props.match.params.changePlanID} stepNumber={this.stepID} />
+            )
+        } else if(popupType === 'decommission'){
+            popup = (
+                <EditDecommissionChangeForm cancelPopup={this.cancelPopup} stepID={this.stepID}
+                                            changePlanID={this.changePlanID} successfulEdit={this.successfulEdit}/>
+            )
+        } else if(popupType === 'edit'){
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+
+                    <EditAssetForm
+                        parentCallback={this.cancelPopup}
+                        cancelCallback={this.cancelPopup}
+                        changePlanID={this.changePlanID}
+                        popupMode={'Update'}
+                        changeDocID={this.state.currentChange.changeDocID}
+                        updateModelFromParent={this.state.currentChange.model}
+                        updateHostnameFromParent={this.state.currentChange.hostname}
+                        updateRackFromParent={this.state.currentChange.rack}
+                        updateRackUFromParent={this.state.currentChange.rackU}
+                        updateOwnerFromParent={this.state.currentChange.owner}
+                        updateCommentFromParent={this.state.currentChange.comment}
+                        updateDatacenterFromParent={this.state.currentChange.datacenter}
+                        updateAssetIDFromParent={this.state.currentChange.assetId}
+                        updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses)}
+                        updatePowerConnectionsFromParent={this.state.currentChange.powerConnections}
+                        updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.currentChange.networkConnections)}
+                    />
+                </Layer>
+            )
+        } else if(popupType === 'add'){
+            console.log(this.state.currentChange.macAddresses, this.state.currentChange, assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses))
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+
+                    <AddAssetForm
+                        parentCallback={this.cancelPopup}
+                        cancelCallback={this.cancelPopup}
+                        changePlanID={this.changePlanID}
+                        popupMode={"Update"}
+                        changeDocID={this.state.currentChange.changeDocID}
+                        updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses)}
+                        updatePowerConnectionsFromParent={this.state.currentChange.powerConnections}
+                        updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.currentChange.networkConnections)}
+
+                        updateModelFromParent={this.state.currentChange.model}
+                        updateHostnameFromParent={this.state.currentChange.hostname}
+                        updateRackFromParent={this.state.currentChange.rack}
+                        updateRackUFromParent={this.state.currentChange.rackU}
+                        updateOwnerFromParent={this.state.currentChange.owner}
+                        updateCommentFromParent={this.state.currentChange.comment}
+                        updateDatacenterFromParent={this.state.currentChange.datacenter}
+                        updateAssetIDFromParent={this.state.currentChange.assetId ? this.state.currentChange.assetId : ""}
+                    />
+                </Layer>
             )
         }
 
@@ -443,10 +511,32 @@ class DetailedChangeScreen extends React.Component {
                                             {this.generateChangeTable()}
                                         </TableBody>
                                     </Table>
-                                    {!this.state.executed && <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
+                                    {(!this.state.executed && (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll())) && <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
                                         gap='small'>
                                         <Button label="Edit Change" onClick={() => {
-
+                                            if(this.state.change.change === "edit") {
+                                                changeplanutils.getMergedAssetAndChange(this.changePlanID, this.stepID, mergedAsset => {
+                                                    if(mergedAsset){
+                                                        this.setState({
+                                                            popupType: this.state.change.change,
+                                                            currentChange: mergedAsset
+                                                        });
+                                                    }
+                                                });
+                                            } else if(this.state.change.change === "add") {
+                                                changeplanutils.getAssetFromAddAsset(this.changePlanID, this.stepID, asset => {
+                                                    if(asset){
+                                                        this.setState({
+                                                            popupType: this.state.change.change,
+                                                            currentChange: asset
+                                                        });
+                                                    }
+                                                })
+                                            } else if(this.state.change.change === "decommission") {
+                                                this.setState({
+                                                    popupType: this.state.change.change,
+                                                });
+                                            }
                                         }} />
                                         <Button label="Delete Change" onClick={() => {
                                             this.setState({

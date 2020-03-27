@@ -43,6 +43,7 @@ class AssetScreen extends Component {
     rackSort;
     rackUSort;
     datacenters = [];
+    activeFilters = false;
 
     constructor(props) {
         super(props);
@@ -131,8 +132,12 @@ class AssetScreen extends Component {
     checkFilterDone(){
         if (/[A-Z]\d+/.test(this.state.rangeStart) && /[A-Z]\d+/.test(this.state.rangeEnd) && this.state.datacenter) {
             console.log("passed")
+            // activeFilters flag is for selectAll feature
+            this.activeFilters = true
             this.assetTable.current.handleFilter(this.state.rangeStart, this.state.rangeEnd, this.state.datacenter);
         } else {
+            // activeFilters flag is for selectAll feature
+            this.activeFilters = false
             this.assetTable.current.restoreDefault();
         }
     }
@@ -274,13 +279,7 @@ class AssetScreen extends Component {
                             checked: this.assetTable.current.state.selectedAssets.includes(hits[i].objectID)
                         }]
                     }
-                    // this is already grabbing all the possible assets so select all should reflect that
-                    this.assetTable.current.totalWasAdded = true
-                    var resultsIds = []
-                    for(var index = 0; index < results.length; index++) {
-                        resultsIds.push(results[index].asset_id)
-                    }
-                    this.assetTable.current.totalAssetIDs = resultsIds
+                    this.assetTable.current.presetTotalAssetIdsForSelectAll(results)
                     this.setState(oldState => ({
                         ...oldState,
                         searchResults: results
@@ -289,6 +288,9 @@ class AssetScreen extends Component {
         } else {
             // reset
             this.assetTable.current.state.assets.forEach(asset => asset.checked = this.assetTable.current.state.selectedAssets.includes(asset.asset_id))
+            if (this.activeFilters) {
+              this.assetTable.current.presetTotalAssetIdsForSelectAll(this.assetTable.current.state.assets)
+            }
             this.setState(oldState => ({
                 ...oldState,
                 searchResults: undefined
@@ -674,11 +676,11 @@ class AssetScreen extends Component {
                                                             />
                                                     </Box>
                                                 </Box>
-                                                {userutils.isLoggedInUserAdmin() && (
+                                                {(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) && (
                                                     <Button primary icon={<Add/>} label="Add Asset" alignSelf='center'
                                                             onClick={() => this.setState({popupType: "Add"})}/>
                                                 )}
-                                                {userutils.isLoggedInUserAdmin() && (
+
                                                   <Button primary icon={<View/>} margin={{
                                                       left: 'medium',
                                                       top: 'small',
@@ -686,7 +688,7 @@ class AssetScreen extends Component {
                                                       right: 'medium'
                                                   }} label="View Decommissioned Assets" alignSelf='center'
                                                           onClick={() => this.props.history.push('/decommissioned')}/>
-                                                )}
+
                                             </Box>
                                         </Box>
                                     </Box>

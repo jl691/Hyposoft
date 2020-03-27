@@ -1,5 +1,6 @@
 import axios from 'axios'
 import * as firebaseutils from './firebaseutils'
+import * as logutils from './logutils'
 
 // Example usage: powerutils.getPortStatus('hpdu-rtp1-A01L', 4, () => {})
 function getPortStatus(pdu, portNumber, callback) {
@@ -11,6 +12,9 @@ function getPortStatus(pdu, portNumber, callback) {
 
 function powerPortOn(pdu, portNumber, callback) {
     axios.get('https://hyposoft-53c70.appspot.com/poweron?pdu='+pdu+'&port='+portNumber, {}).then(response => {
+        if (response) {
+            logutils.addLog(null,logutils.PDU(),logutils.POWER_ON(),{pdu: pdu, portNumber: portNumber})
+        }
         callback(response)
     }).catch(() => {
         callback(null)
@@ -19,6 +23,9 @@ function powerPortOn(pdu, portNumber, callback) {
 
 function powerPortOff(pdu, portNumber, callback) {
     axios.get('https://hyposoft-53c70.appspot.com/poweroff?pdu='+pdu+'&port='+portNumber, {}).then(response => {
+        if (response) {
+            logutils.addLog(null,logutils.PDU(),logutils.POWER_OFF(),{pdu: pdu, portNumber: portNumber})
+        }
         callback(response)
     }).catch(() => {
         callback(null)

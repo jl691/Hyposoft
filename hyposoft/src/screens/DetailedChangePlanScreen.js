@@ -29,6 +29,9 @@ class DetailedChangePlanScreen extends React.Component {
 
     startAfter = null;
     changePlanID;
+    hasConflicts = false;
+    errMessage = "This change plan has conflicts in steps "
+    generateConflictCount = 0;
 
     constructor(props) {
         super(props);
@@ -46,13 +49,14 @@ class DetailedChangePlanScreen extends React.Component {
     componentDidMount() {
         this.changePlanID = this.props.match.params.changePlanID;
         firebaseutils.changeplansRef.doc(this.changePlanID).get().then(documentSnapshot => {
-           if(documentSnapshot.exists){
-               this.setState({
-                   name: documentSnapshot.data().name,
-                   executed: documentSnapshot.data().executed,
-                   timestamp: documentSnapshot.data().timestamp
-               })
-           }
+
+            if (documentSnapshot.exists) {
+                this.setState({
+                    name: documentSnapshot.data().name,
+                    executed: documentSnapshot.data().executed,
+                    timestamp: documentSnapshot.data().timestamp
+                })
+            }
         });
         this.forceRefresh()
     }
@@ -90,33 +94,33 @@ class DetailedChangePlanScreen extends React.Component {
     };
 
     AdminTools() {
-        if (userutils.isLoggedInUserAdmin()) {
+        if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) {
             if (!this.state.executed) {
                 return (
                     <Box
                         width='medium'
                         align='center'
-                        margin={{left: 'medium', right: 'medium'}}
+                        margin={{ left: 'medium', right: 'medium' }}
                         justify='start'>
                         <Box style={{
                             borderRadius: 10,
                             borderColor: '#EDEDED'
                         }}
-                             direction='row'
-                             alignSelf='stretch'
-                             background='#FFFFFF'
-                             width={'medium'}
-                             margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                             pad='small'>
+                            direction='row'
+                            alignSelf='stretch'
+                            background='#FFFFFF'
+                            width={'medium'}
+                            margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                            pad='small'>
                             <Box flex
-                                 margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                 direction='column' justify='start'>
+                                margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
+                                direction='column' justify='start'>
                                 <Heading level='4' margin='none'>Add change</Heading>
                                 <p>Add a new change.</p>
                                 <Box direction='column' flex alignSelf='stretch'>
-                                    <Button primary icon={<Add/>} label="Add" onClick={() => {
+                                    <Button primary icon={<Add />} label="Add" onClick={() => {
                                         this.props.history.push('/changeplans/' + this.changePlanID + '/add')
-                                    }}/>
+                                    }} />
                                 </Box>
                             </Box>
                         </Box>
@@ -124,21 +128,21 @@ class DetailedChangePlanScreen extends React.Component {
                             borderRadius: 10,
                             borderColor: '#EDEDED'
                         }}
-                             direction='row'
-                             alignSelf='stretch'
-                             background='#FFFFFF'
-                             width={'medium'}
-                             margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                             pad='small'>
+                            direction='row'
+                            alignSelf='stretch'
+                            background='#FFFFFF'
+                            width={'medium'}
+                            margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                            pad='small'>
                             <Box flex
-                                 margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                 direction='column' justify='start'>
+                                margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
+                                direction='column' justify='start'>
                                 <Heading level='4' margin='none'>Execute change plan</Heading>
                                 <p>Execute this change plan.</p>
                                 <Box direction='column' flex alignSelf='stretch'>
-                                    <Button primary icon={<Checkmark/>} label="Execute" onClick={() => {
-                                        this.setState({popupType: "Execute"})
-                                    }}/>
+                                    <Button primary icon={<Checkmark />} label="Execute" onClick={() => {
+                                        this.setState({ popupType: "Execute" })
+                                    }} />
                                 </Box>
                             </Box>
                         </Box>
@@ -146,21 +150,21 @@ class DetailedChangePlanScreen extends React.Component {
                             borderRadius: 10,
                             borderColor: '#EDEDED'
                         }}
-                             direction='row'
-                             alignSelf='stretch'
-                             background='#FFFFFF'
-                             width={'medium'}
-                             margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                             pad='small'>
+                            direction='row'
+                            alignSelf='stretch'
+                            background='#FFFFFF'
+                            width={'medium'}
+                            margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                            pad='small'>
                             <Box flex
-                                 margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                 direction='column' justify='start'>
+                                margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
+                                direction='column' justify='start'>
                                 <Heading level='4' margin='none'>Work order</Heading>
                                 <p>Generate a work order for this change plan.</p>
                                 <Box direction='column' flex alignSelf='stretch'>
-                                    <Button primary icon={<Print/>} label="Generate" onClick={() => {
+                                    <Button primary icon={<Print />} label="Generate" onClick={() => {
                                         this.props.history.push('/changeplans/' + this.changePlanID + '/workorder')
-                                    }}/>
+                                    }} />
                                 </Box>
                             </Box>
                         </Box>
@@ -171,27 +175,27 @@ class DetailedChangePlanScreen extends React.Component {
                     <Box
                         width='medium'
                         align='center'
-                        margin={{left: 'medium', right: 'medium'}}
+                        margin={{ left: 'medium', right: 'medium' }}
                         justify='start'>
                         <Box style={{
                             borderRadius: 10,
                             borderColor: '#EDEDED'
                         }}
-                             direction='row'
-                             alignSelf='stretch'
-                             background='#FFFFFF'
-                             width={'medium'}
-                             margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                             pad='small'>
+                            direction='row'
+                            alignSelf='stretch'
+                            background='#FFFFFF'
+                            width={'medium'}
+                            margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                            pad='small'>
                             <Box flex
-                                 margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                 direction='column' justify='start'>
+                                margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
+                                direction='column' justify='start'>
                                 <Heading level='4' margin='none'>Work order</Heading>
                                 <p>Generate a work order for this change plan.</p>
                                 <Box direction='column' flex alignSelf='stretch'>
-                                    <Button primary icon={<Print/>} label="Generate" onClick={() => {
+                                    <Button primary icon={<Print />} label="Generate" onClick={() => {
                                         this.props.history.push('/changeplans/' + this.changePlanID + '/workorder')
-                                    }}/>
+                                    }} />
                                 </Box>
                             </Box>
                         </Box>
@@ -209,6 +213,7 @@ class DetailedChangePlanScreen extends React.Component {
         } else {
             return (
                 <DataTable step={25}
+
                     onMore={() => {
                         if (this.startAfter) {
                             changeplanutils.getChanges(this.changePlanID, userutils.getLoggedInUserUsername(), (newStart, changes, empty) => {
@@ -224,12 +229,45 @@ class DetailedChangePlanScreen extends React.Component {
                     onClickRow={({ datum }) => {
                         this.props.history.push('/changeplans/' + this.changePlanID + '/' + datum.id)
 
-                        // changeplanutils.getStepDocID(this.changePlanID, datum.id, status => {
-                        //     if (status) {
-                        //         changeplanconflictutils.addAssetChangePlanPackage(this.changePlanID, status, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new)
-                        //     }
-                        
-                        // })
+                        //what if it's an edit or decomm and there arent these fields?
+                        console.log(datum)
+                        console.log([...this.state.changes])
+                        if (this.state.changes[datum.id - 1].change === "add") {
+                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new, status => {
+                                console.log("Done with live db checks for change plan conflicts. Add")
+                            })
+                        }
+                        else if (this.state.changes[datum.id - 1].change === "edit") {
+                            
+                            changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, assetData =>{
+                                
+                                let model= assetData.model
+                                let hostname = assetData.hostname
+                                let datacenter= assetData.datacenter
+                                let rack = assetData.rack
+                                let rackU = assetData.rackU
+                                let owner = assetData.owner
+                                let assetID = assetData.assetId
+                                let powerConnections= assetData.powerConnections
+                                let networkConnections= assetData.networkConnections
+                                //networkConnections needs to be an array what is it in assetData?
+                                console.log(assetData)
+                            
+                                changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, status =>{
+                                    console.log("Done with live db checks for edit changes.")
+                                })
+
+
+                            })
+
+                        }
+                        else {
+                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, null, null, null, null, null, null, datum.assetID, null, null, status => {
+                                console.log("Done with live db checks for change plan conflicts. Decomms")
+                            })
+
+                        }
+
 
                     }}
                     columns={this.generateColumns()} data={this.state.changes} size={"large"} />
@@ -256,59 +294,61 @@ class DetailedChangePlanScreen extends React.Component {
                 header: <Text size='small'>Change</Text>,
                 render: datum => (
                     <Text size='small'>{datum.change}</Text>)
-            },
-            {
-                property: "edit",
-                header: <Text size='small'>Edit</Text>,
-                render: datum => (
-                    !this.state.executed && <Edit onClick={(e) => {
-                        e.persist();
-                        e.nativeEvent.stopImmediatePropagation();
-                        e.stopPropagation();
-                        if(datum.change === "edit") {
-                            changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, mergedAsset => {
-                                if(mergedAsset){
-                                    this.setState({
-                                        popupType: "Edit" + datum.change,
-                                        stepID: datum.id,
-                                        currentChange: mergedAsset
-                                    });
-                                }
-                            });
-                        } else if(datum.change === "add") {
-                            changeplanutils.getAssetFromAddAsset(this.changePlanID, datum.id, asset => {
-                                if(asset){
-                                    this.setState({
-                                        popupType: "Edit" + datum.change,
-                                        stepID: datum.id,
-                                        currentChange: asset
-                                    });
-                                }
-                            })
-                        } else if(datum.change === "decommission") {
-                            this.setState({
-                                popupType: "Edit" + datum.change,
-                                stepID: datum.id,
-                            });
-                        }
-
-                    }}/>)
-            },
-            {
-                property: "delete",
-                header: <Text size='small'>Delete</Text>,
-                render: datum => (
-                    !this.state.executed && <Trash onClick={(e) => {
-                        e.persist();
-                        e.nativeEvent.stopImmediatePropagation();
-                        e.stopPropagation();
-                        this.setState({
-                            deleteStepNumber: datum.id,
-                            popupType: "Delete"
-                        })
-                    }} />)
             }
         ];
+        if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()){
+            cols.push({
+                    property: "edit",
+                    header: <Text size='small'>Edit</Text>,
+                    render: datum => (
+                        !this.state.executed && <Edit onClick={(e) => {
+                            e.persist();
+                            e.nativeEvent.stopImmediatePropagation();
+                            e.stopPropagation();
+                            if (datum.change === "edit") {
+                                changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, mergedAsset => {
+                                    if (mergedAsset) {
+                                        this.setState({
+                                            popupType: "Edit" + datum.change,
+                                            stepID: datum.id,
+                                            currentChange: mergedAsset
+                                        });
+                                    }
+                                });
+                            } else if (datum.change === "add") {
+                                changeplanutils.getAssetFromAddAsset(this.changePlanID, datum.id, asset => {
+                                    if (asset) {
+                                        this.setState({
+                                            popupType: "Edit" + datum.change,
+                                            stepID: datum.id,
+                                            currentChange: asset
+                                        });
+                                    }
+                                })
+                            } else if (datum.change === "decommission") {
+                                this.setState({
+                                    popupType: "Edit" + datum.change,
+                                    stepID: datum.id,
+                                });
+                            }
+
+                        }} />)
+                },
+                {
+                    property: "delete",
+                    header: <Text size='small'>Delete</Text>,
+                    render: datum => (
+                        !this.state.executed && <Trash onClick={(e) => {
+                            e.persist();
+                            e.nativeEvent.stopImmediatePropagation();
+                            e.stopPropagation();
+                            this.setState({
+                                deleteStepNumber: datum.id,
+                                popupType: "Delete"
+                            })
+                        }} />)
+                })
+        }
         return cols;
     }
 
@@ -333,6 +373,54 @@ class DetailedChangePlanScreen extends React.Component {
         ToastsStore.success(data);
     }
 
+    generateConflict() {
+        this.generateConflictCount++
+        if (this.generateConflictCount === 1) {
+            changeplanconflictutils.changePlanHasConflicts(this.props.match.params.changePlanID, conflicts => {
+                let conflictsArray = [...conflicts]
+                if (conflictsArray.length) {
+                    console.log(...conflictsArray)
+
+                    for (let i = 0; i < conflictsArray.length; i++) {
+                        if(i === conflictsArray.length - 1){
+                            //last conflicting step, don't want to have a , at the end
+                            this.errMessage = this.errMessage + conflictsArray[i] +"."
+
+                        }
+                        else{
+                        this.errMessage = this.errMessage + conflictsArray[i] + ", "
+                        }
+                    }
+
+
+                    this.hasConflicts = true;
+
+                }
+            })
+
+
+        }
+
+
+        if (this.hasConflicts) {
+            console.log(this.errMessage)
+            return (
+                <Box style={{
+                    borderRadius: 10
+                }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
+                    margin={{ top: "medium" }} height={"small"} overflow="auto" direction="column">
+                    <Heading level={"3"} margin={"small"}>Conflict</Heading>
+                    <Box overflow="scroll">
+                        <Text weight="bold"> {this.errMessage}</Text>
+                    </Box>
+                    <Box align={"center"} width={"small"}>
+                    </Box>
+                </Box>
+
+            )
+        }
+    }
+
     render() {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
@@ -352,17 +440,17 @@ class DetailedChangePlanScreen extends React.Component {
                 <ExecuteChangePlanForm cancelPopup={this.cancelPopup} successfulExecution={this.successfulExecution}
                     id={this.changePlanID} name={this.state.name} />
             )
-        } else if(popupType === 'Editdecommission'){
+        } else if (popupType === 'Editdecommission') {
             console.log(this.changePlanID)
             popup = (
                 <EditDecommissionChangeForm cancelPopup={this.cancelPopup} stepID={this.state.stepID}
-                changePlanID={this.changePlanID} successfulEdit={this.successfulEdit}/>
+                    changePlanID={this.changePlanID} successfulEdit={this.successfulEdit} />
             )
-        } else if(popupType === 'Editedit'){
+        } else if (popupType === 'Editedit') {
             console.log(this.state.currentChange)
             popup = (
-                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
-                       onClickOutside={() => this.setState({popupType: undefined})}>
+                <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
+                    onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <EditAssetForm
                         parentCallback={this.cancelPopup}
@@ -384,11 +472,11 @@ class DetailedChangePlanScreen extends React.Component {
                     />
                 </Layer>
             )
-        } else if(popupType === 'Editadd'){
+        } else if (popupType === 'Editadd') {
             console.log(this.state.currentChange.macAddresses, this.state.currentChange, assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses))
             popup = (
-                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
-                       onClickOutside={() => this.setState({popupType: undefined})}>
+                <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
+                    onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <AddAssetForm
                         parentCallback={this.cancelPopup}
@@ -424,16 +512,17 @@ class DetailedChangePlanScreen extends React.Component {
                         <UserMenu alignSelf='end' this={this} />
                     </AppBar>
                     <Box direction='row'
-                         justify='center'
-                         wrap={true}>
+                        justify='center'
+                        wrap={true}>
                         {this.state.executed && <Box style={{
                             borderRadius: 10
                         }} width={"large"} background={"status-ok"} align={"center"} alignSelf={"center"}
-                                                     margin={{top: "medium"}}>
+                            margin={{ top: "medium" }}>
                             <Heading level={"3"} margin={"small"}>Change Plan Executed</Heading>
                             <Box>This change plan was executed on {decommissionutils.getDate(this.state.timestamp)}. Thus, no further changes can be made.</Box>
                         </Box>}
-                        <Box direction='row' justify='center' overflow={{horizontal: 'hidden'}}>
+                        {this.generateConflict()}
+                        <Box direction='row' justify='center' overflow={{ horizontal: 'hidden' }}>
                             <Box direction='row' justify='center'>
                                 <Box width='large' direction='column' align='stretch' justify='start'>
                                     <Box style={{
