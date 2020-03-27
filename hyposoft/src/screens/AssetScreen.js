@@ -676,11 +676,11 @@ class AssetScreen extends Component {
                                                             />
                                                     </Box>
                                                 </Box>
-                                                {userutils.isLoggedInUserAdmin() && (
+                                                {(userutils.isLoggedInUserAdmin() || true) && (
                                                     <Button primary icon={<Add/>} label="Add Asset" alignSelf='center'
                                                             onClick={() => this.setState({popupType: "Add"})}/>
                                                 )}
-                                                {userutils.isLoggedInUserAdmin() && (
+
                                                   <Button primary icon={<View/>} margin={{
                                                       left: 'medium',
                                                       top: 'small',
@@ -688,7 +688,7 @@ class AssetScreen extends Component {
                                                       right: 'medium'
                                                   }} label="View Decommissioned Assets" alignSelf='center'
                                                           onClick={() => this.props.history.push('/decommissioned')}/>
-                                                )}
+
                                             </Box>
                                         </Box>
                                     </Box>
