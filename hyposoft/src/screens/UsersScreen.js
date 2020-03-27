@@ -17,7 +17,7 @@ import {
     Text,
     TextInput,
     Form,
-    Select } from 'grommet'
+    CheckBox } from 'grommet'
 
 import { Add, FormEdit, FormTrash } from "grommet-icons"
 import theme from '../theme'
@@ -53,12 +53,19 @@ class UsersScreen extends Component {
             }
             this.setState({users: docSnaps.docs.map(doc => (
                 {dummy: true, username: doc.data().username, name: doc.data().displayName,
-                     role: (doc.data.username === 'admin' ? 'Admin' : (doc.data().role === 'ADMIN_ROLE' ? 'Admin' : 'User'))}
+                    permissions: doc.data().permissions,
+                    role: (doc.data.username === 'admin' ? 'Admin' : (doc.data().permissions.includes('ADMIN_PERMISSION') ? 'Admin' : 'User'))}
             ))})
         })
     }
 
     componentWillMount() {
+        userutils.getAllDataCenterAbbrevs(results => {
+            this.setState(oldState => ({
+                ...oldState, datacenterAbbrevs: results
+            }))
+        })
+
         this.init()
     }
 
@@ -132,10 +139,10 @@ class UsersScreen extends Component {
         ))
     }
 
-    showEditDialog(username, role) {
+    showEditDialog(username, permissions) {
         if (userutils.isLoggedInUserAdmin()) {
             this.setState(currState => (
-                {...currState, showEditDialog: true, editUsername: username, editRole: role}
+                {...currState, showEditDialog: true, editUsername: username, editPermissions: permissions}
             ))
         } else {
             ToastsStore.info('Only admins can do that', 3000, 'burntToast')
@@ -185,35 +192,14 @@ class UsersScreen extends Component {
             return
         }
 
-        var newUsername = this.state.editUserNewUsername
 
-        if (newUsername && newUsername.trim() !== '') {
-            while (newUsername.startsWith('@')) {
-                newUsername = newUsername.substring(1)
-            }
 
-            userutils.usernameTaken(newUsername, taken => {
-                if (taken) {
-                    ToastsStore.info('Username taken', 3000, 'burntToast')
-                } else {
-                    userutils.updateUsername(this.state.editUsername, newUsername, () => {
-                        userutils.updateUserRole(this.state.editUsername, (this.state.editRole === 'User' ? userutils.USER_ROLE : userutils.ADMIN_ROLE), () => {
-                            ToastsStore.info("Changes saved", 3000, 'burntToast')
-                            this.onCloseEdit()
+        userutils.updateUserPermissions(this.state.editUsername, this.state.editPermissions, () => {
+            ToastsStore.info("Changes saved", 3000, 'burntToast')
+            this.onCloseEdit()
 
-                            this.init()
-                        })
-                    })
-                }
-            })
-        } else {
-            userutils.updateUserRole(this.state.editUsername, (this.state.editRole === 'User' ? userutils.USER_ROLE : userutils.ADMIN_ROLE), () => {
-                ToastsStore.info("Changes saved", 3000, 'burntToast')
-                this.onCloseEdit()
-
-                this.init()
-            })
-        }
+            this.init()
+        })
 
     }
 
@@ -237,7 +223,7 @@ class UsersScreen extends Component {
             {
                 property: 'dummy',
                 render: datum => (
-                <FormEdit style={{cursor: 'pointer'}} onClick={() => this.showEditDialog(datum.username, datum.role)} />
+                <FormEdit style={{cursor: 'pointer'}} onClick={() => this.showEditDialog(datum.username, datum.permissions)} />
             ),
                 align: 'center',
                 header: <Text>Edit</Text>,
@@ -449,17 +435,158 @@ class UsersScreen extends Component {
                     <Layer position="center" modal onClickOutside={this.onCloseEdit} onEsc={this.onCloseEdit}>
                         <Box pad="medium" gap="small" width="medium">
                             <Heading level={4} margin="none">
-                                Edit user
+                                Edit user permissions
                             </Heading>
                             <Form>
-                                <Box direction="column" gap="small" margin={{top: 'small'}}>
-                                    <Select
-                                        options={['User', 'Admin']}
-                                        value={this.state.editRole}
-                                        onChange={({ option }) => {
-                                            this.setState(oldState => ({...oldState, editRole: option}))
+                                <Box direction="column" gap="small" margin={{top: 'small'}}
+                                    style={{maxHeight: 300}}
+                                    overflow='auto'>
+                                    <CheckBox
+                                        checked={this.state.editPermissions.includes('ADMIN_PERMISSION')}
+                                        label="Administrator permission"
+                                        onChange={(event) => {
+                                            if (event.target.checked && !this.state.editPermissions.includes('ADMIN_PERMISSION')){
+                                                this.setState(oldState => ({
+                                                    ...oldState, editPermissions: [...oldState.editPermissions, 'ADMIN_PERMISSION']
+                                                }))
+                                            } else if (!event.target.checked && this.state.editPermissions.includes('ADMIN_PERMISSION')) {
+                                                this.setState(oldState => {
+                                                    var newPermissions = [...oldState.editPermissions]
+                                                    newPermissions.splice(newPermissions.indexOf('ADMIN_PERMISSION'), 1)
+                                                    return ({
+                                                        ...oldState, editPermissions: newPermissions
+                                                    })
+                                                })
+                                            }
                                         }}
                                         />
+
+                                    <CheckBox
+                                        checked={this.state.editPermissions.includes('AUDIT_PERMISSION')}
+                                        label="Audit permission"
+                                        onChange={(event) => {
+                                            if (event.target.checked && !this.state.editPermissions.includes('AUDIT_PERMISSION')){
+                                                this.setState(oldState => ({
+                                                    ...oldState, editPermissions: [...oldState.editPermissions, 'AUDIT_PERMISSION']
+                                                }))
+                                            } else if (!event.target.checked && this.state.editPermissions.includes('AUDIT_PERMISSION')) {
+                                                this.setState(oldState => {
+                                                    var newPermissions = [...oldState.editPermissions]
+                                                    newPermissions.splice(newPermissions.indexOf('AUDIT_PERMISSION'), 1)
+                                                    return ({
+                                                        ...oldState, editPermissions: newPermissions
+                                                    })
+                                                })
+                                            }
+                                        }}
+                                        />
+                                    <CheckBox
+                                        checked={this.state.editPermissions.includes('MODEL_PERMISSION')}
+                                        label="Model management permission"
+                                        onChange={(event) => {
+                                            if (event.target.checked && !this.state.editPermissions.includes('MODEL_PERMISSION')){
+                                                this.setState(oldState => ({
+                                                    ...oldState, editPermissions: [...oldState.editPermissions, 'MODEL_PERMISSION']
+                                                }))
+                                            } else if (!event.target.checked && this.state.editPermissions.includes('MODEL_PERMISSION')) {
+                                                this.setState(oldState => {
+                                                    var newPermissions = [...oldState.editPermissions]
+                                                    newPermissions.splice(newPermissions.indexOf('MODEL_PERMISSION'), 1)
+                                                    return ({
+                                                        ...oldState, editPermissions: newPermissions
+                                                    })
+                                                })
+                                            }
+                                        }}
+                                        />
+                                    <CheckBox
+                                        checked={this.state.editPermissions.includes('POWER_PERMISSION')}
+                                        label="Power permission"
+                                        onChange={(event) => {
+                                            if (event.target.checked && !this.state.editPermissions.includes('POWER_PERMISSION')){
+                                                this.setState(oldState => ({
+                                                    ...oldState, editPermissions: [...oldState.editPermissions, 'POWER_PERMISSION']
+                                                }))
+                                            } else if (!event.target.checked && this.state.editPermissions.includes('POWER_PERMISSION')) {
+                                                this.setState(oldState => {
+                                                    var newPermissions = [...oldState.editPermissions]
+                                                    newPermissions.splice(newPermissions.indexOf('POWER_PERMISSION'), 1)
+                                                    return ({
+                                                        ...oldState, editPermissions: newPermissions
+                                                    })
+                                                })
+                                            }
+                                        }}
+                                        />
+                                        <hr
+                                            style={{
+                                                color: '#dddddd',
+                                                backgroundColor: '#dddddd',
+                                                height: 1,
+                                                border: 'none',
+                                                width: '100%'
+                                            }}
+                                        />
+                                    <CheckBox
+                                        checked={this.state.editPermissions.includes('ASSET_PERMISSION_GLOBAL')}
+                                        label="Asset management permission (Global)"
+                                        onChange={(event) => {
+                                            if (event.target.checked && !this.state.editPermissions.includes('ASSET_PERMISSION_GLOBAL')){
+                                                this.setState(oldState => {
+                                                    var newPermissions = ['ASSET_PERMISSION_GLOBAL']
+                                                    oldState.editPermissions.forEach((item, i) => {
+                                                        if (!item.startsWith('ASSET_PERMISSION')) {
+                                                            newPermissions.push(item)
+                                                        }
+                                                    })
+                                                    oldState.datacenterAbbrevs.forEach((item, i) => {
+                                                        newPermissions.push('ASSET_PERMISSION_'+item)
+                                                    })
+
+                                                    return ({
+                                                        ...oldState, editPermissions: newPermissions
+                                                    })
+                                                })
+                                            } else if (!event.target.checked && this.state.editPermissions.includes('ASSET_PERMISSION_GLOBAL')) {
+                                                this.setState(oldState => {
+                                                    var newPermissions = []
+                                                    oldState.editPermissions.forEach((item, i) => {
+                                                        if (!item.startsWith('ASSET_PERMISSION')) {
+                                                            newPermissions.push(item)
+                                                        }
+                                                    })
+
+                                                    return ({
+                                                        ...oldState, editPermissions: newPermissions
+                                                    })
+                                                })
+                                            }
+                                        }}
+                                        />
+                                    {this.state.datacenterAbbrevs.map(dcAbbrev => (
+                                        <CheckBox
+                                            checked={this.state.editPermissions.includes('ASSET_PERMISSION_'+dcAbbrev)}
+                                            label={"Asset management permission ("+dcAbbrev+")"}
+                                            onChange={(event) => {
+                                                if (event.target.checked && !this.state.editPermissions.includes('ASSET_PERMISSION_'+dcAbbrev)){
+                                                    this.setState(oldState => ({
+                                                        ...oldState, editPermissions: [...oldState.editPermissions, 'ASSET_PERMISSION_'+dcAbbrev]
+                                                    }))
+                                                } else if (!event.target.checked && this.state.editPermissions.includes('ASSET_PERMISSION_'+dcAbbrev)) {
+                                                    this.setState(oldState => {
+                                                        var newPermissions = [...oldState.editPermissions]
+                                                        if (newPermissions.indexOf('ASSET_PERMISSION_GLOBAL') !== -1)
+                                                            newPermissions.splice(newPermissions.indexOf('ASSET_PERMISSION_GLOBAL'), 1)
+                                                        newPermissions.splice(newPermissions.indexOf('ASSET_PERMISSION_'+dcAbbrev), 1)
+                                                        return ({
+                                                            ...oldState, editPermissions: newPermissions
+                                                        })
+                                                    })
+                                                }
+
+                                            }}
+                                            />
+                                    ))}
                                 </Box>
                                 <Box
                                     margin={{top: 'medium'}}
