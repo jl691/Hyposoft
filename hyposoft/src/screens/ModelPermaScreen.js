@@ -21,6 +21,7 @@ import {
     Meter,
     Text
 } from 'grommet'
+import { FormEdit, FormTrash } from "grommet-icons"
 
 import theme from '../theme'
 
@@ -368,8 +369,8 @@ class ModelPermaScreen extends Component {
                                                 </span>
                                             {userutils.isLoggedInUserAdmin() && <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
                                                  gap='small'>
-                                                <Button primary label="Edit" onClick={this.showEditDialog}/>
-                                                <Button label="Delete" onClick={this.showDeleteDialog}/>
+                                                <Button primary icon={<FormEdit/>} label="Edit" onClick={this.showEditDialog}/>
+                                                <Button icon={<FormTrash/>} label="Delete" onClick={this.showDeleteDialog}/>
                                             </Box>}
                                         </Box>
                                     </Box>
