@@ -62,7 +62,9 @@ export default class DecommissionAssetPopup extends Component {
                     <Form onSubmit={this.handleDecommission}
                         name="decommissionInst"
                     >
-                        <Text>Are you sure you want to decommission asset #<strong>{this.props.decommissionIDFromParent}</strong>? This cannot be undone. </Text>
+                        <Text>Are you sure you want to decommission asset #<strong>{this.props.decommissionIDFromParent}</strong>? {
+                            this.props.changePlanID ? "This will only take effect in the change plan." : "This cannot be undone."
+                        } </Text>
                         <Box direction={"row"}>
                             <Button
                                 alignSelf="center"
