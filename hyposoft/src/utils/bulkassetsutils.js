@@ -1,4 +1,5 @@
 import * as firebaseutils from './firebaseutils'
+import * as userutils from './userutils'
 import { saveAs } from 'file-saver'
 import * as logutils from './logutils'
 
@@ -62,6 +63,7 @@ function validateImportedAssets (data, callback) {
 
             if (!datum.asset_number) {
                 datum.asset_number = unusedIds.pop() // Generate one for them
+                console.log('had to generate asset number')
             } else if (isNaN(String(datum.asset_number).trim()) || !Number.isInteger(parseFloat(String(datum.asset_number).trim()))) {
                 errors = [...errors, [i + 1, 'Asset number invalid format']]
             } else if (parseInt(String(datum.asset_number).trim()) > 999999 || parseInt(String(datum.asset_number).trim()) < 100000) {
@@ -78,9 +80,9 @@ function validateImportedAssets (data, callback) {
                 errors = [...errors, [i + 1, 'Invalid hostname (does not follow RFC-1034 specs)']]
             }
 
-            if (datum.hostname.trim() !== '' && datum.hostname in hostnamesToId && hostnamesToId[datum.hostname] !== datum.asset_number) {
+            if (datum.hostname.trim() !== '' && datum.hostname.trim() in hostnamesToId && (''+hostnamesToId[datum.hostname.trim()]).trim() != (''+datum.asset_number).trim()) {
                 errors = [...errors, [i + 1, 'Hostname taken by another asset']]
-                console.log(datum.asset_number+' '+hostnamesToId[datum.hostname])
+                console.log('HOSTNAME CONFLICT: '+datum.asset_number+' '+hostnamesToId[datum.hostname])
             }
 
             if (!datum.rack_position || String(datum.rack_position).trim() === '') {
@@ -89,6 +91,10 @@ function validateImportedAssets (data, callback) {
             } else if (isNaN(String(datum.rack_position).trim()) || !Number.isInteger(parseFloat(String(datum.rack_position).trim())) || parseInt(String(datum.rack_position).trim()) <= 0 || parseInt(String(datum.rack_position).trim()) > 42) {
                 errors = [...errors, [i + 1, 'Rack position is not a positive integer less than 43']]
                 canTestForFit = false
+            }
+
+            if (!userutils.doesLoggedInUserHaveAssetPerm((datum.datacenter+'').trim())) {
+                errors = [...errors, [i + 1, "You don't have asset management permissions for this datacenter"]]
             }
 
             if (!(datum.datacenter in existingRacks)) {
@@ -143,7 +149,7 @@ function validateImportedAssets (data, callback) {
                     canTestForFit = false
                 }
 
-                if (powerPortsNumber === 1 && datum.power_port_connection_2) {
+                if (powerPortsNumber == 1 && datum.power_port_connection_2) {
                     errors = [...errors, [i + 1, 'This model has only one power port and you have specified a connection for power port #2']]
                     canTestForFit = false
                 }
@@ -159,7 +165,7 @@ function validateImportedAssets (data, callback) {
                     rackNamesToIdsForOurDC[rackIdsToNames[rackId]] = rackId
                 }
                 for (var j = parseInt(datum.rack_position); j < parseInt(datum.rack_position) + parseInt(existingModels[datum.vendor][datum.model_number].height); j++) {
-                    if ((rackNamesToIdsForOurDC[datum.rack] in usedRackUsInRack && j in usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]] && usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]][j] !== datum.asset_number) || j > 42) {
+                    if ((rackNamesToIdsForOurDC[datum.rack] in usedRackUsInRack && j in usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]] && usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]][j] != datum.asset_number) || j > 42) {
                         errors = [...errors, [i + 1, 'Asset will not fit on the rack at this position']]
                     }
                 }
@@ -203,11 +209,11 @@ function validateImportedAssets (data, callback) {
 
 
                 if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]] && datum.power_port_connection_1 in usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]]) {
-                    if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]][datum.power_port_connection_1] !== datum.asset_number)
+                    if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]][datum.power_port_connection_1] != datum.asset_number)
                         errors = [...errors, [i + 1, 'Power port connection 1 is being used by another asset']]
                 }
                 if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]] && datum.power_port_connection_2 in usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]]) {
-                    if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]][datum.power_port_connection_2] !== datum.asset_number)
+                    if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]][datum.power_port_connection_2] != datum.asset_number)
                         errors = [...errors, [i + 1, 'Power port connection 2 is being used by another asset']]
                 }
             }
@@ -243,7 +249,7 @@ function validateImportedAssets (data, callback) {
     firebaseutils.assetRef.get().then(qs => {
         for (var i = 0; i < qs.size; i++) {
             const asset = {...qs.docs[i].data(), id: qs.docs[i].id}
-            const assetID = qs.docs[i].id
+            const assetID = qs.docs[i].data().assetId
             assetsLoaded[assetID] = asset
             if (asset.hostname) {
                 hostnamesToId[asset.hostname] = assetID
@@ -326,7 +332,7 @@ function bulkAddAssets (assets, callback) {
             model: asset.vendor+' '+asset.model_number,
             hostname: asset.hostname,
             rack: asset.rack,
-            rackU: asset.rack_position,
+            rackU: parseInt(asset.rack_position),
             owner: asset.owner,
             comment: asset.comment,
             rackID: asset.rackID,
@@ -401,7 +407,7 @@ function bulkModifyAssets (assets, callback) {
         }
 
         if (asset.rack_position) {
-            updates.rackU = asset.rack_position
+            updates.rackU = parseInt(asset.rack_position)
         }
 
         if (asset.owner) {

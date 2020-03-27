@@ -1,33 +1,36 @@
 import * as firebaseutils from './firebaseutils'
+import * as userutils from './userutils'
 import * as logutils from './logutils'
 import { saveAs } from 'file-saver'
 
 function validateImportedConnections (data, callback) {
+    var tasksPending = 2 // Assets, models
     var fetchedAssets = {}
-    var fetchedAssetsCount = 0
     var errors = []
     var toBeAdded = []
     var toBeIgnored = []
     var toBeModified = []
+    var existingModels = {}
 
-    function postValidation() {
-        fetchedAssetsCount ++
-        if (fetchedAssetsCount < data.length*2)
+    function postTaskCompletion() {
+        tasksPending--
+        if (tasksPending > 0)
             return
         for (var i = 0; i < data.length; i++) {
             var datum = data[i]
             console.log(fetchedAssets)
+
             if (!fetchedAssets[datum.src_hostname]) {
                 errors = [...errors, [i+1, 'No asset with provided source hostname found']]
-            } else if (!(datum.src_port in fetchedAssets[datum.src_hostname].networkConnections)) {
-                errors = [...errors, [i+1, 'No asset with provided source port found']]
+            } else if (!existingModels[fetchedAssets[datum.src_hostname].vendor][fetchedAssets[datum.src_hostname].modelNumber].networkPorts.includes(datum.src_port)) {
+                errors = [...errors, [i+1, "Source asset does not have specified network port"]]
             }
 
             if (datum.dest_hostname) {
                 if (!fetchedAssets[datum.dest_hostname]) {
                     errors = [...errors, [i+1, 'No asset with provided destination hostname found']]
-                } else if (!(datum.dest_port in fetchedAssets[datum.dest_hostname].networkConnections)) {
-                    errors = [...errors, [i+1, 'No asset with provided destination port found']]
+                } else if (!existingModels[fetchedAssets[datum.dest_hostname].vendor][fetchedAssets[datum.dest_hostname].modelNumber].networkPorts.includes(datum.dest_port)) {
+                    errors = [...errors, [i+1, "Destination asset does not have specified network port"]]
                 }
             }
 
@@ -35,6 +38,10 @@ function validateImportedConnections (data, callback) {
                 errors = [...errors, [i+1, 'Bad MAC address']]
             } else {
                 datum.src_mac = datum.src_mac.replace((/[\W_]/g), "").toLowerCase().replace(/(.{2})(?!$)/g,"$1:")
+            }
+
+            if (!userutils.doesLoggedInUserHaveAssetPerm((fetchedAssets[datum.src_hostname].datacenterAbbrev+'').trim())) {
+                errors = [...errors, [i + 1, "You don't have asset management permissions for this datacenter"]]
             }
 
             if (errors.length === 0) {
@@ -77,24 +84,7 @@ function validateImportedConnections (data, callback) {
             errors = [...errors, [i+1, 'Source port required']]
         }
 
-        firebaseutils.assetRef.where('hostname', '==', datum.src_hostname).get().then(qs => {
-            if (qs.empty) {
-                fetchedAssets[datum.src_hostname] = null
-            } else {
-                fetchedAssets[datum.src_hostname] = {...qs.docs[0].data(), id: qs.docs[0].id}
-            }
-            postValidation()
-        })
-
         if (datum.dest_hostname.trim()) {
-            firebaseutils.assetRef.where('hostname', '==', datum.dest_hostname).get().then(qs => {
-                if (qs.empty) {
-                    fetchedAssets[datum.dest_hostname] = null
-                } else {
-                    fetchedAssets[datum.dest_hostname] = {...qs.docs[0].data(), id: qs.docs[0].id}
-                }
-                postValidation()
-            })
             if (!datum.dest_port.trim()) {
                 errors = [...errors, [i+1, 'Destination port is required if destination hostname is specified']]
             }
@@ -102,9 +92,30 @@ function validateImportedConnections (data, callback) {
             if (datum.dest_port.trim()) {
                 errors = [...errors, [i+1, 'Destination port should be blank if destination hostname is']]
             }
-            postValidation()
         }
     }
+
+    firebaseutils.assetRef.get().then(qs => {
+        for (var i = 0; i < qs.size; i++) {
+            const asset = {...qs.docs[i].data(), id: qs.docs[i].id}
+            if (asset.hostname)
+                fetchedAssets[asset.hostname] = asset
+        }
+        postTaskCompletion()
+    })
+
+    firebaseutils.modelsRef.get().then(qs => {
+        for (var i = 0; i < qs.size; i++) {
+            const model = {...qs.docs[i].data(), id: qs.docs[i].id}
+            if (model.vendor in existingModels) {
+                existingModels[model.vendor][model.modelNumber] = model
+            } else {
+                existingModels[model.vendor] = {[model.modelNumber] : model}
+            }
+
+        }
+        postTaskCompletion()
+    })
 }
 
 function addConnections (data, fetchedAssets, callback) {
@@ -112,21 +123,40 @@ function addConnections (data, fetchedAssets, callback) {
         const datum = data[i]
 
         // First remove connection from old destination
-        if (fetchedAssets[datum.src_hostname].networkConnections[datum.src_port]) {
+        if (datum.src_port in fetchedAssets[datum.src_hostname].networkConnections) {
             const oldDestinationId = fetchedAssets[datum.src_hostname].networkConnections[datum.src_port].otherAssetID
             const oldDestinationPort = fetchedAssets[datum.src_hostname].networkConnections[datum.src_port].otherPort
+
             firebaseutils.assetRef.doc(oldDestinationId).update({
-                ["networkConnections."+oldDestinationPort]: null
+                ["networkConnections."+oldDestinationPort]: firebaseutils.firebase.firestore.FieldValue.delete()
             })
             if (datum.dest_hostname in fetchedAssets) {
                 var newAsset = fetchedAssets[datum.dest_hostname]
-                newAsset.networkConnections[oldDestinationPort] = null
+                delete newAsset.networkConnections[oldDestinationPort]
                 logutils.addLog(String(oldDestinationId), logutils.ASSET(), logutils.MODIFY(), newAsset)
             }
         }
 
         if (datum.dest_hostname) {
             // This means: modify or add
+
+            // First remove connection from new destination's old source
+            if (datum.dest_port in fetchedAssets[datum.dest_hostname].networkConnections) {
+                const oldSourceId = fetchedAssets[datum.dest_hostname].networkConnections[datum.dest_port].otherAssetID
+                const oldSourcePort = fetchedAssets[datum.dest_hostname].networkConnections[datum.dest_port].otherPort
+                firebaseutils.assetRef.doc(oldSourceId).update({
+                    ["networkConnections."+oldSourcePort]: firebaseutils.firebase.firestore.FieldValue.delete()
+                })
+
+                for (var x = 0; x < Object.values(fetchedAssets).length; x++) {
+                    var item = Object.values(fetchedAssets)[x]
+                    if (item.assetId == oldSourceId) {
+                        newAsset = {...item}
+                        delete newAsset.networkConnections[oldSourcePort]
+                        logutils.addLog(String(oldSourceId), logutils.ASSET(), logutils.MODIFY(), newAsset)
+                    }
+                }
+            }
 
             // Now add new connection to source
             const newMacAddress = (datum.src_mac ? datum.src_mac : fetchedAssets[datum.src_hostname].macAddresses[datum.src_port])
@@ -167,15 +197,15 @@ function addConnections (data, fetchedAssets, callback) {
             // Now delete connection from source
             const newMacAddress = (datum.src_mac ? datum.src_mac : (fetchedAssets[datum.src_hostname].macAddresses[datum.src_port] || null))
             firebaseutils.assetRef.doc(fetchedAssets[datum.src_hostname].id).update({
-                ["networkConnections."+datum.src_port]: null,
+                ["networkConnections."+datum.src_port]: firebaseutils.firebase.firestore.FieldValue.delete(),
                 ["macAddresses."+datum.src_port]: newMacAddress
             })
 
             var newAsset3 = fetchedAssets[datum.dest_hostname]
             newAsset3 = Object.assign({}, newAsset3, {
-                ["networkConnections."+datum.src_port]: null,
                 ["macAddresses."+datum.src_port]: newMacAddress
             })
+            delete newAsset3.networkConnections[datum.src_port]
             logutils.addLog(String(fetchedAssets[datum.src_hostname].id), logutils.ASSET(), logutils.MODIFY(), newAsset3)
         }
 

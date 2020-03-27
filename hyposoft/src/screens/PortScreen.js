@@ -7,7 +7,6 @@ import { ToastsContainer, ToastsStore } from 'react-toasts'
 import { saveAs } from 'file-saver'
 import * as userutils from '../utils/userutils'
 import * as modelutils from '../utils/modelutils'
-import * as assetutils from '../utils/assetutils'
 import * as bulkutils from '../utils/bulkutils'
 import * as bulkconnectionsutils from '../utils/bulkconnectionsutils'
 import * as bulkassetsutils from '../utils/bulkassetsutils'
@@ -38,6 +37,9 @@ class PortScreen extends Component {
         this.showFormatDocumentation = this.showFormatDocumentation.bind(this)
         this.importConnections = this.importConnections.bind(this)
         this.exportConnections = this.exportConnections.bind(this)
+        this.importAssetsButtonClicked = this.importAssetsButtonClicked.bind(this)
+        this.importModelsButtonClicked = this.importModelsButtonClicked.bind(this)
+        this.importNetconnButtonClicked = this.importNetconnButtonClicked.bind(this)
     }
 
     exportConnections () {
@@ -232,6 +234,36 @@ class PortScreen extends Component {
         }))
     }
 
+    importModelsButtonClicked () {
+        if (userutils.doesLoggedInUserHaveModelPerm()) {
+            document.getElementById('csvreadermodels').click()
+        } else {
+            ToastsStore.info("You don't have model management permissions", 3000, 'burntToast')
+        }
+    }
+
+    importAssetsButtonClicked () {
+        if (!userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) {
+            ToastsStore.info("You don't have asset management permissions for any datacenter", 3000, 'burntToast')
+        } else if (!userutils.doesLoggedInUserHaveAssetPerm(null)){
+            // Show warning that they have limited permissions
+            this.setState(oldState => ({...oldState, showLimitedAssetWarning: 'csvreaderassets'}))
+        } else {
+            document.getElementById('csvreaderassets').click()
+        }
+    }
+
+    importNetconnButtonClicked() {
+        if (!userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) {
+            ToastsStore.info("You don't have asset management permissions for any datacenter", 3000, 'burntToast')
+        } else if (!userutils.doesLoggedInUserHaveAssetPerm(null)){
+            // Show warning that they have limited permissions
+            this.setState(oldState => ({...oldState, showLimitedAssetWarning: 'csvreaderconn'}))
+        } else {
+            document.getElementById('csvreaderconn').click()
+        }
+    }
+
     render() {
         if (this.state.redirect !== '') {
             return <Redirect to={this.state.redirect} />
@@ -239,21 +271,6 @@ class PortScreen extends Component {
         if (!userutils.isUserLoggedIn()) {
             userutils.logout()
             return <Redirect to='/' />
-        }
-
-        var content = [
-                <Button primary label="Export Models" onClick={this.exportModels}/>,
-                <Button label="Import Models" onClick={()=>{document.getElementById('csvreadermodels').click()}}/>,
-                <Button primary label="Export Assets" onClick={this.exportAssets}/>,
-                <Button label="Import Assets" onClick={()=>{document.getElementById('csvreaderassets').click()}}/>,
-                <Button primary label="Export Network Connections" onClick={this.exportConnections}/>,
-                <Button label="Import Network Connections" onClick={()=>{document.getElementById('csvreaderconn').click()}}/>,
-        ]
-        if (!userutils.isLoggedInUserAdmin()) {
-            content = [
-                    <Heading alignSelf='center' level='5' margin='none'>You're not an admin</Heading>,
-                    <Button label="Go back" onClick={()=>this.props.history.goBack()} margin={{top: 'small'}}/>
-            ]
         }
 
         return (
@@ -284,7 +301,55 @@ class PortScreen extends Component {
                             }}
                             gap='small'
                             pad={{top: 'medium', left: 'medium', right: 'medium'}} >
-                            {content}
+                            <Button primary label="Export Models" onClick={this.exportModels}/>
+                            <Button label="Import Models" onClick={this.importModelsButtonClicked}/>
+
+                            <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={() => {}} href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Need documentation for file format?</Anchor>
+                        </Box>
+                    </Box>
+                    <Box direction='row'
+                        justify='center'
+                        wrap={true}>
+                        <Box style={{
+                                 borderRadius: 10,
+                                 borderColor: '#EDEDED'
+                             }}
+                             width="medium"
+                            id='containerBox'
+                            background='#FFFFFF'
+                            margin={{top: 'medium', bottom: 'small'}}
+                            flex={{
+                                grow: 0,
+                                shrink: 0
+                            }}
+                            gap='small'
+                            pad={{top: 'medium', left: 'medium', right: 'medium'}} >
+                            <Button primary label="Export Assets" onClick={this.exportAssets}/>
+                            <Button label="Import Assets" onClick={this.importAssetsButtonClicked}/>
+
+                            <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={() => {}} href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Need documentation for file format?</Anchor>
+                        </Box>
+                    </Box>
+                    <Box direction='row'
+                        justify='center'
+                        wrap={true}>
+                        <Box style={{
+                                 borderRadius: 10,
+                                 borderColor: '#EDEDED'
+                             }}
+                             width="medium"
+                            id='containerBox'
+                            background='#FFFFFF'
+                            margin={{top: 'medium', bottom: 'small'}}
+                            flex={{
+                                grow: 0,
+                                shrink: 0
+                            }}
+                            gap='small'
+                            pad={{top: 'medium', left: 'medium', right: 'medium'}} >
+                            <Button primary label="Export Network Connections" onClick={this.exportConnections}/>
+                            <Button label="Import Network Connections" onClick={this.importNetconnButtonClicked}/>
+
                             <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={() => {}} href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Need documentation for file format?</Anchor>
                         </Box>
                     </Box>
@@ -310,6 +375,42 @@ class PortScreen extends Component {
                                     All the restrictions that would apply to values inputted via the web form also apply to values provided in the import files. Any issues will be reported to you, and your import will safely abort.<br/><br/>
                                     <Anchor href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Click here</Anchor> for more detailed technical information on the file format specification.
                                 </span>
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
+                {this.state.showLimitedAssetWarning && (
+                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState => ({...oldState, showLimitedAssetWarning: undefined}))}} onEsc={()=>{this.setState(oldState => ({...oldState, showLimitedAssetWarning: undefined}))}}>
+                        <Box pad="medium" gap="small" width="large">
+                            <Heading level={4} margin="none">
+                                Just so you know...
+                            </Heading>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="start" >
+                                <span>
+                                    You have custom asset management permissions, which means you can only alter assets in a few specific datacenters ({userutils.getAllowedDCsString()}). Any entries you import that affect other datacenters will be reported as errors and abort the import process.
+                                </span>
+                            </Box>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="end" >
+                                <Button label="Cancel" primary onClick={()=>{this.setState(oldState => ({...oldState, showLimitedAssetWarning: undefined}))}} />
+                                <Button
+                                    label="Proceed"
+                                    onClick={() => {
+                                        this.setState(oldState => ({...oldState, showLimitedAssetWarning: undefined}))
+                                        document.getElementById(this.state.showLimitedAssetWarning).click()
+                                    }}
+                                    />
                             </Box>
                         </Box>
                     </Layer>

@@ -231,14 +231,15 @@ class DetailedChangePlanScreen extends React.Component {
 
                         //what if it's an edit or decomm and there arent these fields?
                         console.log(datum)
-                        console.log([...this.state.changes])
-                        if (this.state.changes[datum.id - 1].change === "add") {
-                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new, status => {
+                        //console.log([...this.state.changes])
+                        if (datum.change === "add") {
+                            console.log("AAA")
+                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.id, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new, status => {
                                 console.log("Done with live db checks for change plan conflicts. Add")
                             })
                         }
-                        else if (this.state.changes[datum.id - 1].change === "edit") {
-                            
+                        else if (datum.change === "edit") {
+                            console.log("BBB")
                             changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, assetData =>{
                                 
                                 let model= assetData.model
@@ -251,9 +252,9 @@ class DetailedChangePlanScreen extends React.Component {
                                 let powerConnections= assetData.powerConnections
                                 let networkConnections= assetData.networkConnections
                                 //networkConnections needs to be an array what is it in assetData?
-                                console.log(assetData)
+                                //console.log(assetData)
                             
-                                changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, status =>{
+                                changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.id, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, status =>{
                                     console.log("Done with live db checks for edit changes.")
                                 })
 
@@ -262,7 +263,7 @@ class DetailedChangePlanScreen extends React.Component {
 
                         }
                         else {
-                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, null, null, null, null, null, null, datum.assetID, null, null, status => {
+                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.id,null, null, null, null, null, null, datum.assetID, null, null, status => {
                                 console.log("Done with live db checks for change plan conflicts. Decomms")
                             })
 
