@@ -344,7 +344,8 @@ function bulkAddAssets (assets, callback) {
             rackNum: asset.rack.substring(1),
             datacenter: asset.dcFN,
             datacenterID: asset.dcID,
-            datacenterAbbrev:  asset.datacenter
+            datacenterAbbrev:  asset.datacenter,
+            macAddresses: {}
         }
 
         firebaseutils.racksRef.doc(asset.rackID).update({

@@ -140,20 +140,14 @@ function deleteUser(username, callback) {
             } else {
                 qs.docs[0].ref.delete().then(() => {
                     logutils.addLog(docId,logutils.USER(),logutils.DELETE(),docData);
-
+                    callback(true)
                     firebaseutils.assetRef.where("owner", "==", docData.username).get().then(function (querySnapshot) {
-                        let count = 0;
                         querySnapshot.forEach(asset => {
                             asset.ref.update({
                                 owner: ""
-                            }).then(function () {
-                                count++;
-                                if(count === querySnapshot.size){
-                                    callback(true)
-                                }
                             })
                         })
-                    });
+                    })
                 })
             }
         }
