@@ -19,7 +19,10 @@ const rackNonExistent = (changePlanID, stepID, rackName, datacenter, callback) =
     let rackNum = parseInt(splitRackArray[1])
     let errorIDSet = new Set();
 
+    
     rackutils.getRackID(rackRow, rackNum, datacenter, function (rackID) {
+        //what if datacenter does not exist?
+        //if(rackID===null)
         if (!rackID) {
             errorIDSet.add("rackErrID")
 
@@ -180,7 +183,7 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, rackNam
 
                         if (doc) {
 
-                            //what if model was deleted???
+                            
                             rackutils.checkAssetFits(rackU, doc.data().height, rackID, async function (status) {
                                 if (status && status.length) {
                                     //asset conflicts with other assets
@@ -192,6 +195,7 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, rackNam
 
                                 }
                                 else {
+                                    //what if model was deleted? Then
                                     callback(false)
                                 }
                             }, assetID)
@@ -433,6 +437,7 @@ function editAssetChangePlanPackage(changePlanID, stepID, model, hostname, datac
                                     let networkConnectionsArray = assetnetworkportutils.networkConnectionsToArray(networkConnections)
 
                                     networkConnectionConflict(changePlanID, stepID, networkConnectionsArray, oldNetworkConnections, status8 => {
+                                        
                                         powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, assetID, status9 => {
                                            // editCheckAssetDecommissioned(changePlanID, stepID, assetID, status10 => {
                                              //   editCheckAssetDeleted(changePlanID, stepID, assetID, status11 => {
@@ -487,7 +492,8 @@ function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datace
                         modelConflict(changePlanID, stepID, model, status6 => {
                             rackUConflict(changePlanID, null, stepID, model, datacenter, rack, rackU, status7 => {
                                 networkConnectionConflict(changePlanID, stepID, networkConnections, oldNetworkConnections, status8 => {
-                                    powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, status9 => {
+                                    
+                                    powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, assetID,status9 => {
                                         console.log("9 layered cake bitch!")
                                         callback()
                                     })
