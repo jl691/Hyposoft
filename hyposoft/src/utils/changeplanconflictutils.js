@@ -19,7 +19,7 @@ const rackNonExistent = (changePlanID, stepID, rackName, datacenter, callback) =
     let rackNum = parseInt(splitRackArray[1])
     let errorIDSet = new Set();
 
-    
+
     rackutils.getRackID(rackRow, rackNum, datacenter, function (rackID) {
         //what if datacenter does not exist?
         //if(rackID===null)
@@ -183,7 +183,7 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, rackNam
 
                         if (doc) {
 
-                            
+
                             rackutils.checkAssetFits(rackU, doc.data().height, rackID, async function (status) {
                                 if (status && status.length) {
                                     //asset conflicts with other assets
@@ -279,7 +279,7 @@ const networkConnectionConflict = (changePlanID, stepID, networkConnections, old
             console.log(otherAssetStatus)
             if (!otherAssetStatus) {
                 //trying to connect to a nonexistent asset
-                //Don't do some checks, because it will error out because of the query. 
+                //Don't do some checks, because it will error out because of the query.
                 errorIDSet.add("networkConnectionNonExistentOtherPortErrID")
                 console.log([...Object.entries(errorIDSet)])
                 addConflictToDBDatabase(changePlanID, stepID, "networkConnections", errorIDSet, status => {
@@ -347,7 +347,7 @@ function networkConnectionOtherAssetID(otherAssetID, errorIDSet, callback) {
 function editCheckAssetNonexistent(changePlanID, stepID, assetID, callback) {
     let errorIDSet = new Set()
     if (assetID !== "") {
-        console.log(assetID) //is this the actual stepID or the ID of the asset doc? 
+        console.log(assetID) //is this the actual stepID or the ID of the asset doc?
         assetRef.doc(assetID).get().then(async function (assetDoc) {
             if (!assetDoc.exists) {
                 errorIDSet.add("editNonexistentErrID")
@@ -369,7 +369,7 @@ function editCheckAssetNonexistent(changePlanID, stepID, assetID, callback) {
 // function editCheckAssetDecommissioned(changePlanID, stepID, assetID, callback) {
 //     let errorIDSet = new Set()
 //     if (assetID !== "") {
-//         console.log(assetID) //is this the actual stepID or the ID of the asset doc? 
+//         console.log(assetID) //is this the actual stepID or the ID of the asset doc?
 //         decommissionRef.where("assetId", "==", assetID).get().then(async function (decommDoc) {
 //             if (decommDoc.exists) {
 //                 errorIDSet.add("editDecommissionedErrID")
@@ -437,7 +437,7 @@ function editAssetChangePlanPackage(changePlanID, stepID, model, hostname, datac
                                     let networkConnectionsArray = assetnetworkportutils.networkConnectionsToArray(networkConnections)
 
                                     networkConnectionConflict(changePlanID, stepID, networkConnectionsArray, oldNetworkConnections, status8 => {
-                                        
+
                                         powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, assetID, status9 => {
                                            // editCheckAssetDecommissioned(changePlanID, stepID, assetID, status10 => {
                                              //   editCheckAssetDeleted(changePlanID, stepID, assetID, status11 => {
@@ -490,9 +490,9 @@ function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datace
                 ownerConflict(changePlanID, stepID, owner, status4 => {
                     assetIDConflict(changePlanID, stepID, assetID, status5 => {
                         modelConflict(changePlanID, stepID, model, status6 => {
-                            rackUConflict(changePlanID, null, stepID, model, datacenter, rack, rackU, status7 => {
+                            rackUConflict(changePlanID, stepID, null /* assetID */, model, datacenter, rack, rackU, status7 => {
                                 networkConnectionConflict(changePlanID, stepID, networkConnections, oldNetworkConnections, status8 => {
-                                    
+
                                     powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, assetID,status9 => {
                                         console.log("9 layered cake bitch!")
                                         callback()
@@ -529,7 +529,7 @@ function checkSequentialStepConflicts(changePlanID) {
     })
 }
 
-//checking current step with many other previous steps 
+//checking current step with many other previous steps
 function checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, callback) {
     changeplansRef.doc(changePlanID).collection('changes').doc(thisStepID).get().then(stepDoc => {
         let thisStepData = stepDoc.data();
@@ -773,7 +773,7 @@ function networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, o
                 errorIDSet.add("networkConnectionConflictErrID")
 
             }
-            //3 does my current thisPort match with another step's otherport? 
+            //3 does my current thisPort match with another step's otherport?
             else if (thisConnKey === otherConnKey && otherAssetID === thisStepData.assetID && otherAssetID !== "" && thisStepData.assetID !== "") {
                 errorIDSet.add("networkConnectionThisPortConflictErrID")
             }
