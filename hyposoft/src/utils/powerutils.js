@@ -7,15 +7,20 @@ function getPortStatus(pdu, portNumber, callback) {
     axios.get('https://hyposoft-53c70.appspot.com/getPduStatuses?pdu='+pdu, {}).then(response => {
         const regex = new RegExp("<td>"+ portNumber + "<td><span style='background-color:#...'>(?<status>[A-Z]{2,3})")
         callback(response.data.match(regex).groups.status)
+    }).catch(() => {
+        callback(null)
     })
 }
 
 function powerPortOn(pdu, portNumber, callback) {
     axios.get('https://hyposoft-53c70.appspot.com/poweron?pdu='+pdu+'&port='+portNumber, {}).then(response => {
+        console.log(response)
         if (response) {
             logutils.addLog(null,logutils.PDU(),logutils.POWER_ON(),{pdu: pdu, portNumber: portNumber})
+            callback(response)
+        } else {
+            callback(null)
         }
-        callback(response)
     }).catch(() => {
         callback(null)
     })
@@ -25,8 +30,10 @@ function powerPortOff(pdu, portNumber, callback) {
     axios.get('https://hyposoft-53c70.appspot.com/poweroff?pdu='+pdu+'&port='+portNumber, {}).then(response => {
         if (response) {
             logutils.addLog(null,logutils.PDU(),logutils.POWER_OFF(),{pdu: pdu, portNumber: portNumber})
+            callback(response)
+        } else {
+            callback(null)
         }
-        callback(response)
     }).catch(() => {
         callback(null)
     })

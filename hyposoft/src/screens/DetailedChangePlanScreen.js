@@ -233,37 +233,62 @@ class DetailedChangePlanScreen extends React.Component {
                         console.log(datum)
                         //console.log([...this.state.changes])
                         if (datum.change === "add") {
-                            console.log("AAA")
-                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.id, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new, status => {
+
+                            changeplanconflictutils.checkLiveDBConflicts(this.props.match.params.changePlanID, datum.id, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new, status => {
                                 console.log("Done with live db checks for change plan conflicts. Add")
                             })
                         }
                         else if (datum.change === "edit") {
-                            console.log("BBB")
-                            changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, assetData =>{
 
-                                let model= assetData.model
-                                let hostname = assetData.hostname
-                                let datacenter= assetData.datacenter
-                                let rack = assetData.rack
-                                let rackU = assetData.rackU
-                                let owner = assetData.owner
-                                let assetID = assetData.assetId
-                                let powerConnections= assetData.powerConnections
-                                let networkConnections= assetData.networkConnections
-                                //networkConnections needs to be an array what is it in assetData?
-                                //console.log(assetData)
-                            
-                                changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.id, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, status =>{
-                                    console.log("Done with live db checks for edit changes.")
-                                })
+                            changeplanutils.getMergedAssetAndChange(this.props.match.params.changePlanID, datum.id, assetData => {
+                                console.log(assetData)
+                                //please dont come for me ik null is falsy but it just was not working uwu
+                                if (assetData !== null) {
+                                    let model = assetData.model
+                                    let hostname = assetData.hostname
+                                    let datacenter = assetData.datacenter
+                                    let rack = assetData.rack
+                                    let rackU = assetData.rackU
+                                    let owner = assetData.owner
+                                    let assetID = assetData.assetId
+                                    let powerConnections = assetData.powerConnections
+                                    let networkConnections = assetData.networkConnections
+                                    //networkConnections needs to be an array what is it in assetData?
+                                    //console.log(assetData)
+
+                                    changeplanconflictutils.checkLiveDBConflicts(this.props.match.params.changePlanID, datum.id, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, status => {
+                                        console.log("Done with live db checks for edit changes.")
+                                    })
+
+
+                                }
+                                else {
+                                    //what if you are trying to edit a decomm/deleted model?
+                                    //then there is no assetData returned, since the getMerged funciton looks in assetsRef
+                                    changeplanutils.getStepDocID(this.changePlanID, datum.id, stepID => {
+                                        console.log(stepID)
+                                        firebaseutils.changeplansRef.doc(this.changePlanID).collection('changes').doc(stepID).get().then(nonExistentStepDoc => {
+                                            console.log(nonExistentStepDoc.data())
+                                            let assetID = nonExistentStepDoc.data().assetID.toString()
+
+
+                                                changeplanconflictutils.editCheckAssetNonexistent(this.changePlanID, stepID, assetID, status11 => {
+                                                    console.log("Done checking edit step: trying to edit an asset that does not exist")
+                                                })
+
+                                        })
+                                    })
+
+
+                                }
+
 
 
                             })
 
                         }
                         else {
-                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.id,null, null, null, null, null, null, datum.assetID, null, null, status => {
+                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.id, null, null, null, null, null, null, datum.assetID, null, null, status => {
                                 console.log("Done with live db checks for change plan conflicts. Decomms")
                             })
 
@@ -297,44 +322,44 @@ class DetailedChangePlanScreen extends React.Component {
                     <Text size='small'>{datum.change}</Text>)
             }
         ];
-        if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()){
+        if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) {
             cols.push({
-                    property: "edit",
-                    header: <Text size='small'>Edit</Text>,
-                    render: datum => (
-                        !this.state.executed && <Edit onClick={(e) => {
-                            e.persist();
-                            e.nativeEvent.stopImmediatePropagation();
-                            e.stopPropagation();
-                            if (datum.change === "edit") {
-                                changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, mergedAsset => {
-                                    if (mergedAsset) {
-                                        this.setState({
-                                            popupType: "Edit" + datum.change,
-                                            stepID: datum.id,
-                                            currentChange: mergedAsset
-                                        });
-                                    }
-                                });
-                            } else if (datum.change === "add") {
-                                changeplanutils.getAssetFromAddAsset(this.changePlanID, datum.id, asset => {
-                                    if (asset) {
-                                        this.setState({
-                                            popupType: "Edit" + datum.change,
-                                            stepID: datum.id,
-                                            currentChange: asset
-                                        });
-                                    }
-                                })
-                            } else if (datum.change === "decommission") {
-                                this.setState({
-                                    popupType: "Edit" + datum.change,
-                                    stepID: datum.id,
-                                });
-                            }
+                property: "edit",
+                header: <Text size='small'>Edit</Text>,
+                render: datum => (
+                    !this.state.executed && <Edit onClick={(e) => {
+                        e.persist();
+                        e.nativeEvent.stopImmediatePropagation();
+                        e.stopPropagation();
+                        if (datum.change === "edit") {
+                            changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, mergedAsset => {
+                                if (mergedAsset) {
+                                    this.setState({
+                                        popupType: "Edit" + datum.change,
+                                        stepID: datum.id,
+                                        currentChange: mergedAsset
+                                    });
+                                }
+                            });
+                        } else if (datum.change === "add") {
+                            changeplanutils.getAssetFromAddAsset(this.changePlanID, datum.id, asset => {
+                                if (asset) {
+                                    this.setState({
+                                        popupType: "Edit" + datum.change,
+                                        stepID: datum.id,
+                                        currentChange: asset
+                                    });
+                                }
+                            })
+                        } else if (datum.change === "decommission") {
+                            this.setState({
+                                popupType: "Edit" + datum.change,
+                                stepID: datum.id,
+                            });
+                        }
 
-                        }} />)
-                },
+                    }} />)
+            },
                 {
                     property: "delete",
                     header: <Text size='small'>Delete</Text>,
@@ -383,13 +408,13 @@ class DetailedChangePlanScreen extends React.Component {
                     console.log(...conflictsArray)
 
                     for (let i = 0; i < conflictsArray.length; i++) {
-                        if(i === conflictsArray.length - 1){
+                        if (i === conflictsArray.length - 1) {
                             //last conflicting step, don't want to have a , at the end
-                            this.errMessage = this.errMessage + conflictsArray[i] +"."
+                            this.errMessage = this.errMessage + conflictsArray[i] + "."
 
                         }
-                        else{
-                        this.errMessage = this.errMessage + conflictsArray[i] + ", "
+                        else {
+                            this.errMessage = this.errMessage + conflictsArray[i] + ", "
                         }
                     }
 

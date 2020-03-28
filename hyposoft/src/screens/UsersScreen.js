@@ -28,7 +28,9 @@ class UsersScreen extends Component {
         users: [
         ],
         newUserEmail: '',
-        newUserUsername: ''
+        newUserUsername: '',
+        newUserDispName: '',
+        newUserPass: ''
     }
 
     startAfter = null
@@ -76,6 +78,8 @@ class UsersScreen extends Component {
         }
 
         var email = this.state.newUserEmail.trim()
+        var displayName = this.state.newUserDispName.trim()
+        var password = this.state.newUserPass.trim()
 
         if (username === '') {
             ToastsStore.info('Username required', 3000, 'burntToast')
@@ -92,6 +96,16 @@ class UsersScreen extends Component {
             return
         }
 
+        if (password === '') {
+            ToastsStore.info('Password required', 3000, 'burntToast')
+            return
+        }
+
+        if (displayName === '') {
+            ToastsStore.info('Display name required', 3000, 'burntToast')
+            return
+        }
+
         userutils.usernameTaken(username, taken => {
             if (taken) {
                 ToastsStore.info('Username taken', 3000, 'burntToast')
@@ -100,11 +114,17 @@ class UsersScreen extends Component {
                     if (user) {
                         ToastsStore.info('Email taken', 3000, 'burntToast')
                     } else {
-                        userutils.addClaim(username, '', email, secret => {
-                            fetch('https://hyposoft-53c70.appspot.com/addUser?claimCode='+secret+'&email='+email)
-                            ToastsStore.info('Invite sent', 3000, 'burntToast')
+                        userutils.createUser(displayName, username, email, password, () => {
+                            ToastsStore.info('User added', 3000, 'burntToast')
                             this.onClose()
+                            this.init()
                         })
+
+                        // userutils.addClaim(username, '', email, secret => {
+                        //     fetch('https://hyposoft-53c70.appspot.com/addUser?claimCode='+secret+'&email='+email)
+                        //     ToastsStore.info('Invite sent', 3000, 'burntToast')
+                        //     this.onClose()
+                        // })
                     }
                 })
             }
@@ -354,14 +374,14 @@ class UsersScreen extends Component {
                 </Box>
                 {this.state.showAddDialog && (
                     <Layer position="center" modal onClickOutside={this.onClose} onEsc={this.onClose}>
-                        <Box pad="medium" gap="small" width="medium">
+                        <Box pad="medium" width="medium">
                             <Heading level={4} margin="none">
                                 Add User
                             </Heading>
-                            <p>Assign them a username, and give us an email address to send them their invitation.</p>
+                            <p>After you create a user, they can directly start using their account. No email verification necessary!</p>
 
                             <Form>
-                                <Box direction="column" gap="small">
+                                <Box direction="column">
                                     <Text size={"small"} style={{marginLeft: "20px"}}>Username</Text>
                                     <TextInput style={{
                                             borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
@@ -375,7 +395,7 @@ class UsersScreen extends Component {
                                         value={this.state.newUserUsername}
                                         title='Username'
                                         />
-                                    <Text size={"small"} style={{marginLeft: "20px"}}>Email</Text>
+                                    <Text size={"small"} style={{marginLeft: "20px"}}  margin={{top: 'small'}}>Email</Text>
                                     <TextInput style={{
                                             borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
                                             width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
@@ -387,6 +407,33 @@ class UsersScreen extends Component {
                                         }}
                                         value={this.state.newUserEmail}
                                         title='Email'
+                                        />
+                                    <Text size={"small"} style={{marginLeft: "20px"}}  margin={{top: 'small'}}>Display name</Text>
+                                    <TextInput style={{
+                                            borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
+                                            width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
+                                        }}
+                                        placeholder="eg. John Doe"
+                                        onChange={e => {
+                                            const value = e.target.value
+                                            this.setState(oldState => ({...oldState, newUserDispName: value}))
+                                        }}
+                                        value={this.state.newUserDispName}
+                                        title='Dispalay name'
+                                        />
+                                    <Text size={"small"} style={{marginLeft: "20px"}}  margin={{top: 'small'}}>Password</Text>
+                                    <TextInput style={{
+                                            borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
+                                            width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
+                                        }}
+                                        type='password'
+                                        placeholder="eg. ad1f-1Q:SPVX"
+                                        onChange={e => {
+                                            const value = e.target.value
+                                            this.setState(oldState => ({...oldState, newUserPass: value}))
+                                        }}
+                                        value={this.state.newUserPass}
+                                        title='Password'
                                         />
                                 </Box>
                                 <Box
