@@ -231,7 +231,8 @@ function editAssetChange(newAsset, assetID, changePlanID, callback, docID = null
                         assetChangePlanObject.step = docSnapInner.data().step;
                         changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject).then(function () {
                             callback(true);
-                        }).catch(function () {
+                        }).catch(function (error) {
+                            console.log(error);
                             callback(null);
                         })
                     } else {
@@ -253,11 +254,13 @@ function editAssetChange(newAsset, assetID, changePlanID, callback, docID = null
                         console.log(error);
                         callback(null);
                     });
-                }).catch(function () {
+                }).catch(function (error) {
+                    console.log(error);
                     callback(null);
                 });
             }
         } else {
+            console.log("dcosnap doesnt exist");
             callback(null);
         }
     });

@@ -289,7 +289,7 @@ const networkConnectionConflict = (changePlanID, stepID, networkConnections, old
             count++;
             if (!otherAssetStatus) {
                 //trying to connect to a nonexistent asset
-                //Don't do some checks, because it will error out because of the query. 
+                //Don't do some checks, because it will error out because of the query.
                 errorIDSet.add("networkConnectionNonExistentOtherPortErrID")
                 console.log([...Object.entries(errorIDSet)])
                 addConflictToDBDatabase(changePlanID, stepID, "networkConnections", errorIDSet, status => {
@@ -547,7 +547,7 @@ function checkSequentialStepConflicts(executed, changePlanID) {
     }
 }
 
-//checking current step with many other previous steps 
+//checking current step with many other previous steps
 function checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, callback) {
     changeplansRef.doc(changePlanID).collection('changes').doc(thisStepID).get().then(stepDoc => {
         let thisStepData = stepDoc.data();
@@ -789,7 +789,7 @@ function networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, o
                 errorIDSet.add("networkConnectionConflictErrID")
 
             }
-            //3 does my current thisPort match with another step's otherport? 
+            //3 does my current thisPort match with another step's otherport?
             else if (thisConnKey === otherConnKey && otherAssetID === thisStepData.assetID && otherAssetID !== "" && thisStepData.assetID !== "") {
                 errorIDSet.add("networkConnectionThisPortConflictErrID")
             }

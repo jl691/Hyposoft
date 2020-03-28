@@ -443,7 +443,7 @@ class DetailedChangeScreen extends React.Component {
 
         return (
             <React.Fragment>
-                <Grommet theme={theme} full className='fade'>
+                <Grommet theme={theme} className='fade'>
                     <Box fill background='light-2' overflow={"auto"}>
                         <AppBar>
                             <BackButton alignSelf='start' this={this} />

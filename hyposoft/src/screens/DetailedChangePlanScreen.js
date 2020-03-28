@@ -252,7 +252,7 @@ class DetailedChangePlanScreen extends React.Component {
 
                             changeplanutils.getMergedAssetAndChange(this.props.match.params.changePlanID, datum.id, assetData => {
                                 console.log(assetData)
-                                //please dont come for me ik null is falsy but it just was not working uwu 
+                                //please dont come for me ik null is falsy but it just was not working uwu
                                 if (assetData !== null) {
                                     let model = assetData.model
                                     let hostname = assetData.hostname
@@ -440,12 +440,10 @@ class DetailedChangePlanScreen extends React.Component {
                 <Box style={{
                     borderRadius: 10
                 }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
-                    margin={{ top: "medium" }} height={"small"} overflow="auto" direction="column">
+                    margin={{ top: "medium" }} overflow="auto" direction="column" pad={"small"}>
                     <Heading level={"3"} margin={"small"}>Conflict</Heading>
-                    <Box overflow="scroll">
+                    <Box overflow="auto">
                         <Text weight="bold"> {this.errMessage}</Text>
-                    </Box>
-                    <Box align={"center"} width={"small"}>
                     </Box>
                 </Box>
 
