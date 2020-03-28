@@ -239,6 +239,7 @@ export default class AssetTable extends Component {
 
     handleRackRackUSort(sortedAssets) {
         this.presetTotalAssetIdsForSelectAll(sortedAssets)
+        this.defaultAssets = sortedAssets
         this.setState({assets: sortedAssets})
     }
 
