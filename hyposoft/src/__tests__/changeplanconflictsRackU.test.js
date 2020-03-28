@@ -15,7 +15,8 @@ describe('change plan add asset: rackU test', () => {
     })
 
     test('changeplan add asset conflicts: rackU pass', done => {
-        changeplanconflictutils.rackUConflict(ids['changePlan'], ids['changePlanStep'], 'Test Model2', 'Test Datacenter2', 'A2', 15, rackUStatus => {
+        changeplanconflictutils.rackUConflict(ids['changePlan'], ids['changePlanStep'], '123456',
+        'Test Model2', 'Test Datacenter2', 'A2', 15, rackUStatus => {
             expect(rackUStatus).toBe(false)
             done()
         })
@@ -23,13 +24,14 @@ describe('change plan add asset: rackU test', () => {
     })
 
     //sometimes the test will not work if there is bad data in the test db: rackID someties will not be found. clear datacenters
+    //test with assetID '' and '123456' to check for self conflicting
     test('changeplan add asset conflicts: rackU conflict', done => {
         console.log([...Object.entries(ids)])
-        changeplanconflictutils.rackUConflict(ids['changePlan'], ids['changePlanStep'], 'Test Model2', 'Test Datacenter2', 'A2', 1, rackUStatus => {
+        changeplanconflictutils.rackUConflict(ids['changePlan'], ids['changePlanStep'], '','Test Model2', 'Test Datacenter2', 'A2', 1, rackUStatus => {
 
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
 
-                expect(docRef.data().rackU[0]).toBe('rackUConflictErrID')
+                expect(docRef.data().database.rackU[0]).toBe('rackUConflictErrID')
                 done()
             })
         })
