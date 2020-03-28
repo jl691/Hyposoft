@@ -340,13 +340,13 @@ function networkConnectionOtherAssetID(otherAssetID, errorIDSet, callback) {
 
 //This is a check against the live db. If there is an edit step, and it's editing an asset that has been recently deleted or decomm
 //assetID refers to assetID of the edit step we are checking
-function editCheckAssetDeleted(changePlanID, stepID, assetID, callback) {
+function editCheckAssetNonexistent(changePlanID, stepID, assetID, callback) {
     let errorIDSet = new Set()
     if (assetID !== "") {
         console.log(assetID) //is this the actual stepID or the ID of the asset doc? 
         assetRef.doc(assetID).get().then(async function (assetDoc) {
             if (!assetDoc.exists) {
-                errorIDSet.add("editDeletedErrID")
+                errorIDSet.add("editNonexistentErrID")
                 addConflictToDBDatabase(changePlanID, stepID, "delete", errorIDSet, status => {
                     callback(status)
                 })
@@ -362,24 +362,24 @@ function editCheckAssetDeleted(changePlanID, stepID, assetID, callback) {
 }
 
 //trying to edit one that was decommissioned
-function editCheckAssetDecommissioned(changePlanID, stepID, assetID, callback) {
-    let errorIDSet = new Set()
-    if (assetID !== "") {
-        console.log(assetID) //is this the actual stepID or the ID of the asset doc? 
-        decommissionRef.where("assetId", "==", assetID).get().then(async function (decommDoc) {
-            if (decommDoc.exists) {
-                errorIDSet.add("editDecommissionedErrID")
-                addConflictToDBDatabase(changePlanID, stepID, "decommission", errorIDSet, status => {
-                    callback(status)
-                })
-            }
-            else {
-                callback(false)
-            }
-        })
-    }
-    else { callback(false) }
-}
+// function editCheckAssetDecommissioned(changePlanID, stepID, assetID, callback) {
+//     let errorIDSet = new Set()
+//     if (assetID !== "") {
+//         console.log(assetID) //is this the actual stepID or the ID of the asset doc? 
+//         decommissionRef.where("assetId", "==", assetID).get().then(async function (decommDoc) {
+//             if (decommDoc.exists) {
+//                 errorIDSet.add("editDecommissionedErrID")
+//                 addConflictToDBDatabase(changePlanID, stepID, "decommission", errorIDSet, status => {
+//                     callback(status)
+//                 })
+//             }
+//             else {
+//                 callback(false)
+//             }
+//         })
+//     }
+//     else { callback(false) }
+// }
 
 //might move this up a level: to when you click on a changeplan
 function checkLiveDBConflicts(changePlanID, stepNum, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, callback) {
@@ -418,7 +418,6 @@ function checkLiveDBConflicts(changePlanID, stepNum, model, hostname, datacenter
 }
 function editAssetChangePlanPackage(changePlanID, stepID, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, callback) {
 
-    console.log("TRIGGERED")
     //how to pass in oldNetworkConnections? what are they exactly? Object or Array? What does it need to be?
     assetRef.doc(assetID).get().then(doc => {
         let oldNetworkConnections = doc.data().networkConnections;
@@ -430,15 +429,17 @@ function editAssetChangePlanPackage(changePlanID, stepID, model, hostname, datac
                     ownerConflict(changePlanID, stepID, owner, status4 => {
                         assetIDConflict(changePlanID, stepID, assetID, status5 => {
                             modelConflict(changePlanID, stepID, model, status6 => {
-                                rackUConflict(changePlanID, stepID, assetID, model, datacenter, rack, rackU, status7 => {
-                                    networkConnectionConflict(changePlanID, stepID, networkConnections, oldNetworkConnections, status8 => {
+                                rackUConflict(changePlanID, stepID, assetID, model, datacenter, rack, rackU, status7 => {//converting networkConnections into an array
+                                    let networkConnectionsArray = assetnetworkportutils.networkConnectionsToArray(networkConnections)
+
+                                    networkConnectionConflict(changePlanID, stepID, networkConnectionsArray, oldNetworkConnections, status8 => {
                                         powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, assetID, status9 => {
-                                            editCheckAssetDecommissioned(changePlanID, stepID, assetID, status10 => {
-                                                editCheckAssetDeleted(changePlanID, stepID, assetID, status11 => {
+                                           // editCheckAssetDecommissioned(changePlanID, stepID, assetID, status10 => {
+                                             //   editCheckAssetDeleted(changePlanID, stepID, assetID, status11 => {
                                                     console.log("11 layered cake bitch!")
                                                     callback()
-                                                })
-                                            })
+                                              //  })
+                                           // })
                                         })
                                     })
                                 })
@@ -784,6 +785,7 @@ function networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, o
 
 //call this in the else: know that it's a decomm change
 // is the other asset i want to connect to been decomm by a previous /otherstep?
+//networkConnections is an array
 function networkConnectionOtherAssetIDStep(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, thisNetworkConnections, otherStepAssetID, callback) {
     let errorIDSet = new Set();
 
@@ -1260,7 +1262,8 @@ export {
     checkSequentialStepConflicts,
     checkLiveDBConflicts,
     deleteConflictFromDB,
-    changePlanHasConflicts
+    changePlanHasConflicts,
+    editCheckAssetNonexistent
 
 
 
