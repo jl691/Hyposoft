@@ -58,7 +58,7 @@ function validateImportedConnections (data, callback) {
                     }
                 }
 
-                if ((datumAssetId !== null && fetchedAssets[datum.src_hostname].networkConnections[datum.src_port] === null)) {
+                if ((datumAssetId !== null && !(datum.src_port in fetchedAssets[datum.src_hostname].networkConnections))) {
                     // Added as in new connection
                     // Always update MAC addresses anyway
                     toBeAdded.push(datum)
