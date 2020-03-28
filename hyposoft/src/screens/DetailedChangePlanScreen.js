@@ -96,6 +96,7 @@ class DetailedChangePlanScreen extends React.Component {
     AdminTools() {
         if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) {
             if (!this.state.executed) {
+
                 return (
                     <Box
                         width='medium'
@@ -171,6 +172,7 @@ class DetailedChangePlanScreen extends React.Component {
                     </Box>
                 );
             } else {
+
                 return (
                     <Box
                         width='medium'
@@ -194,7 +196,13 @@ class DetailedChangePlanScreen extends React.Component {
                                 <p>Generate a work order for this change plan.</p>
                                 <Box direction='column' flex alignSelf='stretch'>
                                     <Button primary icon={<Print />} label="Generate" onClick={() => {
+
+
                                         this.props.history.push('/changeplans/' + this.changePlanID + '/workorder')
+
+
+
+
                                     }} />
                                 </Box>
                             </Box>
@@ -234,9 +242,11 @@ class DetailedChangePlanScreen extends React.Component {
                         //console.log([...this.state.changes])
                         if (datum.change === "add") {
 
-                            changeplanconflictutils.checkLiveDBConflicts(this.props.match.params.changePlanID, datum.id, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new, status => {
+
+                            changeplanconflictutils.checkLiveDBConflicts(this.state.executed, this.props.match.params.changePlanID, datum.id, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new, status => {
                                 console.log("Done with live db checks for change plan conflicts. Add")
                             })
+
                         }
                         else if (datum.change === "edit") {
 
@@ -256,7 +266,7 @@ class DetailedChangePlanScreen extends React.Component {
                                     //networkConnections needs to be an array what is it in assetData?
                                     //console.log(assetData)
 
-                                    changeplanconflictutils.checkLiveDBConflicts(this.props.match.params.changePlanID, datum.id, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, status => {
+                                    changeplanconflictutils.checkLiveDBConflicts(this.state.executed, this.props.match.params.changePlanID, datum.id, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, status => {
                                         console.log("Done with live db checks for edit changes.")
                                     })
 
@@ -265,36 +275,32 @@ class DetailedChangePlanScreen extends React.Component {
                                 else {
                                     //what if you are trying to edit a decomm/deleted model?
                                     //then there is no assetData returned, since the getMerged funciton looks in assetsRef
-                                    changeplanutils.getStepDocID(this.changePlanID, datum.id, stepID => {
-                                        console.log(stepID)
-                                        firebaseutils.changeplansRef.doc(this.changePlanID).collection('changes').doc(stepID).get().then(nonExistentStepDoc => {
-                                            console.log(nonExistentStepDoc.data())
-                                            let assetID = nonExistentStepDoc.data().assetID.toString()
 
-                                         
+                                    if (!this.state.executed) {
+                                        changeplanutils.getStepDocID(this.changePlanID, datum.id, stepID => {
+                                            console.log(stepID)
+                                            firebaseutils.changeplansRef.doc(this.changePlanID).collection('changes').doc(stepID).get().then(nonExistentStepDoc => {
+                                                console.log(nonExistentStepDoc.data())
+                                                let assetID = nonExistentStepDoc.data().assetID.toString()
+
+
                                                 changeplanconflictutils.editCheckAssetNonexistent(this.changePlanID, stepID, assetID, status11 => {
                                                     console.log("Done checking edit step: trying to edit an asset that does not exist")
                                                 })
-                                            
+
+                                            })
                                         })
-                                    })
-
-
+                                    }
                                 }
-
-
-
                             })
-
                         }
                         else {
-                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.id, null, null, null, null, null, null, datum.assetID, null, null, status => {
+
+                            changeplanconflictutils.checkLiveDBConflicts(this.state.executed, this.changePlanID, datum.id, null, null, null, null, null, null, datum.assetID, null, null, status => {
                                 console.log("Done with live db checks for change plan conflicts. Decomms")
                             })
 
                         }
-
-
                     }}
                     columns={this.generateColumns()} data={this.state.changes} size={"large"} />
             )
@@ -418,7 +424,7 @@ class DetailedChangePlanScreen extends React.Component {
                         }
                     }
 
-
+                    this.forceRefresh()
                     this.hasConflicts = true;
 
                 }
@@ -464,7 +470,7 @@ class DetailedChangePlanScreen extends React.Component {
             console.log(this.changePlanID)
             popup = (
                 <ExecuteChangePlanForm cancelPopup={this.cancelPopup} successfulExecution={this.successfulExecution}
-                    id={this.changePlanID} name={this.state.name} />
+                    id={this.changePlanID} name={this.state.name} changePlanID={this.changePlanID} />
             )
         } else if (popupType === 'Editdecommission') {
             console.log(this.changePlanID)

@@ -384,6 +384,7 @@ function checkAssetFits(position, height, rack, callback, id = null) { //rackU, 
             docRefRack.data().assets.forEach(assetID => {
                // console.log("this rack contains " + assetID);
                 firebaseutils.assetRef.doc(assetID).get().then(function (docRefAsset) {
+                    console.log("  THE ID IS "+ id)
                     if (assetID !== id) {
 
                         modelutils.getModelByModelname(docRefAsset.data().model, result => {
