@@ -153,7 +153,9 @@ export default class DetailedAssetScreen extends Component {
     generatePDUStatus() {
         if (this.connectedPDU) {
             this.powerPorts = [];
-            ToastsStore.info("Click a refresh button by a PDU status to power cycle it.", 5000);
+            if (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner){
+                ToastsStore.info("Click a refresh button by a PDU status to power cycle it.", 5000);
+            }
             Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
                 let formattedNum;
                 if (this.state.asset.rackNum.toString().length === 1) {
