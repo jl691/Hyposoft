@@ -86,20 +86,21 @@ function getChangeDetails(changePlanID, stepID, username, callback) {
 
 function getStepDocID(changePlanID, stepNum, callback) {
     console.log(changePlanID, stepNum)
-    firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepNum)).get().then(function (querySnapshot) {
+    firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepNum)).get().then(querySnapshot => {
         console.log(querySnapshot.empty)
-        querySnapshot.forEach(function (doc) {
-            // doc.data() is never undefined for query doc snapshots
-            //for some reason only this works to get the document id?? whatever fuck it i don't care anymore
-            console.log(doc.id);
-            callback(doc.id)
-        });
-
-        // if(doc.exists){
-        //     console.log(doc.id)
-
+        // querySnapshot.forEach(function (doc) {
+        //     // doc.data() is never undefined for query doc snapshots
+        //     //for some reason only this works to get the document id?? whatever fuck it i don't care anymore
+        //     console.log(doc.id);
         //     callback(doc.id)
-        // }
+        // });
+        if (!querySnapshot.empty) {
+            console.log(querySnapshot.docs[0].id)
+            callback(querySnapshot.docs[0].id)
+        }
+        else {
+            callback(null)
+        }
     }).catch(error => console.log(error))
 }
 
@@ -433,13 +434,13 @@ function generateWorkOrder(changePlanID, callback) {
                     assetRef.doc(doc.data().assetID.toString()).get().then(function (documentSnapshot) {
                         let decommissionText = "Decommission asset #" + doc.data().assetID + " from datacenter " + documentSnapshot.data().datacenter + " at rack " + documentSnapshot.data().rack + " at height " + documentSnapshot.data().rackU + " U.";
                         let networkPromise = new Promise(function (resolve, reject) {
-                            if(documentSnapshot.data().networkConnections && Object.keys(documentSnapshot.data().networkConnections).length){
+                            if (documentSnapshot.data().networkConnections && Object.keys(documentSnapshot.data().networkConnections).length) {
                                 decommissionText += " Remove the following network connections: ";
                                 let countInner = 0;
                                 Object.keys(documentSnapshot.data().networkConnections).forEach(networkPort => {
                                     decommissionText += "port " + networkPort + " connected to asset #" + documentSnapshot.data().networkConnections[networkPort].otherAssetID + " on port " + documentSnapshot.data().networkConnections[networkPort].otherPort;
                                     countInner++;
-                                    if(countInner === Object.keys(documentSnapshot.data().networkConnections).length){
+                                    if (countInner === Object.keys(documentSnapshot.data().networkConnections).length) {
                                         decommissionText += ".";
                                         resolve();
                                     } else {
@@ -451,13 +452,13 @@ function generateWorkOrder(changePlanID, callback) {
                             }
                         });
                         let powerPromise = new Promise(function (resolve, reject) {
-                            if(documentSnapshot.data().powerConnections && Object.keys(documentSnapshot.data().powerConnections).length){
+                            if (documentSnapshot.data().powerConnections && Object.keys(documentSnapshot.data().powerConnections).length) {
                                 decommissionText += " Remove the following power connections: ";
                                 let countInner = 0;
                                 Object.keys(documentSnapshot.data().powerConnections).forEach(powerPort => {
                                     decommissionText += "port " + powerPort + " connected to the PDU " + documentSnapshot.data().powerConnections[powerPort].pduSide.toLowerCase() + " side on port " + documentSnapshot.data().powerConnections[powerPort].port;
                                     countInner++;
-                                    if(countInner === documentSnapshot.data().powerConnections.length){
+                                    if (countInner === documentSnapshot.data().powerConnections.length) {
                                         decommissionText += ".";
                                         resolve();
                                     } else {
@@ -485,13 +486,13 @@ function generateWorkOrder(changePlanID, callback) {
 
                     let addText = "Add asset #" + assetID + " to datacenter " + doc.data().changes.datacenter["new"] + " on rack " + doc.data().changes.rack["new"] + " at height " + doc.data().changes.rackU["new"] + " U.";
                     let networkPromise = new Promise(function (resolve, reject) {
-                        if(doc.data().changes.networkConnections && Object.keys(doc.data().changes.networkConnections["new"]).length){
+                        if (doc.data().changes.networkConnections && Object.keys(doc.data().changes.networkConnections["new"]).length) {
                             addText += " Add the following network connections: ";
                             let countInner = 0;
                             Object.keys(doc.data().changes.networkConnections["new"]).forEach(networkPort => {
                                 addText += "port " + networkPort + " connected to asset #" + doc.data().changes.networkConnections["new"][networkPort].otherAssetID + " on port " + doc.data().changes.networkConnections["new"][networkPort].otherPort;
                                 countInner++;
-                                if(countInner === Object.keys(doc.data().changes.networkConnections["new"]).length){
+                                if (countInner === Object.keys(doc.data().changes.networkConnections["new"]).length) {
                                     addText += ".";
                                     resolve();
                                 } else {
@@ -503,13 +504,13 @@ function generateWorkOrder(changePlanID, callback) {
                         }
                     });
                     let powerPromise = new Promise(function (resolve, reject) {
-                        if(doc.data().changes.powerConnections && Object.keys(doc.data().changes.powerConnections["new"]).length){
+                        if (doc.data().changes.powerConnections && Object.keys(doc.data().changes.powerConnections["new"]).length) {
                             addText += " Add the following power connections: ";
                             let countInner = 0;
                             Object.keys(doc.data().changes.powerConnections["new"]).forEach(powerPort => {
                                 addText += "port " + powerPort + " connected to the PDU " + doc.data().changes.powerConnections["new"][powerPort].pduSide.toLowerCase() + " side on port " + doc.data().changes.powerConnections["new"][powerPort].port;
                                 countInner++;
-                                if(countInner === doc.data().changes.powerConnections["new"].length){
+                                if (countInner === doc.data().changes.powerConnections["new"].length) {
                                     addText += ".";
                                     resolve();
                                 } else {

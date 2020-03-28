@@ -25,8 +25,8 @@
     "decommissionDBErrID": "Trying to decommission an asset that does not exist.",
     "decommissionStepErrID": "Trying to decommission an asset that was decommissioned in a previous step",
 
-    "editDeletedErrID":"Trying to edit an asset that has been deleted.",
-    "editDecommissionedErrID": "Trying to edit an asset that has been decommissioned."
+
+    "editNonexistentErrID": "Trying to edit an asset that no longer exists."
 
 
     
