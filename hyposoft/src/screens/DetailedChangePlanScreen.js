@@ -241,7 +241,7 @@ class DetailedChangePlanScreen extends React.Component {
                         else if (datum.change === "edit") {
                             console.log("BBB")
                             changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, assetData =>{
-                                
+
                                 let model= assetData.model
                                 let hostname = assetData.hostname
                                 let datacenter= assetData.datacenter
@@ -409,9 +409,9 @@ class DetailedChangePlanScreen extends React.Component {
                 <Box style={{
                     borderRadius: 10
                 }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
-                    margin={{ top: "medium" }} height={"small"} overflow="auto" direction="column">
+                    margin={{ top: "medium" }} overflow="auto" direction="column" pad={"small"}>
                     <Heading level={"3"} margin={"small"}>Conflict</Heading>
-                    <Box overflow="scroll">
+                    <Box overflow="auto">
                         <Text weight="bold"> {this.errMessage}</Text>
                     </Box>
                     <Box align={"center"} width={"small"}>
