@@ -439,8 +439,6 @@ class DetailedChangePlanScreen extends React.Component {
                     <Box overflow="auto">
                         <Text weight="bold"> {this.errMessage}</Text>
                     </Box>
-                    <Box align={"center"} width={"small"}>
-                    </Box>
                 </Box>
 
             )
