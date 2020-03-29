@@ -300,12 +300,12 @@ class DetailedChangeScreen extends React.Component {
 
             this.conflictMessages = errorMessages;
             //console.log(this.conflictMessages)
-            if (this.forceRefreshCount === 1) {
+          //  if (this.forceRefreshCount === 1) {
                 //need to only forceRefresh once, when we construct the message
                 //Take this out if i figure out a bette timing issue
                 this.forceRefresh()
 
-            }
+          // }
 
 
         })
@@ -387,7 +387,7 @@ class DetailedChangeScreen extends React.Component {
 
         if (popupType === 'Delete') {
             popup = (
-                <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
+                <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction} genConflict={this.generateConflict}
                                   changePlanID={this.props.match.params.changePlanID} stepNumber={this.stepID}/>
             )
         } else if (popupType === 'decommission') {

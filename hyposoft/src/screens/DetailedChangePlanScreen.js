@@ -400,7 +400,7 @@ class DetailedChangePlanScreen extends React.Component {
 
         if (popupType === 'Delete') {
             popup = (
-                <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
+                <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction} 
                     changePlanID={this.changePlanID} stepNumber={this.state.deleteStepNumber} />
             )
         } else if (popupType === 'Execute') {

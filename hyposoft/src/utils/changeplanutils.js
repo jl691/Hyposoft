@@ -85,11 +85,11 @@ function getChangeDetails(changePlanID, stepID, username, callback) {
 }
 
 function getStepDocID(changePlanID, stepNum, callback) {
-    console.log(changePlanID, stepNum)
+    // console.log(changePlanID, stepNum)
     firebaseutils.changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepNum)).get().then(querySnapshot => {
-        console.log(querySnapshot.empty)
+        // console.log(querySnapshot.empty)
         if (!querySnapshot.empty) {
-            console.log(querySnapshot.docs[0].id)
+            // console.log(querySnapshot.docs[0].id)
             callback(querySnapshot.docs[0].id)
         }
         else {
@@ -171,8 +171,9 @@ function addAssetChange(asset, assetID, changePlanID, callback, docID = null) {
         changeplansRef.doc(changePlanID).collection("changes").doc(docID).get().then(function (docSnapInner) {
             if (docSnapInner.exists) {
                 assetChangePlanObject.step = docSnapInner.data().step;
-                changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject).then(function () {
-                    callback(true);
+                changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject).then(function (doc) {
+
+                    callback(true, doc.id);
                 }).catch(function () {
                     callback(null);
                 })
@@ -229,8 +230,8 @@ function editAssetChange(newAsset, assetID, changePlanID, callback, docID = null
                 changeplansRef.doc(changePlanID).collection("changes").doc(docID).get().then(function (docSnapInner) {
                     if (docSnapInner.exists) {
                         assetChangePlanObject.step = docSnapInner.data().step;
-                        changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject).then(function () {
-                            callback(true);
+                        changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject).then(function (doc) {
+                            callback(true, doc.id);
                         }).catch(function (error) {
                             console.log(error);
                             callback(null);
@@ -246,10 +247,10 @@ function editAssetChange(newAsset, assetID, changePlanID, callback, docID = null
                 changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
                     let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
                     assetChangePlanObject.step = changeNumber;
-                    changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function () {
+                    changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function (doc) {
                         //network ports need to be done at time of execution
                         //so does power port and logging
-                        callback(true);
+                        callback(true, doc.id);
                     }).catch(function (error) {
                         console.log(error);
                         callback(null);
@@ -323,18 +324,23 @@ function deleteChange(changePlanID, stepNum, callback) {
             changeplansRef.doc(changePlanID).collection("changes").doc(querySnapshot.docs[0].id).delete().then(function () {
                 cascadeUpStepNumbers(changePlanID, stepNum, result => {
                     if (result) {
-                        callback(true)
+                        getChangePlanData(changePlanID, cpData => {
+                            changeplanconflictutils.clearAllConflicts(changePlanID, status => {
+                                changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
+                                    //     console.log("Made it back from db checks")
+                                    changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
+                                        callback(true)
+                                    })
+                                })
+                            })
+                        })
                     } else {
                         callback(null);
                     }
                 })
             }).then(function () {
-                // changeplanconflictutils.deleteConflictFromDB(changePlanID, deleteID, stepNum, status => {
-                //     //if successfully deleted documents, then will callback true
-                //     console.log("Also succeeded in deleting from conflicts subcolllection")
-                //     //callback(status)
-                console.log("TODO: run all checks again here")
-                // })
+            
+               
             }).catch(function () {
                 callback(null);
             })
@@ -1000,12 +1006,12 @@ function getMergedAssetAndChange(changePlanID, step, callback) {
     });
 }
 
-function getChangePlanData(changePlanID, callback){
-    changeplansRef.doc(changePlanID).get().then(changeplanDoc =>{
-        if(changeplanDoc.exists){
+function getChangePlanData(changePlanID, callback) {
+    changeplansRef.doc(changePlanID).get().then(changeplanDoc => {
+        if (changeplanDoc.exists) {
             callback(changeplanDoc.data())
         }
-        else{callback(null)}
+        else { callback(null) }
     })
 }
 

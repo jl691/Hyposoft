@@ -125,7 +125,9 @@ class ChangePlanScreen extends React.Component {
                         changeplanutils.getChangePlanData(datum.id, changeplanDoc =>{
                             console.log(changeplanDoc.executed)
                             changeplanconflictutils.checkAllLiveDBConflicts(changeplanDoc.executed, datum.id, status =>{
-                                changeplanconflictutils.checkSequentialStepConflicts(changeplanDoc.executed, datum.id)
+                                changeplanconflictutils.checkSequentialStepConflicts(changeplanDoc.executed, datum.id, status1 =>{
+                                    console.log("done retriggering checks: ChangePlanScreen")
+                                })
                             })
 
                         })
