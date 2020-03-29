@@ -105,6 +105,9 @@ function addLog(objectId, objectType, action, data = null, callback = null) {
             break
         default:
             console.log("Could not create log due to unknown type: " + objectType)
+            if (callback) {
+              callback()
+            }
     }
 }
 
@@ -116,10 +119,10 @@ function finishAddingLog(object, objectId, objectType, action, callback) {
             if (user) {
                 var log = packageLog(timestamp, objectId, objectType, object.name, object.data, object.previousData, object.datacenter, action, userId, user.name)
                 firebaseutils.logsRef.add(log)
-                if (callback) {
-                  callback()
-                }
               }
+            if (callback) {
+              callback()
+            }
         })
     }
 }
