@@ -488,7 +488,7 @@ function findArrayAndMapDiff(a,b,map=false) {
       for (var field in c) {
           if (map) {
             if (act !== ' by changing ' && !other[field]) {
-                permDiff.push(field + ' to be ' + c[field])
+                permDiff.push(field + (act == ' by removing ' ? ' as ' : ' to be ') + c[field])
             } else {
               if (act === ' by changing ' && other[field] && other[field] !== c[field]) {
                 permDiff.push(field + ' from ' + other[field] + ' to ' + c[field])
