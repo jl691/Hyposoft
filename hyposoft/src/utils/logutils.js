@@ -80,35 +80,38 @@ function packageLog(timestamp, objectId, objectType, objectName, currentData, pr
     return log
 }
 
-function addLog(objectId, objectType, action, data = null) {
+function addLog(objectId, objectType, action, data = null, callback = null) {
     switch (objectType) {
         case ASSET():
-            getAssetName(objectId,data,action,asset => finishAddingLog(asset, objectId, objectType, action))
+            getAssetName(objectId,data,action,asset => finishAddingLog(asset, objectId, objectType, action, callback))
             break
         case MODEL():
-            getModelName(objectId,data,action,model => finishAddingLog(model, objectId, objectType, action))
+            getModelName(objectId,data,action,model => finishAddingLog(model, objectId, objectType, action, callback))
             break
         case RACK():
-            getRackName(objectId,data,action,rack => finishAddingLog(rack, objectId, objectType, action))
+            getRackName(objectId,data,action,rack => finishAddingLog(rack, objectId, objectType, action, callback))
             break
         case USER():
-            getUserName(objectId,data,action,user => finishAddingLog(user, objectId, objectType, action))
+            getUserName(objectId,data,action,user => finishAddingLog(user, objectId, objectType, action, callback))
             break
         case DATACENTER():
-            getDatacenterName(objectId,data,action,datacenter => finishAddingLog(datacenter, objectId, objectType, action))
+            getDatacenterName(objectId,data,action,datacenter => finishAddingLog(datacenter, objectId, objectType, action, callback))
             break
         case CHANGEPLAN():
-            getChangePlanName(objectId,data,action,changeplan => finishAddingLog(changeplan, objectId, objectType, action))
+            getChangePlanName(objectId,data,action,changeplan => finishAddingLog(changeplan, objectId, objectType, action, callback))
             break
         case PDU():
-            getPDUName(data,action,(pdu,assetId) => finishAddingLog(pdu, assetId, objectType, action))
+            getPDUName(data,action,(pdu,assetId) => finishAddingLog(pdu, assetId, objectType, action, callback))
             break
         default:
             console.log("Could not create log due to unknown type: " + objectType)
+            if (callback) {
+              callback()
+            }
     }
 }
 
-function finishAddingLog(object, objectId, objectType, action) {
+function finishAddingLog(object, objectId, objectType, action, callback) {
     if (object) {
         const timestamp = Date.now()
         const userId = userutils.getLoggedInUser()
@@ -117,6 +120,9 @@ function finishAddingLog(object, objectId, objectType, action) {
                 var log = packageLog(timestamp, objectId, objectType, object.name, object.data, object.previousData, object.datacenter, action, userId, user.name)
                 firebaseutils.logsRef.add(log)
               }
+            if (callback) {
+              callback()
+            }
         })
     }
 }
@@ -191,7 +197,7 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
         docSnaps.docs.forEach(doc => {
             const user = doc.data().userName.toLowerCase()
             const object = doc.data().objectName.toLowerCase()
-            const includesAsset = doc.data().objectType === ASSET() && object.includes(searchName)
+            const includesAsset = doc.data().objectType === ASSET() && (object.includes(searchName) || doc.data().objectId.includes(searchName))
             const includesPDUAsset = doc.data().objectType === PDU() && includesAssetInPDUName(object,searchName)
             const includesUser = user.includes(searchName) || (doc.data().objectType === USER() && object.includes(searchName))
             if (!search || includesAsset || includesPDUAsset || includesUser) {
