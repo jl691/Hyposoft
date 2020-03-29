@@ -197,7 +197,7 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
         docSnaps.docs.forEach(doc => {
             const user = doc.data().userName.toLowerCase()
             const object = doc.data().objectName.toLowerCase()
-            const includesAsset = doc.data().objectType === ASSET() && object.includes(searchName)
+            const includesAsset = doc.data().objectType === ASSET() && (object.includes(searchName) || doc.data().objectId.includes(searchName))
             const includesPDUAsset = doc.data().objectType === PDU() && includesAssetInPDUName(object,searchName)
             const includesUser = user.includes(searchName) || (doc.data().objectType === USER() && object.includes(searchName))
             if (!search || includesAsset || includesPDUAsset || includesUser) {
