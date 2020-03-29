@@ -13,6 +13,7 @@ import {
 } from 'grommet'
 import {View, ShareOption} from "grommet-icons"
 import * as decomutils from '../utils/decommissionutils'
+import * as modelutils from '../utils/modelutils'
 import theme from '../theme'
 import BackButton from '../components/BackButton'
 import AppBar from '../components/AppBar'
@@ -24,7 +25,8 @@ export default class DetailedDecommissionedAssetScreen extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            asset: ""
+            asset: "",
+            modelExists: undefined
         }
     }
 
@@ -110,6 +112,14 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                 </TableRow>
             )
         }
+    }
+
+    doesModelExist() {
+      if (this.state.asset.vendor && this.state.asset.modelNumber && this.state.modelExists === undefined) {
+        modelutils.doesModelDocExist(this.state.asset.vendor,this.state.asset.modelNumber, exist => {
+          this.setState({modelExists: exist})
+        })
+      }
     }
 
     render() {
@@ -259,9 +269,9 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                           <Heading level='4' margin='none'>Asset Actions</Heading>
                                           <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
                                                gap='small'>
-                                              <Button icon={<View/>} label="View Model Details" onClick={() => {
+                                              {(this.state.modelExists ? <Button icon={<View/>} label="View Model Details" onClick={() => {
                                                   this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNumber)
-                                              }}/>
+                                              }}/> : <Box>{this.doesModelExist()}</Box>)}
                                               <Button icon={<ShareOption/>} label="Network Neighborhood" onClick={() => {
                                                   this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
                                               }}/>
