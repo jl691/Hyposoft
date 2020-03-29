@@ -363,17 +363,18 @@ function decommissionAssetChange(assetID, changePlanID, callback, stepID = null)
                             callback(true);
                         })
                         .then(function () {
-                            changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
+                            getChangePlanData(changePlanID, cpData =>{
 
-                                changeplanconflictutils.checkAllLiveDBConflicts(querySnapshot.docs[0].data().executed, changePlanID, status2 => {
+                            changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
+                                changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
                                     //   console.log("Made it back from db checks")
-                                    changeplanconflictutils.checkSequentialStepConflicts(querySnapshot.docs[0].data().executed, changePlanID, status3 => {
+                                    changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
                                         console.log("DONE RECHECKING decomm")
                                         //callback(true)
 
                                     })
                                 })
-
+                            })
                             })
 
 
@@ -399,27 +400,40 @@ function deleteChange(changePlanID, stepNum, callback) {
             callback(null);
         } else {
             let deleteID = querySnapshot.docs[0].id;
+            let executed = querySnapshot.docs[0].data().executed
             changeplansRef.doc(changePlanID).collection("changes").doc(querySnapshot.docs[0].id).delete().then(function () {
                 cascadeUpStepNumbers(changePlanID, stepNum, result => {
                     if (result) {
-                        callback(true)
+                        //callback(true)
+                        changeplanconflictutils.clearAllConflicts(changePlanID, status => {
+                            changeplanconflictutils.checkAllLiveDBConflicts(executed, changePlanID, status2 => {
+                                console.log("Made it back from db checks")
+                                changeplanconflictutils.checkSequentialStepConflicts(executed, changePlanID, status3 => {
+                                    console.log("DONE RECHECKING: after deleting step")
+                                    callback(true)
+                                })
+                            })
+                        })
                     } else {
                         callback(null);
                     }
                 })
-            }).then(function () {
-                changeplanconflictutils.clearAllConflicts(changePlanID, status => {
-                    changeplanconflictutils.checkAllLiveDBConflicts(querySnapshot.docs[0].data().executed, changePlanID, status2 => {
-                        //     console.log("Made it back from db checks")
-                        changeplanconflictutils.checkSequentialStepConflicts(querySnapshot.docs[0].data().executed, changePlanID, status3 => {
-                            console.log("DONE RECHECKING")
-                        })
-                    })
-                })
-
-            }).catch(function () {
-                callback(null);
             })
+                // .then(function () {
+                //     changeplanconflictutils.clearAllConflicts(changePlanID, status => {
+                //         changeplanconflictutils.checkAllLiveDBConflicts(querySnapshot.docs[0].data().executed, changePlanID, status2 => {
+                //             //     console.log("Made it back from db checks")
+                //             changeplanconflictutils.checkSequentialStepConflicts(querySnapshot.docs[0].data().executed, changePlanID, status3 => {
+                //                 console.log("DONE RECHECKING: after deleting step")
+                //                 callback(true)
+                //             })
+                //         })
+                //     })
+
+                // })
+                .catch(function () {
+                    callback(null);
+                })
         }
     }).catch(function () {
         callback(null);
