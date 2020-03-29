@@ -236,71 +236,10 @@ class DetailedChangePlanScreen extends React.Component {
                     }}
                     onClickRow={({ datum }) => {
                         this.props.history.push('/changeplans/' + this.changePlanID + '/' + datum.id)
-
-                        //what if it's an edit or decomm and there arent these fields?
-                        console.log(datum)
-                        //console.log([...this.state.changes])
-                        if (datum.change === "add") {
-
-
-                            changeplanconflictutils.checkLiveDBConflicts(this.state.executed, this.props.match.params.changePlanID, datum.id, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new, status => {
-                                console.log("Done with live db checks for change plan conflicts. Add")
-                            })
-
-                        }
-                        else if (datum.change === "edit") {
-
-                            changeplanutils.getMergedAssetAndChange(this.props.match.params.changePlanID, datum.id, assetData => {
-                                console.log(assetData)
-                                //please dont come for me ik null is falsy but it just was not working uwu
-                                if (assetData !== null) {
-                                    let model = assetData.model
-                                    let hostname = assetData.hostname
-                                    let datacenter = assetData.datacenter
-                                    let rack = assetData.rack
-                                    let rackU = assetData.rackU
-                                    let owner = assetData.owner
-                                    let assetID = assetData.assetId
-                                    let powerConnections = assetData.powerConnections
-                                    let networkConnections = assetData.networkConnections
-                                    //networkConnections needs to be an array what is it in assetData?
-                                    //console.log(assetData)
-
-                                    changeplanconflictutils.checkLiveDBConflicts(this.state.executed, this.props.match.params.changePlanID, datum.id, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, status => {
-                                        console.log("Done with live db checks for edit changes.")
-                                    })
-
-
-                                }
-                                else {
-                                    //what if you are trying to edit a decomm/deleted model?
-                                    //then there is no assetData returned, since the getMerged funciton looks in assetsRef
-
-                                    if (!this.state.executed) {
-                                        changeplanutils.getStepDocID(this.changePlanID, datum.id, stepID => {
-                                            console.log(stepID)
-                                            firebaseutils.changeplansRef.doc(this.changePlanID).collection('changes').doc(stepID).get().then(nonExistentStepDoc => {
-                                                console.log(nonExistentStepDoc.data())
-                                                let assetID = nonExistentStepDoc.data().assetID.toString()
-
-
-                                                changeplanconflictutils.editCheckAssetNonexistent(this.changePlanID, stepID, assetID, status11 => {
-                                                    console.log("Done checking edit step: trying to edit an asset that does not exist")
-                                                })
-
-                                            })
-                                        })
-                                    }
-                                }
-                            })
-                        }
-                        else {
-
-                            changeplanconflictutils.checkLiveDBConflicts(this.state.executed, this.changePlanID, datum.id, null, null, null, null, null, null, datum.assetID, null, null, status => {
-                                console.log("Done with live db checks for change plan conflicts. Decomms")
-                            })
-
-                        }
+                        //console.log(datum)
+                        changeplanconflictutils.checkLiveDBConflicts(this.state.executed, this.props.match.params.changePlanID, datum.id, status => {
+                            console.log("Done with live db checks for change plan conflicts. Add")
+                        })
                     }}
                     columns={this.generateColumns()} data={this.state.changes} size={"large"} />
             )
@@ -461,7 +400,7 @@ class DetailedChangePlanScreen extends React.Component {
 
         if (popupType === 'Delete') {
             popup = (
-                <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
+                <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction} 
                     changePlanID={this.changePlanID} stepNumber={this.state.deleteStepNumber} />
             )
         } else if (popupType === 'Execute') {

@@ -408,11 +408,13 @@ function getPDUName(data,action,callback) {
 function assetDiff(data,field) {
     switch (field) {
       case 'networkConnections':
-        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+        return !findArrayAndMapDiff(flattenArrayOrMap(data.previousData[field]),flattenArrayOrMap(data.currentData[field]),true) ? '' : (field + arrayAndMapDiffString)
       case 'powerConnections':
-        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+        return !findArrayAndMapDiff(flattenArrayOrMap(data.previousData[field]),flattenArrayOrMap(data.currentData[field]),true) ? '' : (field + arrayAndMapDiffString)
       case 'macAddresses':
-        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+        return !findArrayAndMapDiff(data.previousData[field],data.currentData[field],true) ? '' : (field + arrayAndMapDiffString)
+      case 'id':
+          return ''
       default:
         return defaultDiff(data,field)
     }
@@ -421,9 +423,7 @@ function assetDiff(data,field) {
 function modelDiff(data,field) {
     switch (field) {
       case 'networkPorts':
-        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
-      case 'powerPorts':
-        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+        return !findArrayAndMapDiff(data.previousData[field],data.currentData[field]) ? '' : (field + arrayAndMapDiffString)
       case 'modelName':
         return ''
       case 'networkPortsCount':
@@ -447,7 +447,7 @@ function userDiff(data,field) {
       case 'password':
         return field
       case 'permissions':
-        return field + findArrayDiffForPermissions(data.previousData[field],data.currentData[field])
+        return !findArrayAndMapDiff(data.previousData[field],data.currentData[field]) ? '' : (field + arrayAndMapDiffString)
       default:
         return defaultDiff(data,field)
     }
@@ -466,34 +466,78 @@ function defaultDiff(data,field) {
     return field + ' from ' + (data.previousData[field] ? data.previousData[field] : 'none') + ' to ' + (data.currentData[field] ? data.currentData[field] : 'none')
 }
 
-function findArrayDiffForPermissions(a,b) {
-    var result = ''
+var arrayAndMapDiffString = ''
+function findArrayAndMapDiff(a,b,map=false) {
+    arrayAndMapDiffString = ''
     var c, other, act;
-    for (var i = 0; i < 2; i++) {
+    for (var i = 0; i < 3; i++) {
       var permDiff = []
       if (i === 0) {
         c = a
         other = b
         act = ' by removing '
-      } else {
+      } else if (i === 1) {
         c = b
         other = a
         act = ' by adding '
+      } else {
+        c = b
+        other = a
+        act = ' by changing '
       }
-      for (var ind = 0; ind < c.length; ind++) {
-          const of = other.indexOf(c[ind])
-          if (of === -1) {
-              permDiff.push(c[ind])
+      for (var field in c) {
+          if (map) {
+            if (act !== ' by changing ' && !other[field]) {
+                permDiff.push(field + (act == ' by removing ' ? ' as ' : ' to be ') + c[field])
+            } else {
+              if (act === ' by changing ' && other[field] && other[field] !== c[field]) {
+                permDiff.push(field + ' from ' + other[field] + ' to ' + c[field])
+              }
+            }
+          } else {
+            if (act !== ' by changing ' && !other.includes(c[field])) {
+                permDiff.push(c[field])
+            }
           }
       }
       if (permDiff.length !== 0) {
-        if (result) {
-          result = result + ' and'
+        if (arrayAndMapDiffString) {
+          arrayAndMapDiffString = arrayAndMapDiffString + ' and'
         }
-        result = result + act + permDiff.join(', ')
+        arrayAndMapDiffString = arrayAndMapDiffString + act + permDiff.join(', ')
       }
     }
-    return result
+    return arrayAndMapDiffString
+}
+
+function flattenArrayOrMap(flat) {
+    var newMap = {}
+    for (var field in flat) {
+      flatten(field)
+    }
+    return newMap
+
+    function flatten(key) {
+      const value = getValue(key)
+      var type = Object.prototype.toString.call(value)
+      if (['[object Array]', '[object Object]'].indexOf(type) < 0) {
+        return
+      }
+      delete newMap[key]
+      for (var nextKey in value) {
+        newMap[key+':'+nextKey] = value[nextKey]
+        flatten(key+':'+nextKey)
+      }
+    }
+
+    function getValue(key) {
+      var value = flat
+      const keyArray = key.split(':')
+      for (var field in keyArray) {
+        value = value[keyArray[field]]
+      }
+      return value
+    }
 }
 
 var complexDiffString = ''
