@@ -39,10 +39,11 @@ function getChangePlans(itemCount, username, callback, start = null) {
     })
 }
 
-function getChanges(changePlanID, username, callback) {
+function getChanges(changePlanID, username, callback, start = null) {
+    let query = start ? firebaseutils.changeplansRef.doc(changePlanID).collection("changes").orderBy("step").startAfter(start) : firebaseutils.changeplansRef.doc(changePlanID).collection("changes").orderBy("step");
     firebaseutils.changeplansRef.doc(changePlanID).get().then(function (documentSnapshot) {
         if (documentSnapshot.exists && documentSnapshot.data().owner === username) {
-            firebaseutils.changeplansRef.doc(changePlanID).collection("changes").orderBy("step").get().then(function (querySnapshot) {
+            query.get().then(function (querySnapshot) {
                 if (!querySnapshot.empty) {
                     let changes = [];
                     let count = 0;
