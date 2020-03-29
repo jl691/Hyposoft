@@ -67,7 +67,7 @@ class DatacenterScreen extends React.Component {
     }
 
     AdminTools() {
-        if (userutils.doesLoggedInUserHaveAssetPerm() || userutils.isLoggedInUserAdmin()) {
+        if (userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.isLoggedInUserAdmin()) {
             return (
                 <Box
                     width='medium'

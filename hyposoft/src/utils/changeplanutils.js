@@ -761,6 +761,7 @@ function executeChangePlan(changePlanID, callback) {
         if (querySnapshot.empty) {
             callback(true);
         } else {
+            logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.EXECUTE());
             let count = 0;
             querySnapshot.docs.forEach(change => {
                 console.log(change)
@@ -772,6 +773,7 @@ function executeChangePlan(changePlanID, callback) {
                             if (resultAdd) {
                                 count++;
                                 if (count === querySnapshot.size) {
+                                    logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
                                     changeplansRef.doc(changePlanID.toString()).update({
                                         executed: true,
                                         timestamp: Date.now()
