@@ -413,6 +413,8 @@ function assetDiff(data,field) {
         return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       case 'macAddresses':
         return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+      case 'id':
+          return ''
       default:
         return defaultDiff(data,field)
     }
