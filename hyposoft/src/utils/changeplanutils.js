@@ -1124,6 +1124,20 @@ function getAssetFromAddAsset(changePlanID, step, callback) {
     })
 }
 
+function checkChangeAlreadyExists(changePlanID, assetID, change, callback){
+    console.log(changePlanID, assetID, change)
+    changeplansRef.doc(changePlanID.toString()).collection("changes").where("assetID", "==", parseInt(assetID)).where("change", "==", change).get().then(function (querySnapshot) {
+        if(querySnapshot.empty){
+            callback(false);
+        } else {
+            callback(true);
+        }
+    }).catch(function (error) {
+        console.log(error)
+        callback(false);
+    })
+}
+
 export {
     getChangePlans,
     getChanges,
@@ -1140,5 +1154,6 @@ export {
     executeChangePlan,
     getMergedAssetAndChange,
     getAssetFromAddAsset,
-    getChangePlanData
+    getChangePlanData,
+    checkChangeAlreadyExists
 }

@@ -7,6 +7,7 @@ import UserMenu from "./UserMenu";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import {Add} from "grommet-icons";
 import * as assetutils from "../utils/assetutils"
+import * as changeplanutils from "../utils/changeplanutils"
 import AddAssetForm from "./AddAssetForm";
 import BackButton from "./BackButton";
 import EditAssetForm from "./EditAssetForm";
@@ -52,14 +53,22 @@ class AddChangeForm extends React.Component {
     getAssetsList(edit) {
         let newMenuItems = [];
         let action = edit ? "Update" : "delete";
+        let dbAction = edit ? "edit" : "decommission";
         if (this.state.assetsLoaded) {
             this.menuItems.forEach(menuItem => {
                 newMenuItems.push({
                     label: menuItem,
                     onClick: () => {
-                        this.setState({
-                            selected: menuItem,
-                            popupType: action
+                        changeplanutils.checkChangeAlreadyExists(this.props.match.params.changePlanID, this.assetData.get(menuItem).assetId, dbAction, exists => {
+                            console.log(exists)
+                            if(exists){
+                                ToastsStore.error("A(n) " + dbAction + " change with asset #" + this.assetData.get(menuItem).assetId + " already exists in this change plan - please modify that change instead.")
+                            } else {
+                                this.setState({
+                                    selected: menuItem,
+                                    popupType: action
+                                });
+                            }
                         });
                     }
                 });
