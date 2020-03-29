@@ -539,6 +539,9 @@ function decommissionAssetChangePlanPackage(changePlanID, stepID, callback) {
 
 
             }
+            else{
+                callback()
+            }
         })
     })
 }
@@ -1195,6 +1198,8 @@ function checkAllLiveDBConflicts(isExecuted, changePlanID, callback) {
 
                     checkLiveDBConflicts(isExecuted, changePlanID, stepNum, status => {
                         counter++;
+                        console.log(collectionDoc.size)
+                        console.log(counter)
                         if (counter === collectionDoc.size) {
                             console.log("Done with live db conflict checks for this change plan.")
                             console.log("DID THIS SHIT FUCKING WORK")

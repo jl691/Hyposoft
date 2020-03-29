@@ -293,28 +293,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                             console.log(error)
                                                                         })
                                                                     } else {
-                                                                        changeplanutils.addAssetChange(assetObject, overrideAssetID, changePlanID, (result, stepID) => {
+                                                                        changeplanutils.addAssetChange(assetObject, overrideAssetID, changePlanID, (result) => {
                                                                             if (result) {
-                                                                                console.log("Retriggering database and step conflict checks: add asset change added.")
-                                                                                console.log(stepID)
-                                                                                //Janice: added this here as a retrigger of the live db check
-                                                                                if (stepID) {
-                                                                                    changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
-                                                                                        changeplanutils.getChangePlanData(changePlanID, cpData => {
-                                                                                            //checking against liveDb not necessary, and only adds time
-                                                                                            changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
-                                                                                               // console.log("Made it back from db checks")
-                                                                                                changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
-                                                                                                    console.log("DONE RECHECKING")
-                                                                                                    callback(null)
-                                                                                                })
-                                                                                            })
-
-                                                                                        })
-
-                                                                                    })
-
-                                                                                }
+                                                                                callback(null)
                                                                             } else {
                                                                                 callback("Error adding asset to the specified change plan.")
                                                                             }
@@ -438,28 +419,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                 } else {
                                                                     delete assetObject["assetId"];
                                                                     //duplicate this!!
-                                                                    changeplanutils.addAssetChange(assetObject, "", changePlanID, (result, stepID) => {
+                                                                    changeplanutils.addAssetChange(assetObject, "", changePlanID, (result) => {
                                                                         if (result) {
-                                                                            console.log("Retriggering database and step conflict checks: add asset change added.")
-                                                                            console.log(stepID)
-                                                                            //Janice: added this here as a retrigger of the live db check
-                                                                            if (stepID) {
-                                                                                changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
-                                                                                    changeplanutils.getChangePlanData(changePlanID, cpData => {
-                                                                                        //checking against livedb not necessary, only adds more time
-                                                                                        changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
-                                                                                         //   console.log("Made it back from db checks")
-                                                                                            changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
-                                                                                                console.log("DONE RECHECKING")
-                                                                                                callback(null)
-                                                                                            })
-                                                                                        })
-
-                                                                                    })
-
-                                                                                })
-
-                                                                            }
+                                                                            callback(null)
 
                                                                         } else {
                                                                             callback("Error adding asset to the specified change plan.")
@@ -947,28 +909,9 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                             })
                                                                                         } else {
                                                                                             console.log(changeDocID);
-                                                                                            changeplanutils.editAssetChange(assetObject, assetID, changePlanID, (result, stepID) => {
+                                                                                            changeplanutils.editAssetChange(assetObject, assetID, changePlanID, (result) => {
                                                                                                 if (result) {
-                                                                                                    console.log("Retriggering database and step conflict checks: edit asset change added.")
-                                                                                                    //onsole.log(stepID)
-                                                                                                    //Janice: added this here as a retrigger of the live db check
-                                                                                                    if (stepID) {
-                                                                                                        changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
-                                                                                                            changeplanutils.getChangePlanData(changePlanID, cpData => {
-                                                                                                                //checking against liveDB not necessary, and only take more time
-                                                                                                                 changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
-                                                                                                                //     console.log("Made it back from db checks")
-                                                                                                                    changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
-                                                                                                                        console.log("DONE RECHECKING")
-                                                                                                                        callback(null)
-                                                                                                                    })
-                                                                                                                })
-
-                                                                                                            })
-
-                                                                                                        })
-
-                                                                                                    }
+                                                                                                    callback(null)
                                                                                                 }
                                                                                                 else {
                                                                                                     callback("Error adding asset to the specified change plan.")
