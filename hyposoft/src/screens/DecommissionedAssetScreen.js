@@ -193,6 +193,7 @@ class DecommissionedAssetScreen extends Component {
     }
 
     handleRackRackUSort(sortedAssets) {
+        this.defaultAssets = sortedAssets
         this.setState({assets: sortedAssets,searchQuery: ''})
     }
 

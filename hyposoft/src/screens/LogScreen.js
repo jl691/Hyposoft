@@ -101,17 +101,11 @@ class LogScreen extends Component {
                     [
                         {
                             property: 'itemNo',
-                            header: <Text size='small'>Date and Time (EST)</Text>,
-                            render: datum => <Text size='small'>{'['+datum.itemNo+'] '+datum.date}</Text>,
+                            header: <Text size='small'>Date and Time (EST) - Information</Text>,
+                            render: datum => <Text size='small'>{'['+datum.itemNo+'] '+datum.date+' - '+datum.log}</Text>,
                             primary: true,
                             sortable: false,
                         },
-                        {
-                            property: 'log',
-                            header: <Text size='small'>Information</Text>,
-                            render: datum => <Text size='small'>{datum.log}</Text>,
-                            sortable: false,
-                        }
                     ]
                 }
                 data={this.state.logs}

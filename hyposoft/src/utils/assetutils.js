@@ -896,8 +896,8 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                     })
                                                                                                     assetRef.doc(String(assetID)).update(assetObject).then(function () {
                                                                                                         console.log("Updated model successfully")
-                                                                                                        logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData)
-                                                                                                        callback(null);
+                                                                                                        // log needs to be added before calling back for DetailedAssetScreen
+                                                                                                        logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null))
                                                                                                     })
                                                                                                         .catch(function (error) {
                                                                                                             callback(error);
