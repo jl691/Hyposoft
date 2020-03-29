@@ -1280,8 +1280,8 @@ function changePlanHasConflicts(changePlanID, callback) {
                     count--;
                     if (count == 0) {
                         //console.log("This is the result set size: " + result.size)
-
-                        callback(result)
+                        let sortedResult = [...(result)].sort()
+                        callback(sortedResult )
                     }
 
                 }).catch(error => console.log(error))
@@ -1291,6 +1291,24 @@ function changePlanHasConflicts(changePlanID, callback) {
         }
         else {
             callback(result)
+        }
+    })
+
+}
+
+function checkAllLiveDBConflicts(changePlanID, callback){
+    changeplansRef.doc(changePlanID).collection('changes').get().then(collectionDoc =>{
+        if(!collectionDoc.empty){
+            collectionDoc.forEach(stepDoc =>{
+                let isExecuted = stepDoc.data().executed
+                let stepNum = stepDoc.data().step
+
+                let changes = stepDoc.data().changes
+                let model= changes.model.new
+                let hostname = changes.hostname.new
+                // function checkLiveDBConflicts(isExecuted, changePlanID, stepNum, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, callback)
+
+            })
         }
     })
 
@@ -1312,7 +1330,8 @@ export {
     checkLiveDBConflicts,
     deleteConflictFromDB,
     changePlanHasConflicts,
-    editCheckAssetNonexistent
+    editCheckAssetNonexistent,
+    checkAllLiveDBConflicts
 
 
 
