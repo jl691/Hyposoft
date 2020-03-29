@@ -3,14 +3,14 @@ import * as changeplanutils from "../utils/changeplanutils";
 import * as userutils from "../utils/userutils";
 
 import * as changeplanconflictutils from '../utils/changeplanconflictutils'
-import {Box, Button, Grommet, Heading, Text, DataTable, Layer} from "grommet";
+import { Box, Button, Grommet, Heading, Text, DataTable, Layer } from "grommet";
 import theme from "../theme";
 import AppBar from "../components/AppBar";
 import HomeMenu from "../components/HomeMenu";
 import UserMenu from "../components/UserMenu";
-import {ToastsContainer, ToastsStore} from "react-toasts";
-import {Add, Checkmark, Close, Edit, Print, Trash} from "grommet-icons";
-import {Redirect} from "react-router-dom";
+import { ToastsContainer, ToastsStore } from "react-toasts";
+import { Add, Checkmark, Close, Edit, Print, Trash } from "grommet-icons";
+import { Redirect } from "react-router-dom";
 import AddDatacenterForm from "../components/AddDatacenterForm";
 import AddChangePlanForm from "../components/AddChangePlanForm";
 import DeleteDatacenterForm from "../components/DeleteDatacenterForm";
@@ -47,11 +47,11 @@ class ChangePlanScreen extends React.Component {
             popupType: "",
         });
         changeplanutils.getChangePlans(this.itemCount, userutils.getLoggedInUserUsername(), (newItemCount, newStart, changePlans, empty) => {
-            if(empty){
+            if (empty) {
                 this.setState({
                     initialLoaded: true
                 });
-            } else if(newItemCount) {
+            } else if (newItemCount) {
                 this.itemCount = newItemCount;
                 this.startAfter = newStart;
                 this.setState({
@@ -68,27 +68,27 @@ class ChangePlanScreen extends React.Component {
                 <Box
                     width='medium'
                     align='center'
-                    margin={{left: 'medium', right: 'medium'}}
+                    margin={{ left: 'medium', right: 'medium' }}
                     justify='start'>
                     <Box style={{
                         borderRadius: 10,
                         borderColor: '#EDEDED'
                     }}
-                         direction='row'
-                         alignSelf='stretch'
-                         background='#FFFFFF'
-                         width={'medium'}
-                         margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                         pad='small'>
+                        direction='row'
+                        alignSelf='stretch'
+                        background='#FFFFFF'
+                        width={'medium'}
+                        margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                        pad='small'>
                         <Box flex
-                             margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                             direction='column' justify='start'>
+                            margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
+                            direction='column' justify='start'>
                             <Heading level='4' margin='none'>Add change plan</Heading>
                             <p>Add a new change plan.</p>
                             <Box direction='column' flex alignSelf='stretch'>
-                                <Button primary icon={<Add/>} label="Add" onClick={() => {
-                                    this.setState({popupType: "Add"})
-                                }}/>
+                                <Button primary icon={<Add />} label="Add" onClick={() => {
+                                    this.setState({ popupType: "Add" })
+                                }} />
                             </Box>
                         </Box>
                     </Box>
@@ -105,26 +105,33 @@ class ChangePlanScreen extends React.Component {
         } else {
             return (
                 <DataTable step={25}
-                           onMore={() => {
-                               if (this.startAfter) {
-                                   changeplanutils.getChangePlans(this.itemCount, userutils.getLoggedInUserUsername(), (newItemCount, newStart, changePlans, empty) => {
-                                       if(!empty && newItemCount){
-                                           this.itemCount = newItemCount;
-                                           this.startAfter = newStart;
-                                           this.setState({
-                                               changePlans: changePlans,
-                                           });
-                                       }
-                                   }, this.startAfter);
-                               }
-                           }}
-                           onClickRow={({datum}) => {
-                               this.props.history.push('/changeplans/' + datum.id)
-                               console.log("Here is the change plan ID: "+ datum.id)
-                               changeplanconflictutils.checkSequentialStepConflicts(datum.id)
-                             
-                           }}
-                           columns={this.generateColumns()} data={this.state.changePlans} size={"large"}/>
+                    onMore={() => {
+                        if (this.startAfter) {
+                            changeplanutils.getChangePlans(this.itemCount, userutils.getLoggedInUserUsername(), (newItemCount, newStart, changePlans, empty) => {
+                                if (!empty && newItemCount) {
+                                    this.itemCount = newItemCount;
+                                    this.startAfter = newStart;
+                                    this.setState({
+                                        changePlans: changePlans,
+                                    });
+                                }
+                            }, this.startAfter);
+                        }
+                    }}
+                    onClickRow={({ datum }) => {
+                        this.props.history.push('/changeplans/' + datum.id)
+                        console.log("Here is the change plan ID: " + datum.id)
+
+                        changeplanutils.getChangePlanData(datum.id, changeplanDoc =>{
+                            console.log(changeplanDoc.executed)
+                            changeplanconflictutils.checkAllLiveDBConflicts(changeplanDoc.executed, datum.id, status =>{
+                                changeplanconflictutils.checkSequentialStepConflicts(changeplanDoc.executed, datum.id)
+                            })
+
+                        })
+     
+                    }}
+                    columns={this.generateColumns()} data={this.state.changePlans} size={"large"} />
             )
         }
     }
@@ -164,25 +171,25 @@ class ChangePlanScreen extends React.Component {
                         e.nativeEvent.stopImmediatePropagation();
                         e.stopPropagation();
                         this.props.history.push('/changeplans/' + datum.id + '/workorder')
-                    }}/>)
+                    }} />)
             }
         ];
-        if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()){
+        if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) {
             cols.push({
-                    property: "Edit",
-                    header: <Text size='small'>Edit</Text>,
-                    render: datum => (
-                        !datum.executed && <Edit onClick={(e) => {
-                            e.persist();
-                            e.nativeEvent.stopImmediatePropagation();
-                            e.stopPropagation();
-                            this.setState({
-                                editName: datum.name,
-                                editID: datum.id,
-                                popupType: "Edit"
-                            })
-                        }}/>)
-                },
+                property: "Edit",
+                header: <Text size='small'>Edit</Text>,
+                render: datum => (
+                    !datum.executed && <Edit onClick={(e) => {
+                        e.persist();
+                        e.nativeEvent.stopImmediatePropagation();
+                        e.stopPropagation();
+                        this.setState({
+                            editName: datum.name,
+                            editID: datum.id,
+                            popupType: "Edit"
+                        })
+                    }} />)
+            },
                 {
                     property: "execute",
                     header: <Text size='small'>Execute</Text>,
@@ -197,7 +204,7 @@ class ChangePlanScreen extends React.Component {
                                 executeID: datum.id,
                                 popupType: "Execute"
                             })
-                        }}/>)
+                        }} />)
                 },
                 {
                     property: "delete",
@@ -212,7 +219,7 @@ class ChangePlanScreen extends React.Component {
                                 deleteID: datum.id,
                                 popupType: "Delete"
                             })
-                        }}/>)
+                        }} />)
                 })
         }
         return cols;
@@ -237,43 +244,43 @@ class ChangePlanScreen extends React.Component {
 
     render() {
         if (!userutils.isUserLoggedIn()) {
-            return <Redirect to='/'/>
+            return <Redirect to='/' />
         }
 
-        const {popupType} = this.state;
+        const { popupType } = this.state;
         let popup;
 
         if (popupType === 'Add') {
             popup = (
-                <Layer onEsc={() => this.setState({popupType: undefined})}
-                       onClickOutside={() => this.setState({popupType: undefined})}>
-                    <AddChangePlanForm parentCallback={this.callbackFunction}/>
-                    <Button label="Cancel" icon={<Close/>}
-                            onClick={() => this.setState({popupType: ""})}/>
+                <Layer onEsc={() => this.setState({ popupType: undefined })}
+                    onClickOutside={() => this.setState({ popupType: undefined })}>
+                    <AddChangePlanForm parentCallback={this.callbackFunction} />
+                    <Button label="Cancel" icon={<Close />}
+                        onClick={() => this.setState({ popupType: "" })} />
                 </Layer>
             )
-        } else if(popupType === 'Delete'){
+        } else if (popupType === 'Delete') {
             popup = (
                 <DeleteChangePlanForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
-                                      name={this.state.deleteName} id={this.state.deleteID}/>
+                    name={this.state.deleteName} id={this.state.deleteID} />
             )
-        } else if(popupType === 'Edit'){
+        } else if (popupType === 'Edit') {
             popup = (
-                <Layer onEsc={() => this.setState({popupType: undefined})}
-                       onClickOutside={() => this.setState({popupType: undefined})}>
-                    <EditChangePlanForm parentCallback={this.callbackFunction} name={this.state.editName} id={this.state.editID}/>
-                    <Button label="Cancel" icon={<Close/>}
-                            onClick={() => this.setState({popupType: ""})}/>
+                <Layer onEsc={() => this.setState({ popupType: undefined })}
+                    onClickOutside={() => this.setState({ popupType: undefined })}>
+                    <EditChangePlanForm parentCallback={this.callbackFunction} name={this.state.editName} id={this.state.editID} />
+                    <Button label="Cancel" icon={<Close />}
+                        onClick={() => this.setState({ popupType: "" })} />
                 </Layer>
             )
-        } else if(popupType === 'Execute'){
+        } else if (popupType === 'Execute') {
             popup = (
-                <Layer onEsc={() => this.setState({popupType: undefined})}
-                       onClickOutside={() => this.setState({popupType: undefined})}>
-                    <ExecuteChangePlanForm  name={this.state.executeName} id={this.state.executeID}
-                                           cancelPopup={this.cancelPopup} successfulExecution={this.successfulExecution}/>
-                    <Button label="Cancel" icon={<Close/>}
-                            onClick={() => this.setState({popupType: ""})}/>
+                <Layer onEsc={() => this.setState({ popupType: undefined })}
+                    onClickOutside={() => this.setState({ popupType: undefined })}>
+                    <ExecuteChangePlanForm name={this.state.executeName} id={this.state.executeID}
+                        cancelPopup={this.cancelPopup} successfulExecution={this.successfulExecution} />
+                    <Button label="Cancel" icon={<Close />}
+                        onClick={() => this.setState({ popupType: "" })} />
                 </Layer>
             )
         }
@@ -282,34 +289,34 @@ class ChangePlanScreen extends React.Component {
             <Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
                     <AppBar>
-                        <HomeMenu alignSelf='start' this={this}/>
+                        <HomeMenu alignSelf='start' this={this} />
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                         }}>Change Plans</Heading>
-                        <UserMenu alignSelf='end' this={this}/>
+                        <UserMenu alignSelf='end' this={this} />
                     </AppBar>
                     <Box direction='row'
-                         justify='center'
-                         wrap={true}>
-                        <Box direction='row' justify='center' overflow={{horizontal: 'hidden'}}>
+                        justify='center'
+                        wrap={true}>
+                        <Box direction='row' justify='center' overflow={{ horizontal: 'hidden' }}>
                             <Box direction='row' justify='center'>
                                 <Box width='large' direction='column' align='stretch' justify='start'>
                                     <Box style={{
                                         borderRadius: 10,
                                         borderColor: '#EDEDED'
                                     }}
-                                         id='containerBox'
-                                         direction='row'
-                                         background='#FFFFFF'
-                                         margin={{top: 'medium', bottom: 'medium'}}
-                                         flex={{
-                                             grow: 0,
-                                             shrink: 0
-                                         }}
-                                         pad='small'>
-                                        <Box margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                             direction='column'
-                                             justify='start' alignSelf='stretch' height={"810px"} flex>
+                                        id='containerBox'
+                                        direction='row'
+                                        background='#FFFFFF'
+                                        margin={{ top: 'medium', bottom: 'medium' }}
+                                        flex={{
+                                            grow: 0,
+                                            shrink: 0
+                                        }}
+                                        pad='small'>
+                                        <Box margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
+                                            direction='column'
+                                            justify='start' alignSelf='stretch' height={"810px"} flex>
                                             <Box align="center">
 
                                                 {this.DataTable()}
@@ -324,7 +331,7 @@ class ChangePlanScreen extends React.Component {
                     </Box>
                 </Box>
                 {popup}
-                <ToastsContainer store={ToastsStore}/>
+                <ToastsContainer store={ToastsStore} />
             </Grommet>
         )
     }

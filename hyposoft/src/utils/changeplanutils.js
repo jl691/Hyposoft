@@ -329,11 +329,12 @@ function deleteChange(changePlanID, stepNum, callback) {
                     }
                 })
             }).then(function () {
-                changeplanconflictutils.deleteConflictFromDB(changePlanID, deleteID, stepNum, status => {
-                    //if successfully deleted documents, then will callback true
-                    console.log("Also succeeded in deleting from conflicts subcolllection")
-                    //callback(status)
-                })
+                // changeplanconflictutils.deleteConflictFromDB(changePlanID, deleteID, stepNum, status => {
+                //     //if successfully deleted documents, then will callback true
+                //     console.log("Also succeeded in deleting from conflicts subcolllection")
+                //     //callback(status)
+                console.log("TODO: run all checks again here")
+                // })
             }).catch(function () {
                 callback(null);
             })
@@ -999,6 +1000,15 @@ function getMergedAssetAndChange(changePlanID, step, callback) {
     });
 }
 
+function getChangePlanData(changePlanID, callback){
+    changeplansRef.doc(changePlanID).get().then(changeplanDoc =>{
+        if(changeplanDoc.exists){
+            callback(changeplanDoc.data())
+        }
+        else{callback(null)}
+    })
+}
+
 function getAssetFromAddAsset(changePlanID, step, callback) {
     changeplansRef.doc(changePlanID.toString()).collection("changes").where("step", "==", parseInt(step)).get().then(function (querySnapshot) {
         if (!querySnapshot.empty) {
@@ -1035,5 +1045,6 @@ export {
     decommissionAssetChange,
     executeChangePlan,
     getMergedAssetAndChange,
-    getAssetFromAddAsset
+    getAssetFromAddAsset,
+    getChangePlanData
 }
