@@ -341,7 +341,7 @@ function bulkAddAssets (assets, callback) {
             modelNumber: asset.model_number,
             vendor: asset.vendor,
             rackRow: asset.rack.charAt(0).toUpperCase(),
-            rackNum: asset.rack.substring(1),
+            rackNum: parseInt(asset.rack.substring(1)),
             datacenter: asset.dcFN,
             datacenterID: asset.dcID,
             datacenterAbbrev:  asset.datacenter,
@@ -429,7 +429,7 @@ function bulkModifyAssets (assets, callback) {
 
         if (asset.rack) {
             updates.rackRow = asset.rack.charAt(0).toUpperCase()
-            updates.rackNum = asset.rack.substring(1)
+            updates.rackNum = parseInt(asset.rack.substring(1))
         }
 
         if (asset.dcFN) {
