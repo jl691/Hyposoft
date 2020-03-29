@@ -305,6 +305,7 @@ class AssetScreen extends Component {
             />)
         } else {
             //console.log(this.datacenters)
+            console.log(this.datacenters)
             return (
                 <Select
                     placeholder="Select a datacenter..."
@@ -326,11 +327,11 @@ class AssetScreen extends Component {
         let count = 0;
         datacenterutils.getAllDatacenterNames(names => {
             if (names.length) {
+                console.log(names)
                 names.forEach(name => {
                     this.datacenters.push(name);
                     count++;
                     if (count === names.length) {
-                        this.datacenters.push(name);
                         this.datacenters.push("All datacenters")
                         //console.log(items)
                         this.setState({
