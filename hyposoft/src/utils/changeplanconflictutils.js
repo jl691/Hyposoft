@@ -734,7 +734,7 @@ function editChangeCheck(changePlanID, thisStepID, thisStepNum, otherStepNum, ca
                         let thisAssetID = thisStepData.assetId
                         console.log(otherAssetID, thisAssetID)
                         if (otherAssetID == thisAssetID && otherAssetID !== "" && thisAssetID !== "") {
-                            errorIDSet.add("decommissionStepErrID")
+                            errorIDSet.add("editNonexistentErrID")
                             
                             addConflictToDBSteps(changePlanID, thisStepID, thisStepNum, null, otherStepNum, errorIDSet, status => {
 
@@ -1161,32 +1161,26 @@ function getErrorMessages(changePlanID, stepNum, callback) {
 function changePlanHasConflicts(changePlanID, callback) {
     changeplansRef.doc(changePlanID).collection('conflicts').get().then(query => {
         let result = new Set()
-        let count = query.docs.length;
+        let count = 0;
+       console.log(query.size)
         if (query.docs.length) {
-
-            //if there are conflicts
-            //console.log(query.docs)
-
-            for (let i = 0; i < query.docs.length; i++) {
-
-                changeplansRef.doc(changePlanID).collection('changes').doc(query.docs[i].id).get().then(stepDoc => {
-
-                    let stepNum = stepDoc.data().step
+            query.docs.forEach(stepDoc => {
+                changeplansRef.doc(changePlanID).collection('changes').doc(stepDoc.id).get().then(changeStepDoc => {
+                    let stepNum = changeStepDoc.data().step
                     result.add(stepNum)
-                    count--;
-                    if (count == 0) {
+                    count++;
+                    if (count === query.size) {
                         //console.log("This is the result set size: " + result.size)
                         let sortedResult = [...(result)].sort()
+                        console.log("CALLING BACK")
                         callback(sortedResult)
                     }
 
                 }).catch(error => console.log(error))
-
-            }
-
+            })
         }
         else {
-            callback(result)
+            callback([])
         }
     })
 
