@@ -18,6 +18,7 @@ class DeleteChangeForm extends React.Component {
                         <Box direction="row">
                             <Button label="Delete" icon={<Trash/>} onClick={() => {
                                 changeplanutils.deleteChange(this.props.changePlanID, this.props.stepNumber, status => {
+                                    console.log(status);
                                     if (status) {
                                         this.props.forceRefresh(true);
                                         //this.props.genConflict()
