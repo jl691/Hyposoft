@@ -539,6 +539,9 @@ function decommissionAssetChangePlanPackage(changePlanID, stepID, callback) {
 
 
             }
+            else{
+                callback()
+            }
         })
     })
 }
@@ -728,8 +731,8 @@ function editChangeCheck(changePlanID, thisStepID, thisStepNum, otherStepNum, ca
                         //trying to edit an asset that was decomm in a previous step
                         let errorIDSet = new Set()
                         let otherAssetID = otherStepDoc.data().assetID
-                        let thisAssetID = thisStepData.assetID
-                        //console.log(otherAssetID, thisAssetID)
+                        let thisAssetID = thisStepData.assetId
+                        console.log(otherAssetID, thisAssetID)
                         if (otherAssetID == thisAssetID && otherAssetID !== "" && thisAssetID !== "") {
                             errorIDSet.add("decommissionStepErrID")
                             
@@ -878,6 +881,7 @@ function networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, o
     let errorIDSet = new Set()
     let thisNetworkConnections = isEdit ? thisStepData.networkConnections : thisStepData.changes.networkConnections.new //this is a map object since we are getting it from changeplans
     //three things to check for, each with own errID (double check messages say correct thing in JSON)
+    let thisAssetID = isEdit? thisStepData.assetId : thisStepData.assetID
 
     Object.keys(otherNetworkConnections).forEach(otherConnKey => {
         Object.keys(thisNetworkConnections).forEach(thisConnKey => {
@@ -892,7 +896,7 @@ function networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, o
 
             }
             //3 does my current thisPort match with another step's otherport?
-            else if (thisConnKey === otherConnKey && otherAssetID === thisStepData.assetID && otherAssetID !== "" && thisStepData.assetID !== "") {
+            else if (thisConnKey === otherConnKey && otherAssetID === thisAssetID && otherAssetID !== "" && thisAssetID !== "") {
                 errorIDSet.add("networkConnectionThisPortConflictErrID")
             }
 
@@ -913,6 +917,7 @@ function networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, o
 //networkConnections is an array
 function networkConnectionOtherAssetIDStep(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, thisNetworkConnections, otherStepAssetID, thisStepNum, callback) {
     let errorIDSet = new Set();
+    let count = 0;
 
     if (!thisNetworkConnections.size) {
         callback(false)
@@ -921,14 +926,17 @@ function networkConnectionOtherAssetIDStep(changePlanID, thisStepID, otherStepID
         if (thisNetworkConnections[thisConnThisPort].otherAssetID == otherStepAssetID) {
             errorIDSet.add("networkConnectionOtherAssetIDErrID")
             errorIDSet.add("networkConnectionNonExistentOtherPortErrID")
+            count++;
+            if(count === this.networkConnections.length){
+                addConflictToDBSteps(changePlanID, thisStepID, thisStepNum, null, otherStepNum, errorIDSet, status => {
+                    callback(status)
+                })
+
+            } 
         }
 
     })
-
-    addConflictToDBSteps(changePlanID, thisStepID, thisStepNum, null, otherStepNum, errorIDSet, status => {
-        callback(status)
-    })
-
+ 
 }
 
 //TODO: need to test this
@@ -1195,6 +1203,8 @@ function checkAllLiveDBConflicts(isExecuted, changePlanID, callback) {
 
                     checkLiveDBConflicts(isExecuted, changePlanID, stepNum, status => {
                         counter++;
+                        console.log(collectionDoc.size)
+                        console.log(counter)
                         if (counter === collectionDoc.size) {
                             console.log("Done with live db conflict checks for this change plan.")
                             console.log("DID THIS SHIT FUCKING WORK")

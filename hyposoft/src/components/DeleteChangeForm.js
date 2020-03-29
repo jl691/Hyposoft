@@ -21,7 +21,6 @@ class DeleteChangeForm extends React.Component {
                                     console.log(status);
                                     if (status) {
                                         this.props.forceRefresh(true);
-                                        //this.props.genConflict()
                                         ToastsStore.success('Successfully deleted!');
                                     } else {
                                         ToastsStore.error('Failed to delete change. Please try again.');
