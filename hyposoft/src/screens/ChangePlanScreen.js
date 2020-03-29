@@ -112,7 +112,7 @@ class ChangePlanScreen extends React.Component {
                                     this.itemCount = newItemCount;
                                     this.startAfter = newStart;
                                     this.setState({
-                                        changePlans: changePlans,
+                                        changePlans: this.state.changePlans.concat(changePlans),
                                     });
                                 }
                             }, this.startAfter);
