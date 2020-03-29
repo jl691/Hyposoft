@@ -11,6 +11,10 @@ import { racksRef } from "./firebaseutils";
 import { firebase } from "./firebaseutils";
 import * as assetIDutils from "./assetidutils";
 
+const algoliasearch = require('algoliasearch')
+const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
+const index = client.initIndex('assets')
+
 function getChangePlans(itemCount, username, callback, start = null) {
     console.log(username)
     let query = start ? firebaseutils.changeplansRef.where("owner", "==", username).orderBy("name").startAfter(start).limit(25) : firebaseutils.changeplansRef.where("owner", "==", username).orderBy("name").limit(25);
@@ -773,11 +777,11 @@ function executeChangePlan(changePlanID, callback) {
                             if (resultAdd) {
                                 count++;
                                 if (count === querySnapshot.size) {
-                                    logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
                                     changeplansRef.doc(changePlanID.toString()).update({
                                         executed: true,
                                         timestamp: Date.now()
                                     }).then(function () {
+                                        logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
                                         callback(true);
                                     }).catch(function () {
                                         callback(null);
@@ -799,6 +803,7 @@ function executeChangePlan(changePlanID, callback) {
                                             executed: true,
                                             timestamp: Date.now()
                                         }).then(function () {
+                                            logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
                                             callback(true);
                                         }).catch(function () {
                                             callback(null);
@@ -820,6 +825,7 @@ function executeChangePlan(changePlanID, callback) {
                                     executed: true,
                                     timestamp: Date.now()
                                 }).then(function () {
+                                    logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
                                     callback(true);
                                 }).catch(function () {
                                     callback(null);
@@ -840,6 +846,7 @@ function executeChangePlan(changePlanID, callback) {
                                     executed: true,
                                     timestamp: Date.now()
                                 }).then(function () {
+                                    logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
                                     callback(true);
                                 }).catch(function () {
                                     callback(null);
@@ -890,6 +897,47 @@ function executeAddAsset(id, doc, changePlanID, callback) {
                                         assetID: id
                                     })))
                                 }).then(function () {
+                                    let suffixes_list = []
+                                    let _model = assetObject.model
+
+                                    while (_model.length > 1) {
+                                        _model = _model.substr(1)
+                                        suffixes_list.push(_model)
+                                    }
+
+                                    let _hostname = assetObject.hostname
+
+                                    while (_hostname.length > 1) {
+                                        _hostname = _hostname.substr(1)
+                                        suffixes_list.push(_hostname)
+                                    }
+
+                                    let _datacenter = assetObject.datacenter
+
+                                    while (_datacenter.length > 1) {
+                                        _datacenter = _datacenter.substr(1)
+                                        suffixes_list.push(_datacenter)
+                                    }
+
+                                    let _datacenterAbbrev = assetObject.datacenterAbbrev
+
+                                    while (_datacenterAbbrev.length > 1) {
+                                        _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                                        suffixes_list.push(_datacenterAbbrev)
+                                    }
+                                    let _owner = assetObject.owner
+
+                                    while (_owner.length > 1) {
+                                        _owner = _owner.substr(1)
+                                        suffixes_list.push(_owner)
+                                    }
+
+                                    index.saveObject({
+                                        ...assetObject,
+                                        objectID: id,
+                                        suffixes: suffixes_list.join(' ')
+                                    })
+
                                     console.log("Document successfully updated in racks");
                                     logutils.addLog(id, logutils.ASSET(), logutils.CREATE())
                                     callback(true);
@@ -949,6 +997,46 @@ function executeEditAsset(doc, callback) {
                                 assetutils.replaceAssetRack(oldRackID, newRackID, oldPowerPorts, newPowerPorts, doc.data().assetID, null, replaceResult => {
                                     if (replaceResult) {
                                         assetRef.doc(String(doc.data().assetID)).update(assetObject).then(function () {
+                                            let suffixes_list = []
+                                            let _model = assetObject.model
+
+                                            while (_model.length > 1) {
+                                                _model = _model.substr(1)
+                                                suffixes_list.push(_model)
+                                            }
+
+                                            let _hostname = assetObject.hostname
+
+                                            while (_hostname.length > 1) {
+                                                _hostname = _hostname.substr(1)
+                                                suffixes_list.push(_hostname)
+                                            }
+
+                                            let _datacenter = assetObject.datacenter
+
+                                            while (_datacenter.length > 1) {
+                                                _datacenter = _datacenter.substr(1)
+                                                suffixes_list.push(_datacenter)
+                                            }
+
+                                            let _datacenterAbbrev = assetObject.datacenterAbbrev
+
+                                            while (_datacenterAbbrev.length > 1) {
+                                                _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                                                suffixes_list.push(_datacenterAbbrev)
+                                            }
+                                            let _owner = assetObject.owner
+
+                                            while (_owner.length > 1) {
+                                                _owner = _owner.substr(1)
+                                                suffixes_list.push(_owner)
+                                            }
+
+                                            index.saveObject({
+                                                ...assetObject,
+                                                objectID: doc.data().assetID,
+                                                suffixes: suffixes_list.join(' ')
+                                            })
                                             console.log("Updated model successfully")
                                             logutils.addLog(String(doc.data().assetID), logutils.ASSET(), logutils.MODIFY(), assetData)
                                             callback(true);
