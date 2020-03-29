@@ -228,7 +228,7 @@ class DetailedChangePlanScreen extends React.Component {
                                 if (!empty && newStart) {
                                     this.startAfter = newStart;
                                     this.setState({
-                                        changes: changes,
+                                        changes: this.state.changes.concat(changes),
                                     });
                                 }
                             }, this.startAfter);

@@ -68,7 +68,7 @@ const hostnameConflict = (changePlanID, stepID, assetID, hostname, callback) => 
 
         if (!docSnaps.empty && hostname !== "" && docSnaps.docs[0].data().assetId !== assetID) {
 
-            errorIDSet.add("hostnameErrID")
+            errorIDSet.add("hostnameDBErrID")
 
             addConflictToDBDatabase(changePlanID, stepID, "hostname", errorIDSet, status => {
                 callback(status)
@@ -117,7 +117,7 @@ const assetIDConflict = (changePlanID, stepID, assetID, callback, isEdit = null)
                     callback(false)
                 }
                 else {
-                    errorIDSet.add("assetIDErrID")
+                    errorIDSet.add("assetIDDBErrID")
                     addConflictToDBDatabase(changePlanID, stepID, "assetID", errorIDSet, status => {
                         callback(status)
                     })
@@ -191,7 +191,7 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, rackNam
                             rackutils.checkAssetFits(rackU, doc.data().height, rackID, async function (status) {
                                 if (status && status.length) {
                                     //asset conflicts with other assets
-                                    errorIDSet.add("rackUConflictErrID")
+                                    errorIDSet.add("rackUConflictDBErrID")
                                     addConflictToDBDatabase(changePlanID, stepID, "rackU", errorIDSet, status => {
                                         //console.log(status)
                                         callback(status)
@@ -237,7 +237,7 @@ const powerConnectionOccupied = (datacenter, rack, rackU, pduSide, port, errorID
     assetpowerportutils.checkConflicts(datacenter, rack, rackU, pduSide, port, async function (status) {
         //console.log("powerportutils checkConflict callback: " + status)
         if (status) {
-            errorIDSet.add("powerConnectionConflictErrID")
+            errorIDSet.add("powerConnectionConflictDBErrID")
 
         }
         callback()
@@ -290,7 +290,7 @@ const networkConnectionConflict = (changePlanID, stepID, networkConnections, old
             if (!otherAssetStatus) {
                 //trying to connect to a nonexistent asset
                 //Don't do some checks, because it will error out because of the query.
-                errorIDSet.add("networkConnectionNonExistentOtherPortErrID")
+                errorIDSet.add("networkConnectionNonExistentOtherPortDBErrID")
                 console.log([...Object.entries(errorIDSet)])
                 addConflictToDBDatabase(changePlanID, stepID, "networkConnections", errorIDSet, status => {
                     if (count === networkConnections.length) {
@@ -322,7 +322,7 @@ function networkConnectionOtherAssetPortExist(otherAssetID, otherPort, errorIDSe
     assetnetworkportutils.checkOtherAssetPortsExist(otherAssetID, otherPort, status => {
         console.log(status)
         if (status) {
-            errorIDSet.add("networkConnectionNonExistentOtherPortErrID")
+            errorIDSet.add("networkConnectionNonExistentOtherPortDBErrID")
         }
         //if timing is weird or unit tests keep failing randomly, move this callback
         callback()
@@ -336,7 +336,7 @@ function networkConnectionConflictsHelper(oldNetworkConnections, thisPort, other
         console.log(status)
         if (status) {
             // console.log(status)
-            errorIDSet.add("networkConnectionConflictErrID")
+            errorIDSet.add("networkConnectionConflictDBErrID")
         }
         callback()
     }, oldNetworkConnections)
@@ -348,7 +348,7 @@ function networkConnectionConflictsHelper(oldNetworkConnections, thisPort, other
 function networkConnectionOtherAssetID(otherAssetID, errorIDSet, callback) {
     assetRef.doc(otherAssetID).get().then(function (otherAssetModelDoc) {
         if (!otherAssetModelDoc.exists) {
-            errorIDSet.add("networkConnectionOtherAssetIDErrID")
+            errorIDSet.add("networkConnectionOtherAssetIDDBErrID")
             callback(false)
 
         }
@@ -892,7 +892,7 @@ function networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, o
             //2 does my current otherAssetID, otherPort match with another step's assetID and thisPort?
             //otherAssetID, otherPort conflict check
             if (thisConnOtherAssetID === otherConnOtherAssetID && thisConnOtherPort === otherConnOtherPort) {
-                errorIDSet.add("networkConnectionConflictErrID")
+                errorIDSet.add("networkConnectionConflictStepErrID")
 
             }
             //3 does my current thisPort match with another step's otherport?
@@ -924,8 +924,8 @@ function networkConnectionOtherAssetIDStep(changePlanID, thisStepID, otherStepID
     }
     Object.keys(thisNetworkConnections).forEach(thisConnThisPort => {
         if (thisNetworkConnections[thisConnThisPort].otherAssetID == otherStepAssetID) {
-            errorIDSet.add("networkConnectionOtherAssetIDErrID")
-            errorIDSet.add("networkConnectionNonExistentOtherPortErrID")
+            errorIDSet.add("networkConnectionOtherAssetIDStepErrID")
+            errorIDSet.add("networkConnectionNonExistentOtherPortStepErrID")
             count++;
             if(count === this.networkConnections.length){
                 addConflictToDBSteps(changePlanID, thisStepID, thisStepNum, null, otherStepNum, errorIDSet, status => {
@@ -956,7 +956,7 @@ function powerConnectionsStepConflict(changePlanID, thisStepID, otherStepID, oth
                 let otherPort = otherPowerConnections[j].port
 
                 if (thisPort == otherPort && thisPduSide == otherPduSide) {
-                    errorIDSet.add("powerConnectionConflictErrID")
+                    errorIDSet.add("powerConnectionConflictStepErrID")
                 }
             }
         }
@@ -974,7 +974,7 @@ function assetIDStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum
     let thisAssetID = isEdit ? thisStepData.assetId : thisStepData.assetID //Id vs ID is important
 
     if (thisAssetID.toString() === otherAssetID.toString() && thisAssetID !== "" && otherAssetID !== "") {
-        errorIDSet.add("assetIDErrID")
+        errorIDSet.add("assetIDStepErrID")
         addConflictToDBSteps(changePlanID, thisStepID, thisStepNum, otherStepID, otherStepNum, errorIDSet, status => {
             callback(status)
         })
@@ -990,13 +990,13 @@ function hostnameStepConflict(changePlanID, thisStepID, otherStepID, otherStepNu
 
 
     if (thisHostname === otherHostname && thisAssetID !== otherAssetID && isEdit) {
-        errorIDSet.add("hostnameErrID")
+        errorIDSet.add("hostnameStepErrID")
         addConflictToDBSteps(changePlanID, thisStepID, thisStepNum, otherStepID, otherStepNum, errorIDSet, status => {
             callback(status)
         })
     }
     else if(thisHostname === otherHostname && !isEdit){
-        errorIDSet.add("hostnameErrID")
+        errorIDSet.add("hostnameStepErrID")
         addConflictToDBSteps(changePlanID, thisStepID, thisStepNum, otherStepID, otherStepNum, errorIDSet, status => {
             callback(status)
         })
@@ -1035,7 +1035,7 @@ function rackUStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, 
                 let intersection = thisOccupied.filter(x => otherOccupied.includes(x));
                 if (intersection.length) {
 
-                    errorIDSet.add("rackUConflictErrID")
+                    errorIDSet.add("rackUConflictStepErrID")
                     addConflictToDBSteps(changePlanID, thisStepID, thisStepNum, otherStepID, otherStepNum, errorIDSet, status => {
                         callback(status)
                     })
