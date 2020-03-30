@@ -8,11 +8,12 @@ const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
 const index = client.initIndex('assets')
 
 function validateImportedAssets (data, callback) {
-    var tasksPending = 4 // Assets, users, datacenters+racks, models
+    var tasksPending = 5 // Assets, users, datacenters+racks, models, decommissioned assets
     var errors = []
     var toBeAdded = []
     var toBeIgnored = []
     var toBeModified = []
+    var decommissionedAssetIds = []
 
     var assetsLoaded = {} // asset id => asset
     var hostnamesToId = {} // hostname => asset id
@@ -68,6 +69,8 @@ function validateImportedAssets (data, callback) {
                 errors = [...errors, [i + 1, 'Asset number invalid format']]
             } else if (parseInt(String(datum.asset_number).trim()) > 999999 || parseInt(String(datum.asset_number).trim()) < 100000) {
                 errors = [...errors, [i + 1, 'Asset number not in range 100000-999999']]
+            } else if (decommissionedAssetIds.includes(datum.asset_number)) {
+                errors = [...errors, [i + 1, 'A decommissioned asset with this asset number exists (you cannot modify decommissioned assets)']]
             }
 
             if (assetNumbersSeenInImport.includes(datum.asset_number)) {
@@ -230,6 +233,15 @@ function validateImportedAssets (data, callback) {
         // At this point we're done with all validation
         callback({ errors, toBeIgnored, toBeAdded, toBeModified })
     }
+
+    firebaseutils.decommissionRef.get().then(qs => {
+        for (var i = 0; i < qs.size; i++) {
+            const assetID = qs.docs[i].data().assetId
+            decommissionedAssetIds.push(assetID)
+            unusedIds.pop(assetID)
+        }
+        postTaskCompletion()
+    })
 
     firebaseutils.assetRef.get().then(qs => {
         for (var i = 0; i < qs.size; i++) {
