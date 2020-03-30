@@ -17,7 +17,7 @@ const index = client.initIndex('assets')
 
 function getChangePlans(itemCount, username, callback, start = null) {
     console.log(username)
-    let query = start ? firebaseutils.changeplansRef.where("owner", "==", username).orderBy("name").startAfter(start).limit(25) : firebaseutils.changeplansRef.where("owner", "==", username).orderBy("name").limit(25);
+    let query = start ? firebaseutils.changeplansRef.where("owner", "==", username).orderBy("executed").orderBy("name").startAfter(start).limit(25) : firebaseutils.changeplansRef.where("owner", "==", username).orderBy("executed").orderBy("name").limit(25);
     query.get().then(function (querySnapshot) {
         if (querySnapshot.empty) {
             callback(null, null, null, true);
