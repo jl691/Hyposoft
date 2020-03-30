@@ -187,6 +187,18 @@ function updateEveryonesAssetPermissions () {
                     user.ref.update({
                         permissions: newPermissions
                     })
+
+                    if (user.id === localStorage.getItem('userDocId')) {
+                        const userObject = user.data()
+                        localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(
+                            userObject.displayName+userObject.username+userObject.email+JSON.stringify(userObject.permissions)))
+                        localStorage.setItem('displayName', userObject.displayName)
+                        localStorage.setItem('username', userObject.username)
+                        localStorage.setItem('email', userObject.email)
+                        localStorage.setItem('userDocId', userObject.docId)
+                        localStorage.setItem('isNetIDAccount', userObject.password.trim() === '' ? 'yes' : 'no')
+                        localStorage.setItem('permissions', JSON.stringify(newPermissions))
+                    }
                 }
             })
         })
