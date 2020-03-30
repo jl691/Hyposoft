@@ -237,6 +237,9 @@ function doesObjectStillExist(objectType,objectId,callback) {
                 })
             })
             break
+        case CHANGEPLAN():
+            firebaseutils.changeplansRef.doc(objectId).get().then(doc => callback(doc.exists,true))
+            break
         case MODEL():
             firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.exists,true))
             break

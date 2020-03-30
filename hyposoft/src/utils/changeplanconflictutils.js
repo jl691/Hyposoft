@@ -539,7 +539,7 @@ function decommissionAssetChangePlanPackage(changePlanID, stepID, callback) {
 
 
             }
-            else{
+            else {
                 callback()
             }
         })
@@ -582,27 +582,33 @@ function checkSequentialStepConflicts(executed, changePlanID, callback) {
     let counter = 0;
     if (!executed) {
         changeplansRef.doc(changePlanID).collection('changes').get().then(querySnapshot => {
-            for (let i = 0; i < querySnapshot.size; i++) {
-                let thisStepID = querySnapshot.docs[i].id
-                //console.log(thisStepID)
-                changeplansRef.doc(changePlanID).collection('changes').doc(thisStepID).get().then(docSnap => {
-                    let thisStepNum = docSnap.data().step
-                    console.log("ON CURRENT STEP " + thisStepNum)
-                    if (thisStepNum > 1) {
-                        checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, status => {
-                            counter++
-                            if (counter === querySnapshot.size - 1) {
+
+            if (querySnapshot.size) {
+                for (let i = 0; i < querySnapshot.size; i++) {
+                    let thisStepID = querySnapshot.docs[i].id
+                    //console.log(thisStepID)
+                    changeplansRef.doc(changePlanID).collection('changes').doc(thisStepID).get().then(docSnap => {
+                        let thisStepNum = docSnap.data().step
+                        console.log("ON CURRENT STEP " + thisStepNum)
+                        if (thisStepNum > 1) {
+                            checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, status => {
+                                counter++
+                                if (counter === querySnapshot.size - 1) {
+                                    callback()
+                                }
+                            })
+                        } else {//if there is only 1 step in the plan, callback
+
+                            if (querySnapshot.size === 1) {
                                 callback()
                             }
-                        })
-                    } else {//if there is only 1 step in the plan, callback
 
-                        if (querySnapshot.size === 1) {
-                            callback()
                         }
-
-                    }
-                })
+                    })
+                }
+            }
+            else {
+                callback() //there are no changes
             }
         })
     }
@@ -734,8 +740,8 @@ function editChangeCheck(changePlanID, thisStepID, thisStepNum, otherStepNum, ca
                         let thisAssetID = thisStepData.assetId
                         console.log(otherAssetID, thisAssetID)
                         if (otherAssetID == thisAssetID && otherAssetID !== "" && thisAssetID !== "") {
-                            errorIDSet.add("decommissionStepErrID")
-                            
+                            errorIDSet.add("editNonexistentErrID")
+
                             addConflictToDBSteps(changePlanID, thisStepID, thisStepNum, null, otherStepNum, errorIDSet, status => {
 
                                 let thisNetworkConnections = thisStepData.networkConnections
@@ -881,7 +887,7 @@ function networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, o
     let errorIDSet = new Set()
     let thisNetworkConnections = isEdit ? thisStepData.networkConnections : thisStepData.changes.networkConnections.new //this is a map object since we are getting it from changeplans
     //three things to check for, each with own errID (double check messages say correct thing in JSON)
-    let thisAssetID = isEdit? thisStepData.assetId : thisStepData.assetID
+    let thisAssetID = isEdit ? thisStepData.assetId : thisStepData.assetID
 
     Object.keys(otherNetworkConnections).forEach(otherConnKey => {
         Object.keys(thisNetworkConnections).forEach(thisConnKey => {
@@ -927,16 +933,16 @@ function networkConnectionOtherAssetIDStep(changePlanID, thisStepID, otherStepID
             errorIDSet.add("networkConnectionOtherAssetIDStepErrID")
             errorIDSet.add("networkConnectionNonExistentOtherPortStepErrID")
             count++;
-            if(count === this.networkConnections.length){
+            if (count === this.networkConnections.length) {
                 addConflictToDBSteps(changePlanID, thisStepID, thisStepNum, null, otherStepNum, errorIDSet, status => {
                     callback(status)
                 })
 
-            } 
+            }
         }
 
     })
- 
+
 }
 
 //TODO: need to test this
@@ -995,7 +1001,7 @@ function hostnameStepConflict(changePlanID, thisStepID, otherStepID, otherStepNu
             callback(status)
         })
     }
-    else if(thisHostname === otherHostname && !isEdit){
+    else if (thisHostname === otherHostname && !isEdit) {
         errorIDSet.add("hostnameStepErrID")
         addConflictToDBSteps(changePlanID, thisStepID, thisStepNum, otherStepID, otherStepNum, errorIDSet, status => {
             callback(status)
@@ -1161,32 +1167,26 @@ function getErrorMessages(changePlanID, stepNum, callback) {
 function changePlanHasConflicts(changePlanID, callback) {
     changeplansRef.doc(changePlanID).collection('conflicts').get().then(query => {
         let result = new Set()
-        let count = query.docs.length;
+        let count = 0;
+       // console.log(query.size)
         if (query.docs.length) {
-
-            //if there are conflicts
-            //console.log(query.docs)
-
-            for (let i = 0; i < query.docs.length; i++) {
-
-                changeplansRef.doc(changePlanID).collection('changes').doc(query.docs[i].id).get().then(stepDoc => {
-
-                    let stepNum = stepDoc.data().step
+            query.docs.forEach(stepDoc => {
+                changeplansRef.doc(changePlanID).collection('changes').doc(stepDoc.id).get().then(changeStepDoc => {
+                    let stepNum = changeStepDoc.data().step
                     result.add(stepNum)
-                    count--;
-                    if (count == 0) {
+                    count++;
+                    if (count === query.size) {
                         //console.log("This is the result set size: " + result.size)
                         let sortedResult = [...(result)].sort()
+                        console.log("CALLING BACK")
                         callback(sortedResult)
                     }
 
                 }).catch(error => console.log(error))
-
-            }
-
+            })
         }
         else {
-            callback(result)
+            callback([])
         }
     })
 

@@ -116,6 +116,8 @@ class LogScreen extends Component {
                         if (exists) {
                             if (datum.objectType === logutils.MODEL()) {
                                 this.props.history.push('/models/'+datum.currentData.vendor+'/'+datum.currentData.modelNumber)
+                            } else if (datum.objectType === logutils.CHANGEPLAN()) {
+                                this.props.history.push('/changeplans/'+datum.objectId)
                             } else if (datum.objectType === logutils.ASSET() || datum.objectType === logutils.PDU()) {
                                 if (!deployed) {
                                     this.props.history.push('/decommissioned/'+datum.objectId)

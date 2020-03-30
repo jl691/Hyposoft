@@ -456,48 +456,49 @@ function bulkModifyAssets (assets, callback) {
             })
 
             const updates = updatesss[ds.data().assetId]
+            logutils.getObjectData(String(asset.asset_number), logutils.ASSET(), oldData => {
+              firebaseutils.assetRef.doc(ds.data().assetId).update(updates).then(() => {
+                  // Add to algolia index
+                  var assetObject = Object.assign({}, ds.data(), updates)
+                  let suffixes_list = []
+                  let _model = assetObject.model
 
-            firebaseutils.assetRef.doc(ds.data().assetId).update(updates).then(() => {
-                // Add to algolia index
-                var assetObject = Object.assign({}, ds.data(), updates)
-                let suffixes_list = []
-                let _model = assetObject.model
+                  while (_model.length > 1) {
+                      _model = _model.substr(1)
+                      suffixes_list.push(_model)
+                  }
 
-                while (_model.length > 1) {
-                    _model = _model.substr(1)
-                    suffixes_list.push(_model)
-                }
+                  let _hostname = assetObject.hostname
 
-                let _hostname = assetObject.hostname
+                  while (_hostname.length > 1) {
+                      _hostname = _hostname.substr(1)
+                      suffixes_list.push(_hostname)
+                  }
 
-                while (_hostname.length > 1) {
-                    _hostname = _hostname.substr(1)
-                    suffixes_list.push(_hostname)
-                }
+                  let _datacenter = assetObject.datacenter
 
-                let _datacenter = assetObject.datacenter
+                  while (_datacenter.length > 1) {
+                      _datacenter = _datacenter.substr(1)
+                      suffixes_list.push(_datacenter)
+                  }
 
-                while (_datacenter.length > 1) {
-                    _datacenter = _datacenter.substr(1)
-                    suffixes_list.push(_datacenter)
-                }
+                  let _datacenterAbbrev = assetObject.datacenterAbbrev
 
-                let _datacenterAbbrev = assetObject.datacenterAbbrev
+                  while (_datacenterAbbrev.length > 1) {
+                      _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                      suffixes_list.push(_datacenterAbbrev)
+                  }
+                  let _owner = assetObject.owner
 
-                while (_datacenterAbbrev.length > 1) {
-                    _datacenterAbbrev = _datacenterAbbrev.substr(1)
-                    suffixes_list.push(_datacenterAbbrev)
-                }
-                let _owner = assetObject.owner
+                  while (_owner.length > 1) {
+                      _owner = _owner.substr(1)
+                      suffixes_list.push(_owner)
+                  }
 
-                while (_owner.length > 1) {
-                    _owner = _owner.substr(1)
-                    suffixes_list.push(_owner)
-                }
+                  index.saveObject({ ...assetObject, objectID: ds.id, suffixes: suffixes_list.join(' ') })
 
-                index.saveObject({ ...assetObject, objectID: ds.id, suffixes: suffixes_list.join(' ') })
-
-                logutils.addLog(String(asset.asset_number), logutils.ASSET(), logutils.MODIFY(), assetObject)
+                  logutils.addLog(String(asset.asset_number), logutils.ASSET(), logutils.MODIFY(), oldData)
+              })
             })
         })
     })
