@@ -302,9 +302,11 @@ class PortScreen extends Component {
                             gap='small'
                             pad={{top: 'medium', left: 'medium', right: 'medium'}} >
                             <Button primary label="Export Models" onClick={this.exportModels}/>
-                            <Button label="Import Models" onClick={this.importModelsButtonClicked}/>
-
-                            <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={() => {}} href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Need documentation for file format?</Anchor>
+                            { userutils.doesLoggedInUserHaveModelPerm() ?
+                                [<Button label="Import Models" onClick={this.importModelsButtonClicked}/>,
+                                <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={() => this.setState(oldState => ({...oldState, showFormatDocumentationModels: true}))}>Need documentation for file format?</Anchor>]
+                                : [<p style={{textAlign: 'center'}}>Sorry, you can't import models because you don't have model management permissions.</p>]
+                            }
                         </Box>
                     </Box>
                     <Box direction='row'
@@ -325,9 +327,11 @@ class PortScreen extends Component {
                             gap='small'
                             pad={{top: 'medium', left: 'medium', right: 'medium'}} >
                             <Button primary label="Export Assets" onClick={this.exportAssets}/>
-                            <Button label="Import Assets" onClick={this.importAssetsButtonClicked}/>
-
-                            <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={() => {}} href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Need documentation for file format?</Anchor>
+                            { userutils.doesLoggedInUserHaveAnyAssetPermsAtAll() ?
+                                [<Button label="Import Assets" onClick={this.importAssetsButtonClicked}/>,
+                                <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={() => {}}>Need documentation for file format?</Anchor>]
+                                : [<p style={{textAlign: 'center'}}>Sorry, you can't import assets because you don't have asset management permissions for any datacenter.</p>]
+                            }
                         </Box>
                     </Box>
                     <Box direction='row'
@@ -348,18 +352,20 @@ class PortScreen extends Component {
                             gap='small'
                             pad={{top: 'medium', left: 'medium', right: 'medium'}} >
                             <Button primary label="Export Network Connections" onClick={this.exportConnections}/>
-                            <Button label="Import Network Connections" onClick={this.importNetconnButtonClicked}/>
-
-                            <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={() => {}} href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Need documentation for file format?</Anchor>
+                            { userutils.doesLoggedInUserHaveAnyAssetPermsAtAll() ?
+                                [<Button label="Import Network Connections" onClick={this.importNetconnButtonClicked}/>,
+                                <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={() => {}}>Need documentation for file format?</Anchor>]
+                                : [<p style={{textAlign: 'center'}}>Sorry, you can't import connections because you don't have asset management permissions for any datacenter.</p>]
+                            }
                         </Box>
                     </Box>
                 </Box>
                 <ToastsContainer store={ToastsStore} lightBackground/>
-                {this.state.showFormatDocumentation && (
-                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState => ({...oldState, showFormatDocumentation: false}))}} onEsc={()=>{this.setState(oldState => ({...oldState, showFormatDocumentation: false}))}}>
+                {this.state.showFormatDocumentationModels && (
+                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState => ({...oldState, showFormatDocumentationModels: false}))}} onEsc={()=>{this.setState(oldState => ({...oldState, showFormatDocumentationModels: false}))}}>
                         <Box pad="medium" gap="small" width="large">
                             <Heading level={4} margin="none">
-                                Import File Format Documentation
+                                Import File Format Documentation for Models
                             </Heading>
                             <Box
                                 margin={{top: 'small'}}
