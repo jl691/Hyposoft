@@ -373,7 +373,8 @@ class DetailedChangePlanScreen extends React.Component {
                         count++
                         if (count === conflictsArray.length) {
                             this.hasConflicts = true;
-                            callback(this.errMessage)
+                            let errMessage = this.errMessage
+                            callback(errMessage)
 
                         }
                     }
