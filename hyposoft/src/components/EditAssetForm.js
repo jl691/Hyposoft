@@ -48,7 +48,7 @@ export default class EditAssetForm extends Component {
             editDeletedNetworkConnections: [],
             showPowerConnections: this.props.updatePowerConnectionsFromParent.length ? true : false
 
-        }
+        } 
         this.handleUpdate = this.handleUpdate.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.addNetworkConnection = this.addNetworkConnection.bind(this);
@@ -218,6 +218,7 @@ export default class EditAssetForm extends Component {
                 ToastsStore.error("Rack U must be positive.");
             }
             else {
+              
                 if (this.state.showPowerConnections) {
                     let existingConnections = [];
                     Object.keys(this.state.powerConnections).forEach(connection => {
@@ -237,6 +238,8 @@ export default class EditAssetForm extends Component {
                                             if (fixedAddr) {
                                                 console.log(fixedAddr)
                                                 console.log(this.props.changeDocID)
+                                                ToastsStore.info('Please wait...', 750);
+
                                                 assetutils.updateAsset(
                                                     this.state.asset_id,
                                                     this.state.model,
@@ -280,6 +283,7 @@ export default class EditAssetForm extends Component {
 
                                 if (fixedAddr) {
                                     console.log(fixedAddr)
+                                    ToastsStore.info('Please wait...', 750);
                                     assetutils.updateAsset(
                                         this.state.asset_id,
                                         this.state.model,

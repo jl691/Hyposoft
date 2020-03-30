@@ -176,15 +176,18 @@ function addAssetChange(asset, assetID, changePlanID, callback, docID = null) {
         changeplansRef.doc(changePlanID).collection("changes").doc(docID).get().then(function (docSnapInner) {
             if (docSnapInner.exists) {
                 assetChangePlanObject.step = docSnapInner.data().step;
-                changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject).then(function (doc) {
+                changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject)
+                // .then(function (doc) {
 
-                    callback(true);
-                }).then(function () {
+                //     callback(true);
+                // })
+                .then(function () {
                     changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
                         changeplanconflictutils.checkAllLiveDBConflicts(docSnapInner.data().executed, changePlanID, status2 => {
                             // console.log("Made it back from db checks")
                             changeplanconflictutils.checkSequentialStepConflicts(docSnapInner.data().executed, changePlanID, status3 => {
                                 console.log("DONE RECHECKING")
+                                callback(true);
 
                             })
                         })
@@ -205,19 +208,22 @@ function addAssetChange(asset, assetID, changePlanID, callback, docID = null) {
         changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
             let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
             assetChangePlanObject.step = changeNumber;
-            changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function (doc) {
-                //network ports need to be done at time of execution
-                //so does power port and logging
+            changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject)
+            // .then(function (doc) {
+            //     //network ports need to be done at time of execution
+            //     //so does power port and logging
 
-                //added the doc.id for change plan conflict checking: need to know which step we are checking
-                callback(true);
-            }).then(function () {
+            //     //added the doc.id for change plan conflict checking: need to know which step we are checking
+            //     callback(true);
+            // })
+            .then(function () {
                 getChangePlanData(changePlanID, cpData =>{
                 changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
                     changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
                         // console.log("Made it back from db checks")
                         changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
                             console.log("DONE RECHECKING")
+                            callback(true);
 
                         })
                     })
@@ -260,15 +266,18 @@ function editAssetChange(newAsset, assetID, changePlanID, callback, docID = null
                 changeplansRef.doc(changePlanID).collection("changes").doc(docID).get().then(function (docSnapInner) {
                     if (docSnapInner.exists) {
                         assetChangePlanObject.step = docSnapInner.data().step;
-                        changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject).then(function (doc) {
-                            callback(true);
-                        }).then(function () {
+                        changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject)
+                        // .then(function (doc) {
+                        //     callback(true);
+                        // })
+                        .then(function () {
                             changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
                                 //checking against liveDB not necessary, and only take more time
                                 changeplanconflictutils.checkAllLiveDBConflicts(docSnapInner.data().executed, changePlanID, status2 => {
                                     //     console.log("Made it back from db checks")
                                     changeplanconflictutils.checkSequentialStepConflicts(docSnapInner.data().executed, changePlanID, status3 => {
                                         console.log("DONE RECHECKING")
+                                        callback(true);
 
                                     })
                                 })
@@ -288,12 +297,14 @@ function editAssetChange(newAsset, assetID, changePlanID, callback, docID = null
                 changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
                     let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
                     assetChangePlanObject.step = changeNumber;
-                    changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function (doc) {
-                        //network ports need to be done at time of execution
-                        //so does power port and logging
-                        callback(true);
+                    changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject)
+                    // .then(function (doc) {
+                    //     //network ports need to be done at time of execution
+                    //     //so does power port and logging
+                    //     callback(true);
 
-                    }).then(function () {
+                    // })
+                    .then(function () {
                         
                         getChangePlanData(changePlanID, cpData =>{
                         changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
@@ -302,6 +313,7 @@ function editAssetChange(newAsset, assetID, changePlanID, callback, docID = null
                                 //     console.log("Made it back from db checks")
                                 changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
                                     console.log("DONE RECHECKING")
+                                    callback(true);
 
                                 })
                             })
@@ -372,9 +384,9 @@ function decommissionAssetChange(assetID, changePlanID, callback, stepID = null)
                         change: "decommission",
                         step: changeNumber
                     })
-                        .then(function () {
-                            callback(true);
-                        })
+                        // .then(function () {
+                        //     callback(true);
+                        // })
                         .then(function () {
                             getChangePlanData(changePlanID, cpData => {
 
@@ -384,6 +396,7 @@ function decommissionAssetChange(assetID, changePlanID, callback, stepID = null)
                                         changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
                                             console.log("DONE RECHECKING decomm")
                                             //callback(true)
+                                            callback(true);
 
                                         })
                                     })

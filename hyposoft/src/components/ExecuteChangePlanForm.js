@@ -8,7 +8,7 @@ import * as changeplanconflictutils from "../utils/changeplanconflictutils";
 class ExecuteChangePlanForm extends React.Component {
 
     render() {
-        return (
+        return ( 
             <React.Fragment>
                 <Layer onEsc={() => this.props.cancelPopup(true)}
                     onClickOutside={() => this.props.cancelPopup(true)}>
@@ -26,6 +26,7 @@ class ExecuteChangePlanForm extends React.Component {
                                     ToastsStore.error("Error executing change plan - there are conflicts.")
 
                                 } else {
+                                    ToastsStore.info('Please wait...', 7000);
                                     console.log("there were no conflcits in the change plan--executing")
                                     changeplanutils.executeChangePlan(this.props.id, result => {
                                         if (result) {
