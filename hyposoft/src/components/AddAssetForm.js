@@ -60,7 +60,7 @@ export default class AddAssetForm extends Component {
         this.deleteNetworkConnection = this.deleteNetworkConnection.bind(this)
         this.deletePowerConnection = this.deletePowerConnection.bind(this);
     }
-
+ 
     componentDidMount() {
         console.log(this.props.updateMacAddressesFromParent);
         let panel = document.getElementById("powerPortConnectionsPanel");
@@ -280,6 +280,7 @@ export default class AddAssetForm extends Component {
                 //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
             }
             else {
+                
                 if (this.state.showPowerConnections) {
                     let existingPowerConnections = [];
                     Object.keys(this.state.powerConnections).forEach(connection => {
@@ -295,6 +296,7 @@ export default class AddAssetForm extends Component {
                                         assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
                                             if (fixedAddr) {
+                                                ToastsStore.info('Please wait...', 750);
                                                 console.log(fixedAddr)
                                                 assetutils.addAsset(
                                                     this.state.asset_id,
@@ -338,6 +340,7 @@ export default class AddAssetForm extends Component {
 
                                 if (fixedAddr) {
                                     console.log(fixedAddr)
+                                    ToastsStore.info('Please wait...', 750);
                                     assetutils.addAsset(
                                         this.state.asset_id,
                                         this.state.model,

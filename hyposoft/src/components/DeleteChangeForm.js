@@ -18,8 +18,13 @@ class DeleteChangeForm extends React.Component {
                         <Box direction="row">
                             <Button label="Delete" icon={<Trash/>} onClick={() => {
                                 changeplanutils.deleteChange(this.props.changePlanID, this.props.stepNumber, status => {
+                                    //console.log(status);
                                     if (status) {
-                                        this.props.forceRefresh(true);
+                                        this.props.genConflict(this.props.changePlanID, done =>{
+                                            //console.log(done)
+                                            this.props.forceRefresh(true);
+                                        })
+                                       
                                         ToastsStore.success('Successfully deleted!');
                                     } else {
                                         ToastsStore.error('Failed to delete change. Please try again.');

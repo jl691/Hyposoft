@@ -8,11 +8,12 @@ const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
 const index = client.initIndex('assets')
 
 function validateImportedAssets (data, callback) {
-    var tasksPending = 4 // Assets, users, datacenters+racks, models
+    var tasksPending = 5 // Assets, users, datacenters+racks, models, decommissioned assets
     var errors = []
     var toBeAdded = []
     var toBeIgnored = []
     var toBeModified = []
+    var decommissionedAssetIds = []
 
     var assetsLoaded = {} // asset id => asset
     var hostnamesToId = {} // hostname => asset id
@@ -68,6 +69,8 @@ function validateImportedAssets (data, callback) {
                 errors = [...errors, [i + 1, 'Asset number invalid format']]
             } else if (parseInt(String(datum.asset_number).trim()) > 999999 || parseInt(String(datum.asset_number).trim()) < 100000) {
                 errors = [...errors, [i + 1, 'Asset number not in range 100000-999999']]
+            } else if (decommissionedAssetIds.includes(datum.asset_number)) {
+                errors = [...errors, [i + 1, 'A decommissioned asset with this asset number exists (you cannot modify decommissioned assets)']]
             }
 
             if (assetNumbersSeenInImport.includes(datum.asset_number)) {
@@ -142,8 +145,9 @@ function validateImportedAssets (data, callback) {
                 errors = [...errors, [i + 1, 'Power port connection 2 invalid']]
             }
 
-            const powerPortsNumber = existingModels[datum.vendor][datum.model_number].powerPorts
+            var powerPortsNumber = 0
             if (canTestForFit) {
+                powerPortsNumber = existingModels[datum.vendor][datum.model_number].powerPorts
                 if (!powerPortsNumber && (datum.power_port_connection_1 || datum.power_port_connection_2)) {
                     errors = [...errors, [i + 1, 'This model does not have any power ports']]
                     canTestForFit = false
@@ -181,15 +185,6 @@ function validateImportedAssets (data, callback) {
                         pduSide: datum.power_port_connection_1.charAt(0) === 'L' ? 'Left' : 'Right',
                         port: datum.power_port_connection_1.substring(1)
                     })
-                } else {
-                    if ((datum.asset_number in assetsLoaded) && assetsLoaded[datum.asset_number].powerConnections) {
-                        if (powerPortsNumber && powerPortsNumber >= 1){
-                            datum.power_connections.push({
-                                pduSide: null,
-                                port: null
-                            })
-                        }
-                    }
                 }
 
                 if (datum.power_port_connection_2) {
@@ -197,13 +192,6 @@ function validateImportedAssets (data, callback) {
                         pduSide: datum.power_port_connection_2.charAt(0) === 'L' ? 'Left' : 'Right',
                         port: datum.power_port_connection_2.substring(1)
                     })
-                } else {
-                    if ((datum.asset_number in assetsLoaded) && powerPortsNumber && powerPortsNumber > 1 && assetsLoaded[datum.asset_number].powerConnections) {
-                        datum.power_connections.push({
-                            pduSide: null,
-                            port: null
-                        })
-                    }
                 }
 
 
@@ -245,6 +233,15 @@ function validateImportedAssets (data, callback) {
         // At this point we're done with all validation
         callback({ errors, toBeIgnored, toBeAdded, toBeModified })
     }
+
+    firebaseutils.decommissionRef.get().then(qs => {
+        for (var i = 0; i < qs.size; i++) {
+            const assetID = qs.docs[i].data().assetId
+            decommissionedAssetIds.push(assetID)
+            unusedIds.pop(assetID)
+        }
+        postTaskCompletion()
+    })
 
     firebaseutils.assetRef.get().then(qs => {
         for (var i = 0; i < qs.size; i++) {
@@ -341,10 +338,11 @@ function bulkAddAssets (assets, callback) {
             modelNumber: asset.model_number,
             vendor: asset.vendor,
             rackRow: asset.rack.charAt(0).toUpperCase(),
-            rackNum: asset.rack.substring(1),
+            rackNum: parseInt(asset.rack.substring(1)),
             datacenter: asset.dcFN,
             datacenterID: asset.dcID,
-            datacenterAbbrev:  asset.datacenter
+            datacenterAbbrev:  asset.datacenter,
+            macAddresses: {}
         }
 
         firebaseutils.racksRef.doc(asset.rackID).update({
@@ -428,7 +426,7 @@ function bulkModifyAssets (assets, callback) {
 
         if (asset.rack) {
             updates.rackRow = asset.rack.charAt(0).toUpperCase()
-            updates.rackNum = asset.rack.substring(1)
+            updates.rackNum = parseInt(asset.rack.substring(1))
         }
 
         if (asset.dcFN) {
@@ -455,48 +453,49 @@ function bulkModifyAssets (assets, callback) {
             })
 
             const updates = updatesss[ds.data().assetId]
+            logutils.getObjectData(String(asset.asset_number), logutils.ASSET(), oldData => {
+              firebaseutils.assetRef.doc(ds.data().assetId).update(updates).then(() => {
+                  // Add to algolia index
+                  var assetObject = Object.assign({}, ds.data(), updates)
+                  let suffixes_list = []
+                  let _model = assetObject.model
 
-            firebaseutils.assetRef.doc(ds.data().assetId).update(updates).then(() => {
-                // Add to algolia index
-                var assetObject = Object.assign({}, ds.data(), updates)
-                let suffixes_list = []
-                let _model = assetObject.model
+                  while (_model.length > 1) {
+                      _model = _model.substr(1)
+                      suffixes_list.push(_model)
+                  }
 
-                while (_model.length > 1) {
-                    _model = _model.substr(1)
-                    suffixes_list.push(_model)
-                }
+                  let _hostname = assetObject.hostname
 
-                let _hostname = assetObject.hostname
+                  while (_hostname.length > 1) {
+                      _hostname = _hostname.substr(1)
+                      suffixes_list.push(_hostname)
+                  }
 
-                while (_hostname.length > 1) {
-                    _hostname = _hostname.substr(1)
-                    suffixes_list.push(_hostname)
-                }
+                  let _datacenter = assetObject.datacenter
 
-                let _datacenter = assetObject.datacenter
+                  while (_datacenter.length > 1) {
+                      _datacenter = _datacenter.substr(1)
+                      suffixes_list.push(_datacenter)
+                  }
 
-                while (_datacenter.length > 1) {
-                    _datacenter = _datacenter.substr(1)
-                    suffixes_list.push(_datacenter)
-                }
+                  let _datacenterAbbrev = assetObject.datacenterAbbrev
 
-                let _datacenterAbbrev = assetObject.datacenterAbbrev
+                  while (_datacenterAbbrev.length > 1) {
+                      _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                      suffixes_list.push(_datacenterAbbrev)
+                  }
+                  let _owner = assetObject.owner
 
-                while (_datacenterAbbrev.length > 1) {
-                    _datacenterAbbrev = _datacenterAbbrev.substr(1)
-                    suffixes_list.push(_datacenterAbbrev)
-                }
-                let _owner = assetObject.owner
+                  while (_owner.length > 1) {
+                      _owner = _owner.substr(1)
+                      suffixes_list.push(_owner)
+                  }
 
-                while (_owner.length > 1) {
-                    _owner = _owner.substr(1)
-                    suffixes_list.push(_owner)
-                }
+                  index.saveObject({ ...assetObject, objectID: ds.id, suffixes: suffixes_list.join(' ') })
 
-                index.saveObject({ ...assetObject, objectID: ds.id, suffixes: suffixes_list.join(' ') })
-
-                logutils.addLog(String(asset.asset_number), logutils.ASSET(), logutils.MODIFY(), assetObject)
+                  logutils.addLog(String(asset.asset_number), logutils.ASSET(), logutils.MODIFY(), oldData)
+              })
             })
         })
     })

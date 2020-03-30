@@ -6,6 +6,7 @@ import BackButton from "../components/BackButton";
 import UserMenu from "../components/UserMenu";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as changeplanutils from "../utils/changeplanutils";
+import * as changeplanconflictutils from "../utils/changeplanconflictutils";
 
 class WorkOrderScreen extends React.Component {
 
@@ -14,46 +15,58 @@ class WorkOrderScreen extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            stepsLoaded: false
+            stepsLoaded: false,
+            conflicts: false
         }
     }
 
     componentDidMount() {
-        changeplanutils.generateWorkOrder(this.props.match.params.changePlanID, result => {
-            console.log(result)
-            if(result){
-                this.sortedSteps = new Map([...result.entries()].sort());
-                console.log(this.sortedSteps)
+        changeplanconflictutils.changePlanHasConflicts(this.props.match.params.changePlanID, conflicts => {
+            console.log(conflicts.length, !Boolean(conflicts.length))
+            if (conflicts && !Boolean(conflicts.length)) {
+                changeplanutils.generateWorkOrder(this.props.match.params.changePlanID, result => {
+                    if (result) {
+                        console.log(result)
+                        this.sortedSteps = result;
+                        this.setState({
+                            stepsLoaded: true
+                        })
+                    }
+                })
+            } else {
                 this.setState({
-                    stepsLoaded: true
+                    stepsLoaded: true,
+                    conflicts: true
                 })
             }
-        })
+        });
     }
 
-    generateStepTable(){
-        if(!this.state.stepsLoaded){
+    generateStepTable() {
+        if (!this.state.stepsLoaded) {
             return (
                 <Text>Please wait...</Text>
             )
+        } else if (this.state.conflicts) {
+            return <Text>A work order cannot be generated because the change plan has conflicts.</Text>
         } else {
-            console.log(Object.keys(this.sortedSteps))
-            return [...this.sortedSteps.keys()].map(key => (
+            return this.sortedSteps.map((element, index) => (
                 <TableRow>
                     <TableCell scope={"row"}>
-                        {key}
+                        {index+1}
                     </TableCell>
                     <TableCell>
-                        <ol>
-                            {this.generateListFromStepsArray(this.sortedSteps.get(key))}
-                        </ol>
+                        <ul>
+                            {this.generateListFromStepsArray(element)}
+                        </ul>
                     </TableCell>
                 </TableRow>
             ))
         }
+
     }
 
-    generateListFromStepsArray(steps){
+    generateListFromStepsArray(steps) {
         console.log(steps)
         return steps.map(step => (
             <li>{step}</li>

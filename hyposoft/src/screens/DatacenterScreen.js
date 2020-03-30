@@ -67,7 +67,7 @@ class DatacenterScreen extends React.Component {
     }
 
     AdminTools() {
-        if (userutils.doesLoggedInUserHaveAssetPerm() || userutils.isLoggedInUserAdmin()) {
+        if (userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.isLoggedInUserAdmin()) {
             return (
                 <Box
                     width='medium'
@@ -158,11 +158,16 @@ class DatacenterScreen extends React.Component {
                     header: <Text size='small'>Delete</Text>,
                     render: datum =>
                         <Trash onClick={() => {
-                            this.setState({
-                                deleteName: datum.name,
-                                deleteAbbrev: datum.abbreviation,
-                                popupType: "Delete"
-                            })
+                            if(!datum.rackCount) {
+                                this.setState({
+                                    deleteName: datum.name,
+                                    deleteAbbrev: datum.abbreviation,
+                                    popupType: "Delete"
+                                })
+                            }
+                            else {
+                                ToastsStore.error("Can't delete datacenters with existing racks.");
+                            }
                         }}
                                style={{cursor: 'pointer', backgroundColor: this.colors[datum.count+'_edit_color']}}
                                onMouseOver={e => this.colors[datum.count+'_edit_color']='#dddddd'}

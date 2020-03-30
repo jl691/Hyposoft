@@ -58,7 +58,7 @@ function validateImportedConnections (data, callback) {
                     }
                 }
 
-                if ((datumAssetId !== null && fetchedAssets[datum.src_hostname].networkConnections[datum.src_port] === null)) {
+                if ((datumAssetId !== null && !(datum.src_port in fetchedAssets[datum.src_hostname].networkConnections))) {
                     // Added as in new connection
                     // Always update MAC addresses anyway
                     toBeAdded.push(datum)
@@ -118,9 +118,12 @@ function validateImportedConnections (data, callback) {
     })
 }
 
-function addConnections (data, fetchedAssets, callback) {
+async function addConnections (data, fetchedAssets, callback) {
     for (var i = 0; i < data.length; i++) {
         const datum = data[i]
+        const oldDatum = await logutils.getObjectData(String(fetchedAssets[datum.src_hostname].assetId),logutils.ASSET(),() => {}, true)
+        console.log('Old datum: ')
+        console.log(oldDatum)
 
         // First remove connection from old destination
         if (datum.src_port in fetchedAssets[datum.src_hostname].networkConnections) {
@@ -133,7 +136,6 @@ function addConnections (data, fetchedAssets, callback) {
             if (datum.dest_hostname in fetchedAssets) {
                 var newAsset = fetchedAssets[datum.dest_hostname]
                 delete newAsset.networkConnections[oldDestinationPort]
-                logutils.addLog(String(oldDestinationId), logutils.ASSET(), logutils.MODIFY(), newAsset)
             }
         }
 
@@ -153,7 +155,6 @@ function addConnections (data, fetchedAssets, callback) {
                     if (item.assetId == oldSourceId) {
                         newAsset = {...item}
                         delete newAsset.networkConnections[oldSourcePort]
-                        logutils.addLog(String(oldSourceId), logutils.ASSET(), logutils.MODIFY(), newAsset)
                     }
                 }
             }
@@ -173,7 +174,6 @@ function addConnections (data, fetchedAssets, callback) {
                     ["networkConnections."+datum.src_port+".otherPort"]: datum.dest_port,
                     ["macAddresses."+datum.src_port]: newMacAddress
                 })
-                logutils.addLog(String(fetchedAssets[datum.src_hostname].id), logutils.ASSET(), logutils.MODIFY(), newAsset1)
             }
 
             // Lastly add new connection to new destination
@@ -188,7 +188,6 @@ function addConnections (data, fetchedAssets, callback) {
                     ["networkConnections."+datum.dest_port+".otherAssetID"]: fetchedAssets[datum.src_hostname].id,
                     ["networkConnections."+datum.dest_port+".otherPort"]: datum.src_port
                 })
-                logutils.addLog(String(fetchedAssets[datum.src_hostname].id), logutils.ASSET(), logutils.MODIFY(), newAsset2)
             }
 
         } else {
@@ -206,11 +205,10 @@ function addConnections (data, fetchedAssets, callback) {
                 ["macAddresses."+datum.src_port]: newMacAddress
             })
             delete newAsset3.networkConnections[datum.src_port]
-            logutils.addLog(String(fetchedAssets[datum.src_hostname].id), logutils.ASSET(), logutils.MODIFY(), newAsset3)
         }
-
-        callback()
+        await logutils.addLog(String(fetchedAssets[datum.src_hostname].assetId), logutils.ASSET(), logutils.MODIFY(), oldDatum, () => {}, true)
     }
+    callback()
 }
 
 function exportFilteredConnections (assets) {

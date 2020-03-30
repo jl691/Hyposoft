@@ -80,35 +80,51 @@ function packageLog(timestamp, objectId, objectType, objectName, currentData, pr
     return log
 }
 
-function addLog(objectId, objectType, action, data = null) {
-    switch (objectType) {
-        case ASSET():
-            getAssetName(objectId,data,action,asset => finishAddingLog(asset, objectId, objectType, action))
-            break
-        case MODEL():
-            getModelName(objectId,data,action,model => finishAddingLog(model, objectId, objectType, action))
-            break
-        case RACK():
-            getRackName(objectId,data,action,rack => finishAddingLog(rack, objectId, objectType, action))
-            break
-        case USER():
-            getUserName(objectId,data,action,user => finishAddingLog(user, objectId, objectType, action))
-            break
-        case DATACENTER():
-            getDatacenterName(objectId,data,action,datacenter => finishAddingLog(datacenter, objectId, objectType, action))
-            break
-        case CHANGEPLAN():
-            getChangePlanName(objectId,data,action,changeplan => finishAddingLog(changeplan, objectId, objectType, action))
-            break
-        case PDU():
-            getPDUName(data,action,(pdu,assetId) => finishAddingLog(pdu, assetId, objectType, action))
-            break
-        default:
-            console.log("Could not create log due to unknown type: " + objectType)
+function addLog(objectId, objectType, action, data = null, callback = null, wantPromise = false) {
+    function meatOfAddLog (callback) {
+        switch (objectType) {
+            case ASSET():
+                getAssetName(objectId,data,action,asset => finishAddingLog(asset, objectId, objectType, action, callback))
+                break
+            case MODEL():
+                getModelName(objectId,data,action,model => finishAddingLog(model, objectId, objectType, action, callback))
+                break
+            case RACK():
+                getRackName(objectId,data,action,rack => finishAddingLog(rack, objectId, objectType, action, callback))
+                break
+            case USER():
+                getUserName(objectId,data,action,user => finishAddingLog(user, objectId, objectType, action, callback))
+                break
+            case DATACENTER():
+                getDatacenterName(objectId,data,action,datacenter => finishAddingLog(datacenter, objectId, objectType, action, callback))
+                break
+            case CHANGEPLAN():
+                getChangePlanName(objectId,data,action,changeplan => finishAddingLog(changeplan, objectId, objectType, action, callback))
+                break
+            case PDU():
+                getPDUName(data,action,(pdu,assetId) => finishAddingLog(pdu, assetId, objectType, action, callback))
+                break
+            default:
+                console.log("Could not create log due to unknown type: " + objectType)
+                if (callback) {
+                  callback()
+                }
+        }
     }
+
+    if (!wantPromise) {
+        // Just do the original work
+        meatOfAddLog(callback)
+    } else {
+        // Return a promise
+        return new Promise(function(resolve, reject) {
+            meatOfAddLog(resolve)
+        })
+    }
+
 }
 
-function finishAddingLog(object, objectId, objectType, action) {
+function finishAddingLog(object, objectId, objectType, action, callback) {
     if (object) {
         const timestamp = Date.now()
         const userId = userutils.getLoggedInUser()
@@ -117,50 +133,65 @@ function finishAddingLog(object, objectId, objectType, action) {
                 var log = packageLog(timestamp, objectId, objectType, object.name, object.data, object.previousData, object.datacenter, action, userId, user.name)
                 firebaseutils.logsRef.add(log)
               }
+            if (callback) {
+              callback()
+            }
         })
     }
 }
 
-function getObjectData(objectId, objectType, callback) {
-    switch (objectType) {
-        case ASSET():
-            firebaseutils.assetRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
+function getObjectData(objectId, objectType, callback, wantPromise = false) {
+    function meatOfGetObjectData (callback) {
+        switch (objectType) {
+            case ASSET():
+                firebaseutils.assetRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case MODEL():
+                firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case RACK():
+                firebaseutils.racksRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case USER():
+                firebaseutils.usersRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case DATACENTER():
+                firebaseutils.datacentersRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            default:
+                console.log("Could not get object data due to unknown type: " + objectType)
                 callback(null)
-            })
-            break
-        case MODEL():
-            firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
-                callback(null)
-            })
-            break
-        case RACK():
-            firebaseutils.racksRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
-                callback(null)
-            })
-            break
-        case USER():
-            firebaseutils.usersRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
-                callback(null)
-            })
-            break
-        case DATACENTER():
-            firebaseutils.datacentersRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
-                callback(null)
-            })
-            break
-        default:
-            console.log("Could not get object data due to unknown type: " + objectType)
-            callback(null)
+        }
+    }
+
+    if (!wantPromise) {
+        // Just do the original work
+        meatOfGetObjectData(callback)
+    } else {
+        // Return a promise
+        return new Promise(function(resolve, reject) {
+            meatOfGetObjectData(resolve)
+        })
     }
 }
 
@@ -191,7 +222,7 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
         docSnaps.docs.forEach(doc => {
             const user = doc.data().userName.toLowerCase()
             const object = doc.data().objectName.toLowerCase()
-            const includesAsset = doc.data().objectType === ASSET() && object.includes(searchName)
+            const includesAsset = doc.data().objectType === ASSET() && (object.includes(searchName) || doc.data().objectId.includes(searchName))
             const includesPDUAsset = doc.data().objectType === PDU() && includesAssetInPDUName(object,searchName)
             const includesUser = user.includes(searchName) || (doc.data().objectType === USER() && object.includes(searchName))
             if (!search || includesAsset || includesPDUAsset || includesUser) {
@@ -230,6 +261,9 @@ function doesObjectStillExist(objectType,objectId,callback) {
                     callback(docSnaps.docs[0].exists,false)
                 })
             })
+            break
+        case CHANGEPLAN():
+            firebaseutils.changeplansRef.doc(objectId).get().then(doc => callback(doc.exists,true))
             break
         case MODEL():
             firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.exists,true))
@@ -408,11 +442,13 @@ function getPDUName(data,action,callback) {
 function assetDiff(data,field) {
     switch (field) {
       case 'networkConnections':
-        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+        return !findArrayAndMapDiff(flattenArrayOrMap(data.previousData[field]),flattenArrayOrMap(data.currentData[field]),true) ? '' : (field + arrayAndMapDiffString)
       case 'powerConnections':
-        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+        return !findArrayAndMapDiff(flattenArrayOrMap(data.previousData[field]),flattenArrayOrMap(data.currentData[field]),true) ? '' : (field + arrayAndMapDiffString)
       case 'macAddresses':
-        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+        return !findArrayAndMapDiff(data.previousData[field],data.currentData[field],true) ? '' : (field + arrayAndMapDiffString)
+      case 'id':
+          return ''
       default:
         return defaultDiff(data,field)
     }
@@ -421,9 +457,7 @@ function assetDiff(data,field) {
 function modelDiff(data,field) {
     switch (field) {
       case 'networkPorts':
-        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
-      case 'powerPorts':
-        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+        return !findArrayAndMapDiff(data.previousData[field],data.currentData[field]) ? '' : (field + arrayAndMapDiffString)
       case 'modelName':
         return ''
       case 'networkPortsCount':
@@ -447,7 +481,7 @@ function userDiff(data,field) {
       case 'password':
         return field
       case 'permissions':
-        return field + findArrayDiffForPermissions(data.previousData[field],data.currentData[field])
+        return !findArrayAndMapDiff(data.previousData[field],data.currentData[field]) ? '' : (field + arrayAndMapDiffString)
       default:
         return defaultDiff(data,field)
     }
@@ -466,34 +500,78 @@ function defaultDiff(data,field) {
     return field + ' from ' + (data.previousData[field] ? data.previousData[field] : 'none') + ' to ' + (data.currentData[field] ? data.currentData[field] : 'none')
 }
 
-function findArrayDiffForPermissions(a,b) {
-    var result = ''
+var arrayAndMapDiffString = ''
+function findArrayAndMapDiff(a,b,map=false) {
+    arrayAndMapDiffString = ''
     var c, other, act;
-    for (var i = 0; i < 2; i++) {
+    for (var i = 0; i < 3; i++) {
       var permDiff = []
       if (i === 0) {
         c = a
         other = b
         act = ' by removing '
-      } else {
+      } else if (i === 1) {
         c = b
         other = a
         act = ' by adding '
+      } else {
+        c = b
+        other = a
+        act = ' by changing '
       }
-      for (var ind = 0; ind < c.length; ind++) {
-          const of = other.indexOf(c[ind])
-          if (of === -1) {
-              permDiff.push(c[ind])
+      for (var field in c) {
+          if (map) {
+            if (act !== ' by changing ' && !other[field]) {
+                permDiff.push(field + (act == ' by removing ' ? ' as ' : ' to be ') + c[field])
+            } else {
+              if (act === ' by changing ' && other[field] && other[field] !== c[field]) {
+                permDiff.push(field + ' from ' + other[field] + ' to ' + c[field])
+              }
+            }
+          } else {
+            if (act !== ' by changing ' && !other.includes(c[field])) {
+                permDiff.push(c[field])
+            }
           }
       }
       if (permDiff.length !== 0) {
-        if (result) {
-          result = result + ' and'
+        if (arrayAndMapDiffString) {
+          arrayAndMapDiffString = arrayAndMapDiffString + ' and'
         }
-        result = result + act + permDiff.join(', ')
+        arrayAndMapDiffString = arrayAndMapDiffString + act + permDiff.join(', ')
       }
     }
-    return result
+    return arrayAndMapDiffString
+}
+
+function flattenArrayOrMap(flat) {
+    var newMap = {}
+    for (var field in flat) {
+      flatten(field)
+    }
+    return newMap
+
+    function flatten(key) {
+      const value = getValue(key)
+      var type = Object.prototype.toString.call(value)
+      if (['[object Array]', '[object Object]'].indexOf(type) < 0) {
+        return
+      }
+      delete newMap[key]
+      for (var nextKey in value) {
+        newMap[key+':'+nextKey] = value[nextKey]
+        flatten(key+':'+nextKey)
+      }
+    }
+
+    function getValue(key) {
+      var value = flat
+      const keyArray = key.split(':')
+      for (var field in keyArray) {
+        value = value[keyArray[field]]
+      }
+      return value
+    }
 }
 
 var complexDiffString = ''

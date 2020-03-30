@@ -1,32 +1,31 @@
 {
     "rackErrID": "The rack in this change plan step does not exist.",
     "datacenterErrID": "The datacenter in this change plan step does not exist.",
-    "rackUConflictErrID": "An asset at this rack U conflicts with other assets on the rack.",
+    "rackUConflictDBErrID": "An asset at this rack U conflicts with other asset(s) on the rack.",
+    "rackUConflictStepErrID": "An asset at this rack U conflicts with other asset(s) on the rack placed in an earlier step.",
     "ownerErrID": "The owner for this asset does not exist.",
-    "hostnameErrID": "The hostname in this change plan step is already taken.",
-    "assetIDErrID": "The asset ID in this change plan step is already taken.",
+    "hostnameDBErrID": "The hostname in this change plan step is already taken.",
+    "hostnameStepErrID": "The hostname in this change plan step is already taken in a previous step.",
+    "assetIDDBErrID": "The asset ID in this change plan step is already taken.",
+    "assetIDStepErrID": "The asset ID in this change plan step is already taken in a previous step.",
     "modelErrID": "The model in this change plan step does not exist.", 
-    "powerConnectionConflictErrID": "The power connections in this change plan step are conflicting.",
-    "powerConnectionsIncompleteFormErrID": "The power connections in this change plan step were not filled out correctly in the form.",
+    "powerConnectionConflictDBErrID": "The power connections in this change plan step are connected to one or more power ports that are already occupied.",
+    "powerConnectionConflictStepErrID": "The power connections in this change plan step are connected to one or more power ports that are already occupied in a previous step.",
     "powerConnectionsInvalidPortErrID": "The power connections in this change plan step have an invalid port number.",
-    "powerConnectionsIncorrectNumConnectionsErrID": "An incorrect number of power connections were made.",
-    "powerConnectionModel0ErrID": "Tried to made power connections with a model with no power ports.",
-    "networkConnectionNonExistentOtherPortErrID": "The network connections in this change plan step is trying to connect to a nonexistent port on another asset.",
-    "networkConnectionsIncompleteFormErrID": "The network connections in this change plan step were not filled out correctly in the form.",
+    "networkConnectionNonExistentOtherPortDBErrID": "The network connections in this change plan step is trying to connect to a nonexistent port on another asset.",
+    "networkConnectionNonExistentOtherPortStepErrID": "The network connections in this change plan step is trying to connect to a port on another asset that no longer exists due to an earlier step.",
     "networkConnectionNonExistentThisPortErrID": "The network connections in this change plan step is trying to connect a nonexistent port on this asset.",
-    "networkConnectionConflictErrID": "The network connections in this change plan step are conflicting.",
-    "networkConnectionOtherAssetIDErrID": "The network connections in this change step plan are trying to connect to a nonexistent asset.",
-    "networkConnectionNonUniqueThisPortErrID": "The network connections must be unique: please check the ports on this asset.",
-    "networkConnectionNonUniqueOtherPortErrID": "The network connections must be unique: please check the ports on other assets you are trying to connect to.",
-    "networkConnectionIncorrectNumConnectionsErrID": "An incorrect number of network connections were made.",
-    "networkConnectionModel0ErrID": "Tried to made network connections with a model with no power ports.",
+    "networkConnectionConflictDBErrID": "The network connections in this change plan step contain one or more ports that are already occupied.",
+    "networkConnectionConflictStepErrID": "The network connections in this change plan step contain one or more ports that are already occupied due to a previous step.",
+    "networkConnectionOtherAssetIDDBErrID": "The network connections in this change step plan are trying to connect to a nonexistent asset.",
+    "networkConnectionOtherAssetIDStepErrID": "The network connections in this change step plan are trying to connect to an asset that no longer exist due to a previous step.",
     "networkConnectionThisPortConflictErrID": "This step's network connection conflicts on This Port",
 
-    "decommissionDBErrID": "Trying to decommission an asset that does not exist.",
-    "decommissionStepErrID": "Trying to decommission an asset that was decommissioned in a previous step",
+    "decommissionDBErrID": "Trying to edit or decommission an asset that does not exist.",
+    "decommissionStepErrID": "Trying to edit or decommission an asset that was decommissioned in a previous step",
 
-    "editDeletedErrID":"Trying to edit an asset that has been deleted.",
-    "editDecommissionedErrID": "Trying to edit an asset that has been decommissioned."
+
+    "editNonexistentErrID": "Trying to edit an asset that no longer exists."
 
 
     

@@ -48,39 +48,47 @@ class DetailedChangePlanScreen extends React.Component {
 
     componentDidMount() {
         this.changePlanID = this.props.match.params.changePlanID;
-        firebaseutils.changeplansRef.doc(this.changePlanID).get().then(documentSnapshot => {
+        //this.generateConflict(this.props.match.params.changePlanID, done => {
+            firebaseutils.changeplansRef.doc(this.changePlanID).get().then(documentSnapshot => {
 
-            if (documentSnapshot.exists) {
-                this.setState({
-                    name: documentSnapshot.data().name,
-                    executed: documentSnapshot.data().executed,
-                    timestamp: documentSnapshot.data().timestamp
-                })
-            }
-        });
+                if (documentSnapshot.exists) {
+                    this.setState({
+                        name: documentSnapshot.data().name,
+                        executed: documentSnapshot.data().executed,
+                        timestamp: documentSnapshot.data().timestamp
+                    })
+                }
+            });
+
+      //  })
+
         this.forceRefresh()
     }
 
     forceRefresh() {
         this.startAfter = null;
+        this.hasConflicts=false;
         this.setState({
             changes: [],
             initialLoaded: false,
             popupType: "",
         });
-        changeplanutils.getChanges(this.props.match.params.changePlanID, userutils.getLoggedInUserUsername(), (newStart, changes, empty) => {
-            if (empty) {
-                this.setState({
-                    initialLoaded: true
-                });
-            } else if (newStart) {
-                this.startAfter = newStart;
-                this.setState({
-                    changes: changes,
-                    initialLoaded: true
-                });
-            }
-        });
+        this.generateConflict(this.props.match.params.changePlanID, done => {
+
+            changeplanutils.getChanges(this.props.match.params.changePlanID, userutils.getLoggedInUserUsername(), (newStart, changes, empty) => {
+                if (empty) {
+                    this.setState({
+                        initialLoaded: true
+                    });
+                } else if (newStart) {
+                    this.startAfter = newStart;
+                    this.setState({
+                        changes: changes,
+                        initialLoaded: true
+                    });
+                }
+            });
+        })
     }
 
     cancelPopup = (data) => {
@@ -90,12 +98,14 @@ class DetailedChangePlanScreen extends React.Component {
     };
 
     callbackFunction = (data) => {
+        //console.log("BITCCCCHHH")
         this.forceRefresh();
     };
 
     AdminTools() {
         if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) {
             if (!this.state.executed) {
+
                 return (
                     <Box
                         width='medium'
@@ -171,6 +181,7 @@ class DetailedChangePlanScreen extends React.Component {
                     </Box>
                 );
             } else {
+
                 return (
                     <Box
                         width='medium'
@@ -194,7 +205,13 @@ class DetailedChangePlanScreen extends React.Component {
                                 <p>Generate a work order for this change plan.</p>
                                 <Box direction='column' flex alignSelf='stretch'>
                                     <Button primary icon={<Print />} label="Generate" onClick={() => {
+
+
                                         this.props.history.push('/changeplans/' + this.changePlanID + '/workorder')
+
+
+
+
                                     }} />
                                 </Box>
                             </Box>
@@ -220,7 +237,7 @@ class DetailedChangePlanScreen extends React.Component {
                                 if (!empty && newStart) {
                                     this.startAfter = newStart;
                                     this.setState({
-                                        changes: changes,
+                                        changes: this.state.changes.concat(changes),
                                     });
                                 }
                             }, this.startAfter);
@@ -228,48 +245,10 @@ class DetailedChangePlanScreen extends React.Component {
                     }}
                     onClickRow={({ datum }) => {
                         this.props.history.push('/changeplans/' + this.changePlanID + '/' + datum.id)
-
-                        //what if it's an edit or decomm and there arent these fields?
-                        console.log(datum)
-                        //console.log([...this.state.changes])
-                        if (datum.change === "add") {
-                            console.log("AAA")
-                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.id, datum.changes.model.new, datum.changes.hostname.new, datum.changes.datacenter.new, datum.changes.rack.new, datum.changes.rackU.new, datum.changes.owner.new, datum.assetID, datum.changes.powerConnections.new, datum.changes.networkConnections.new, status => {
-                                console.log("Done with live db checks for change plan conflicts. Add")
-                            })
-                        }
-                        else if (datum.change === "edit") {
-                            console.log("BBB")
-                            changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, assetData =>{
-                                
-                                let model= assetData.model
-                                let hostname = assetData.hostname
-                                let datacenter= assetData.datacenter
-                                let rack = assetData.rack
-                                let rackU = assetData.rackU
-                                let owner = assetData.owner
-                                let assetID = assetData.assetId
-                                let powerConnections= assetData.powerConnections
-                                let networkConnections= assetData.networkConnections
-                                //networkConnections needs to be an array what is it in assetData?
-                                //console.log(assetData)
-                            
-                                changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.id, model, hostname, datacenter, rack, rackU, owner, assetID, powerConnections, networkConnections, status =>{
-                                    console.log("Done with live db checks for edit changes.")
-                                })
-
-
-                            })
-
-                        }
-                        else {
-                            changeplanconflictutils.checkLiveDBConflicts(this.changePlanID, datum.id,null, null, null, null, null, null, datum.assetID, null, null, status => {
-                                console.log("Done with live db checks for change plan conflicts. Decomms")
-                            })
-
-                        }
-
-
+                        //console.log(datum)
+                        changeplanconflictutils.checkLiveDBConflicts(this.state.executed, this.props.match.params.changePlanID, datum.id, status => {
+                            console.log("Done with live db checks for change plan conflicts. Add")
+                        })
                     }}
                     columns={this.generateColumns()} data={this.state.changes} size={"large"} />
             )
@@ -297,44 +276,44 @@ class DetailedChangePlanScreen extends React.Component {
                     <Text size='small'>{datum.change}</Text>)
             }
         ];
-        if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()){
+        if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) {
             cols.push({
-                    property: "edit",
-                    header: <Text size='small'>Edit</Text>,
-                    render: datum => (
-                        !this.state.executed && <Edit onClick={(e) => {
-                            e.persist();
-                            e.nativeEvent.stopImmediatePropagation();
-                            e.stopPropagation();
-                            if (datum.change === "edit") {
-                                changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, mergedAsset => {
-                                    if (mergedAsset) {
-                                        this.setState({
-                                            popupType: "Edit" + datum.change,
-                                            stepID: datum.id,
-                                            currentChange: mergedAsset
-                                        });
-                                    }
-                                });
-                            } else if (datum.change === "add") {
-                                changeplanutils.getAssetFromAddAsset(this.changePlanID, datum.id, asset => {
-                                    if (asset) {
-                                        this.setState({
-                                            popupType: "Edit" + datum.change,
-                                            stepID: datum.id,
-                                            currentChange: asset
-                                        });
-                                    }
-                                })
-                            } else if (datum.change === "decommission") {
-                                this.setState({
-                                    popupType: "Edit" + datum.change,
-                                    stepID: datum.id,
-                                });
-                            }
+                property: "edit",
+                header: <Text size='small'>Edit</Text>,
+                render: datum => (
+                    !this.state.executed && <Edit onClick={(e) => {
+                        e.persist();
+                        e.nativeEvent.stopImmediatePropagation();
+                        e.stopPropagation();
+                        if (datum.change === "edit") {
+                            changeplanutils.getMergedAssetAndChange(this.changePlanID, datum.id, mergedAsset => {
+                                if (mergedAsset) {
+                                    this.setState({
+                                        popupType: "Edit" + datum.change,
+                                        stepID: datum.id,
+                                        currentChange: mergedAsset
+                                    });
+                                }
+                            });
+                        } else if (datum.change === "add") {
+                            changeplanutils.getAssetFromAddAsset(this.changePlanID, datum.id, asset => {
+                                if (asset) {
+                                    this.setState({
+                                        popupType: "Edit" + datum.change,
+                                        stepID: datum.id,
+                                        currentChange: asset
+                                    });
+                                }
+                            })
+                        } else if (datum.change === "decommission") {
+                            this.setState({
+                                popupType: "Edit" + datum.change,
+                                stepID: datum.id,
+                            });
+                        }
 
-                        }} />)
-                },
+                    }} />)
+            },
                 {
                     property: "delete",
                     header: <Text size='small'>Delete</Text>,
@@ -374,52 +353,70 @@ class DetailedChangePlanScreen extends React.Component {
         ToastsStore.success(data);
     }
 
-    generateConflict() {
-        this.generateConflictCount++
-        if (this.generateConflictCount === 1) {
-            changeplanconflictutils.changePlanHasConflicts(this.props.match.params.changePlanID, conflicts => {
-                let conflictsArray = [...conflicts]
-                if (conflictsArray.length) {
-                    console.log(...conflictsArray)
 
-                    for (let i = 0; i < conflictsArray.length; i++) {
-                        if(i === conflictsArray.length - 1){
-                            //last conflicting step, don't want to have a , at the end
-                            this.errMessage = this.errMessage + conflictsArray[i] +"."
+    generateConflict(changePlanID, callback) {
+        // this.generateConflictCount++
+        // if (this.generateConflictCount === 1) {
+        let count = 0;
+        changeplanconflictutils.changePlanHasConflicts(changePlanID, conflicts => {
+            let conflictsArray = [...conflicts]
 
-                        }
-                        else{
-                        this.errMessage = this.errMessage + conflictsArray[i] + ", "
+            if (conflictsArray.length) {
+                console.log(...conflictsArray)
+
+                for (let i = 0; i < conflictsArray.length; i++) {
+
+                    if (i === conflictsArray.length - 1) {
+
+                        //last conflicting step, don't want to have a , at the end
+                        this.errMessage = this.errMessage + conflictsArray[i] + "."
+                        count++
+                        if (count === conflictsArray.length) {
+                            this.hasConflicts = true;
+                            callback(this.errMessage)
+
                         }
                     }
+                    else {
 
+                        this.errMessage = this.errMessage + conflictsArray[i] + ", "
+                        count++
+                        if (count === conflictsArray.length) {
+                            this.hasConflicts = true;
+                            callback(this.errMessage)
 
-                    this.hasConflicts = true;
-
+                        }
+                    }
                 }
-            })
+
+                // this.forceRefresh()
+                //this.hasConflicts = true;
+
+            }
+            else {
+                callback()
+            }
+        })
 
 
-        }
+        //   }
 
 
-        if (this.hasConflicts) {
-            console.log(this.errMessage)
-            return (
-                <Box style={{
-                    borderRadius: 10
-                }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
-                    margin={{ top: "medium" }} height={"small"} overflow="auto" direction="column">
-                    <Heading level={"3"} margin={"small"}>Conflict</Heading>
-                    <Box overflow="scroll">
-                        <Text weight="bold"> {this.errMessage}</Text>
-                    </Box>
-                    <Box align={"center"} width={"small"}>
-                    </Box>
-                </Box>
+        // if (this.hasConflicts) {
+        //     console.log(this.errMessage)
+        //     return (
+        //         <Box style={{
+        //             borderRadius: 10
+        //         }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
+        //             margin={{ top: "medium" }} overflow="auto" direction="column" pad={"small"}>
+        //             <Heading level={"3"} margin={"small"}>Conflict</Heading>
+        //             <Box overflow="auto">
+        //                 <Text weight="bold"> {this.errMessage}</Text>
+        //             </Box>
+        //         </Box>
 
-            )
-        }
+        //     )
+        // }
     }
 
     render() {
@@ -432,14 +429,14 @@ class DetailedChangePlanScreen extends React.Component {
 
         if (popupType === 'Delete') {
             popup = (
-                <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
+                <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction} genConflict={this.generateConflict}
                     changePlanID={this.changePlanID} stepNumber={this.state.deleteStepNumber} />
             )
         } else if (popupType === 'Execute') {
             console.log(this.changePlanID)
             popup = (
                 <ExecuteChangePlanForm cancelPopup={this.cancelPopup} successfulExecution={this.successfulExecution}
-                    id={this.changePlanID} name={this.state.name} />
+                    id={this.changePlanID} name={this.state.name} changePlanID={this.changePlanID} />
             )
         } else if (popupType === 'Editdecommission') {
             console.log(this.changePlanID)
@@ -522,7 +519,19 @@ class DetailedChangePlanScreen extends React.Component {
                             <Heading level={"3"} margin={"small"}>Change Plan Executed</Heading>
                             <Box>This change plan was executed on {decommissionutils.getDate(this.state.timestamp)}. Thus, no further changes can be made.</Box>
                         </Box>}
-                        {this.generateConflict()}
+                        {/* {this.generateConflict()} */}
+                        {
+                            this.hasConflicts &&
+                            <Box style={{
+                                borderRadius: 10
+                            }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
+                                margin={{ top: "medium" }} overflow="auto" direction="column" pad={"small"}>
+                                <Heading level={"3"} margin={"small"}>Conflict</Heading>
+                                <Box overflow="auto">
+                                    <Text weight="bold"> {this.errMessage}</Text>
+                                </Box>
+                            </Box>
+                        }
                         <Box direction='row' justify='center' overflow={{ horizontal: 'hidden' }}>
                             <Box direction='row' justify='center'>
                                 <Box width='large' direction='column' align='stretch' justify='start'>

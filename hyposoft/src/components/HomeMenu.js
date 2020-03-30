@@ -14,9 +14,9 @@ class HomeMenu extends Component {
       var items = []
       items = items.concat(
         [
+            {label: 'Dashboard', onClick: () => this.setState({clicked:true, redirect: '/dashboard'})},
             {label: 'Assets', onClick: () => this.setState({clicked:true, redirect: '/assets'})},
             {label: 'Change Plans', onClick: () => this.setState({clicked:true, redirect: '/changeplans'})},
-            {label: 'Dashboard', onClick: () => this.setState({clicked:true, redirect: '/dashboard'})},
             {label: 'Datacenters', onClick: () => this.setState({clicked:true, redirect: '/datacenters'})},
             {label: 'Import/Export', onClick: () => this.setState({clicked:true, redirect: '/port'})},
         ]
