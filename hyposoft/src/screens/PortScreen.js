@@ -106,10 +106,10 @@ class PortScreen extends Component {
                     if (toBeModified.length === 0) {
                         if (toBeAdded.length > 0) {
                             bulkconnectionsutils.addConnections(toBeAdded, fetchedAssets, () => {
-                                this.setState(oldState => ({...oldState, modificationsInfoConns: undefined, showStatsForConns: true, ignoredConns: toBeIgnored, modifiedConns: [], createdConns: toBeAdded}))
+                                this.setState(oldState => ({...oldState, showLoadingDialog: false, modificationsInfoConns: undefined, showStatsForConns: true, ignoredConns: toBeIgnored, modifiedConns: [], createdConns: toBeAdded}))
                             })
                         } else {
-                            this.setState(oldState => ({...oldState, modificationsInfoConns: undefined, showStatsForConns: true, ignoredConns: toBeIgnored, modifiedConns: [], createdConns: []}))
+                            this.setState(oldState => ({...oldState, showLoadingDialog: false, modificationsInfoConns: undefined, showStatsForConns: true, ignoredConns: toBeIgnored, modifiedConns: [], createdConns: []}))
                         }
                     } else {
                         // Ask if they want to modify, then add.
