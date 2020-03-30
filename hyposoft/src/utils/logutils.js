@@ -269,7 +269,6 @@ function doesObjectStillExist(objectType,objectId,callback,objectName=null) {
             firebaseutils.modelsRef.doc(objectId).get().then(doc => {
               if (doc.exists) {
                 firebaseutils.modelsRef.where('modelName','==',objectName).get().then(qs => {
-                  console.log(!qs.empty);
                   callback(!qs.empty,true)
                 })
               } else {
