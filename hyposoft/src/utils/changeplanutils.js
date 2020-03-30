@@ -1067,6 +1067,7 @@ function executeAddAsset(id, doc, changePlanID, callback) {
                                         objectID: id,
                                         suffixes: suffixes_list.join(' ')
                                     })
+                                    console.log(assetObject, suffixes_list.join(' '))
 
                                     console.log("Document successfully updated in racks");
                                     logutils.addLog(id, logutils.ASSET(), logutils.CREATE())
@@ -1076,6 +1077,47 @@ function executeAddAsset(id, doc, changePlanID, callback) {
                                 racksRef.doc(String(doc.data().changes.rackID["new"])).update({
                                     assets: firebase.firestore.FieldValue.arrayUnion(id)
                                 }).then(function () {
+                                    let suffixes_list = []
+                                    let _model = assetObject.model
+
+                                    while (_model.length > 1) {
+                                        _model = _model.substr(1)
+                                        suffixes_list.push(_model)
+                                    }
+
+                                    let _hostname = assetObject.hostname
+
+                                    while (_hostname.length > 1) {
+                                        _hostname = _hostname.substr(1)
+                                        suffixes_list.push(_hostname)
+                                    }
+
+                                    let _datacenter = assetObject.datacenter
+
+                                    while (_datacenter.length > 1) {
+                                        _datacenter = _datacenter.substr(1)
+                                        suffixes_list.push(_datacenter)
+                                    }
+
+                                    let _datacenterAbbrev = assetObject.datacenterAbbrev
+
+                                    while (_datacenterAbbrev.length > 1) {
+                                        _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                                        suffixes_list.push(_datacenterAbbrev)
+                                    }
+                                    let _owner = assetObject.owner
+
+                                    while (_owner.length > 1) {
+                                        _owner = _owner.substr(1)
+                                        suffixes_list.push(_owner)
+                                    }
+
+                                    index.saveObject({
+                                        ...assetObject,
+                                        objectID: id,
+                                        suffixes: suffixes_list.join(' ')
+                                    })
+                                    console.log(assetObject, suffixes_list.join(' '))
                                     console.log("Document successfully updated in racks");
                                     logutils.addLog(id, logutils.ASSET(), logutils.CREATE())
                                     callback(true);
