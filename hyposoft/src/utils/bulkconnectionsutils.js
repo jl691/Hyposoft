@@ -119,7 +119,9 @@ function validateImportedConnections (data, callback) {
 }
 
 function addConnections (data, fetchedAssets, callback) {
+    var finishedLogging = 0
     for (var i = 0; i < data.length; i++) {
+        while (finishedLogging < i) {} // Just busy wait until the previous datum finishes logging
         const datum = data[i]
 
         // First remove connection from old destination
@@ -203,9 +205,11 @@ function addConnections (data, fetchedAssets, callback) {
             })
             delete newAsset3.networkConnections[datum.src_port]
         }
-        logutils.addLog(String(fetchedAssets[datum.src_hostname].assetId), logutils.ASSET(), logutils.MODIFY(), fetchedAssets[datum.src_hostname])
-        callback()
+        logutils.addLog(String(fetchedAssets[datum.src_hostname].assetId), logutils.ASSET(), logutils.MODIFY(), fetchedAssets[datum.src_hostname], () => {
+            finishedLogging++
+        })
     }
+    callback()
 }
 
 function exportFilteredConnections (assets) {

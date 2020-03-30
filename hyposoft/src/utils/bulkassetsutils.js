@@ -142,8 +142,9 @@ function validateImportedAssets (data, callback) {
                 errors = [...errors, [i + 1, 'Power port connection 2 invalid']]
             }
 
-            const powerPortsNumber = existingModels[datum.vendor][datum.model_number].powerPorts
+            var powerPortsNumber = 0
             if (canTestForFit) {
+                powerPortsNumber = existingModels[datum.vendor][datum.model_number].powerPorts
                 if (!powerPortsNumber && (datum.power_port_connection_1 || datum.power_port_connection_2)) {
                     errors = [...errors, [i + 1, 'This model does not have any power ports']]
                     canTestForFit = false
@@ -181,15 +182,6 @@ function validateImportedAssets (data, callback) {
                         pduSide: datum.power_port_connection_1.charAt(0) === 'L' ? 'Left' : 'Right',
                         port: datum.power_port_connection_1.substring(1)
                     })
-                } else {
-                    if ((datum.asset_number in assetsLoaded) && assetsLoaded[datum.asset_number].powerConnections) {
-                        if (powerPortsNumber && powerPortsNumber >= 1){
-                            datum.power_connections.push({
-                                pduSide: null,
-                                port: null
-                            })
-                        }
-                    }
                 }
 
                 if (datum.power_port_connection_2) {
@@ -197,13 +189,6 @@ function validateImportedAssets (data, callback) {
                         pduSide: datum.power_port_connection_2.charAt(0) === 'L' ? 'Left' : 'Right',
                         port: datum.power_port_connection_2.substring(1)
                     })
-                } else {
-                    if ((datum.asset_number in assetsLoaded) && powerPortsNumber && powerPortsNumber > 1 && assetsLoaded[datum.asset_number].powerConnections) {
-                        datum.power_connections.push({
-                            pduSide: null,
-                            port: null
-                        })
-                    }
                 }
 
 
