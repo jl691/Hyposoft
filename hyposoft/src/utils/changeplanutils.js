@@ -201,6 +201,7 @@ function addAssetChange(asset, assetID, changePlanID, callback, docID = null) {
             callback(null);
         })
     } else {
+
         changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
             let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
             assetChangePlanObject.step = changeNumber;
@@ -211,15 +212,17 @@ function addAssetChange(asset, assetID, changePlanID, callback, docID = null) {
                 //added the doc.id for change plan conflict checking: need to know which step we are checking
                 callback(true);
             }).then(function () {
+                getChangePlanData(changePlanID, cpData =>{
                 changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
-                    changeplanconflictutils.checkAllLiveDBConflicts(querySnapshot.docs[0].data().executed, changePlanID, status2 => {
+                    changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
                         // console.log("Made it back from db checks")
-                        changeplanconflictutils.checkSequentialStepConflicts(querySnapshot.docs[0].data().executed, changePlanID, status3 => {
+                        changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
                             console.log("DONE RECHECKING")
 
                         })
                     })
                 })
+            })
 
             }).catch(function (error) {
                 console.log(error);
@@ -291,14 +294,17 @@ function editAssetChange(newAsset, assetID, changePlanID, callback, docID = null
                         callback(true);
 
                     }).then(function () {
+                        
+                        getChangePlanData(changePlanID, cpData =>{
                         changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
                             //checking against liveDB not necessary, and only take more time
-                            changeplanconflictutils.checkAllLiveDBConflicts(querySnapshot.docs[0].data().executed, changePlanID, status2 => {
+                            changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
                                 //     console.log("Made it back from db checks")
-                                changeplanconflictutils.checkSequentialStepConflicts(querySnapshot.docs[0].data().executed, changePlanID, status3 => {
+                                changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
                                     console.log("DONE RECHECKING")
 
                                 })
+                            })
                             })
                         })
                     }).catch(function (error) {
@@ -332,16 +338,18 @@ function decommissionAssetChange(assetID, changePlanID, callback, stepID = null)
                             //     callback(true);
                             // })
                             .then(function () {
+                                getChangePlanData(changePlanID, cpData =>{
                                 changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
 
-                                    changeplanconflictutils.checkAllLiveDBConflicts(querySnapshot.docs[0].data().executed, changePlanID, status2 => {
+                                    changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
                                         //   console.log("Made it back from db checks")
-                                        changeplanconflictutils.checkSequentialStepConflicts(querySnapshot.docs[0].data().executed, changePlanID, status3 => {
+                                        changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
                                             console.log("DONE RECHECKING decomm")
                                             callback(true)
 
                                         })
                                     })
+                                })
 
                                 })
                             }).catch(function (error) {
@@ -368,18 +376,18 @@ function decommissionAssetChange(assetID, changePlanID, callback, stepID = null)
                             callback(true);
                         })
                         .then(function () {
-                            getChangePlanData(changePlanID, cpData =>{
+                            getChangePlanData(changePlanID, cpData => {
 
-                            changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
-                                changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
-                                    //   console.log("Made it back from db checks")
-                                    changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
-                                        console.log("DONE RECHECKING decomm")
-                                        //callback(true)
+                                changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
+                                    changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
+                                        //   console.log("Made it back from db checks")
+                                        changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
+                                            console.log("DONE RECHECKING decomm")
+                                            //callback(true)
 
+                                        })
                                     })
                                 })
-                            })
                             })
 
 
@@ -859,108 +867,136 @@ function generateEditWorkOrderMessage(doc, callback) {
 }
 
 function executeChangePlan(changePlanID, callback) {
-    changeplansRef.doc(changePlanID.toString()).collection("changes").get().then(function (querySnapshot) {
-        if (querySnapshot.empty) {
-            callback(true);
-        } else {
-            logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.EXECUTE());
-            let count = 0;
-            querySnapshot.docs.forEach(change => {
-                console.log(change)
-                if (change.data().change === "add") {
-                    console.log("add")
-                    if (change.data().changes.assetId && change.data().changes.assetId["new"]) {
-                        console.log("not generating")
-                        executeAddAsset(change.data().changes.assetId["new"], change, changePlanID, resultAdd => {
-                            if (resultAdd) {
-                                count++;
-                                if (count === querySnapshot.size) {
-                                    changeplansRef.doc(changePlanID.toString()).update({
-                                        executed: true,
-                                        timestamp: Date.now()
-                                    }).then(function () {
-                                        logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
-                                        callback(true);
-                                    }).catch(function () {
-                                        callback(null);
-                                    });
-                                }
-                            } else {
-                                callback(null);
-                            }
-                        });
-                    } else {
-                        //generate
-                        console.log("generating")
-                        assetIDutils.generateAssetID().then(newID => {
-                            executeAddAsset(newID, change, changePlanID, resultAdd => {
-                                if (resultAdd) {
-                                    count++;
-                                    if (count === querySnapshot.size) {
-                                        changeplansRef.doc(changePlanID.toString()).update({
-                                            executed: true,
-                                            timestamp: Date.now()
-                                        }).then(function () {
-                                            logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
-                                            callback(true);
-                                        }).catch(function () {
-                                            callback(null);
-                                        });
-                                    }
-                                } else {
-                                    callback(null);
-                                }
-                            })
-                        });
+    
+    changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
+        changeplanconflictutils.checkAllLiveDBConflicts(false, changePlanID, status2 => {
+            changeplanconflictutils.checkSequentialStepConflicts(false, changePlanID, status3 => {
+
+
+                changeplanconflictutils.changePlanHasConflicts(changePlanID, conflicts => {
+                    let conflictsArray = [...conflicts]
+
+                    if (conflictsArray.length) {
+                        //there are conflicts
+                        callback(null)
                     }
-                } else if (change.data().change === "edit") {
-                    console.log("edit")
-                    executeEditAsset(change, resultEdit => {
-                        if (resultEdit) {
-                            count++;
-                            if (count === querySnapshot.size) {
-                                changeplansRef.doc(changePlanID.toString()).update({
-                                    executed: true,
-                                    timestamp: Date.now()
-                                }).then(function () {
-                                    logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
-                                    callback(true);
-                                }).catch(function () {
-                                    callback(null);
-                                });
+                    else {
+                        changeplansRef.doc(changePlanID.toString()).collection("changes").get().then(function (querySnapshot) {
+                            if (querySnapshot.empty) {
+                                callback(true);
+                            } else {
+                                logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.EXECUTE());
+                                let count = 0;
+                                querySnapshot.docs.forEach(change => {
+                                    console.log(change)
+                                    if (change.data().change === "add") {
+                                        console.log("add")
+                                        if (change.data().changes.assetId && change.data().changes.assetId["new"]) {
+                                            console.log("not generating")
+                                            executeAddAsset(change.data().changes.assetId["new"], change, changePlanID, resultAdd => {
+                                                if (resultAdd) {
+                                                    count++;
+                                                    if (count === querySnapshot.size) {
+                                                        changeplansRef.doc(changePlanID.toString()).update({
+                                                            executed: true,
+                                                            timestamp: Date.now()
+                                                        }).then(function () {
+                                                            logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
+                                                            callback(true);
+                                                        }).catch(function () {
+                                                            callback(null);
+                                                        });
+                                                    }
+                                                } else {
+                                                    callback(null);
+                                                }
+                                            });
+                                        } else {
+                                            //generate
+                                            console.log("generating")
+                                            assetIDutils.generateAssetID().then(newID => {
+                                                executeAddAsset(newID, change, changePlanID, resultAdd => {
+                                                    if (resultAdd) {
+                                                        count++;
+                                                        if (count === querySnapshot.size) {
+                                                            changeplansRef.doc(changePlanID.toString()).update({
+                                                                executed: true,
+                                                                timestamp: Date.now()
+                                                            }).then(function () {
+                                                                logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
+                                                                callback(true);
+                                                            }).catch(function () {
+                                                                callback(null);
+                                                            });
+                                                        }
+                                                    } else {
+                                                        callback(null);
+                                                    }
+                                                })
+                                            });
+                                        }
+                                    } else if (change.data().change === "edit") {
+                                        console.log("edit")
+                                        executeEditAsset(change, resultEdit => {
+                                            if (resultEdit) {
+                                                count++;
+                                                if (count === querySnapshot.size) {
+                                                    changeplansRef.doc(changePlanID.toString()).update({
+                                                        executed: true,
+                                                        timestamp: Date.now()
+                                                    }).then(function () {
+                                                        logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
+                                                        callback(true);
+                                                    }).catch(function () {
+                                                        callback(null);
+                                                    });
+                                                }
+                                            } else {
+                                                callback(null);
+                                            }
+                                        })
+                                    } else {
+                                        //decomission
+                                        console.log("decomm")
+                                        decommissionutils.decommissionAsset(change.data().assetID.toString(), resultDecom => {
+                                            if (resultDecom) {
+                                                count++;
+                                                if (count === querySnapshot.size) {
+                                                    changeplansRef.doc(changePlanID.toString()).update({
+                                                        executed: true,
+                                                        timestamp: Date.now()
+                                                    }).then(function () {
+                                                        logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
+                                                        callback(true);
+                                                    }).catch(function () {
+                                                        callback(null);
+                                                    });
+                                                }
+                                            } else {
+                                                callback(null);
+                                            }
+                                        })
+                                    }
+                                })
                             }
-                        } else {
+                        }).catch(function (error) {
+                            console.log(error)
                             callback(null);
-                        }
-                    })
-                } else {
-                    //decomission
-                    console.log("decomm")
-                    decommissionutils.decommissionAsset(change.data().assetID.toString(), resultDecom => {
-                        if (resultDecom) {
-                            count++;
-                            if (count === querySnapshot.size) {
-                                changeplansRef.doc(changePlanID.toString()).update({
-                                    executed: true,
-                                    timestamp: Date.now()
-                                }).then(function () {
-                                    logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
-                                    callback(true);
-                                }).catch(function () {
-                                    callback(null);
-                                });
-                            }
-                        } else {
-                            callback(null);
-                        }
-                    })
-                }
+                        })
+
+
+
+
+
+
+
+
+                    }
+                })
             })
-        }
-    }).catch(function (error) {
-        console.log(error)
-        callback(null);
+        })
     })
+
 }
 
 function executeAddAsset(id, doc, changePlanID, callback) {
@@ -1215,10 +1251,10 @@ function getAssetFromAddAsset(changePlanID, step, callback) {
     })
 }
 
-function checkChangeAlreadyExists(changePlanID, assetID, change, callback){
+function checkChangeAlreadyExists(changePlanID, assetID, change, callback) {
     console.log(changePlanID, assetID, change)
     changeplansRef.doc(changePlanID.toString()).collection("changes").where("assetID", "==", parseInt(assetID)).where("change", "==", change).get().then(function (querySnapshot) {
-        if(querySnapshot.empty){
+        if (querySnapshot.empty) {
             callback(false);
         } else {
             callback(true);
