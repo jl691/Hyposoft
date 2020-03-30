@@ -22,7 +22,7 @@ export default class DecommissionAssetPopup extends Component {
     handleDecommission(event) {
         if (event.target.name === "decommissionInst") {
             if(this.props.changePlanID){
-                ToastsStore.info('Please wait...', 5000);
+                ToastsStore.info('Please wait...', 3000);
                 changeplanutils.decommissionAssetChange(this.props.decommissionIDFromParent, this.props.changePlanID, result => {
                     if(result){
                         ToastsStore.success('Decommissioned asset successfully');
