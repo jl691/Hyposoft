@@ -15,7 +15,7 @@ import BackButton from "../components/BackButton";
 import DeleteChangePlanForm from "../components/DeleteChangePlanForm";
 import DeleteChangeForm from "../components/DeleteChangeForm";
 import ExecuteChangePlanForm from "../components/ExecuteChangePlanForm";
-import EditDecommissionChangeForm from "../components/EditDecommissionChangeForm";
+import EditDecommissionChangeForm from "../components/EditDecommissionChangeForm"; 
 import EditAssetForm from "../components/EditAssetForm";
 import * as assetmacutils from "../utils/assetmacutils";
 import * as assetnetworkportutils from "../utils/assetnetworkportutils";
@@ -373,7 +373,8 @@ class DetailedChangePlanScreen extends React.Component {
                         count++
                         if (count === conflictsArray.length) {
                             this.hasConflicts = true;
-                            callback(this.errMessage)
+                            let errMessage = this.errMessage
+                            callback(errMessage)
 
                         }
                     }

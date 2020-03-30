@@ -209,8 +209,6 @@ function logUserIn(userObject) {
     localStorage.setItem('userDocId', userObject.docId)
     localStorage.setItem('isNetIDAccount', userObject.password.trim() === '' ? 'yes' : 'no')
     localStorage.setItem('permissions', JSON.stringify(userObject.permissions))
-
-    updateEveryonesAssetPermissions()
 }
 
 function getLoggedInUser() {
@@ -364,4 +362,4 @@ fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers, getLoggedInUs
  ADMIN_PERMISSION, isLoggedInUserNetID, getLoggedInUserUsername, getAllDataCenterAbbrevs,
 updateUserPermissions, doesLoggedInUserHaveModelPerm, doesLoggedInUserHaveAssetPerm,
 doesLoggedInUserHaveAuditPerm, doesLoggedInUserHavePowerPerm,
-doesLoggedInUserHaveAnyAssetPermsAtAll, getAllowedDCsString }
+doesLoggedInUserHaveAnyAssetPermsAtAll, getAllowedDCsString, updateEveryonesAssetPermissions }
