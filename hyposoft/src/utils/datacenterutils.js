@@ -2,6 +2,7 @@ import * as firebaseutils from "./firebaseutils";
 import {datacentersRef} from "./firebaseutils";
 import * as logutils from "./logutils";
 import * as rackutils from "./rackutils";
+import * as userutils from './userutils';
 
 function getDatacenters(itemCount, callback, start = null) {
     let datacenters = [];
@@ -94,6 +95,7 @@ function addDatacenter(name, abbrev, callback) {
                         racks: []
                     }).then(function (docRef) {
                         logutils.addLog(docRef.id, logutils.DATACENTER(), logutils.CREATE());
+                        userutils.updateEveryonesAssetPermissions()
                         callback(true);
                     }).catch(function (error) {
                         callback(null);
@@ -119,6 +121,7 @@ function deleteDatacenter(name, callback) {
                 let docData = querySnapshot.docs[0].data();
                 firebaseutils.datacentersRef.doc(querySnapshot.docs[0].id).delete().then(function () {
                     logutils.addLog(querySnapshot.docs[0].id, logutils.DATACENTER(), logutils.DELETE(), docData);
+                    userutils.updateEveryonesAssetPermissions()
                     callback(true);
                 }).catch(function (error) {
                     callback(null);
