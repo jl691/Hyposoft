@@ -171,6 +171,28 @@ function isLoginValid(username, password, callback) {
     })
 }
 
+function updateEveryonesAssetPermissions () {
+    // Loop through all users, and if they have global assets, update their permissions to have all dcs
+    getAllDataCenterAbbrevs(datacenterAbbrevs => {
+        const assetPerms = datacenterAbbrevs.map(abbrev => 'ASSET_PERMISSION_'+abbrev)
+        firebaseutils.usersRef.get().then(querySnapshot => {
+            querySnapshot.forEach(user => {
+                if (user.data().permissions.includes('ASSET_PERMISSION_GLOBAL')) {
+                    var newPermissions = [...assetPerms, 'ASSET_PERMISSION_GLOBAL']
+                    user.data().permissions.forEach((item, i) => {
+                        if (!item.startsWith('ASSET_PERMISSION')) {
+                            newPermissions.push(item)
+                        }
+                    })
+                    user.ref.update({
+                        permissions: newPermissions
+                    })
+                }
+            })
+        })
+    })
+}
+
 function logUserIn(userObject) {
     localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(
         userObject.displayName+userObject.username+userObject.email+JSON.stringify(userObject.permissions)))
@@ -180,6 +202,8 @@ function logUserIn(userObject) {
     localStorage.setItem('userDocId', userObject.docId)
     localStorage.setItem('isNetIDAccount', userObject.password.trim() === '' ? 'yes' : 'no')
     localStorage.setItem('permissions', JSON.stringify(userObject.permissions))
+
+    updateEveryonesAssetPermissions()
 }
 
 function getLoggedInUser() {
