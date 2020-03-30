@@ -244,7 +244,7 @@ function includesAssetInPDUName(name,searchName) {
     return ind !== -1 ? splitName.slice(ind+1).join(' ').includes(searchName) : false
 }
 
-function doesObjectStillExist(objectType,objectId,callback) {
+function doesObjectStillExist(objectType,objectId,callback,objectName=null) {
     switch (objectType) {
         case ASSET():
         case PDU():
@@ -266,7 +266,16 @@ function doesObjectStillExist(objectType,objectId,callback) {
             firebaseutils.changeplansRef.doc(objectId).get().then(doc => callback(doc.exists,true))
             break
         case MODEL():
-            firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.exists,true))
+            firebaseutils.modelsRef.doc(objectId).get().then(doc => {
+              if (doc.exists) {
+                firebaseutils.modelsRef.where('modelName','==',objectName).get().then(qs => {
+                  console.log(!qs.empty);
+                  callback(!qs.empty,true)
+                })
+              } else {
+                callback(false,true)
+              }
+            })
             break
         default:
             callback(true,true)
