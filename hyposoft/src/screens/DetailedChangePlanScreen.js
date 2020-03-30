@@ -98,7 +98,7 @@ class DetailedChangePlanScreen extends React.Component {
     };
 
     callbackFunction = (data) => {
-        console.log("BITCCCCHHH")
+        //console.log("BITCCCCHHH")
         this.forceRefresh();
     };
 
