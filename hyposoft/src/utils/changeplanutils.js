@@ -1175,63 +1175,85 @@ function executeEditAsset(doc, callback) {
                         assetRef.doc(doc.data().assetID.toString()).get().then(function (documentSnapshot) {
                             console.log("checkpoint 1")
                             if (documentSnapshot.exists) {
+                                console.log("checkpoint 2")
                                 let oldRackID = documentSnapshot.data().rackID;
                                 let newRackID = doc.data().changes.rackID ? doc.data().changes.rackID["new"] : documentSnapshot.data().rackID;
                                 let oldPowerPorts = documentSnapshot.data().powerConnections;
                                 let newPowerPorts = doc.data().changes.powerConnections ? doc.data().changes.powerConnections["new"] : documentSnapshot.data().powerConnections;
+                                console.log("checkpoint 3")
                                 assetutils.replaceAssetRack(oldRackID, newRackID, oldPowerPorts, newPowerPorts, doc.data().assetID, null, replaceResult => {
                                     if (replaceResult) {
+                                        console.log("checkpoint 4")
                                         assetRef.doc(String(doc.data().assetID)).update(assetObject).then(function () {
+                                            console.log("checkpoint 6")
                                             let suffixes_list = []
-                                            let _model = assetObject.model
-
+                                            let _model = documentSnapshot.data().model
+                                            console.log("checkpoint 11", _model, assetObject)
                                             while (_model.length > 1) {
                                                 _model = _model.substr(1)
+                                                console.log(_model)
                                                 suffixes_list.push(_model)
                                             }
+                                            console.log("checkpoint 12")
 
-                                            let _hostname = assetObject.hostname
+                                            let _hostname = documentSnapshot.data().hostname
 
                                             while (_hostname.length > 1) {
                                                 _hostname = _hostname.substr(1)
                                                 suffixes_list.push(_hostname)
                                             }
+                                            console.log("checkpoint 7")
 
-                                            let _datacenter = assetObject.datacenter
+                                            let _datacenter = documentSnapshot.data().datacenter
 
                                             while (_datacenter.length > 1) {
                                                 _datacenter = _datacenter.substr(1)
                                                 suffixes_list.push(_datacenter)
                                             }
 
-                                            let _datacenterAbbrev = assetObject.datacenterAbbrev
+                                            let _datacenterAbbrev = documentSnapshot.data().datacenterAbbrev
 
                                             while (_datacenterAbbrev.length > 1) {
                                                 _datacenterAbbrev = _datacenterAbbrev.substr(1)
                                                 suffixes_list.push(_datacenterAbbrev)
                                             }
-                                            let _owner = assetObject.owner
+                                            console.log("checkpoint 8")
+                                            let _owner = documentSnapshot.data().owner
 
                                             while (_owner.length > 1) {
                                                 _owner = _owner.substr(1)
                                                 suffixes_list.push(_owner)
                                             }
+                                            console.log("checkpoint 9")
 
-                                            index.saveObject({
-                                                ...assetObject,
-                                                objectID: doc.data().assetID,
-                                                suffixes: suffixes_list.join(' ')
-                                            })
-                                            console.log("Updated model successfully")
-                                            logutils.addLog(String(doc.data().assetID), logutils.ASSET(), logutils.MODIFY(), assetData)
-                                            callback(true);
+                                            let mergedAssetData = documentSnapshot.data();
+                                            let mergeCount = 0;
+                                            Object.keys(doc.data().changes).forEach(change => {
+                                                mergedAssetData[change] = doc.data().changes[change]["new"];
+                                                mergeCount++;
+                                                if (count === Object.keys(doc.data().changes).length) {
+                                                    index.saveObject({
+                                                        ...mergedAssetData,
+                                                        objectID: doc.data().assetID,
+                                                        suffixes: suffixes_list.join(' ')
+                                                    })
+                                                    console.log("Updated model successfully")
+                                                    console.log(assetData)
+                                                    logutils.addLog(String(doc.data().assetID), logutils.ASSET(), logutils.MODIFY(), assetData)
+                                                    callback(true);
+                                                }
+                                            });
                                         }).catch(function (error) {
                                             callback(error);
                                         });
                                     } else {
+                                        console.log("checkpoint 5")
                                         callback(null);
                                     }
                                 });
+                            } else {
+                                console.log("erroring here")
+                                callback(null);
                             }
                         }).catch(function () {
                             callback(null);
