@@ -329,7 +329,7 @@ class DetailedChangeScreen extends React.Component {
 
                         <Button primary label="Resolve" color={"light-1"} margin={{top: "small", bottom: "small"}}
                                 size={"small"} onClick={() => {
-                            //TODO HERE
+            
                             if (this.state.change.change === "edit") {
                                 changeplanutils.getMergedAssetAndChange(this.changePlanID, this.stepID, mergedAsset => {
                                     if (mergedAsset) {
