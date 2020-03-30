@@ -1184,7 +1184,8 @@ function changePlanHasConflicts(changePlanID, callback) {
                         if (count === query.size) {
                             //console.log("This is the result set size: " + result.size)
                             let sortedResult = [...(result)].sort()
-                            console.log("CALLING BACK")
+                            console.log("CALLING BACK" + sortedResult)
+                       
                             callback(sortedResult)
                         }
 
