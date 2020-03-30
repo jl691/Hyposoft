@@ -59,8 +59,9 @@ function modifyModel(id, vendor, modelNumber, height, displayColor, networkPorts
         }
         logutils.getObjectData(id,logutils.MODEL(),data => {
             firebaseutils.modelsRef.doc(id).update(model).then(() => {
-                logutils.addLog(id,logutils.MODEL(),logutils.MODIFY(),data)
-                callback(model, id)
+                logutils.addLog(id,logutils.MODEL(),logutils.MODIFY(),data, () => {
+                    callback(model, id)
+                })
             })
         })
         qs.forEach(doc => {

@@ -80,35 +80,48 @@ function packageLog(timestamp, objectId, objectType, objectName, currentData, pr
     return log
 }
 
-function addLog(objectId, objectType, action, data = null, callback = null) {
-    switch (objectType) {
-        case ASSET():
-            getAssetName(objectId,data,action,asset => finishAddingLog(asset, objectId, objectType, action, callback))
-            break
-        case MODEL():
-            getModelName(objectId,data,action,model => finishAddingLog(model, objectId, objectType, action, callback))
-            break
-        case RACK():
-            getRackName(objectId,data,action,rack => finishAddingLog(rack, objectId, objectType, action, callback))
-            break
-        case USER():
-            getUserName(objectId,data,action,user => finishAddingLog(user, objectId, objectType, action, callback))
-            break
-        case DATACENTER():
-            getDatacenterName(objectId,data,action,datacenter => finishAddingLog(datacenter, objectId, objectType, action, callback))
-            break
-        case CHANGEPLAN():
-            getChangePlanName(objectId,data,action,changeplan => finishAddingLog(changeplan, objectId, objectType, action, callback))
-            break
-        case PDU():
-            getPDUName(data,action,(pdu,assetId) => finishAddingLog(pdu, assetId, objectType, action, callback))
-            break
-        default:
-            console.log("Could not create log due to unknown type: " + objectType)
-            if (callback) {
-              callback()
-            }
+function addLog(objectId, objectType, action, data = null, callback = null, wantPromise = false) {
+    function meatOfAddLog (callback) {
+        switch (objectType) {
+            case ASSET():
+                getAssetName(objectId,data,action,asset => finishAddingLog(asset, objectId, objectType, action, callback))
+                break
+            case MODEL():
+                getModelName(objectId,data,action,model => finishAddingLog(model, objectId, objectType, action, callback))
+                break
+            case RACK():
+                getRackName(objectId,data,action,rack => finishAddingLog(rack, objectId, objectType, action, callback))
+                break
+            case USER():
+                getUserName(objectId,data,action,user => finishAddingLog(user, objectId, objectType, action, callback))
+                break
+            case DATACENTER():
+                getDatacenterName(objectId,data,action,datacenter => finishAddingLog(datacenter, objectId, objectType, action, callback))
+                break
+            case CHANGEPLAN():
+                getChangePlanName(objectId,data,action,changeplan => finishAddingLog(changeplan, objectId, objectType, action, callback))
+                break
+            case PDU():
+                getPDUName(data,action,(pdu,assetId) => finishAddingLog(pdu, assetId, objectType, action, callback))
+                break
+            default:
+                console.log("Could not create log due to unknown type: " + objectType)
+                if (callback) {
+                  callback()
+                }
+        }
     }
+
+    if (!wantPromise) {
+        // Just do the original work
+        meatOfAddLog(callback)
+    } else {
+        // Return a promise
+        return new Promise(function(resolve, reject) {
+            meatOfAddLog(resolve)
+        })
+    }
+
 }
 
 function finishAddingLog(object, objectId, objectType, action, callback) {
@@ -127,46 +140,58 @@ function finishAddingLog(object, objectId, objectType, action, callback) {
     }
 }
 
-function getObjectData(objectId, objectType, callback) {
-    switch (objectType) {
-        case ASSET():
-            firebaseutils.assetRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
+function getObjectData(objectId, objectType, callback, wantPromise = false) {
+    function meatOfGetObjectData (callback) {
+        switch (objectType) {
+            case ASSET():
+                firebaseutils.assetRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case MODEL():
+                firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case RACK():
+                firebaseutils.racksRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case USER():
+                firebaseutils.usersRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case DATACENTER():
+                firebaseutils.datacentersRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            default:
+                console.log("Could not get object data due to unknown type: " + objectType)
                 callback(null)
-            })
-            break
-        case MODEL():
-            firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
-                callback(null)
-            })
-            break
-        case RACK():
-            firebaseutils.racksRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
-                callback(null)
-            })
-            break
-        case USER():
-            firebaseutils.usersRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
-                callback(null)
-            })
-            break
-        case DATACENTER():
-            firebaseutils.datacentersRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
-                callback(null)
-            })
-            break
-        default:
-            console.log("Could not get object data due to unknown type: " + objectType)
-            callback(null)
+        }
+    }
+
+    if (!wantPromise) {
+        // Just do the original work
+        meatOfGetObjectData(callback)
+    } else {
+        // Return a promise
+        return new Promise(function(resolve, reject) {
+            meatOfGetObjectData(resolve)
+        })
     }
 }
 
@@ -219,7 +244,7 @@ function includesAssetInPDUName(name,searchName) {
     return ind !== -1 ? splitName.slice(ind+1).join(' ').includes(searchName) : false
 }
 
-function doesObjectStillExist(objectType,objectId,callback) {
+function doesObjectStillExist(objectType,objectId,callback,objectName=null) {
     switch (objectType) {
         case ASSET():
         case PDU():
@@ -241,7 +266,16 @@ function doesObjectStillExist(objectType,objectId,callback) {
             firebaseutils.changeplansRef.doc(objectId).get().then(doc => callback(doc.exists,true))
             break
         case MODEL():
-            firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.exists,true))
+            firebaseutils.modelsRef.doc(objectId).get().then(doc => {
+              if (doc.exists) {
+                firebaseutils.modelsRef.where('modelName','==',objectName).get().then(qs => {
+                  console.log(!qs.empty);
+                  callback(!qs.empty,true)
+                })
+              } else {
+                callback(false,true)
+              }
+            })
             break
         default:
             callback(true,true)

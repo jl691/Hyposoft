@@ -171,6 +171,35 @@ function isLoginValid(username, password, callback) {
     })
 }
 
+function updateEveryonesAssetPermissions () {
+    // Loop through all users, and if they have global assets, update their permissions to have all dcs
+    getAllDataCenterAbbrevs(datacenterAbbrevs => {
+        const assetPerms = datacenterAbbrevs.map(abbrev => 'ASSET_PERMISSION_'+abbrev)
+        firebaseutils.usersRef.get().then(querySnapshot => {
+            querySnapshot.forEach(user => {
+                if (user.data().permissions.includes('ASSET_PERMISSION_GLOBAL')) {
+                    var newPermissions = [...assetPerms, 'ASSET_PERMISSION_GLOBAL']
+                    user.data().permissions.forEach((item, i) => {
+                        if (!item.startsWith('ASSET_PERMISSION')) {
+                            newPermissions.push(item)
+                        }
+                    })
+                    user.ref.update({
+                        permissions: newPermissions
+                    })
+
+                    if (user.id === localStorage.getItem('userDocId')) {
+                        const userObject = user.data()
+                        localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(
+                            userObject.displayName+userObject.username+userObject.email+JSON.stringify(newPermissions)))
+                        localStorage.setItem('permissions', JSON.stringify(newPermissions))
+                    }
+                }
+            })
+        })
+    })
+}
+
 function logUserIn(userObject) {
     localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(
         userObject.displayName+userObject.username+userObject.email+JSON.stringify(userObject.permissions)))
@@ -333,4 +362,4 @@ fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers, getLoggedInUs
  ADMIN_PERMISSION, isLoggedInUserNetID, getLoggedInUserUsername, getAllDataCenterAbbrevs,
 updateUserPermissions, doesLoggedInUserHaveModelPerm, doesLoggedInUserHaveAssetPerm,
 doesLoggedInUserHaveAuditPerm, doesLoggedInUserHavePowerPerm,
-doesLoggedInUserHaveAnyAssetPermsAtAll, getAllowedDCsString }
+doesLoggedInUserHaveAnyAssetPermsAtAll, getAllowedDCsString, updateEveryonesAssetPermissions }

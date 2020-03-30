@@ -19,28 +19,40 @@ class ExecuteChangePlanForm extends React.Component {
                         <Box direction="row">
                             <Button label="Execute" icon={<Checkmark />} onClick={() => {
                                 console.log(this.props.id)
-                                changeplanconflictutils.changePlanHasConflicts(this.props.id, hasConflicts =>{
-                                console.log(hasConflicts)
-                                if (hasConflicts.length) {
-                                    console.log("please end me now")
-                                    ToastsStore.error("Error executing change plan - there are conflicts.")
+                                ToastsStore.info('Please wait...', 5000);
+                                changeplanconflictutils.changePlanHasConflicts(this.props.id, hasConflicts => {
+                                  
+                                    // console.log(hasConflicts.length)
+                                     console.log(hasConflicts)
+                                    //if there are conflicts, then hasConflicts.length with be a number
+                                    if (hasConflicts.length) {
+                                        console.log("please end me now")
+                                        ToastsStore.error("Error executing change plan - there are conflicts.")
 
-                                } else {
-                                    console.log("there were no conflcits in the change plan--executing")
-                                    changeplanutils.executeChangePlan(this.props.id, result => {
-                                        if (result) {
-                                            this.props.successfulExecution();
-                                        } else {
-                                            ToastsStore.error("Error executing change plan - please try again later.")
-                                        }
-                                    })
+                                    } else {
+                                        // console.log("there were no conflcits in the change plan--executing")
+                                        // console.log(hasConflicts)
+                                        // console.log(hasConflicts.length)
+                                        changeplanutils.executeChangePlan(this.props.id, result => {
+                                            changeplanconflictutils.changePlanHasConflicts(this.props.id, hasConflicts1 => {
 
-                                }
+                                                if (result) {
+                                                    this.props.successfulExecution();
+                                                }
+                                                else if (hasConflicts1.length) {
+                                                    ToastsStore.error("Error executing change plan - there are conflicts.")
 
+                                                } else {
+                                                    ToastsStore.error("Error executing change plan - please try again later.")
+                                                }
+                                            })
+                                        })
+
+                                    }
 
 
                                 })
-                                
+
                             }} />
                             <Button label="Cancel" icon={<Close />}
                                 onClick={() => this.props.cancelPopup(true)} />

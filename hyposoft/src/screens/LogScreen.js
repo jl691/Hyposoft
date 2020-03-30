@@ -130,7 +130,7 @@ class LogScreen extends Component {
                         } else {
                             ToastsStore.error(datum.objectType+' does not exist anymore', 3000)
                         }
-                    })
+                    },datum.objectName)
                 }}
             />
         }

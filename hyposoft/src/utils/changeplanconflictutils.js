@@ -557,6 +557,7 @@ function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datace
                 ownerConflict(changePlanID, stepID, owner, status4 => {
                     assetIDConflict(changePlanID, stepID, assetID, status5 => {
                         modelConflict(changePlanID, stepID, model, status6 => {
+                            //assetID is null here, because it's used to check for self conflicting in rackUConflict
                             rackUConflict(changePlanID, stepID, null, model, datacenter, rack, rackU, status7 => {
                                 console.log(networkConnections)
                                 let networkConnectionsArray = assetnetworkportutils.networkConnectionsToArray(networkConnections)
@@ -1119,6 +1120,10 @@ function addConflictToDBSteps(changePlanID, stepID, stepNum, otherStepID, otherS
                 })
 
             }
+            else {
+                //this relates to decommission errors, where it's not necessary to do a symmetric add conflict
+                callback(false)
+            }
 
         }).catch(error => {
             callback(false)
@@ -1168,19 +1173,27 @@ function changePlanHasConflicts(changePlanID, callback) {
     changeplansRef.doc(changePlanID).collection('conflicts').get().then(query => {
         let result = new Set()
         let count = 0;
-       // console.log(query.size)
+        // console.log(query.size)
         if (query.docs.length) {
             query.docs.forEach(stepDoc => {
                 changeplansRef.doc(changePlanID).collection('changes').doc(stepDoc.id).get().then(changeStepDoc => {
-                    let stepNum = changeStepDoc.data().step
-                    result.add(stepNum)
-                    count++;
-                    if (count === query.size) {
-                        //console.log("This is the result set size: " + result.size)
-                        let sortedResult = [...(result)].sort()
-                        console.log("CALLING BACK")
-                        callback(sortedResult)
+                    if (changeStepDoc.exists) {
+                        let stepNum = changeStepDoc.data().step
+                        result.add(stepNum)
+                        count++;
+                        if (count === query.size) {
+                            //console.log("This is the result set size: " + result.size)
+                            let sortedResult = [...(result)].sort()
+                            console.log("CALLING BACK" + sortedResult)
+                       
+                            callback(sortedResult)
+                        }
+
                     }
+                    else{
+                        callback([])
+                    }
+
 
                 }).catch(error => console.log(error))
             })
@@ -1220,6 +1233,33 @@ function checkAllLiveDBConflicts(isExecuted, changePlanID, callback) {
             }
         })
     }
+}
+
+function clearAllStepConflicts(changePlanID, callback) {
+    let counter = 0;
+    changeplansRef.doc(changePlanID).collection('conflicts').get().then(allConflicts => {
+        if (!allConflicts.empty) {
+            allConflicts.docs.forEach(stepConflict => {
+                //what if there is no steps field?
+                changeplansRef.doc(changePlanID).collection("conflicts").doc(stepConflict.id).set({
+                    steps: firebase.firestore.FieldValue.delete()
+                }, { merge: true }).then(() => {
+                    counter++;
+                    if (counter === allConflicts.size) {
+                        console.log("Done deleting docs in conflict subcoll")
+                        callback(true)
+                    }
+                }).catch(function () {
+                    callback(null);
+                })
+            })
+        }
+        else {
+            callback(true)
+        }
+
+    })
+
 }
 
 function clearAllConflicts(changePlanID, callback) {
@@ -1264,7 +1304,8 @@ export {
     changePlanHasConflicts,
     editCheckAssetNonexistent,
     checkAllLiveDBConflicts,
-    clearAllConflicts
+    clearAllConflicts,
+    clearAllStepConflicts
 
 
 }
