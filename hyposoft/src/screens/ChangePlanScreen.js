@@ -120,8 +120,8 @@ class ChangePlanScreen extends React.Component {
                     }}
                     onClickRow={({ datum }) => {
                         //this.props.history.push('/changeplans/' + datum.id)
-                       // console.log("Here is the change plan ID: " + datum.id)
-
+                       // console.log("Here is the change plan ID: " + datum.id)                      
+                       ToastsStore.info("Please wait...", 7000)
                         changeplanutils.getChangePlanData(datum.id, changeplanDoc =>{
                             console.log(changeplanDoc.executed)
                             changeplanconflictutils.checkAllLiveDBConflicts(changeplanDoc.executed, datum.id, status =>{
