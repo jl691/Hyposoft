@@ -22,12 +22,12 @@ class WorkOrderScreen extends React.Component {
 
     componentDidMount() {
         changeplanconflictutils.changePlanHasConflicts(this.props.match.params.changePlanID, conflicts => {
-            if (conflicts && conflicts.length) {
+            console.log(conflicts.length, !Boolean(conflicts.length))
+            if (conflicts && !Boolean(conflicts.length)) {
                 changeplanutils.generateWorkOrder(this.props.match.params.changePlanID, result => {
-                    console.log(result)
                     if (result) {
-                        this.sortedSteps = new Map([...result.entries()].sort());
-                        console.log(this.sortedSteps)
+                        console.log(result)
+                        this.sortedSteps = result;
                         this.setState({
                             stepsLoaded: true
                         })
@@ -50,16 +50,15 @@ class WorkOrderScreen extends React.Component {
         } else if (this.state.conflicts) {
             return <Text>A work order cannot be generated because the change plan has conflicts.</Text>
         } else {
-            console.log(Object.keys(this.sortedSteps))
-            return [...this.sortedSteps.keys()].map(key => (
+            return this.sortedSteps.map((element, index) => (
                 <TableRow>
                     <TableCell scope={"row"}>
-                        {key}
+                        {index+1}
                     </TableCell>
                     <TableCell>
-                        <ol>
-                            {this.generateListFromStepsArray(this.sortedSteps.get(key))}
-                        </ol>
+                        <ul>
+                            {this.generateListFromStepsArray(element)}
+                        </ul>
                     </TableCell>
                 </TableRow>
             ))
