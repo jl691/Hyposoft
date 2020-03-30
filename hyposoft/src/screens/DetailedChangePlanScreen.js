@@ -48,39 +48,47 @@ class DetailedChangePlanScreen extends React.Component {
 
     componentDidMount() {
         this.changePlanID = this.props.match.params.changePlanID;
-        firebaseutils.changeplansRef.doc(this.changePlanID).get().then(documentSnapshot => {
+        //this.generateConflict(this.props.match.params.changePlanID, done => {
+            firebaseutils.changeplansRef.doc(this.changePlanID).get().then(documentSnapshot => {
 
-            if (documentSnapshot.exists) {
-                this.setState({
-                    name: documentSnapshot.data().name,
-                    executed: documentSnapshot.data().executed,
-                    timestamp: documentSnapshot.data().timestamp
-                })
-            }
-        });
+                if (documentSnapshot.exists) {
+                    this.setState({
+                        name: documentSnapshot.data().name,
+                        executed: documentSnapshot.data().executed,
+                        timestamp: documentSnapshot.data().timestamp
+                    })
+                }
+            });
+
+      //  })
+
         this.forceRefresh()
     }
 
     forceRefresh() {
         this.startAfter = null;
+        this.hasConflicts=false;
         this.setState({
             changes: [],
             initialLoaded: false,
             popupType: "",
         });
-        changeplanutils.getChanges(this.props.match.params.changePlanID, userutils.getLoggedInUserUsername(), (newStart, changes, empty) => {
-            if (empty) {
-                this.setState({
-                    initialLoaded: true
-                });
-            } else if (newStart) {
-                this.startAfter = newStart;
-                this.setState({
-                    changes: changes,
-                    initialLoaded: true
-                });
-            }
-        });
+        this.generateConflict(this.props.match.params.changePlanID, done => {
+
+            changeplanutils.getChanges(this.props.match.params.changePlanID, userutils.getLoggedInUserUsername(), (newStart, changes, empty) => {
+                if (empty) {
+                    this.setState({
+                        initialLoaded: true
+                    });
+                } else if (newStart) {
+                    this.startAfter = newStart;
+                    this.setState({
+                        changes: changes,
+                        initialLoaded: true
+                    });
+                }
+            });
+        })
     }
 
     cancelPopup = (data) => {
@@ -90,6 +98,7 @@ class DetailedChangePlanScreen extends React.Component {
     };
 
     callbackFunction = (data) => {
+        //console.log("BITCCCCHHH")
         this.forceRefresh();
     };
 
@@ -344,50 +353,70 @@ class DetailedChangePlanScreen extends React.Component {
         ToastsStore.success(data);
     }
 
-    generateConflict(deletedStep = null) {
-        this.generateConflictCount++
-        if (this.generateConflictCount === 1) {
-            changeplanconflictutils.changePlanHasConflicts(this.props.match.params.changePlanID, conflicts => {
-                let conflictsArray = [...conflicts]
-                if (conflictsArray.length) {
-                    console.log(...conflictsArray)
 
-                    for (let i = 0; i < conflictsArray.length; i++) {
-                        if (i === conflictsArray.length - 1) {
-                            //last conflicting step, don't want to have a , at the end
-                            this.errMessage = this.errMessage + conflictsArray[i] + "."
+    generateConflict(changePlanID, callback) {
+        // this.generateConflictCount++
+        // if (this.generateConflictCount === 1) {
+        let count = 0;
+        changeplanconflictutils.changePlanHasConflicts(changePlanID, conflicts => {
+            let conflictsArray = [...conflicts]
 
-                        }
-                        else {
-                            this.errMessage = this.errMessage + conflictsArray[i] + ", "
+            if (conflictsArray.length) {
+                console.log(...conflictsArray)
+
+                for (let i = 0; i < conflictsArray.length; i++) {
+
+                    if (i === conflictsArray.length - 1) {
+
+                        //last conflicting step, don't want to have a , at the end
+                        this.errMessage = this.errMessage + conflictsArray[i] + "."
+                        count++
+                        if (count === conflictsArray.length) {
+                            this.hasConflicts = true;
+                            callback(this.errMessage)
+
                         }
                     }
+                    else {
 
-                    this.forceRefresh()
-                    this.hasConflicts = true;
+                        this.errMessage = this.errMessage + conflictsArray[i] + ", "
+                        count++
+                        if (count === conflictsArray.length) {
+                            this.hasConflicts = true;
+                            callback(this.errMessage)
 
+                        }
+                    }
                 }
-            })
+
+                // this.forceRefresh()
+                //this.hasConflicts = true;
+
+            }
+            else {
+                callback()
+            }
+        })
 
 
-        }
+        //   }
 
 
-        if (this.hasConflicts) {
-            console.log(this.errMessage)
-            return (
-                <Box style={{
-                    borderRadius: 10
-                }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
-                    margin={{ top: "medium" }} overflow="auto" direction="column" pad={"small"}>
-                    <Heading level={"3"} margin={"small"}>Conflict</Heading>
-                    <Box overflow="auto">
-                        <Text weight="bold"> {this.errMessage}</Text>
-                    </Box>
-                </Box>
+        // if (this.hasConflicts) {
+        //     console.log(this.errMessage)
+        //     return (
+        //         <Box style={{
+        //             borderRadius: 10
+        //         }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
+        //             margin={{ top: "medium" }} overflow="auto" direction="column" pad={"small"}>
+        //             <Heading level={"3"} margin={"small"}>Conflict</Heading>
+        //             <Box overflow="auto">
+        //                 <Text weight="bold"> {this.errMessage}</Text>
+        //             </Box>
+        //         </Box>
 
-            )
-        }
+        //     )
+        // }
     }
 
     render() {
@@ -400,7 +429,7 @@ class DetailedChangePlanScreen extends React.Component {
 
         if (popupType === 'Delete') {
             popup = (
-                <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction}
+                <DeleteChangeForm cancelPopup={this.cancelPopup} forceRefresh={this.callbackFunction} genConflict={this.generateConflict}
                     changePlanID={this.changePlanID} stepNumber={this.state.deleteStepNumber} />
             )
         } else if (popupType === 'Execute') {
@@ -490,7 +519,19 @@ class DetailedChangePlanScreen extends React.Component {
                             <Heading level={"3"} margin={"small"}>Change Plan Executed</Heading>
                             <Box>This change plan was executed on {decommissionutils.getDate(this.state.timestamp)}. Thus, no further changes can be made.</Box>
                         </Box>}
-                        {this.generateConflict()}
+                        {/* {this.generateConflict()} */}
+                        {
+                            this.hasConflicts &&
+                            <Box style={{
+                                borderRadius: 10
+                            }} width={"xlarge"} background={"status-error"} align={"center"} alignSelf={"center"} justify={"center"}
+                                margin={{ top: "medium" }} overflow="auto" direction="column" pad={"small"}>
+                                <Heading level={"3"} margin={"small"}>Conflict</Heading>
+                                <Box overflow="auto">
+                                    <Text weight="bold"> {this.errMessage}</Text>
+                                </Box>
+                            </Box>
+                        }
                         <Box direction='row' justify='center' overflow={{ horizontal: 'hidden' }}>
                             <Box direction='row' justify='center'>
                                 <Box width='large' direction='column' align='stretch' justify='start'>
