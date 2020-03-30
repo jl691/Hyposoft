@@ -191,7 +191,7 @@ function updateEveryonesAssetPermissions () {
                     if (user.id === localStorage.getItem('userDocId')) {
                         const userObject = user.data()
                         localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(
-                            userObject.displayName+userObject.username+userObject.email+JSON.stringify(userObject.permissions)))
+                            userObject.displayName+userObject.username+userObject.email+JSON.stringify(newPermissions)))
                         localStorage.setItem('permissions', JSON.stringify(newPermissions))
                     }
                 }
