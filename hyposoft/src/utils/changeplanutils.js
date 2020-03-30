@@ -1050,9 +1050,11 @@ function executeAddAsset(id, doc, changePlanID, callback) {
 
                                     let _hostname = assetObject.hostname
 
-                                    while (_hostname.length > 1) {
-                                        _hostname = _hostname.substr(1)
-                                        suffixes_list.push(_hostname)
+                                    if(_hostname){
+                                        while (_hostname.length > 1) {
+                                            _hostname = _hostname.substr(1)
+                                            suffixes_list.push(_hostname)
+                                        }
                                     }
 
                                     let _datacenter = assetObject.datacenter
@@ -1070,9 +1072,11 @@ function executeAddAsset(id, doc, changePlanID, callback) {
                                     }
                                     let _owner = assetObject.owner
 
-                                    while (_owner.length > 1) {
-                                        _owner = _owner.substr(1)
-                                        suffixes_list.push(_owner)
+                                    if(_owner){
+                                        while (_owner.length > 1) {
+                                            _owner = _owner.substr(1)
+                                            suffixes_list.push(_owner)
+                                        }
                                     }
 
                                     index.saveObject({
