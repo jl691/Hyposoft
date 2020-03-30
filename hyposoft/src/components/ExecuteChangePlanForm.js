@@ -21,7 +21,7 @@ class ExecuteChangePlanForm extends React.Component {
                                 console.log(this.props.id)
                                 changeplanconflictutils.changePlanHasConflicts(this.props.id, hasConflicts =>{
                                 console.log(hasConflicts)
-                                if (hasConflicts.size) {
+                                if (hasConflicts.length) {
                                     console.log("please end me now")
                                     ToastsStore.error("Error executing change plan - there are conflicts.")
 
