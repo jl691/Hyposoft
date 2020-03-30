@@ -121,6 +121,9 @@ function validateImportedConnections (data, callback) {
 async function addConnections (data, fetchedAssets, callback) {
     for (var i = 0; i < data.length; i++) {
         const datum = data[i]
+        const oldDatum = await logutils.getObjectData(String(fetchedAssets[datum.src_hostname].assetId),logutils.ASSET(),() => {}, true)
+        console.log('Old datum: ')
+        console.log(oldDatum)
 
         // First remove connection from old destination
         if (datum.src_port in fetchedAssets[datum.src_hostname].networkConnections) {
@@ -203,7 +206,7 @@ async function addConnections (data, fetchedAssets, callback) {
             })
             delete newAsset3.networkConnections[datum.src_port]
         }
-        await logutils.addLog(String(fetchedAssets[datum.src_hostname].assetId), logutils.ASSET(), logutils.MODIFY(), fetchedAssets[datum.src_hostname], () => {}, true)
+        await logutils.addLog(String(fetchedAssets[datum.src_hostname].assetId), logutils.ASSET(), logutils.MODIFY(), oldDatum, () => {}, true)
     }
     callback()
 }

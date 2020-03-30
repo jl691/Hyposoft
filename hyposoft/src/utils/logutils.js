@@ -140,46 +140,58 @@ function finishAddingLog(object, objectId, objectType, action, callback) {
     }
 }
 
-function getObjectData(objectId, objectType, callback) {
-    switch (objectType) {
-        case ASSET():
-            firebaseutils.assetRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
+function getObjectData(objectId, objectType, callback, wantPromise = false) {
+    function meatOfGetObjectData (callback) {
+        switch (objectType) {
+            case ASSET():
+                firebaseutils.assetRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case MODEL():
+                firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case RACK():
+                firebaseutils.racksRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case USER():
+                firebaseutils.usersRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case DATACENTER():
+                firebaseutils.datacentersRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            default:
+                console.log("Could not get object data due to unknown type: " + objectType)
                 callback(null)
-            })
-            break
-        case MODEL():
-            firebaseutils.modelsRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
-                callback(null)
-            })
-            break
-        case RACK():
-            firebaseutils.racksRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
-                callback(null)
-            })
-            break
-        case USER():
-            firebaseutils.usersRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
-                callback(null)
-            })
-            break
-        case DATACENTER():
-            firebaseutils.datacentersRef.doc(objectId).get().then(doc => callback(doc.data()))
-            .catch( error => {
-                console.log("Error getting documents: ", error)
-                callback(null)
-            })
-            break
-        default:
-            console.log("Could not get object data due to unknown type: " + objectType)
-            callback(null)
+        }
+    }
+
+    if (!wantPromise) {
+        // Just do the original work
+        meatOfGetObjectData(callback)
+    } else {
+        // Return a promise
+        return new Promise(function(resolve, reject) {
+            meatOfGetObjectData(resolve)
+        })
     }
 }
 
