@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import AppBar from '../components/AppBar'
-import HomeButton from '../components/HomeButton'
+import HomeMenu from '../components/HomeMenu'
 import UserMenu from '../components/UserMenu'
 import {Redirect} from "react-router-dom";
 import { ToastsContainer, ToastsStore } from 'react-toasts'
@@ -101,43 +101,43 @@ class LogScreen extends Component {
                     [
                         {
                             property: 'itemNo',
-                            header: <Text size='small'>Date and Time (EST)</Text>,
-                            render: datum => <Text size='small'>{'['+datum.itemNo+'] '+datum.date}</Text>,
+                            header: <Text size='small'>Date and Time (EST) - Information</Text>,
+                            render: datum => <Text size='small'>{'['+datum.itemNo+'] '+datum.date+' - '+datum.log}</Text>,
                             primary: true,
                             sortable: false,
                         },
-                        {
-                            property: 'log',
-                            header: <Text size='small'>Information</Text>,
-                            render: datum => <Text size='small'>{datum.log}</Text>,
-                            sortable: false,
-                        }
                     ]
                 }
                 data={this.state.logs}
                 sortable={true}
                 size="medium"
                 onClickRow={({datum}) => {
-                    logutils.doesObjectStillExist(datum.objectType,datum.objectId,exists => {
+                    logutils.doesObjectStillExist(datum.objectType,datum.objectId,(exists,deployed) => {
                         if (exists) {
                             if (datum.objectType === logutils.MODEL()) {
                                 this.props.history.push('/models/'+datum.currentData.vendor+'/'+datum.currentData.modelNumber)
-                            } else if (datum.objectType === logutils.ASSET()) {
-                                this.props.history.push('/assets/'+datum.objectId)
+                            } else if (datum.objectType === logutils.CHANGEPLAN()) {
+                                this.props.history.push('/changeplans/'+datum.objectId)
+                            } else if (datum.objectType === logutils.ASSET() || datum.objectType === logutils.PDU()) {
+                                if (!deployed) {
+                                    this.props.history.push('/decommissioned/'+datum.objectId)
+                                } else {
+                                    this.props.history.push('/assets/'+datum.objectId)
+                                }
                             } else {
                                 ToastsStore.error(datum.objectType+' does not have a detailed view', 3000)
                             }
                         } else {
                             ToastsStore.error(datum.objectType+' does not exist anymore', 3000)
                         }
-                    })
+                    },datum.objectName)
                 }}
             />
         }
     }
 
     render() {
-        if (!userutils.isUserLoggedIn()) {
+        if (!userutils.doesLoggedInUserHaveAuditPerm()) {
             return <Redirect to='/'/>
         }
 
@@ -145,7 +145,7 @@ class LogScreen extends Component {
           <Grommet theme={theme} full className='fade'>
               <Box fill background='light-2'>
                   <AppBar>
-                      <HomeButton alignSelf='start' this={this} />
+                      <HomeMenu alignSelf='start' this={this} />
                       <Heading alignSelf='center' level='4' margin={{
                           top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                       }} >Logs</Heading>

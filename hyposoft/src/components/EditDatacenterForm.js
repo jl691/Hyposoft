@@ -28,7 +28,7 @@ class EditDatacenterForm extends React.Component {
         } else {
             datacenterutils.updateDatacenter(this.state.oldName, this.state.oldAbbreviation, this.state.name.trim(), this.state.abbreviation.trim(), result => {
                 if(result) {
-                    this.props.parentCallback(true);
+                    this.props.parentCallback("Successfully edited the datacenter!");
                 } else {
                     console.log(result)
                     ToastsStore.error("Error updating datacenter. Please ensure that the name and abbreviation are unique.");

@@ -1,12 +1,11 @@
 import React, { Component } from 'react'
 import AppBar from '../components/AppBar'
-import HomeButton from '../components/HomeButton'
+import HomeMenu from '../components/HomeMenu'
 import UserMenu from '../components/UserMenu'
 import ItemCard from '../components/ItemCard'
 import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import * as userutils from '../utils/userutils'
-import * as powerutils from '../utils/powerutils'
 
 import {
     Box,
@@ -22,16 +21,24 @@ class DashboardScreen extends Component {
         classes: []
     }
 
-    actions = [
-        {id: 0, title: 'Users', desc: 'View and manage users'},
-        {id: 1, title: 'Models', desc: 'View and manage models'},
-        {id: 2, title: 'Assets', desc: 'View and manage assets'},
-        {id: 3, title: 'Racks', desc: 'View and manage racks'},
-        {id: 4, title: 'Import / Export', desc: 'Import and export models and assets'},
-        {id: 5, title: 'Datacenters', desc: 'View and manage datacenters'},
-        {id: 6, title: 'Logs', desc: 'View global logs'},
-        //{id: 5, title: 'Reports', desc: 'Generate rack usage reports'}
-    ]
+    generateActions() {
+      var actions = []
+      actions = actions.concat(
+        [
+            {id: 0, title: 'Users', desc: 'View and manage users'},
+            {id: 1, title: 'Models', desc: 'View and manage models'},
+            {id: 2, title: 'Assets', desc: 'View and manage assets'},
+            {id: 3, title: 'Racks', desc: 'View and manage racks'},
+            {id: 4, title: 'Import / Export', desc: 'Import and export models and assets'},
+            {id: 5, title: 'Datacenters', desc: 'View and manage datacenters'},
+        ]
+      )
+      if (userutils.doesLoggedInUserHaveAuditPerm()) {
+        actions.push({id: 6, title: 'Logs', desc: 'View global logs'})
+      }
+      actions.push({id: 7, title: 'Change Plans', desc: 'View change plans'})
+      return actions
+    }
 
     doAction (action) {
         switch(action) {
@@ -56,6 +63,9 @@ class DashboardScreen extends Component {
             case 6:
                 this.setState({redirect: '/logs'})
                 break
+            case 7:
+                this.setState({redirect: '/changeplans'})
+                break
             default:
                 alert(action)
         }
@@ -70,7 +80,7 @@ class DashboardScreen extends Component {
             return <Redirect to='/' />
         }
 
-        var content = this.actions.map(element => (
+        var content = this.generateActions().map(element => (
                     <ItemCard
                         key={element.id}
                         title={element.title}
@@ -83,7 +93,7 @@ class DashboardScreen extends Component {
 
                 <Box fill background='light-2'>
                     <AppBar>
-                        <HomeButton alignSelf='start' this={this} />
+                        <HomeMenu alignSelf='start' this={this} />
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                         }} >Dashboard</Heading>

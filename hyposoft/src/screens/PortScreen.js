@@ -1,17 +1,19 @@
 import React, { Component } from 'react'
 import AppBar from '../components/AppBar'
-import HomeButton from '../components/HomeButton'
+import HomeMenu from '../components/HomeMenu'
 import UserMenu from '../components/UserMenu'
 import { Redirect } from 'react-router-dom'
 import { ToastsContainer, ToastsStore } from 'react-toasts'
 import { saveAs } from 'file-saver'
 import * as userutils from '../utils/userutils'
 import * as modelutils from '../utils/modelutils'
-import * as assetutils from '../utils/assetutils'
 import * as bulkutils from '../utils/bulkutils'
 import * as bulkconnectionsutils from '../utils/bulkconnectionsutils'
 import * as bulkassetsutils from '../utils/bulkassetsutils'
 import CSVReader from 'react-csv-reader'
+import example_model from '../res/example_model.png'
+import example_asset from '../res/example_asset.png'
+import example_network from '../res/example_network.png'
 
 import {
     Anchor,
@@ -38,6 +40,9 @@ class PortScreen extends Component {
         this.showFormatDocumentation = this.showFormatDocumentation.bind(this)
         this.importConnections = this.importConnections.bind(this)
         this.exportConnections = this.exportConnections.bind(this)
+        this.importAssetsButtonClicked = this.importAssetsButtonClicked.bind(this)
+        this.importModelsButtonClicked = this.importModelsButtonClicked.bind(this)
+        this.importNetconnButtonClicked = this.importNetconnButtonClicked.bind(this)
     }
 
     exportConnections () {
@@ -97,7 +102,7 @@ class PortScreen extends Component {
                     // NOTE: Addition and modification are done by the same utils function
                     // The only difference is that you have to confirm modifications
 
-                    this.setState(oldState => ({...oldState, showLoadingDialog: false, errors: undefined}))
+                    this.setState(oldState => ({...oldState, errors: undefined}))
                     if (toBeModified.length === 0) {
                         if (toBeAdded.length > 0) {
                             bulkconnectionsutils.addConnections(toBeAdded, fetchedAssets, () => {
@@ -232,6 +237,36 @@ class PortScreen extends Component {
         }))
     }
 
+    importModelsButtonClicked () {
+        if (userutils.doesLoggedInUserHaveModelPerm()) {
+            document.getElementById('csvreadermodels').click()
+        } else {
+            ToastsStore.info("You don't have model management permissions", 3000, 'burntToast')
+        }
+    }
+
+    importAssetsButtonClicked () {
+        if (!userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) {
+            ToastsStore.info("You don't have asset management permissions for any datacenter", 3000, 'burntToast')
+        } else if (!userutils.doesLoggedInUserHaveAssetPerm(null)){
+            // Show warning that they have limited permissions
+            this.setState(oldState => ({...oldState, showLimitedAssetWarning: 'csvreaderassets'}))
+        } else {
+            document.getElementById('csvreaderassets').click()
+        }
+    }
+
+    importNetconnButtonClicked() {
+        if (!userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) {
+            ToastsStore.info("You don't have asset management permissions for any datacenter", 3000, 'burntToast')
+        } else if (!userutils.doesLoggedInUserHaveAssetPerm(null)){
+            // Show warning that they have limited permissions
+            this.setState(oldState => ({...oldState, showLimitedAssetWarning: 'csvreaderconn'}))
+        } else {
+            document.getElementById('csvreaderconn').click()
+        }
+    }
+
     render() {
         if (this.state.redirect !== '') {
             return <Redirect to={this.state.redirect} />
@@ -241,27 +276,12 @@ class PortScreen extends Component {
             return <Redirect to='/' />
         }
 
-        var content = [
-                <Button primary label="Export Models" onClick={this.exportModels}/>,
-                <Button label="Import Models" onClick={()=>{document.getElementById('csvreadermodels').click()}}/>,
-                <Button primary label="Export Assets" onClick={this.exportAssets}/>,
-                <Button label="Import Assets" onClick={()=>{document.getElementById('csvreaderassets').click()}}/>,
-                <Button primary label="Export Network Connections" onClick={this.exportConnections}/>,
-                <Button label="Import Network Connections" onClick={()=>{document.getElementById('csvreaderconn').click()}}/>,
-        ]
-        if (!userutils.isLoggedInUserAdmin()) {
-            content = [
-                    <Heading alignSelf='center' level='5' margin='none'>You're not an admin</Heading>,
-                    <Button label="Go back" onClick={()=>this.props.history.goBack()} margin={{top: 'small'}}/>
-            ]
-        }
-
         return (
             <Grommet theme={theme} full className='fade'>
 
                 <Box fill background='light-2'>
                     <AppBar>
-                        <HomeButton alignSelf='start' this={this} />
+                        <HomeMenu alignSelf='start' this={this} />
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                         }} ></Heading>
@@ -284,17 +304,71 @@ class PortScreen extends Component {
                             }}
                             gap='small'
                             pad={{top: 'medium', left: 'medium', right: 'medium'}} >
-                            {content}
-                            <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={() => {}} href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Need documentation for file format?</Anchor>
+                            <Button primary label="Export Models" onClick={this.exportModels}/>
+                            { userutils.doesLoggedInUserHaveModelPerm() ?
+                                [<Button label="Import Models" onClick={this.importModelsButtonClicked}/>,
+                                <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={() => this.setState(oldState => ({...oldState, showFormatDocumentationModels: true}))}>Need documentation for file format?</Anchor>]
+                                : [<p style={{textAlign: 'center'}}>Sorry, you can't import models because you don't have model management permissions.</p>]
+                            }
+                        </Box>
+                    </Box>
+                    <Box direction='row'
+                        justify='center'
+                        wrap={true}>
+                        <Box style={{
+                                 borderRadius: 10,
+                                 borderColor: '#EDEDED'
+                             }}
+                             width="medium"
+                            id='containerBox'
+                            background='#FFFFFF'
+                            margin={{top: 'medium', bottom: 'small'}}
+                            flex={{
+                                grow: 0,
+                                shrink: 0
+                            }}
+                            gap='small'
+                            pad={{top: 'medium', left: 'medium', right: 'medium'}} >
+                            <Button primary label="Export Assets" onClick={this.exportAssets}/>
+                            { userutils.doesLoggedInUserHaveAnyAssetPermsAtAll() ?
+                                [<Button label="Import Assets" onClick={this.importAssetsButtonClicked}/>,
+                                <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={() => this.setState(oldState => ({...oldState, showFormatDocumentationAssets: true}))}>Need documentation for file format?</Anchor>]
+                                : [<p style={{textAlign: 'center'}}>Sorry, you can't import assets because you don't have asset management permissions for any datacenter.</p>]
+                            }
+                        </Box>
+                    </Box>
+                    <Box direction='row'
+                        justify='center'
+                        wrap={true}>
+                        <Box style={{
+                                 borderRadius: 10,
+                                 borderColor: '#EDEDED'
+                             }}
+                             width="medium"
+                            id='containerBox'
+                            background='#FFFFFF'
+                            margin={{top: 'medium', bottom: 'small'}}
+                            flex={{
+                                grow: 0,
+                                shrink: 0
+                            }}
+                            gap='small'
+                            pad={{top: 'medium', left: 'medium', right: 'medium'}} >
+                            <Button primary label="Export Network Connections" onClick={this.exportConnections}/>
+                            { userutils.doesLoggedInUserHaveAnyAssetPermsAtAll() ?
+                                [<Button label="Import Network Connections" onClick={this.importNetconnButtonClicked}/>,
+                                <Anchor margin={{top: 'small'}} style={{marginBottom: 10}} alignSelf='center' onClick={() => this.setState(oldState => ({...oldState, showFormatDocumentationNetwork: true}))}>Need documentation for file format?</Anchor>]
+                                : [<p style={{textAlign: 'center'}}>Sorry, you can't import connections because you don't have asset management permissions for any datacenter.</p>]
+                            }
                         </Box>
                     </Box>
                 </Box>
                 <ToastsContainer store={ToastsStore} lightBackground/>
-                {this.state.showFormatDocumentation && (
-                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState => ({...oldState, showFormatDocumentation: false}))}} onEsc={()=>{this.setState(oldState => ({...oldState, showFormatDocumentation: false}))}}>
+                {this.state.showFormatDocumentationModels && (
+                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState => ({...oldState, showFormatDocumentationModels: false}))}} onEsc={()=>{this.setState(oldState => ({...oldState, showFormatDocumentationModels: false}))}}>
                         <Box pad="medium" gap="small" width="large">
                             <Heading level={4} margin="none">
-                                Import File Format Documentation
+                                Import File Format Documentation for Models
                             </Heading>
                             <Box
                                 margin={{top: 'small'}}
@@ -304,12 +378,93 @@ class PortScreen extends Component {
                                 align="center"
                                 justify="start" >
                                 <span>
-                                    Files must be CSV files (comma-separated values) for import purposes. Files for model import must contain all 10 headers (columns) that can potentially be specified, although individual values for these columns may be left empty.
-                                    These columns are: <b>vendor, model_number, height, display_color, network_ports, power_ports, cpu, memory, storage,</b> and <b>comments.</b> <br/> <br/>
-                                    The same rules apply for files intended for asset imports. However, the columns for asset import files are: <b>hostname, rack, rack_position, vendor, model_number, owner,</b> and <b>comments.</b> <br/><br/>
-                                    All the restrictions that would apply to values inputted via the web form also apply to values provided in the import files. Any issues will be reported to you, and your import will safely abort.<br/><br/>
+                                    Files must be CSV files (comma-separated values) for import purposes. Files for import must contain all the headers (columns) that can potentially be specified, although individual values for these columns may be left empty.
+                                    Here's an example row showing data that you can specify for each column:
+                                    <img src={example_model} alt='Model example' style={{maxWidth: '100%', maxHeight: '100%', marginTop: '10px', marginBottom: '10px'}} />
                                     <Anchor href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Click here</Anchor> for more detailed technical information on the file format specification.
                                 </span>
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
+                {this.state.showFormatDocumentationAssets && (
+                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState => ({...oldState, showFormatDocumentationAssets: false}))}} onEsc={()=>{this.setState(oldState => ({...oldState, showFormatDocumentationAssets: false}))}}>
+                        <Box pad="medium" gap="small" width="large">
+                            <Heading level={4} margin="none">
+                                Import File Format Documentation for Assets
+                            </Heading>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="start" >
+                                <span>
+                                    Files must be CSV files (comma-separated values) for import purposes. Files for import must contain all the headers (columns) that can potentially be specified, although individual values for these columns may be left empty.
+                                    Here's an example row showing data that you can specify for each column:
+                                    <img src={example_asset} alt='Model example' style={{maxWidth: '100%', maxHeight: '100%', marginTop: '10px', marginBottom: '10px'}} />
+                                    <Anchor href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Click here</Anchor> for more detailed technical information on the file format specification.
+                                </span>
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
+                {this.state.showFormatDocumentationNetwork && (
+                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState => ({...oldState, showFormatDocumentationNetwork: false}))}} onEsc={()=>{this.setState(oldState => ({...oldState, showFormatDocumentationNetwork: false}))}}>
+                        <Box pad="medium" gap="small" width="large">
+                            <Heading level={4} margin="none">
+                                Import File Format Documentation for Network Connections
+                            </Heading>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="start" >
+                                <span>
+                                    Files must be CSV files (comma-separated values) for import purposes. Files for import must contain all the headers (columns) that can potentially be specified, although individual values for these columns may be left empty.
+                                    Here's an example row showing data that you can specify for each column:
+                                    <img src={example_network} alt='Model example' style={{maxWidth: '100%', maxHeight: '100%', marginTop: '10px', marginBottom: '10px'}} />
+                                    <Anchor href="https://hyposoft-53c70.appspot.com/spec.pdf" target="_blank">Click here</Anchor> for more detailed technical information on the file format specification.
+                                </span>
+                            </Box>
+                        </Box>
+                    </Layer>
+                )}
+                {this.state.showLimitedAssetWarning && (
+                    <Layer position="center" modal onClickOutside={()=>{this.setState(oldState => ({...oldState, showLimitedAssetWarning: undefined}))}} onEsc={()=>{this.setState(oldState => ({...oldState, showLimitedAssetWarning: undefined}))}}>
+                        <Box pad="medium" gap="small" width="large">
+                            <Heading level={4} margin="none">
+                                Just so you know...
+                            </Heading>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="start" >
+                                <span>
+                                    You have custom asset management permissions, which means you can only alter assets in a few specific datacenters ({userutils.getAllowedDCsString()}). Any entries you import that affect other datacenters will be reported as errors and abort the import process.
+                                </span>
+                            </Box>
+                            <Box
+                                margin={{top: 'small'}}
+                                as="footer"
+                                gap="small"
+                                direction="row"
+                                align="center"
+                                justify="end" >
+                                <Button label="Cancel" primary onClick={()=>{this.setState(oldState => ({...oldState, showLimitedAssetWarning: undefined}))}} />
+                                <Button
+                                    label="Proceed"
+                                    onClick={() => {
+                                        this.setState(oldState => ({...oldState, showLimitedAssetWarning: undefined}))
+                                        document.getElementById(this.state.showLimitedAssetWarning).click()
+                                    }}
+                                    />
                             </Box>
                         </Box>
                     </Layer>

@@ -3,11 +3,11 @@ import * as datacenterutils from "../utils/datacenterutils";
 import {Box, Button, Grommet, Heading, Text, DataTable, Layer} from "grommet";
 import theme from "../theme";
 import AppBar from "../components/AppBar";
-import HomeButton from "../components/HomeButton";
+import HomeMenu from "../components/HomeMenu";
 import UserMenu from "../components/UserMenu";
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as userutils from "../utils/userutils";
-import {Add, Close, Edit, Trash} from "grommet-icons";
+import {Add, Close, Edit, FormEdit, Trash} from "grommet-icons";
 import {Redirect} from "react-router-dom";
 import AddDatacenterForm from "../components/AddDatacenterForm";
 import DeleteDatacenterForm from "../components/DeleteDatacenterForm";
@@ -17,6 +17,7 @@ class DatacenterScreen extends React.Component {
 
     startAfter = null;
     itemCount = 1;
+    colors={};
 
     constructor(props) {
         super(props);
@@ -66,7 +67,7 @@ class DatacenterScreen extends React.Component {
     }
 
     AdminTools() {
-        if (userutils.isLoggedInUserAdmin()) {
+        if (userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.isLoggedInUserAdmin()) {
             return (
                 <Box
                     width='medium'
@@ -136,7 +137,7 @@ class DatacenterScreen extends React.Component {
                 property: "name",
                 header: <Text size='small'>Name</Text>,
                 render: datum => (
-                    <Text size='small'>{datum.name}</Text>)
+                    <Text size='small' wordBreak={"break-all"}>{datum.name}</Text>)
             },
             {
                 property: "abbreviation",
@@ -151,18 +152,26 @@ class DatacenterScreen extends React.Component {
                     <Text size='small'>{datum.rackCount}</Text>)
             }
         ];
-        if (userutils.isLoggedInUserAdmin()) {
+        if (userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.isLoggedInUserAdmin()) {
             cols.push({
                     property: "delete",
                     header: <Text size='small'>Delete</Text>,
                     render: datum =>
                         <Trash onClick={() => {
-                            this.setState({
-                                deleteName: datum.name,
-                                deleteAbbrev: datum.abbreviation,
-                                popupType: "Delete"
-                            })
-                        }}/>
+                            if(!datum.rackCount) {
+                                this.setState({
+                                    deleteName: datum.name,
+                                    deleteAbbrev: datum.abbreviation,
+                                    popupType: "Delete"
+                                })
+                            }
+                            else {
+                                ToastsStore.error("Can't delete datacenters with existing racks.");
+                            }
+                        }}
+                               style={{cursor: 'pointer', backgroundColor: this.colors[datum.count+'_edit_color']}}
+                               onMouseOver={e => this.colors[datum.count+'_edit_color']='#dddddd'}
+                               onMouseLeave={e => this.colors[datum.count+'_edit_color']=''}/>
                 },
                 {
                     property: "edit",
@@ -174,13 +183,17 @@ class DatacenterScreen extends React.Component {
                                 editAbbrev: datum.abbreviation,
                                 popupType: "Edit"
                             })
-                        }}/>
+                        }}
+                              style={{cursor: 'pointer', backgroundColor: this.colors[datum.count+'_edit_color']}}
+                              onMouseOver={e => this.colors[datum.count+'_edit_color']='#dddddd'}
+                              onMouseLeave={e => this.colors[datum.count+'_edit_color']=''}/>
                 });
         }
         return cols;
     }
 
     callbackFunction = (data) => {
+        ToastsStore.success(data);
         this.forceRefresh();
     };
 
@@ -191,6 +204,7 @@ class DatacenterScreen extends React.Component {
     }
 
     render() {
+        console.log(userutils.doesLoggedInUserHaveAssetPerm(null))
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/'/>
         }
@@ -227,7 +241,7 @@ class DatacenterScreen extends React.Component {
             <Grommet theme={theme} full className='fade'>
                 <Box fill background='light-2'>
                     <AppBar>
-                        <HomeButton alignSelf='start' this={this}/>
+                        <HomeMenu alignSelf='start' this={this}/>
                         <Heading alignSelf='center' level='4' margin={{
                             top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                         }}>Datacenters</Heading>

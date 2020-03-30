@@ -1,5 +1,4 @@
 import React, {Component} from 'react'
-import {BrowserRouter as Router, Route} from 'react-router-dom'
 
 import {
     Text,
@@ -15,14 +14,15 @@ import {
     Menu,
     Select
 } from 'grommet'
-import {Add, Filter, Share} from 'grommet-icons'
+import {Add, View, Filter, Share} from 'grommet-icons'
 import AddAssetForm from '../components/AddAssetForm'
 import DeleteAssetPopup from '../components/DeleteAssetPopup'
+import DecommissionAssetPopup from '../components/DecommissionAssetPopup'
 import EditAssetForm from '../components/EditAssetForm'
 
 import theme from '../theme'
 import AppBar from '../components/AppBar'
-import HomeButton from '../components/HomeButton'
+import HomeMenu from '../components/HomeMenu'
 import UserMenu from '../components/UserMenu'
 import AssetTable from '../components/AssetTable'
 import * as userutils from "../utils/userutils";
@@ -32,6 +32,7 @@ import {ToastsContainer, ToastsStore} from "react-toasts";
 import * as datacenterutils from "../utils/datacenterutils";
 import * as bulkassetutils from "../utils/bulkassetsutils";
 import * as bulkconnectionstutils from "../utils/bulkconnectionsutils";
+import * as labelutils from "../utils/labelutils";
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
@@ -42,6 +43,7 @@ class AssetScreen extends Component {
     rackSort;
     rackUSort;
     datacenters = [];
+    activeFilters = false;
 
     constructor(props) {
         super(props);
@@ -52,6 +54,9 @@ class AssetScreen extends Component {
             deleteID: "",
             deleteModel: "",
             deleteHostname: "",
+            decommissionID: "",
+            decommissionModel: "",
+            decommissionHostname: "",
             updateID: "",
             initialLoaded: false,
             updateModel: "",
@@ -88,6 +93,7 @@ class AssetScreen extends Component {
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
         this.handleCancelRefreshPopupChange = this.handleCancelRefreshPopupChange.bind(this);
         this.handleDeleteButton = this.handleDeleteButton.bind(this);
+        this.handleDecommissionButton = this.handleDecommissionButton.bind(this);
         this.handleUpdateButton = this.handleUpdateButton.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleChangeRange = this.handleChangeRange.bind(this);
@@ -126,8 +132,12 @@ class AssetScreen extends Component {
     checkFilterDone(){
         if (/[A-Z]\d+/.test(this.state.rangeStart) && /[A-Z]\d+/.test(this.state.rangeEnd) && this.state.datacenter) {
             console.log("passed")
+            // activeFilters flag is for selectAll feature
+            this.activeFilters = true
             this.assetTable.current.handleFilter(this.state.rangeStart, this.state.rangeEnd, this.state.datacenter);
         } else {
+            // activeFilters flag is for selectAll feature
+            this.activeFilters = false
             this.assetTable.current.restoreDefault();
         }
     }
@@ -177,7 +187,7 @@ class AssetScreen extends Component {
 
             }
 
-        })
+        }, this.assetTable.current.state.selectedAssets)
     }
 
     handleCancelRefreshPopupChange() {
@@ -212,6 +222,14 @@ class AssetScreen extends Component {
             deleteID: datum.asset_id,
             deleteModel: datum.model,
             deleteHostname: datum.hostname
+        });
+    }
+    handleDecommissionButton = (datum) => {
+        this.setState({
+            popupType: 'Decommission',
+            decommissionID: datum.asset_id,
+            decommissionModel: datum.model,
+            decommissionHostname: datum.hostname
         });
     }
     handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter, datumMACAddresses, datumNetworkConnections, datumPowerConnections) => {
@@ -257,10 +275,11 @@ class AssetScreen extends Component {
                             ...hits[i],
                             id: hits[i].objectID,
                             itemNo: itemNo++,
-                            asset_id: hits[i].objectID
+                            asset_id: hits[i].objectID,
+                            checked: this.assetTable.current.state.selectedAssets.includes(hits[i].objectID)
                         }]
                     }
-                    console.log(results)
+                    this.assetTable.current.presetTotalAssetIdsForSelectAll(results)
                     this.setState(oldState => ({
                         ...oldState,
                         searchResults: results
@@ -268,6 +287,10 @@ class AssetScreen extends Component {
                 })
         } else {
             // reset
+            this.assetTable.current.state.assets.forEach(asset => asset.checked = this.assetTable.current.state.selectedAssets.includes(asset.asset_id))
+            if (this.activeFilters) {
+              this.assetTable.current.presetTotalAssetIdsForSelectAll(this.assetTable.current.state.assets)
+            }
             this.setState(oldState => ({
                 ...oldState,
                 searchResults: undefined
@@ -282,6 +305,7 @@ class AssetScreen extends Component {
             />)
         } else {
             //console.log(this.datacenters)
+            console.log(this.datacenters)
             return (
                 <Select
                     placeholder="Select a datacenter..."
@@ -303,11 +327,11 @@ class AssetScreen extends Component {
         let count = 0;
         datacenterutils.getAllDatacenterNames(names => {
             if (names.length) {
+                console.log(names)
                 names.forEach(name => {
                     this.datacenters.push(name);
                     count++;
                     if (count === names.length) {
-                        this.datacenters.push(name);
                         this.datacenters.push("All datacenters")
                         //console.log(items)
                         this.setState({
@@ -342,6 +366,19 @@ class AssetScreen extends Component {
                     <AddAssetForm
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
+                        updatePowerConnectionsFromParent={[]}
+                        updateNetworkConnectionsFromParent={[]}
+                        updateMacAddressesFromParent={[]}
+
+                        updateIDFromParent={""}
+                        updateModelFromParent={""}
+                        updateHostnameFromParent={""}
+                        updateRackFromParent={""}
+                        updateRackUFromParent={""}
+                        updateOwnerFromParent={""}
+                        updateCommentFromParent={""}
+                        updateDatacenterFromParent={""}
+                        updateAssetIDFromParent={""}
                     />
 
                 </Layer>
@@ -359,6 +396,21 @@ class AssetScreen extends Component {
                         deleteModel={this.state.deleteModel}
                         deleteHostname={this.state.deleteHostname}
 
+                    />
+                </Layer>
+            )
+        } else if (popupType === 'Decommission') {
+
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+
+                    <DecommissionAssetPopup
+                        parentCallback={this.handleCancelRefreshPopupChange}
+                        cancelCallback={this.handleCancelPopupChange}
+                        decommissionIDFromParent={this.state.decommissionID}
+                        decommissionModel={this.state.decommissionModel}
+                        decommissionHostname={this.state.decommissionHostname}
                     />
                 </Layer>
             )
@@ -448,71 +500,58 @@ class AssetScreen extends Component {
                              alignSelf='stretch'
                              background='#FFFFFF'
                              width={"medium"}
-                             margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                             margin={{ top: 'small', left: 'medium', right: 'medium' }}
                              pad='xxsmall' >
                             <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }} direction='column' justify='start'>
                                 <Stack >
                                     <Box gap='small' direction="column" margin='small'>
                                         {/* Put sort buttons here */}
-                                        <Text size='small'><b>Rack</b></Text>
-                                        <Box direction="row" justify="start" margin="small">
+                                        <Text size='small'><b>Sort by Rack and RackU</b></Text>
+                                        <Box direction="row" justify="center" margin="small" wrap={true}>
                                             <RadioButtonGroup
                                                 label="Rack"
                                                 name="rackSortChoice"
+                                                margin={{right: "small"}}
                                                 value={this.state.rackSortChoice}
-
                                                 options={[
-                                                    { label: "Ascending", value: "asc" },
-                                                    { label: "Descending", value: "desc" },
-
+                                                    { label: "Rack: Ascend", value: "asc" },
+                                                    { label: "Rack: Descend", value: "desc" },
                                                 ]}
-
                                                 onClick={e => {
-
                                                     this.value = e.target.value
                                                     this.setState(oldState => ({ ...oldState, rackSortChoice: this.value }))
                                                     this.handleRadioButtonChange(e)
-
                                                 }}
-
                                             />
-
-                                        </Box>
-                                        <Text size='small'><b>Rack U</b></Text>
-                                        <Box direction="row" justify="start" margin="small">
                                             <RadioButtonGroup
                                                 label="Rack"
                                                 name="rackUSortChoice"
+                                                margin={{left: "small"}}
                                                 value={this.state.rackUSortChoice}
-
                                                 options={[
-                                                    { label: "Ascending", value: "asc" },
-                                                    { label: "Descending", value: "desc" },
+                                                    { label: "RackU: Ascend", value: "asc" },
+                                                    { label: "RackU: Descend", value: "desc" },
 
                                                 ]}
-
                                                 onClick={e => {
-
                                                     this.value = e.target.value
                                                     this.setState(oldState => ({ ...oldState, rackUSortChoice: this.value }))
                                                     this.handleRadioButtonChange(e)
-
                                                 }}
-
                                             />
-
                                         </Box>
-                                        <Box direction="column" justify="center" margin={{top: 'small', bottom: 'medium'}}>
+                                        <Box direction="column" justify="center" margin={{top: 'small', bottom: 'small'}}>
                                             <Button label={<Text size="small"> Apply</Text>} onClick={this.handleCombinedSort}/>
                                         </Box>
-
-
+                                        <Box direction="column" justify="center" margin={{bottom: 'small'}}>
+                                            <Button label={<Text size="small"> Close</Text>} onClick={() => {
+                                                this.setState({
+                                                    popupType: ""
+                                                })
+                                            }}/>
+                                        </Box>
                                     </Box>
-
                                 </Stack>
-
-
-
                             </Box>
                         </Box>
 
@@ -524,20 +563,18 @@ class AssetScreen extends Component {
                              alignSelf='stretch'
                              background='#FFFFFF'
                              width={"medium"}
-                             margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                             margin={{ top: 'small', left: 'medium', right: 'medium' }}
                              pad='small' >
                             <Box flex margin={{ left: 'medium', top: 'small', right: 'medium' }} direction='column' justify='start'>
                                 {/*<Box direction="column" width={"medium"} margin={{top: 'small'}}>*/}
-                                <Button label={<Text size="small">Close</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
-                                    this.setState({
-                                        popupType: ""
-                                    })
-                                }}/>
-                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} onClick={() => {
+                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
                                     bulkassetutils.exportFilteredAssets(this.state.searchResults || this.assetTable.current.state.assets);
                                 }} style={{marginBottom: "10px"}}/>
-                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} onClick={() => {
+                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} margin={{bottom: 'medium'}} onClick={() => {
                                     bulkconnectionstutils.exportFilteredConnections(this.state.searchResults || this.assetTable.current.state.assets);
+                                }} style={{marginBottom: "10px"}}/>
+                                <Button icon={<Share/>} label={<Text size="small">Export Selected Barcodes</Text>} onClick={() => {
+                                    labelutils.generateLabelPDF(this.assetTable.current.state.selectedAssets.sort());
                                 }} margin={{bottom: 'medium'}}/>
                                 {/*this.assetTable.current.state*/}
                                 {/*</Box>*/}
@@ -556,17 +593,14 @@ class AssetScreen extends Component {
 
         return (
 
-            <Router>
 
-                <Route
-                    exact path="/assets" render={props => (
                     <React.Fragment>
                         <Grommet theme={theme} full className='fade'>
                             <Box fill background='light-2' overflow={"auto"}>
                                 {popup}
                                 <AppBar>
 
-                                    <HomeButton alignSelf='start' this={this}/>
+                                    <HomeMenu alignSelf='start' this={this}/>
                                     <Heading alignSelf='center' level='4' margin={{
                                         top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                                     }}>Assets</Heading>
@@ -628,9 +662,9 @@ class AssetScreen extends Component {
                                                         right: 'medium'
                                                     }} direction='column'
                                                          justify='start' alignSelf='stretch' flex>
-                                                        <Box align="center">
                                                             <AssetTable
                                                                 deleteButtonCallbackFromParent={this.handleDeleteButton}
+                                                                decommissionButtonCallbackFromParent={this.handleDecommissionButton}
 
                                                                 UpdateButtonCallbackFromParent={this.handleUpdateButton}
 
@@ -641,13 +675,21 @@ class AssetScreen extends Component {
                                                                 parent={this}
 
                                                             />
-                                                        </Box>
                                                     </Box>
                                                 </Box>
-                                                {userutils.isLoggedInUserAdmin() && (
+                                                {(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) && (
                                                     <Button primary icon={<Add/>} label="Add Asset" alignSelf='center'
                                                             onClick={() => this.setState({popupType: "Add"})}/>
                                                 )}
+
+                                                  <Button primary icon={<View/>} margin={{
+                                                      left: 'medium',
+                                                      top: 'small',
+                                                      bottom: 'small',
+                                                      right: 'medium'
+                                                  }} label="View Decommissioned Assets" alignSelf='center'
+                                                          onClick={() => this.props.history.push('/decommissioned')}/>
+
                                             </Box>
                                         </Box>
                                     </Box>
@@ -662,11 +704,7 @@ class AssetScreen extends Component {
 
                     </React.Fragment>
 
-                )}
 
-                />
-
-            </Router>
         )
     }
 }

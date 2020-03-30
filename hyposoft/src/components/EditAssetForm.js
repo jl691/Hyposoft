@@ -1,5 +1,17 @@
 import React, { Component } from 'react'
-import { Button, Grommet, Form, FormField, Heading, TextInput, Box, Accordion, AccordionPanel, CheckBox } from 'grommet'
+import {
+    Button,
+    Grommet,
+    Form,
+    FormField,
+    Heading,
+    TextInput,
+    Box,
+    Accordion,
+    AccordionPanel,
+    CheckBox,
+    TextArea
+} from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as assetmacutils from '../utils/assetmacutils'
@@ -36,12 +48,12 @@ export default class EditAssetForm extends Component {
             editDeletedNetworkConnections: [],
             showPowerConnections: this.props.updatePowerConnectionsFromParent.length ? true : false
 
-        }
+        } 
         this.handleUpdate = this.handleUpdate.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.addNetworkConnection = this.addNetworkConnection.bind(this);
         this.addPowerConnection = this.addPowerConnection.bind(this);
-        this.defaultPDUFields = this.defaultPDUFields.bind(this);
+        //this.defaultPDUFields = this.defaultPDUFields.bind(this);
         this.deleteNetworkConnection = this.deleteNetworkConnection.bind(this)
         this.deletePowerConnection = this.deletePowerConnection.bind(this);
     }
@@ -58,61 +70,61 @@ export default class EditAssetForm extends Component {
         this.setState({
             [event.target.name]: event.target.value
         });
-        if (event.target.name === "rackU") {
-            //console.log(this.state)
-            // console.log(this.state.datacenter)
-            this.defaultPDUFields(this.state.model, this.state.rack, this.state.datacenter)
-        }
+        // if (event.target.name === "rackU") {
+        //     //console.log(this.state)
+        //     // console.log(this.state.datacenter)
+        //     this.defaultPDUFields(this.state.model, this.state.rack, this.state.datacenter)
+        // }
     }
 
-    defaultPDUFields(model, rack, datacenter) {
-        //if the model has 2 or more ports, need to do these default fields
-        //find the first available spot
-        let numPorts = 0;
-        //instead of going into modelsRef, use a backend method
-        try {
-            modelutils.getModelByModelname(model, status => {
+    // defaultPDUFields(model, rack, datacenter) {
+    //     //if the model has 2 or more ports, need to do these default fields
+    //     //find the first available spot
+    //     let numPorts = 0;
+    //     //instead of going into modelsRef, use a backend method
+    //     try {
+    //         modelutils.getModelByModelname(model, status => {
 
-                if (status) {
-                    //test with model lenovo foobar
-                    numPorts = status.data().powerPorts
+    //             if (status) {
+    //                 //test with model lenovo foobar
+    //                 numPorts = status.data().powerPorts
 
-                    if (numPorts >= 2) {
-                        assetpowerportutils.getFirstFreePort(rack, datacenter, returnedPort => {
-                            console.log("In AddAssetForm. returned power port: " + returnedPort)
-                            if (returnedPort) {
+    //                 if (numPorts >= 2) {
+    //                     assetpowerportutils.getFirstFreePort(rack, datacenter, returnedPort => {
+    //                         console.log("In AddAssetForm. returned power port: " + returnedPort)
+    //                         if (returnedPort) {
 
-                                this.setState(oldState => ({
-                                    ...oldState,
-                                    powerConnections: [{
-                                        pduSide: "Left",
-                                        port: returnedPort.toString()
-                                    },
-                                    {
-                                        pduSide: "Right",
-                                        port: returnedPort.toString()
-                                    },
+    //                             this.setState(oldState => ({
+    //                                 ...oldState,
+    //                                 powerConnections: [{
+    //                                     pduSide: "Left",
+    //                                     port: returnedPort.toString()
+    //                                 },
+    //                                 {
+    //                                     pduSide: "Right",
+    //                                     port: returnedPort.toString()
+    //                                 },
 
-                                    ]
-                                }))
+    //                                 ]
+    //                             }))
 
-                                console.log(this.state.powerConnections)
-                            }
-
-
-                        });
+    //                             console.log(this.state.powerConnections)
+    //                         }
 
 
-                    }
-                }
-            })
+    //                     });
 
 
-        } catch (error) {
-            console.log(error)
-        }
+    //                 }
+    //             }
+    //         })
 
-    }
+
+    //     } catch (error) {
+    //         console.log(error)
+    //     }
+
+    // }
 
 
     addNetworkConnection(event) {
@@ -206,6 +218,7 @@ export default class EditAssetForm extends Component {
                 ToastsStore.error("Rack U must be positive.");
             }
             else {
+              
                 if (this.state.showPowerConnections) {
                     let existingConnections = [];
                     Object.keys(this.state.powerConnections).forEach(connection => {
@@ -224,6 +237,9 @@ export default class EditAssetForm extends Component {
 
                                             if (fixedAddr) {
                                                 console.log(fixedAddr)
+                                                console.log(this.props.changeDocID)
+                                                ToastsStore.info('Please wait...', 750);
+
                                                 assetutils.updateAsset(
                                                     this.state.asset_id,
                                                     this.state.model,
@@ -245,7 +261,7 @@ export default class EditAssetForm extends Component {
                                                             this.props.parentCallback(true);
                                                             ToastsStore.success('Successfully updated asset!');
                                                         }
-                                                    }
+                                                    }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null
                                                 );
                                             }
                                             else {
@@ -267,6 +283,7 @@ export default class EditAssetForm extends Component {
 
                                 if (fixedAddr) {
                                     console.log(fixedAddr)
+                                    ToastsStore.info('Please wait...', 750);
                                     assetutils.updateAsset(
                                         this.state.asset_id,
                                         this.state.model,
@@ -288,7 +305,7 @@ export default class EditAssetForm extends Component {
                                                 this.props.parentCallback(true);
                                                 ToastsStore.success('Successfully updated asset!');
                                             }
-                                        }
+                                        }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null
                                     );
 
 
@@ -342,7 +359,13 @@ export default class EditAssetForm extends Component {
                     >Update Asset</Heading>
 
                     <Form onSubmit={this.handleUpdate} name="updateInst" >
-
+                        {this.props.changePlanID && (<Box style={{
+                            borderRadius: 10
+                        }} width={"large"} background={"status-warning"} align={"center"} alignSelf={"center"}
+                                                          margin={{top: "medium"}}>
+                            <Heading level={"3"} margin={"small"}>Warning</Heading>
+                            <Box>This asset will only be edited within the change plan.</Box>
+                        </Box>)}
                         <FormField name="model" label="Model">
                             {/* change placeholders to what the original values were? */}
                             <TextInput name="model" placeholder="Update Model"
@@ -517,14 +540,14 @@ export default class EditAssetForm extends Component {
 
                         <FormField name="asset_id" label="Override Asset ID">
                             <TextInput name="asset_id" placeholder="Update Asset ID" onChange={this.handleChange}
-                                value={this.state.asset_id}
+                                value={this.state.asset_id} disabled={true}
                             />
                         </FormField>
 
 
                         <FormField name="comment" label="Comment" >
 
-                            <TextInput name="comment" placeholder="Update Comment" onChange={this.handleChange}
+                            <TextArea name="comment" placeholder="Update Comment" onChange={this.handleChange}
                                 value={this.state.comment} />
                         </FormField>
 

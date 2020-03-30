@@ -1,5 +1,5 @@
 import React, {Component} from 'react'
-import {BrowserRouter as Router, Route} from 'react-router-dom'
+import {BrowserRouter as Router, Link, Redirect, Route} from 'react-router-dom'
 import {
     Button,
     Grommet,
@@ -10,16 +10,21 @@ import {
     TableHeader,
     TableRow,
     TableCell,
-    TableBody
+    TableBody, Layer
 } from 'grommet'
 import * as assetutils from '../utils/assetutils'
+import * as userutils from '../utils/userutils'
 import * as powerutils from '../utils/powerutils'
+import * as assetmacutils from "../utils/assetmacutils"
+import * as assetnetworkportutils from "../utils/assetnetworkportutils"
 import theme from '../theme'
 import BackButton from '../components/BackButton'
 import AppBar from '../components/AppBar'
 import UserMenu from '../components/UserMenu'
-import {PowerCycle} from "grommet-icons";
+import {FormEdit, Power, Clear, PowerCycle, View, ShareOption} from "grommet-icons"
 import {ToastsContainer, ToastsStore} from "react-toasts";
+import EditAssetForm from "../components/EditAssetForm";
+import ReactTooltip from "react-tooltip";
 
 export default class DetailedAssetScreen extends Component {
 
@@ -30,10 +35,12 @@ export default class DetailedAssetScreen extends Component {
         super(props);
         this.state = {
             asset: "",
-            powerMap: false
+            powerMap: false,
+            popupType: ""
         }
 
         this.generatePDUStatus = this.generatePDUStatus.bind(this);
+        this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
     }
 
     static contextTypes = {
@@ -41,10 +48,17 @@ export default class DetailedAssetScreen extends Component {
     }
 
     componentDidMount() {
-        console.log("DetailedAssetScreen")
+        this.forceRefresh();
+    }
+
+    forceRefresh(){
         this.setState({
-            asset: ""
+            asset: "",
+            powerMap: false,
+            popupType: ""
         });
+        this.powerPorts = null;
+        this.connectedPDU = null;
         powerutils.checkConnectedToPDU(this.props.match.params.assetID, result => {
             if (!(result === null)) {
                 console.log(result)
@@ -69,8 +83,12 @@ export default class DetailedAssetScreen extends Component {
 
     generateNetworkTable() {
         if (this.state.asset.networkConnections && Object.keys(this.state.asset.networkConnections).length) {
+            console.log(this.state.asset.networkConnections)
             return Object.keys(this.state.asset.networkConnections).map((connection) => (
-                <TableRow>
+                <TableRow
+                          style={{ cursor: 'pointer' }} onClick={() => {
+                              window.location.href = '/assets/' + this.state.asset.networkConnections[connection].otherAssetID;
+                }}>
                     <TableCell scope="row">
                         {connection}
                     </TableCell>
@@ -135,7 +153,9 @@ export default class DetailedAssetScreen extends Component {
     generatePDUStatus() {
         if (this.connectedPDU) {
             this.powerPorts = [];
-            ToastsStore.info("Click a refresh button by a PDU status to power cycle it.", 5000);
+            if (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner){
+                ToastsStore.info("Click a refresh button by a PDU status to power cycle it.", 5000);
+            }
             Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
                 let formattedNum;
                 if (this.state.asset.rackNum.toString().length === 1) {
@@ -274,6 +294,7 @@ export default class DetailedAssetScreen extends Component {
                     <td><b>{connection.name}:{connection.port}</b></td>
                     <td style={{float: "right"}}><Box direction={"row"} alignSelf={"end"}>
                         <CheckBox toggle={true}
+                                  disabled={!(userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)}
                                   checked={this.state[connection.name + ":" + connection.port]}
                                   onChange={(e) => {
                                       if (this.state[connection.name + ":" + connection.port]) {
@@ -305,7 +326,9 @@ export default class DetailedAssetScreen extends Component {
                                               }
                                           })
                                       }
-                                  }}/><PowerCycle
+                                  }}/>{(userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner) &&
+                    <PowerCycle
+                        data-tip="Power cycle"
                         size={"medium"} style={{marginLeft: "10px", cursor: "pointer"}} onClick={(e) => {
                         ToastsStore.success("Power cycling " + connection.name + ":" + connection.port + ". Please wait!");
                         powerutils.powerPortOff(connection.name, connection.port, result => {
@@ -329,14 +352,58 @@ export default class DetailedAssetScreen extends Component {
                                 ToastsStore.error("Could not power cycle due to network connectivity issues.")
                             }
                         })
-                    }}/></Box></td>
+                    }}/>}<ReactTooltip /></Box></td>
                 </tr>
             ))
         }
     }
 
+    handleCancelRefreshPopupChange() {
+        ToastsStore.success("Successfully updated asset.");
+        window.location.reload();
+    }
+
+    handleCancelPopupChange() {
+        this.setState({
+            popupType: ""
+        });
+    }
+
     render() {
-        console.log(this.props.match.params.assetID)
+        const {popupType} = this.state;
+        let popup;
+
+        if (popupType === 'Update') {
+            console.log("In parent: updateID is " + this.state.updateID)
+
+            popup = (
+
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+
+                    <EditAssetForm
+                        parentCallback={this.handleCancelRefreshPopupChange}
+                        cancelCallback={this.handleCancelPopupChange}
+
+                        popupMode={this.state.popupType}
+                        updateIDFromParent={this.state.asset.assetID}
+                        updateModelFromParent={this.state.asset.model}
+                        updateHostnameFromParent={this.state.asset.hostname}
+                        updateRackFromParent={this.state.asset.rack}
+                        updateRackUFromParent={this.state.asset.rackU}
+                        updateOwnerFromParent={this.state.asset.owner}
+                        updateCommentFromParent={this.state.asset.comment}
+                        updateDatacenterFromParent={this.state.asset.datacenter}
+                        updateAssetIDFromParent={this.state.asset.assetID}
+                        updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(this.state.asset.macAddresses)}
+                        updatePowerConnectionsFromParent={this.state.asset.powerConnections}
+                        updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.asset.networkConnections)}
+                    />
+                </Layer>
+            )
+
+        }
+
         return (
 
             <Router>
@@ -347,6 +414,7 @@ export default class DetailedAssetScreen extends Component {
 
                     <Grommet theme={theme} full className='fade'>
                         <Box fill background='light-2'>
+                            {popup}
                             <AppBar>
                                 {/* {this.props.match.params.vendor} {this.props.match.params.modelNumber} */}
                                 <BackButton alignSelf='start' this={this}/>
@@ -356,19 +424,17 @@ export default class DetailedAssetScreen extends Component {
                                 <UserMenu alignSelf='end' this={this}/>
                             </AppBar>
                             <Box
-
-                                align='center'
+                                align='start'
                                 direction='row'
                                 margin={{left: 'medium', right: 'medium'}}
-                                justify='center'>
+                                justify='start'>
                                 <Box style={{
                                     borderRadius: 10,
                                     borderColor: '#EDEDED'
                                 }}
                                      direction='row'
-
                                      background='#FFFFFF'
-                                     width={'medium'}
+                                     width={'xxlarge'}
                                      margin={{top: 'medium', left: 'medium', right: 'medium'}}
                                      pad='small'>
                                     <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
@@ -425,13 +491,13 @@ export default class DetailedAssetScreen extends Component {
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableCell scope="col" border="bottom">
-                                                        <strong>Power Port</strong>
+                                                        <strong>Power Port Name</strong>
                                                     </TableCell>
                                                     <TableCell scope="col" border="bottom">
-                                                        <strong>PDU Side</strong>
+                                                        <strong>Connected PDU Side</strong>
                                                     </TableCell>
                                                     <TableCell scope="col" border="bottom">
-                                                        <strong>PDU Port</strong>
+                                                        <strong>Connected PDU Port</strong>
                                                     </TableCell>
                                                 </TableRow>
                                             </TableHeader>
@@ -459,25 +525,45 @@ export default class DetailedAssetScreen extends Component {
                                              return <div key={key}>{i}</div>
                                          })}
                                          </span>
+                                    </Box>
+                                </Box>
+                                <Box style={{
+                                    borderRadius: 10,
+                                    borderColor: '#EDEDED'
+                                }}
+                                     direction='row'
+                                     background='#FFFFFF'
+                                     width={'large'}
+                                     margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                                     pad='small'>
+                                    <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                         direction='column' justify='start'>
+                                        <Heading level='4' margin='none'>Asset Actions</Heading>
                                         <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
                                              gap='small'>
-                                            {this.connectedPDU &&
-                                            <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                            {(this.connectedPDU && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
+                                            <Box direction='column' flex alignSelf='stretch'
                                                  gap='small'>
-                                                <Button label="Power Asset On" onClick={() => {
+                                                <Button icon={<Power/>} label="Power Asset On" onClick={() => {
                                                     this.turnAssetOn()
                                                 }}/>
-                                                <Button label="Power Asset Off" onClick={() => {
+                                                <Button icon={<Clear/>} label="Power Asset Off" onClick={() => {
                                                     this.turnAssetOff()
                                                 }}/>
-                                                <Button label="Power Cycle Asset" onClick={() => {
+                                                <Button icon={<PowerCycle/>} label="Power Cycle Asset" onClick={() => {
                                                     this.powerCycleAsset()
                                                 }}/>
                                             </Box>}
-                                            <Button label="View Model Details" onClick={() => {
+                                            {(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.doesLoggedInUserHaveAssetPerm(this.state.asset.datacenterAbbrev)) &&
+                                            <Button icon={<FormEdit/>} label="Edit Asset" onClick={() => {
+                                                this.setState({
+                                                    popupType: "Update"
+                                                })
+                                            }}/>}
+                                            <Button icon={<View/>} label="View Model Details" onClick={() => {
                                                 this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNum)
                                             }}/>
-                                            <Button label="Network Neighborhood" onClick={() => {
+                                            <Button icon={<ShareOption/>} label="Network Neighborhood" onClick={() => {
                                                 this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
                                             }}/>
                                         </Box>

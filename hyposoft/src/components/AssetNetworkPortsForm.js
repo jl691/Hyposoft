@@ -65,10 +65,11 @@ export default class AssetNetworkPortsForm extends Component {
 
                         <Box direction="column" gap="small" overflow="auto" background="light-2">
 
-                            <Box direction="row">
+                            <Box direction="row" justify={"between"}>
                                 <Text>{idx + 1}</Text>
                                 <FormTrash
-                                    style={{ cursor: 'pointer' }}
+                                    style={{ cursor: 'pointer'}}
+                                    margin={{left: "small"}}
                                     onClick={(e) => {
                                         
                                         this.props.deleteNetworkConnectionCallbackFromParent(e,idx)

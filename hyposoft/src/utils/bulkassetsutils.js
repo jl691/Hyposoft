@@ -1,4 +1,5 @@
 import * as firebaseutils from './firebaseutils'
+import * as userutils from './userutils'
 import { saveAs } from 'file-saver'
 import * as logutils from './logutils'
 
@@ -7,11 +8,12 @@ const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
 const index = client.initIndex('assets')
 
 function validateImportedAssets (data, callback) {
-    var tasksPending = 4 // Assets, users, datacenters+racks, models
+    var tasksPending = 5 // Assets, users, datacenters+racks, models, decommissioned assets
     var errors = []
     var toBeAdded = []
     var toBeIgnored = []
     var toBeModified = []
+    var decommissionedAssetIds = []
 
     var assetsLoaded = {} // asset id => asset
     var hostnamesToId = {} // hostname => asset id
@@ -62,10 +64,13 @@ function validateImportedAssets (data, callback) {
 
             if (!datum.asset_number) {
                 datum.asset_number = unusedIds.pop() // Generate one for them
+                console.log('had to generate asset number')
             } else if (isNaN(String(datum.asset_number).trim()) || !Number.isInteger(parseFloat(String(datum.asset_number).trim()))) {
                 errors = [...errors, [i + 1, 'Asset number invalid format']]
             } else if (parseInt(String(datum.asset_number).trim()) > 999999 || parseInt(String(datum.asset_number).trim()) < 100000) {
                 errors = [...errors, [i + 1, 'Asset number not in range 100000-999999']]
+            } else if (decommissionedAssetIds.includes(datum.asset_number)) {
+                errors = [...errors, [i + 1, 'A decommissioned asset with this asset number exists (you cannot modify decommissioned assets)']]
             }
 
             if (assetNumbersSeenInImport.includes(datum.asset_number)) {
@@ -78,8 +83,9 @@ function validateImportedAssets (data, callback) {
                 errors = [...errors, [i + 1, 'Invalid hostname (does not follow RFC-1034 specs)']]
             }
 
-            if (datum.hostname.trim() !== '' && datum.hostname in hostnamesToId && hostnamesToId[datum.hostname] !== datum.asset_number) {
+            if (datum.hostname.trim() !== '' && datum.hostname.trim() in hostnamesToId && (''+hostnamesToId[datum.hostname.trim()]).trim() != (''+datum.asset_number).trim()) {
                 errors = [...errors, [i + 1, 'Hostname taken by another asset']]
+                console.log('HOSTNAME CONFLICT: '+datum.asset_number+' '+hostnamesToId[datum.hostname])
             }
 
             if (!datum.rack_position || String(datum.rack_position).trim() === '') {
@@ -88,6 +94,10 @@ function validateImportedAssets (data, callback) {
             } else if (isNaN(String(datum.rack_position).trim()) || !Number.isInteger(parseFloat(String(datum.rack_position).trim())) || parseInt(String(datum.rack_position).trim()) <= 0 || parseInt(String(datum.rack_position).trim()) > 42) {
                 errors = [...errors, [i + 1, 'Rack position is not a positive integer less than 43']]
                 canTestForFit = false
+            }
+
+            if (!userutils.doesLoggedInUserHaveAssetPerm((datum.datacenter+'').trim())) {
+                errors = [...errors, [i + 1, "You don't have asset management permissions for this datacenter"]]
             }
 
             if (!(datum.datacenter in existingRacks)) {
@@ -135,14 +145,15 @@ function validateImportedAssets (data, callback) {
                 errors = [...errors, [i + 1, 'Power port connection 2 invalid']]
             }
 
-            const powerPortsNumber = existingModels[datum.vendor][datum.model_number].powerPorts
+            var powerPortsNumber = 0
             if (canTestForFit) {
+                powerPortsNumber = existingModels[datum.vendor][datum.model_number].powerPorts
                 if (!powerPortsNumber && (datum.power_port_connection_1 || datum.power_port_connection_2)) {
                     errors = [...errors, [i + 1, 'This model does not have any power ports']]
                     canTestForFit = false
                 }
 
-                if (powerPortsNumber === 1 && datum.power_port_connection_2) {
+                if (powerPortsNumber == 1 && datum.power_port_connection_2) {
                     errors = [...errors, [i + 1, 'This model has only one power port and you have specified a connection for power port #2']]
                     canTestForFit = false
                 }
@@ -158,7 +169,7 @@ function validateImportedAssets (data, callback) {
                     rackNamesToIdsForOurDC[rackIdsToNames[rackId]] = rackId
                 }
                 for (var j = parseInt(datum.rack_position); j < parseInt(datum.rack_position) + parseInt(existingModels[datum.vendor][datum.model_number].height); j++) {
-                    if ((rackNamesToIdsForOurDC[datum.rack] in usedRackUsInRack && j in usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]] && usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]][j] !== datum.asset_number) || j > 42) {
+                    if ((rackNamesToIdsForOurDC[datum.rack] in usedRackUsInRack && j in usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]] && usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]][j] != datum.asset_number) || j > 42) {
                         errors = [...errors, [i + 1, 'Asset will not fit on the rack at this position']]
                     }
                 }
@@ -174,15 +185,6 @@ function validateImportedAssets (data, callback) {
                         pduSide: datum.power_port_connection_1.charAt(0) === 'L' ? 'Left' : 'Right',
                         port: datum.power_port_connection_1.substring(1)
                     })
-                } else {
-                    if ((datum.asset_number in assetsLoaded) && assetsLoaded[datum.asset_number].powerConnections) {
-                        if (powerPortsNumber && powerPortsNumber >= 1){
-                            datum.power_connections.push({
-                                pduSide: null,
-                                port: null
-                            })
-                        }
-                    }
                 }
 
                 if (datum.power_port_connection_2) {
@@ -190,23 +192,16 @@ function validateImportedAssets (data, callback) {
                         pduSide: datum.power_port_connection_2.charAt(0) === 'L' ? 'Left' : 'Right',
                         port: datum.power_port_connection_2.substring(1)
                     })
-                } else {
-                    if ((datum.asset_number in assetsLoaded) && powerPortsNumber && powerPortsNumber > 1 && assetsLoaded[datum.asset_number].powerConnections) {
-                        datum.power_connections.push({
-                            pduSide: null,
-                            port: null
-                        })
-                    }
                 }
 
 
 
                 if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]] && datum.power_port_connection_1 in usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]]) {
-                    if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]][datum.power_port_connection_1] !== datum.asset_number)
+                    if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]][datum.power_port_connection_1] != datum.asset_number)
                         errors = [...errors, [i + 1, 'Power port connection 1 is being used by another asset']]
                 }
                 if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]] && datum.power_port_connection_2 in usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]]) {
-                    if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]][datum.power_port_connection_2] !== datum.asset_number)
+                    if (usedPowerConnections[rackNamesToIdsForOurDC[datum.rack]][datum.power_port_connection_2] != datum.asset_number)
                         errors = [...errors, [i + 1, 'Power port connection 2 is being used by another asset']]
                 }
             }
@@ -239,10 +234,19 @@ function validateImportedAssets (data, callback) {
         callback({ errors, toBeIgnored, toBeAdded, toBeModified })
     }
 
+    firebaseutils.decommissionRef.get().then(qs => {
+        for (var i = 0; i < qs.size; i++) {
+            const assetID = qs.docs[i].data().assetId
+            decommissionedAssetIds.push(assetID)
+            unusedIds.pop(assetID)
+        }
+        postTaskCompletion()
+    })
+
     firebaseutils.assetRef.get().then(qs => {
         for (var i = 0; i < qs.size; i++) {
             const asset = {...qs.docs[i].data(), id: qs.docs[i].id}
-            const assetID = qs.docs[i].id
+            const assetID = qs.docs[i].data().assetId
             assetsLoaded[assetID] = asset
             if (asset.hostname) {
                 hostnamesToId[asset.hostname] = assetID
@@ -325,7 +329,7 @@ function bulkAddAssets (assets, callback) {
             model: asset.vendor+' '+asset.model_number,
             hostname: asset.hostname,
             rack: asset.rack,
-            rackU: asset.rack_position,
+            rackU: parseInt(asset.rack_position),
             owner: asset.owner,
             comment: asset.comment,
             rackID: asset.rackID,
@@ -334,10 +338,11 @@ function bulkAddAssets (assets, callback) {
             modelNumber: asset.model_number,
             vendor: asset.vendor,
             rackRow: asset.rack.charAt(0).toUpperCase(),
-            rackNum: asset.rack.substring(1),
+            rackNum: parseInt(asset.rack.substring(1)),
             datacenter: asset.dcFN,
             datacenterID: asset.dcID,
-            datacenterAbbrev:  asset.datacenter
+            datacenterAbbrev:  asset.datacenter,
+            macAddresses: {}
         }
 
         firebaseutils.racksRef.doc(asset.rackID).update({
@@ -400,7 +405,7 @@ function bulkModifyAssets (assets, callback) {
         }
 
         if (asset.rack_position) {
-            updates.rackU = asset.rack_position
+            updates.rackU = parseInt(asset.rack_position)
         }
 
         if (asset.owner) {
@@ -421,7 +426,7 @@ function bulkModifyAssets (assets, callback) {
 
         if (asset.rack) {
             updates.rackRow = asset.rack.charAt(0).toUpperCase()
-            updates.rackNum = asset.rack.substring(1)
+            updates.rackNum = parseInt(asset.rack.substring(1))
         }
 
         if (asset.dcFN) {
@@ -448,48 +453,49 @@ function bulkModifyAssets (assets, callback) {
             })
 
             const updates = updatesss[ds.data().assetId]
+            logutils.getObjectData(String(asset.asset_number), logutils.ASSET(), oldData => {
+              firebaseutils.assetRef.doc(ds.data().assetId).update(updates).then(() => {
+                  // Add to algolia index
+                  var assetObject = Object.assign({}, ds.data(), updates)
+                  let suffixes_list = []
+                  let _model = assetObject.model
 
-            firebaseutils.assetRef.doc(ds.data().assetId).update(updates).then(() => {
-                // Add to algolia index
-                var assetObject = Object.assign({}, ds.data(), updates)
-                let suffixes_list = []
-                let _model = assetObject.model
+                  while (_model.length > 1) {
+                      _model = _model.substr(1)
+                      suffixes_list.push(_model)
+                  }
 
-                while (_model.length > 1) {
-                    _model = _model.substr(1)
-                    suffixes_list.push(_model)
-                }
+                  let _hostname = assetObject.hostname
 
-                let _hostname = assetObject.hostname
+                  while (_hostname.length > 1) {
+                      _hostname = _hostname.substr(1)
+                      suffixes_list.push(_hostname)
+                  }
 
-                while (_hostname.length > 1) {
-                    _hostname = _hostname.substr(1)
-                    suffixes_list.push(_hostname)
-                }
+                  let _datacenter = assetObject.datacenter
 
-                let _datacenter = assetObject.datacenter
+                  while (_datacenter.length > 1) {
+                      _datacenter = _datacenter.substr(1)
+                      suffixes_list.push(_datacenter)
+                  }
 
-                while (_datacenter.length > 1) {
-                    _datacenter = _datacenter.substr(1)
-                    suffixes_list.push(_datacenter)
-                }
+                  let _datacenterAbbrev = assetObject.datacenterAbbrev
 
-                let _datacenterAbbrev = assetObject.datacenterAbbrev
+                  while (_datacenterAbbrev.length > 1) {
+                      _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                      suffixes_list.push(_datacenterAbbrev)
+                  }
+                  let _owner = assetObject.owner
 
-                while (_datacenterAbbrev.length > 1) {
-                    _datacenterAbbrev = _datacenterAbbrev.substr(1)
-                    suffixes_list.push(_datacenterAbbrev)
-                }
-                let _owner = assetObject.owner
+                  while (_owner.length > 1) {
+                      _owner = _owner.substr(1)
+                      suffixes_list.push(_owner)
+                  }
 
-                while (_owner.length > 1) {
-                    _owner = _owner.substr(1)
-                    suffixes_list.push(_owner)
-                }
+                  index.saveObject({ ...assetObject, objectID: ds.id, suffixes: suffixes_list.join(' ') })
 
-                index.saveObject({ ...assetObject, objectID: ds.id, suffixes: suffixes_list.join(' ') })
-
-                logutils.addLog(String(asset.asset_number), logutils.ASSET(), logutils.MODIFY(), assetObject)
+                  logutils.addLog(String(asset.asset_number), logutils.ASSET(), logutils.MODIFY(), oldData)
+              })
             })
         })
     })

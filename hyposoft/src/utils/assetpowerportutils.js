@@ -5,7 +5,7 @@ import * as firebaseutils from './firebaseutils'
 //Toast message at the front end level
 
 
-function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerConnections, model, callback, assetID = null) {
+async function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerConnections, model, callback, assetID = null) {
     // assuming all or nothing. If an asset has 2 power ports, can't just plug one in
     console.log(powerConnections);
     //How to handle when the rack does not have a network managed port?? How does this affect the detailed view? Getting the status?
@@ -27,15 +27,11 @@ function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerC
 
             if (success == powerConnections.length) {
                 console.log("Returning successfully")
-                console.log(powerConnections.length)
                 callback(null)
             }
-            //TODO: need to signify to store a null in the DB. That way, can do a .length check to know to dispplay "no connection" in the asset detail view
         }
 
-        //take out else and try with jsut if???
         else if (pduSide.trim() !== "" && port.trim() !== "") {
-
 
             modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
                 let numPowerPorts = querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : 0;
@@ -206,8 +202,8 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
         racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", id).get().then(function (rackConnectionsDoc) {
             console.log(rackConnectionsDoc.docs[0].data())
             let rackPowerConns = rackConnectionsDoc.docs[0].data().powerPorts ? rackConnectionsDoc.docs[0].data().powerPorts : [];
-            console.log(rackConnectionsDoc)
-            console.log(rackPowerConns)
+//            console.log(rackConnectionsDoc)
+ //           console.log(rackPowerConns)
 
             if (rackPowerConns.length) {
                 let count = 0;
@@ -224,6 +220,7 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
                     else {
                         count++;
                         if (count === rackPowerConns.length) {
+                            console.log("no conflicts found for power ports")
                             callback(null)
                         }
                     }
@@ -231,6 +228,7 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
             }
             else {
                 //There are no occupied ports on the rack
+                console.log("There are no occupied ports on the rack")
                 callback(null)
             }
 
@@ -241,24 +239,9 @@ function checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, c
 }
 
 
-//This is so the db in assets collection will store null instead of "" if no power connections are made
-// function formatPowerConnections(powerPorts) {
-//     //need to return null if no power port conections have been made
-//     if (powerPorts[0].pduSide === "") {
-//         //TODO:didn't fill out anything. But what if first is empty but second is not?
-//         powerPorts = [];
-//         return powerPorts;
-//     }
-//     else {
-//         return powerPorts;
-//     }
-
-// }
-
 export {
     validatePowerConnections,
     checkConflicts,
     getFirstFreePort,
-   // formatPowerConnections,
 
 }

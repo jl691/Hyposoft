@@ -1,4 +1,4 @@
-import { assetRef} from './firebaseutils'
+import { assetRef, decommissionRef} from './firebaseutils'
 
 function generateAssetID() {
     //Asset IDs are 6 digits long. CONFIRM THIS
@@ -15,7 +15,7 @@ function generateAssetID() {
 
         for (var i = 0; i < 5; i++) {
             result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    
+
         }
 
         //Checking if the generated ID is unique: call function here
@@ -35,8 +35,8 @@ function generateAssetID() {
                 else{
                     reject("Error trying to generate unique assetID: timeout")
                 }
-              
-    
+
+
             }
         })
     })
@@ -46,15 +46,19 @@ function isUniqueAssetID(id, callback) {
 
     assetRef.doc(id).get().then(function(doc) {
         if (doc.exists) {
-            callback(null)
+            callback(false)
         } else {
             // doc.data() will be undefined in this case
-            console.log("No such document exists. Is unique");
-            callback(true)
+            decommissionRef.where('assetId','==',id).get().then(qs => {
+                if (qs.empty) {
+                  console.log("No such document exists. Is unique");
+                }
+                callback(qs.empty)
+            })
         }
     }).catch(function(error) {
         console.log("Error getting document:", error);
-        
+
     });
 
 }
@@ -64,7 +68,7 @@ function overrideAssetID(inputID) {
     return new Promise((resolve, reject) => {
         //needs to be within range
         //needs to be unique
-        //DOUBLE CHECK WITH REGEX. 
+        //DOUBLE CHECK WITH REGEX.
         if(parseInt(inputID) <=999999 && parseInt(inputID) >= 100000){
             isUniqueAssetID(inputID, result => {
                 if(result){
