@@ -545,26 +545,27 @@ function generateWorkOrder(changePlanID, callback) {
         if (querySnapshot.empty) {
             callback([])
         } else {
-            let steps = new Map();
+            //let steps = new Map();
+            let steps = [];
             let count = 0;
             querySnapshot.docs.forEach(doc => {
                 let change = doc.data().change;
                 if (change === "decommission") {
                     console.log("decommission", count)
                     assetRef.doc(doc.data().assetID.toString()).get().then(function (documentSnapshot) {
-                        let decommissionText = "Decommission asset #" + doc.data().assetID + " from datacenter " + documentSnapshot.data().datacenter + " at rack " + documentSnapshot.data().rack + " at height " + documentSnapshot.data().rackU + " U.";
+                        let decommissionText = ["Decommission asset #" + doc.data().assetID + " from datacenter " + documentSnapshot.data().datacenter + " at rack " + documentSnapshot.data().rack + " at height " + documentSnapshot.data().rackU + " U."];
                         let networkPromise = new Promise(function (resolve, reject) {
                             if (documentSnapshot.data().networkConnections && Object.keys(documentSnapshot.data().networkConnections).length) {
-                                decommissionText += " Remove the following network connections: ";
+                                decommissionText.push("Remove the following network connections:");
                                 let countInner = 0;
                                 Object.keys(documentSnapshot.data().networkConnections).forEach(networkPort => {
-                                    decommissionText += "port " + networkPort + " connected to asset #" + documentSnapshot.data().networkConnections[networkPort].otherAssetID + " on port " + documentSnapshot.data().networkConnections[networkPort].otherPort;
+                                    decommissionText.push("port " + networkPort + " connected to asset #" + documentSnapshot.data().networkConnections[networkPort].otherAssetID + " on port " + documentSnapshot.data().networkConnections[networkPort].otherPort);
                                     countInner++;
                                     if (countInner === Object.keys(documentSnapshot.data().networkConnections).length) {
-                                        decommissionText += ".";
+                                        //decommissionText += ".";
                                         resolve();
                                     } else {
-                                        decommissionText += ", ";
+                                        //decommissionText += ", ";
                                     }
                                 });
                             } else {
@@ -573,16 +574,14 @@ function generateWorkOrder(changePlanID, callback) {
                         });
                         let powerPromise = new Promise(function (resolve, reject) {
                             if (documentSnapshot.data().powerConnections && Object.keys(documentSnapshot.data().powerConnections).length) {
-                                decommissionText += " Remove the following power connections: ";
+                                decommissionText.push("Remove the following power connections: ");
                                 let countInner = 0;
                                 Object.keys(documentSnapshot.data().powerConnections).forEach(powerPort => {
-                                    decommissionText += "port " + powerPort + " connected to the PDU " + documentSnapshot.data().powerConnections[powerPort].pduSide.toLowerCase() + " side on port " + documentSnapshot.data().powerConnections[powerPort].port;
+                                    decommissionText.push("port " + powerPort + " connected to the PDU " + documentSnapshot.data().powerConnections[powerPort].pduSide.toLowerCase() + " side on port " + documentSnapshot.data().powerConnections[powerPort].port);
                                     countInner++;
                                     if (countInner === documentSnapshot.data().powerConnections.length) {
-                                        decommissionText += ".";
+                                        //decommissionText += ".";
                                         resolve();
-                                    } else {
-                                        decommissionText += ", ";
                                     }
                                 });
                             } else {
@@ -591,7 +590,8 @@ function generateWorkOrder(changePlanID, callback) {
                         });
                         let promiseArray = [networkPromise, powerPromise];
                         Promise.all(promiseArray).then(function () {
-                            steps.set(doc.data().step, [decommissionText])
+                            steps[doc.data().step-1] = decommissionText;
+                            console.log(steps);
                             count++;
                             console.log("3", count, querySnapshot.size)
                             if (count === querySnapshot.size) {
@@ -604,19 +604,16 @@ function generateWorkOrder(changePlanID, callback) {
                 } else if (change === "add") {
                     let assetID = doc.data().assetID ? doc.data().assetID : "TBD";
 
-                    let addText = "Add asset #" + assetID + " to datacenter " + doc.data().changes.datacenter["new"] + " on rack " + doc.data().changes.rack["new"] + " at height " + doc.data().changes.rackU["new"] + " U.";
+                    let addText = ["Add asset #" + assetID + " to datacenter " + doc.data().changes.datacenter["new"] + " on rack " + doc.data().changes.rack["new"] + " at height " + doc.data().changes.rackU["new"] + " U."];
                     let networkPromise = new Promise(function (resolve, reject) {
                         if (doc.data().changes.networkConnections && Object.keys(doc.data().changes.networkConnections["new"]).length) {
-                            addText += " Add the following network connections: ";
+                            addText.push("Add the following network connections: ");
                             let countInner = 0;
                             Object.keys(doc.data().changes.networkConnections["new"]).forEach(networkPort => {
-                                addText += "port " + networkPort + " connected to asset #" + doc.data().changes.networkConnections["new"][networkPort].otherAssetID + " on port " + doc.data().changes.networkConnections["new"][networkPort].otherPort;
+                                addText.push("port " + networkPort + " connected to asset #" + doc.data().changes.networkConnections["new"][networkPort].otherAssetID + " on port " + doc.data().changes.networkConnections["new"][networkPort].otherPort);
                                 countInner++;
                                 if (countInner === Object.keys(doc.data().changes.networkConnections["new"]).length) {
-                                    addText += ".";
                                     resolve();
-                                } else {
-                                    addText += ", ";
                                 }
                             });
                         } else {
@@ -625,16 +622,13 @@ function generateWorkOrder(changePlanID, callback) {
                     });
                     let powerPromise = new Promise(function (resolve, reject) {
                         if (doc.data().changes.powerConnections && Object.keys(doc.data().changes.powerConnections["new"]).length) {
-                            addText += " Add the following power connections: ";
+                            addText.push("Add the following power connections:");
                             let countInner = 0;
                             Object.keys(doc.data().changes.powerConnections["new"]).forEach(powerPort => {
-                                addText += "port " + powerPort + " connected to the PDU " + doc.data().changes.powerConnections["new"][powerPort].pduSide.toLowerCase() + " side on port " + doc.data().changes.powerConnections["new"][powerPort].port;
+                                addText.push("port " + powerPort + " connected to the PDU " + doc.data().changes.powerConnections["new"][powerPort].pduSide.toLowerCase() + " side on port " + doc.data().changes.powerConnections["new"][powerPort].port);
                                 countInner++;
                                 if (countInner === doc.data().changes.powerConnections["new"].length) {
-                                    addText += ".";
                                     resolve();
-                                } else {
-                                    addText += ", ";
                                 }
                             });
                         } else {
@@ -643,7 +637,8 @@ function generateWorkOrder(changePlanID, callback) {
                     });
                     let promiseArray = [networkPromise, powerPromise];
                     Promise.all(promiseArray).then(function () {
-                        steps.set(doc.data().step, [addText]);
+                        steps[doc.data().step-1] = addText;
+                        console.log(steps);
                         count++;
                         console.log("1", count, querySnapshot.size)
                         if (count === querySnapshot.size) {
@@ -653,7 +648,8 @@ function generateWorkOrder(changePlanID, callback) {
                     });
                 } else if (change === "edit") {
                     generateEditWorkOrderMessage(doc, result => {
-                        steps.set(doc.data().step, result);
+                        steps[doc.data().step-1] = result;
+                        console.log(steps);
                         count++;
                         console.log("2", count, querySnapshot.size)
                         if (count === querySnapshot.size) {
@@ -1084,6 +1080,7 @@ function executeAddAsset(id, doc, changePlanID, callback) {
                                         objectID: id,
                                         suffixes: suffixes_list.join(' ')
                                     })
+                                    console.log(assetObject, suffixes_list.join(' '))
 
                                     console.log("Document successfully updated in racks");
                                     logutils.addLog(id, logutils.ASSET(), logutils.CREATE())
@@ -1093,6 +1090,47 @@ function executeAddAsset(id, doc, changePlanID, callback) {
                                 racksRef.doc(String(doc.data().changes.rackID["new"])).update({
                                     assets: firebase.firestore.FieldValue.arrayUnion(id)
                                 }).then(function () {
+                                    let suffixes_list = []
+                                    let _model = assetObject.model
+
+                                    while (_model.length > 1) {
+                                        _model = _model.substr(1)
+                                        suffixes_list.push(_model)
+                                    }
+
+                                    let _hostname = assetObject.hostname
+
+                                    while (_hostname.length > 1) {
+                                        _hostname = _hostname.substr(1)
+                                        suffixes_list.push(_hostname)
+                                    }
+
+                                    let _datacenter = assetObject.datacenter
+
+                                    while (_datacenter.length > 1) {
+                                        _datacenter = _datacenter.substr(1)
+                                        suffixes_list.push(_datacenter)
+                                    }
+
+                                    let _datacenterAbbrev = assetObject.datacenterAbbrev
+
+                                    while (_datacenterAbbrev.length > 1) {
+                                        _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                                        suffixes_list.push(_datacenterAbbrev)
+                                    }
+                                    let _owner = assetObject.owner
+
+                                    while (_owner.length > 1) {
+                                        _owner = _owner.substr(1)
+                                        suffixes_list.push(_owner)
+                                    }
+
+                                    index.saveObject({
+                                        ...assetObject,
+                                        objectID: id,
+                                        suffixes: suffixes_list.join(' ')
+                                    })
+                                    console.log(assetObject, suffixes_list.join(' '))
                                     console.log("Document successfully updated in racks");
                                     logutils.addLog(id, logutils.ASSET(), logutils.CREATE())
                                     callback(true);

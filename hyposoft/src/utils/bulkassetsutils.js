@@ -142,8 +142,9 @@ function validateImportedAssets (data, callback) {
                 errors = [...errors, [i + 1, 'Power port connection 2 invalid']]
             }
 
-            const powerPortsNumber = existingModels[datum.vendor][datum.model_number].powerPorts
+            var powerPortsNumber = 0
             if (canTestForFit) {
+                powerPortsNumber = existingModels[datum.vendor][datum.model_number].powerPorts
                 if (!powerPortsNumber && (datum.power_port_connection_1 || datum.power_port_connection_2)) {
                     errors = [...errors, [i + 1, 'This model does not have any power ports']]
                     canTestForFit = false
@@ -181,15 +182,6 @@ function validateImportedAssets (data, callback) {
                         pduSide: datum.power_port_connection_1.charAt(0) === 'L' ? 'Left' : 'Right',
                         port: datum.power_port_connection_1.substring(1)
                     })
-                } else {
-                    if ((datum.asset_number in assetsLoaded) && assetsLoaded[datum.asset_number].powerConnections) {
-                        if (powerPortsNumber && powerPortsNumber >= 1){
-                            datum.power_connections.push({
-                                pduSide: null,
-                                port: null
-                            })
-                        }
-                    }
                 }
 
                 if (datum.power_port_connection_2) {
@@ -197,13 +189,6 @@ function validateImportedAssets (data, callback) {
                         pduSide: datum.power_port_connection_2.charAt(0) === 'L' ? 'Left' : 'Right',
                         port: datum.power_port_connection_2.substring(1)
                     })
-                } else {
-                    if ((datum.asset_number in assetsLoaded) && powerPortsNumber && powerPortsNumber > 1 && assetsLoaded[datum.asset_number].powerConnections) {
-                        datum.power_connections.push({
-                            pduSide: null,
-                            port: null
-                        })
-                    }
                 }
 
 
@@ -456,48 +441,49 @@ function bulkModifyAssets (assets, callback) {
             })
 
             const updates = updatesss[ds.data().assetId]
+            logutils.getObjectData(String(asset.asset_number), logutils.ASSET(), oldData => {
+              firebaseutils.assetRef.doc(ds.data().assetId).update(updates).then(() => {
+                  // Add to algolia index
+                  var assetObject = Object.assign({}, ds.data(), updates)
+                  let suffixes_list = []
+                  let _model = assetObject.model
 
-            firebaseutils.assetRef.doc(ds.data().assetId).update(updates).then(() => {
-                // Add to algolia index
-                var assetObject = Object.assign({}, ds.data(), updates)
-                let suffixes_list = []
-                let _model = assetObject.model
+                  while (_model.length > 1) {
+                      _model = _model.substr(1)
+                      suffixes_list.push(_model)
+                  }
 
-                while (_model.length > 1) {
-                    _model = _model.substr(1)
-                    suffixes_list.push(_model)
-                }
+                  let _hostname = assetObject.hostname
 
-                let _hostname = assetObject.hostname
+                  while (_hostname.length > 1) {
+                      _hostname = _hostname.substr(1)
+                      suffixes_list.push(_hostname)
+                  }
 
-                while (_hostname.length > 1) {
-                    _hostname = _hostname.substr(1)
-                    suffixes_list.push(_hostname)
-                }
+                  let _datacenter = assetObject.datacenter
 
-                let _datacenter = assetObject.datacenter
+                  while (_datacenter.length > 1) {
+                      _datacenter = _datacenter.substr(1)
+                      suffixes_list.push(_datacenter)
+                  }
 
-                while (_datacenter.length > 1) {
-                    _datacenter = _datacenter.substr(1)
-                    suffixes_list.push(_datacenter)
-                }
+                  let _datacenterAbbrev = assetObject.datacenterAbbrev
 
-                let _datacenterAbbrev = assetObject.datacenterAbbrev
+                  while (_datacenterAbbrev.length > 1) {
+                      _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                      suffixes_list.push(_datacenterAbbrev)
+                  }
+                  let _owner = assetObject.owner
 
-                while (_datacenterAbbrev.length > 1) {
-                    _datacenterAbbrev = _datacenterAbbrev.substr(1)
-                    suffixes_list.push(_datacenterAbbrev)
-                }
-                let _owner = assetObject.owner
+                  while (_owner.length > 1) {
+                      _owner = _owner.substr(1)
+                      suffixes_list.push(_owner)
+                  }
 
-                while (_owner.length > 1) {
-                    _owner = _owner.substr(1)
-                    suffixes_list.push(_owner)
-                }
+                  index.saveObject({ ...assetObject, objectID: ds.id, suffixes: suffixes_list.join(' ') })
 
-                index.saveObject({ ...assetObject, objectID: ds.id, suffixes: suffixes_list.join(' ') })
-
-                logutils.addLog(String(asset.asset_number), logutils.ASSET(), logutils.MODIFY(), assetObject)
+                  logutils.addLog(String(asset.asset_number), logutils.ASSET(), logutils.MODIFY(), oldData)
+              })
             })
         })
     })
