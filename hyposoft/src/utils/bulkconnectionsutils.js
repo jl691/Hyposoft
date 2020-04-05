@@ -40,7 +40,7 @@ function validateImportedConnections (data, callback) {
                 datum.src_mac = datum.src_mac.replace((/[\W_]/g), "").toLowerCase().replace(/(.{2})(?!$)/g,"$1:")
             }
 
-            if (!userutils.doesLoggedInUserHaveAssetPerm((fetchedAssets[datum.src_hostname].datacenterAbbrev+'').trim())) {
+            if (datum.src_hostname in fetchedAssets && !userutils.doesLoggedInUserHaveAssetPerm((fetchedAssets[datum.src_hostname].datacenterAbbrev+'').trim())) {
                 errors = [...errors, [i + 1, "You don't have asset management permissions for this datacenter"]]
             }
 
