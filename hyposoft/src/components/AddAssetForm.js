@@ -16,6 +16,7 @@ import {
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import errorStrings from '../res/errorMessages.json'
 import * as assetutils from '../utils/assetutils'
+import * as bladeutils from '../utils/bladeutils'
 import * as assetpowerportutils from '../utils/assetpowerportutils'
 import * as assetmacutils from '../utils/assetmacutils'
 import * as modelutils from '../utils/modelutils'
@@ -33,6 +34,8 @@ import AssetMACForm from './AssetMACForm';
 
 //TODO: need to change states in here, screen, elsewhere
 export default class AddAssetForm extends Component {
+    addFunction = null
+
     constructor(props) {
         super(props);
         this.state = {
@@ -259,6 +262,17 @@ export default class AddAssetForm extends Component {
         }
     }
 
+   determineAddFunction(callback) {
+      modelutils.getModelByModelname(this.state.model, doc => {
+          this.addFunction = doc.data().mount && doc.data().mount != 'normal'
+                             ? (doc.data().mount == 'chassis'
+                                ? bladeutils.addChassis
+                                : bladeutils.addServer)
+                             : assetutils.addAsset
+          callback()
+      })
+   }
+
    handleSubmit(event) {
 
         if (event.target.name === "addInst") {
@@ -280,7 +294,7 @@ export default class AddAssetForm extends Component {
                 //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
             }
             else {
-                
+
                 if (this.state.showPowerConnections) {
                     let existingPowerConnections = [];
                     Object.keys(this.state.powerConnections).forEach(connection => {
@@ -298,27 +312,29 @@ export default class AddAssetForm extends Component {
                                             if (fixedAddr) {
                                                 ToastsStore.info('Please wait...', 750);
                                                 console.log(fixedAddr)
-                                                assetutils.addAsset(
-                                                    this.state.asset_id,
-                                                    this.state.model,
-                                                    this.state.hostname,
-                                                    this.state.rack,
-                                                    parseInt(this.state.rackU),
-                                                    this.state.owner,
-                                                    this.state.comment,
-                                                    this.state.datacenter,
-                                                    fixedAddr,
-                                                    this.state.networkConnections,
-                                                    this.state.showPowerConnections ? this.state.powerConnections : [],
-                                                    errorMessage => {
-                                                        if (errorMessage) {
-                                                            ToastsStore.error(errorMessage, 10000)
-                                                        } else {
-                                                            this.props.parentCallback(true);
-                                                            ToastsStore.success('Successfully added asset!');
-                                                        }
-                                                    }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null
-                                                );
+                                                this.determineAddFunction(() => {
+                                                  this.addFunction(
+                                                      this.state.asset_id,
+                                                      this.state.model,
+                                                      this.state.hostname,
+                                                      this.state.rack,
+                                                      parseInt(this.state.rackU),
+                                                      this.state.owner,
+                                                      this.state.comment,
+                                                      this.state.datacenter,
+                                                      fixedAddr,
+                                                      this.state.networkConnections,
+                                                      this.state.showPowerConnections ? this.state.powerConnections : [],
+                                                      errorMessage => {
+                                                          if (errorMessage) {
+                                                              ToastsStore.error(errorMessage, 10000)
+                                                          } else {
+                                                              this.props.parentCallback(true);
+                                                              ToastsStore.success('Successfully added asset!');
+                                                          }
+                                                      }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null
+                                                  );
+                                                })
                                             }
                                             else {
                                                 ToastsStore.error(macError)
@@ -341,28 +357,30 @@ export default class AddAssetForm extends Component {
                                 if (fixedAddr) {
                                     console.log(fixedAddr)
                                     ToastsStore.info('Please wait...', 750);
-                                    assetutils.addAsset(
-                                        this.state.asset_id,
-                                        this.state.model,
-                                        this.state.hostname,
-                                        this.state.rack,
-                                        parseInt(this.state.rackU),
-                                        this.state.owner,
-                                        this.state.comment,
-                                        this.state.datacenter,
-                                        fixedAddr,
-                                        this.state.networkConnections,
-                                        this.state.showPowerConnections ? this.state.powerConnections : [],
+                                    this.determineAddFunction(() => {
+                                      this.addFunction(
+                                          this.state.asset_id,
+                                          this.state.model,
+                                          this.state.hostname,
+                                          this.state.rack,
+                                          parseInt(this.state.rackU),
+                                          this.state.owner,
+                                          this.state.comment,
+                                          this.state.datacenter,
+                                          fixedAddr,
+                                          this.state.networkConnections,
+                                          this.state.showPowerConnections ? this.state.powerConnections : [],
 
-                                        errorMessage => {
-                                            if (errorMessage) {
-                                                ToastsStore.error(errorMessage, 10000)
-                                            } else {
-                                                this.props.parentCallback(true);
-                                                ToastsStore.success('Successfully added asset!');
-                                            }
-                                        }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null
-                                    );
+                                          errorMessage => {
+                                              if (errorMessage) {
+                                                  ToastsStore.error(errorMessage, 10000)
+                                              } else {
+                                                  this.props.parentCallback(true);
+                                                  ToastsStore.success('Successfully added asset!');
+                                              }
+                                          }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null
+                                      );
+                                    })
 
 
                                 }
