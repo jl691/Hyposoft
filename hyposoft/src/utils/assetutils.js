@@ -135,7 +135,7 @@ function getAllAssetIDs(callback, field = null, direction = null) {
     })
 }
 
-function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, callback, changePlanID = null, changeDocID = null) {
+function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, callback, changePlanID = null, changeDocID = null, chassis = null) {
 
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
@@ -262,9 +262,10 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                             assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, overrideAssetID);
 
                                                                             if (powerConnections.length != 0) {
+                                                                              racksRef.doc(String(rackID)).get().then(doc => {
                                                                                 racksRef.doc(String(rackID)).update({
-                                                                                    assets: firebase.firestore.FieldValue.arrayUnion(overrideAssetID),
-                                                                                    powerPorts: firebase.firestore.FieldValue.arrayUnion(...powerConnections.map(obj => ({
+                                                                                    assets: chassis ? doc.data().assets : firebase.firestore.FieldValue.arrayUnion(overrideAssetID),
+                                                                                    powerPorts: chassis ? doc.data().powerPorts : firebase.firestore.FieldValue.arrayUnion(...powerConnections.map(obj => ({
                                                                                         ...obj,
                                                                                         assetID: overrideAssetID
                                                                                     })))
@@ -274,17 +275,20 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                     logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
                                                                                     callback(null,overrideAssetID);
                                                                                 })
+                                                                              })
 
 
                                                                             } else {
+                                                                              racksRef.doc(String(rackID)).get().then(doc => {
                                                                                 racksRef.doc(String(rackID)).update({
-                                                                                    assets: firebase.firestore.FieldValue.arrayUnion(overrideAssetID)
+                                                                                    assets: chassis ? doc.data().assets : firebase.firestore.FieldValue.arrayUnion(overrideAssetID)
                                                                                 }).then(function () {
 
                                                                                     console.log("Document successfully updated in racks");
                                                                                     logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
                                                                                     callback(null,overrideAssetID);
                                                                                 })
+                                                                              })
 
 
                                                                             }
@@ -384,30 +388,33 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                             assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, newID);
 
                                                                             if (powerConnections.length != 0) {
+                                                                                racksRef.doc(String(rackID)).get().then(doc => {
+                                                                                  racksRef.doc(String(rackID)).update({
+                                                                                      assets: chassis ? doc.data().assets : firebase.firestore.FieldValue.arrayUnion(newID),
+                                                                                      powerPorts: chassis ? doc.data().powerPorts : firebase.firestore.FieldValue.arrayUnion(...powerConnections.map(obj => ({
+                                                                                          ...obj,
+                                                                                          assetID: newID
+                                                                                      })))
+                                                                                  }).then(function () {
 
-                                                                                racksRef.doc(String(rackID)).update({
-                                                                                    assets: firebase.firestore.FieldValue.arrayUnion(newID),
-                                                                                    powerPorts: firebase.firestore.FieldValue.arrayUnion(...powerConnections.map(obj => ({
-                                                                                        ...obj,
-                                                                                        assetID: newID
-                                                                                    })))
-                                                                                }).then(function () {
-
-                                                                                    console.log("Document successfully updated in racks");
-                                                                                    logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
-                                                                                    callback(null,newID);
+                                                                                      console.log("Document successfully updated in racks");
+                                                                                      logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                                      callback(null,newID);
+                                                                                  })
                                                                                 })
 
 
                                                                             } else {
+                                                                              racksRef.doc(String(rackID)).get().then(doc => {
                                                                                 racksRef.doc(String(rackID)).update({
-                                                                                    assets: firebase.firestore.FieldValue.arrayUnion(newID)
+                                                                                    assets: chassis ? doc.data().assets : firebase.firestore.FieldValue.arrayUnion(newID)
                                                                                 }).then(function () {
 
                                                                                     console.log("Document successfully updated in racks");
                                                                                     logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
                                                                                     callback(null,newID);
                                                                                 })
+                                                                              })
 
 
                                                                             }
@@ -446,7 +453,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                     })
 
                                 }
-                            })
+                            }, null, -1, chassis)
                         } else {
                             callback("You do not have permissions for this datacenter");
                         }
@@ -550,40 +557,35 @@ function sortAssetsByRackAndRackUFilter(rackAsc, rackUAsc, datacenter, rowStart,
 // This will check if the instance fits on rack (after checking rack exists): fits within in the height of rack, and does not conflict with other instances
 // The echo param was added by Anshu and will be passed back via callback to the import functions as-is
 // The param does NOT affect this function at all
-function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id = null, echo = -1) {
+function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id = null, echo = -1, chassis = null) {
 
     let splitRackArray = assetRack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
-    let rackID = null;
-    rackutils.getRackID(rackRow, rackNum, datacenter, id => {
-        if (id) {
-            rackID = id
-        } else {
-        }
-    })
+    rackutils.getRackID(rackRow, rackNum, datacenter, rackID => {
 
     datacenterutils.getDataFromName(datacenter, datacenterID => {
         if (datacenterID) {
-            racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
+            let ref = chassis ? racksRef.doc(rackID).collection('blades') : racksRef
+            ref.where("letter", "==", chassis ? chassis.hostname : rackRow).where("number", "==", chassis ? 1 : rackNum).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
                 if (!querySnapshot.empty && querySnapshot.docs[0].data().letter && querySnapshot.docs[0].data().number) {
                     let rackHeight = querySnapshot.docs[0].data().height
 
                     console.log(model)
                     modelutils.getModelByModelname(model, doc => {
                         //doc.data().height refers to model height
-                        if (rackHeight > parseInt(rackU) + doc.data().height) {
+                        if (rackHeight > parseInt(chassis ? chassis.slot : rackU) + doc.data().height) {
                             //We know the instance will fit on the rack, but now does it conflict with anything?
 
-                            rackutils.checkAssetFits(rackU, doc.data().height, rackID, function (status) {
+                            rackutils.checkAssetFits(chassis ? chassis.slot : rackU, doc.data().height, rackID, function (status) {
 
                                 //can check length. If length > 0, then conflicting instances were returned
                                 //means that there are conflicts.
 
                                 if (status && status.length) {
                                     let height = doc.data().height
-                                    let rackedAt = rackU
+                                    let rackedAt = chassis ? chassis.slot : rackU
                                     let conflictNew = [];
                                     let conflictCount = 0;
                                     status.forEach(assetID => {
@@ -609,7 +611,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                                     }
 
                                 }
-                            }, asset_id) //if you pass in a null to checkInstanceFits
+                            }, asset_id, chassis) //if you pass in a null to checkInstanceFits
                         } else {
                             var errMessage = "Asset of this model at this RackU will not fit on this rack";
                             if (echo < 0) {
@@ -637,6 +639,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                 callback({ error: errMessage, echo: echo })
             }
         }
+    })
     })
 }
 
