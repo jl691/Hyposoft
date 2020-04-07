@@ -60,7 +60,7 @@ export default class AddAssetForm extends Component {
         this.deleteNetworkConnection = this.deleteNetworkConnection.bind(this)
         this.deletePowerConnection = this.deletePowerConnection.bind(this);
     }
- 
+
     componentDidMount() {
         console.log(this.props.updateMacAddressesFromParent);
         let panel = document.getElementById("powerPortConnectionsPanel");

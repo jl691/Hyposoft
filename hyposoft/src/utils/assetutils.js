@@ -272,7 +272,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
                                                                                     console.log("Document successfully updated in racks");
                                                                                     logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
-                                                                                    callback(null);
+                                                                                    callback(null,overrideAssetID);
                                                                                 })
 
 
@@ -283,7 +283,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
                                                                                     console.log("Document successfully updated in racks");
                                                                                     logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
-                                                                                    callback(null);
+                                                                                    callback(null,overrideAssetID);
                                                                                 })
 
 
@@ -395,7 +395,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
                                                                                     console.log("Document successfully updated in racks");
                                                                                     logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
-                                                                                    callback(null);
+                                                                                    callback(null,newID);
                                                                                 })
 
 
@@ -406,7 +406,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
                                                                                     console.log("Document successfully updated in racks");
                                                                                     logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
-                                                                                    callback(null);
+                                                                                    callback(null,newID);
                                                                                 })
 
 
