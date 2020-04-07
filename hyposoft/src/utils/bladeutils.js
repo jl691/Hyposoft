@@ -59,8 +59,9 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
                 callback(errorMessage)
                 return
             }, changePlanID, changeDocID, {hostname: chassisHostname, slot: slot, id: chassisId})
+        } else {
+            callback('blade chassis ' + chassisHostname +' does not exist')
         }
-        callback('blade chassis ' + chassisHostname +' does not exist')
     })
 }
 
