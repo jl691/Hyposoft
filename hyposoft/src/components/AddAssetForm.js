@@ -594,77 +594,85 @@ export default class AddAssetForm extends Component {
                                 />
                             </FormField>
 
+                            {(this.isNonBlade
+                              ?
+                              <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"}
+                                  toggle={true} onChange={(e) => {
+                                      let panel = document.getElementById("powerPortConnectionsPanel");
+                                      let display = !this.state.showPowerConnections;
+                                      this.setState({
+                                          showPowerConnections: display
+                                      }, function () {
+                                          panel.style.display = display ? "block" : "none";
+                                      })
+                                  }} />
+                              :
+                              <Box></Box>
+                            )}
 
-                            <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"}
-                                toggle={true} onChange={(e) => {
-                                    let panel = document.getElementById("powerPortConnectionsPanel");
-                                    let display = !this.state.showPowerConnections;
-                                    this.setState({
-                                        showPowerConnections: display
-                                    }, function () {
-                                        panel.style.display = display ? "block" : "none";
-                                    })
-                                }} />
+                            {(this.isNonBlade
+                              ?
+                              <Accordion>
+                                  <div id={"powerPortConnectionsPanel"} style={{ display: "none" }}>
 
-                            <Accordion>
-                                <div id={"powerPortConnectionsPanel"} style={{ display: "none" }}>
+                                      <AccordionPanel label="Power Port Connections">
+                                          <AssetPowerPortsForm
 
-                                    <AccordionPanel label="Power Port Connections">
-                                        <AssetPowerPortsForm
+                                              powerConnections={this.state.powerConnections}
+                                              deletePowerConnectionCallbackFromParent={this.deletePowerConnection}
 
-                                            powerConnections={this.state.powerConnections}
-                                            deletePowerConnectionCallbackFromParent={this.deletePowerConnection}
+                                          />
 
-                                        />
+                                          <Button
+                                              onClick={this.addPowerConnection}
+                                              margin={{ horizontal: 'medium', vertical: 'small' }}
 
-                                        <Button
-                                            onClick={this.addPowerConnection}
-                                            margin={{ horizontal: 'medium', vertical: 'small' }}
-
-                                            label="Add a power connection" />
-
-
-                                    </AccordionPanel>
-                                </div>
-                                <AccordionPanel label="MAC Addresses">
-                                    <AssetMACForm
-
-                                        fieldCallback={this.handleDisplayMACFields}
-                                        model={this.state.model}
-                                        macAddresses={this.state.macAddresses}
-                                        popupMode={this.props.popupMode}
+                                              label="Add a power connection" />
 
 
-                                    />
+                                      </AccordionPanel>
+                                  </div>
+                                  <AccordionPanel label="MAC Addresses">
+                                      <AssetMACForm
 
-                                </AccordionPanel>
+                                          fieldCallback={this.handleDisplayMACFields}
+                                          model={this.state.model}
+                                          macAddresses={this.state.macAddresses}
+                                          popupMode={this.props.popupMode}
 
 
-                                <AccordionPanel label="Network Port Connections">
-                                    <AssetNetworkPortsForm
+                                      />
 
-                                        model={this.state.model}
-                                        datacenter={this.state.datacenter}
-                                        networkConnections={this.state.networkConnections}
-                                        deleteNetworkConnectionCallbackFromParent={this.deleteNetworkConnection}
+                                  </AccordionPanel>
 
-                                    />
 
-                                    <Button
-                                        onClick={this.addNetworkConnection}
-                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+                                  <AccordionPanel label="Network Port Connections">
+                                      <AssetNetworkPortsForm
 
-                                        label="Add a network connection" />
+                                          model={this.state.model}
+                                          datacenter={this.state.datacenter}
+                                          networkConnections={this.state.networkConnections}
+                                          deleteNetworkConnectionCallbackFromParent={this.deleteNetworkConnection}
 
-                                    {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
-                                    {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
-                                    {/* <Button onClick={this.handleConnect}
-                                        margin={{ horizontal: 'medium', vertical: 'small' }}
-                                        label="Validate Connections" /> */}
+                                      />
 
-                                </AccordionPanel>
-                            </Accordion>
+                                      <Button
+                                          onClick={this.addNetworkConnection}
+                                          margin={{ horizontal: 'medium', vertical: 'small' }}
 
+                                          label="Add a network connection" />
+
+                                      {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
+                                      {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
+                                      {/* <Button onClick={this.handleConnect}
+                                          margin={{ horizontal: 'medium', vertical: 'small' }}
+                                          label="Validate Connections" /> */}
+
+                                  </AccordionPanel>
+                              </Accordion>
+                              :
+                              <Box></Box>
+                            )}
 
                             <FormField name="asset_id" label="Override Asset ID">
                                 <TextInput name="asset_id" placeholder="If left blank, will auto-generate"
