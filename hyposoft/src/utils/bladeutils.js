@@ -91,6 +91,7 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
                 })
                 .catch(function (error) {
                     console.log(error);
+                    // maybe remove the asset and add error message?
                     callback(errorMessage)
                     return
                 })
@@ -136,4 +137,70 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
     })
 }
 
-export { addChassis, addServer, updateChassis }
+function updateServer(assetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses,
+    networkConnectionsArray, deletedNCThisPort, powerConnections, callback, changePlanID = null, changeDocID = null) {
+    firebaseutils.assetRef.where('hostname','==',chassisHostname).get().then(qs => {
+        if (!qs.empty) {
+            const rack = qs.docs[0].data().rack
+            const rackU = qs.docs[0].data().rackU
+            const rackId = qs.docs[0].data().rackID
+            const chassisId = qs.docs[0].id
+
+            assetutils.updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
+                networkConnectionsArray, deletedNCThisPort, powerConnections, (errorMessage,id) => {
+                if (!errorMessage && id) {
+                  firebaseutils.bladeRef.doc(id).get().then(docRef => {
+                    firebaseutils.db.collectionGroup('blades').where("id","==",docRef.data().chassisId).get().then(async(qs) => {
+                      // remove blade id from previous chassis
+                      const qsAssets = qs.docs[0].data().assets
+                      const ind = qsAssets.indexOf(id)
+                      if (ind !== -1) {
+                        await new Promise(function(resolve, reject) {
+                          qs.docs[0].ref.update({
+                              assets: qsAssets.slice(0, ind).concat(qsAssets.slice(ind + 1, qsAssets.length))
+                          }).then(() => resolve())
+                        })
+                      }
+                      await new Promise(function(resolve, reject) {
+                        // add to the new chassis
+                        firebaseutils.racksRef.doc(rackId).collection('blades').doc(chassisId).get().then(async(doc) => {
+                            if (doc.exists) {
+                                await new Promise(function(resolve, reject) {
+                                  doc.ref.update({
+                                      assets: doc.data().assets.concat(id)
+                                  }).then(() => resolve())
+                                })
+                                await new Promise(function(resolve, reject) {
+                                  firebaseutils.bladeRef.doc(id).update({
+                                      rack: chassisHostname,
+                                      rackU: slot,
+                                      rackId: rackId,
+                                      model: model,
+                                      chassisId: chassisId
+                                  }).then(() => resolve())
+                                })
+                            }
+                            resolve()
+                        })
+                      })
+                      callback(errorMessage)
+                      return
+                    })
+                  }).catch(function (error) {
+                      console.log(error);
+                      // maybe remove the asset and add error message?
+                      callback(errorMessage)
+                      return
+                  })
+                } else {
+                  callback(errorMessage)
+                  return
+                }
+            }, changePlanID, changeDocID, {hostname: chassisHostname, slot: slot, id: chassisId})
+        } else {
+            callback('blade chassis ' + chassisHostname +' does not exist')
+        }
+    })
+}
+
+export { addChassis, addServer, updateChassis, updateServer }

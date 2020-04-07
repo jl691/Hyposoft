@@ -752,7 +752,7 @@ function deleteAsset(assetID, callback, isDecommission = false) {
 //hostname updating works, owner updating works, conflicts, etc.
 
 function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
-    networkConnectionsArray, deletedNCThisPort, powerConnections, callback, changePlanID = null, changeDocID = null) {
+    networkConnectionsArray, deletedNCThisPort, powerConnections, callback, changePlanID = null, changeDocID = null, chassis=null) {
 
     validateAssetForm(assetID, model, hostname, rack, rackU, owner, datacenter).then(
         _ => {
@@ -930,14 +930,14 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                         })
                                                                     }, oldNetworkConnections)
                                                                 })
-                                                            })
+                                                            },chassis)
                                                         }
                                                     })
                                                 })
                                             }
                                         })
                                     }
-                                }, assetID)
+                                }, assetID, -1, chassis)
                             } else {
                                 callback("You don't have the permissions for this datacenter");
                             }
@@ -1242,7 +1242,7 @@ function validateAssetForm(assetID, model, hostname, rack, racku, owner, datacen
     })
 }
 
-function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, changePlanID, callback) {
+function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, changePlanID, callback, chassis = null) {
     if (!changePlanID) {
         if (String(oldRack) === String(newRack)) {
 
@@ -1297,6 +1297,10 @@ function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, ch
             }
 
         } else {
+            if (chassis) {
+                callback(true)
+                return
+            }
             racksRef.doc(String(oldRack)).update({
                 assets: firebase.firestore.FieldValue.arrayRemove(id),
                 powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({ ...obj, assetID: id })))

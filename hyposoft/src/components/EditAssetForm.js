@@ -210,10 +210,10 @@ export default class EditAssetForm extends Component {
                    this.updateFunction = bladeutils.updateChassis
                    this.isNonBlade = true
                    break
-                 // case 'blade':
-                 //   this.updateFunction = bladeutils.updateServer
-                 //   this.isNonBlade = false
-                 //   break
+                 case 'blade':
+                   this.updateFunction = bladeutils.updateServer
+                   this.isNonBlade = false
+                   break
                  default:
                    this.updateFunction = assetutils.updateAsset
                    this.isNonBlade = true
