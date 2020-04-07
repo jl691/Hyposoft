@@ -546,9 +546,31 @@ export default class AddAssetForm extends Component {
                               :
                               <FormField name="rack" label="Chassis Hostname">
 
-                                  <TextInput padding="medium" name="rack" placeholder="eg. chassis1"
-                                      onChange={this.handleChange}
-                                      value={this.state.rack} />
+                                  <TextInput name="rack" placeholder="eg. chassis1"
+                                      onChange={e => {
+                                          const value = e.target.value
+                                          this.setState(oldState => ({ ...oldState, rack: value }))
+                                          assetutils.getSuggestedChassis(this.state.datacenter, value, results => this.setState(oldState => ({
+                                              ...oldState,
+                                              rackSuggestions: results
+                                          })))
+                                      }}
+                                      onSelect={e => {
+                                          this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
+                                      }}
+                                      value={this.state.rack}
+                                      suggestions={this.state.rackSuggestions}
+                                      onClick={() => {
+                                          if (this.state.datacenter) {
+                                              assetutils.getSuggestedChassis(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
+                                                  ...oldState,
+                                                  rackSuggestions: results
+                                              })))
+                                          }
+                                      }}
+                                      title='Chassis Hostname'
+                                      required={true}
+                                    />
                               </FormField>
                             )}
 

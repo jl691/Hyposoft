@@ -1041,6 +1041,48 @@ function getSuggestedRacks(datacenter, userInput, callback) {
         })
 }
 
+function getSuggestedChassis(datacenter, userInput, callback) {
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    var modelArray = []
+    let count = 0
+    datacentersRef.where('name', '==', datacenter).get().then(docSnaps => {
+        const datacenterID = docSnaps.docs[0].id
+        racksRef.where('datacenter', '==', datacenterID).get().then(querySnapshot => {
+            querySnapshot.forEach(async(docRef) => {
+                modelArray = await helpChassisSuggestions(docRef,modelArray,userInput)
+                count++;
+                if (count === querySnapshot.size) {
+                    modelArray.sort()
+                    callback(modelArray)
+                }
+            })
+        })
+            .catch(error => {
+                callback(null)
+            })
+    })
+        .catch(error => {
+            callback(null)
+        })
+}
+
+function helpChassisSuggestions(docRef,modelArray,userInput) {
+  return new Promise(function(resolve, reject) {
+    let suggest = modelArray
+    docRef.ref.collection('blades').get().then(qs => {
+        if (!qs.empty) {
+            qs.forEach(doc => {
+                const data = doc.data().letter
+                if (shouldAddToSuggestedItems(suggest, data, userInput)) {
+                    suggest.push(data)
+                }
+            })
+        }
+        resolve(suggest)
+    })
+  })
+}
+
 function getNetworkPorts(model, userInput, callback) {
     var modelArray = []
     // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
@@ -1496,6 +1538,7 @@ export {
     getAssetFromModel,
     getSuggestedOwners,
     getSuggestedRacks,
+    getSuggestedChassis,
     getSuggestedAssetIds,
     getSuggestedOtherAssetPorts,
     getNetworkPorts,
