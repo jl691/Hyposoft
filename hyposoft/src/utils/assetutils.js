@@ -253,11 +253,11 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                             suffixes_list.push(_owner)
                                                                         }
 
-                                                                        index.saveObject({
-                                                                            ...assetObject,
-                                                                            objectID: overrideAssetID,
-                                                                            suffixes: suffixes_list.join(' ')
-                                                                        })
+                                                                        // index.saveObject({
+                                                                        //     ...assetObject,
+                                                                        //     objectID: overrideAssetID,
+                                                                        //     suffixes: suffixes_list.join(' ')
+                                                                        // })
                                                                         assetRef.doc(overrideAssetID).set(assetObject).then(function (docRef) {
                                                                             assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, overrideAssetID);
 
@@ -375,11 +375,11 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                         suffixes_list.push(_owner)
                                                                     }
 
-                                                                    index.saveObject({
-                                                                        ...assetObject,
-                                                                        objectID: newID,
-                                                                        suffixes: suffixes_list.join(' ')
-                                                                    })
+                                                                    // index.saveObject({
+                                                                    //     ...assetObject,
+                                                                    //     objectID: newID,
+                                                                    //     suffixes: suffixes_list.join(' ')
+                                                                    // })
 
                                                                     assetRef.doc(newID)
                                                                         .set(assetObject).then(function (docRef) {
