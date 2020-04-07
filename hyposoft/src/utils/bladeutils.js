@@ -203,4 +203,14 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
     })
 }
 
-export { addChassis, addServer, updateChassis, updateServer }
+function getBladeInfo(id,callback) {
+    firebaseutils.bladeRef.doc(id).get().then(doc => {
+        let data = null
+        if (doc.exists) {
+            data = doc.data()
+        }
+        callback(data)
+    })
+}
+
+export { addChassis, addServer, updateChassis, updateServer, getBladeInfo }

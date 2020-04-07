@@ -35,6 +35,7 @@ export default class EditAssetForm extends Component {
     updateFunction = null
     isNonBlade = true
     previousModel = null
+    originalRackRackU = null
 
     constructor(props) {
         super(props);
@@ -61,6 +62,8 @@ export default class EditAssetForm extends Component {
         //this.defaultPDUFields = this.defaultPDUFields.bind(this);
         this.deleteNetworkConnection = this.deleteNetworkConnection.bind(this)
         this.deletePowerConnection = this.deletePowerConnection.bind(this);
+
+        this.originalRackRackU = {rack: this.state.rack, rackU: this.state.rackU}
     }
 
     componentDidMount() {
@@ -222,7 +225,21 @@ export default class EditAssetForm extends Component {
                this.updateFunction = assetutils.updateAsset
                this.isNonBlade = true
            }
-           callback()
+           if (!this.isNonBlade) {
+              bladeutils.getBladeInfo(this.state.asset_id,data => {
+                  if (data) {
+                      // purposefully not using setState so render is not called!!!
+                      this.state.rack = data.rack
+                      this.state.rackU = data.rackU
+                  }
+                  callback()
+              })
+           } else {
+              // purposefully not using setState so render is not called!!!
+              this.state.rack = this.originalRackRackU.rack
+              this.state.rackU = this.originalRackRackU.rackU
+              callback()
+           }
        })
     }
 
@@ -451,30 +468,61 @@ export default class EditAssetForm extends Component {
                             />
                         </FormField>
 
-                        <FormField name="rack" label="Rack" >
+                        {(this.isNonBlade
+                          ?
+                          <FormField name="rack" label="Rack" >
 
-                            <TextInput name="rack"
-                                placeholder="Update Rack"
-                                onChange={e => {
-                                    const value = e.target.value
-                                    this.setState(oldState => ({ ...oldState, rack: value }))
-                                    assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))
-                                }}
-                                onSelect={e => {
-                                    this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
-                                }}
-                                value={this.state.rack}
-                                suggestions={this.state.rackSuggestions}
-                                onClick={() => assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
-                                title='Rack'
-                            />
-                        </FormField>
+                              <TextInput name="rack"
+                                  placeholder="Update Rack"
+                                  onChange={e => {
+                                      const value = e.target.value
+                                      this.setState(oldState => ({ ...oldState, rack: value }))
+                                      assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))
+                                  }}
+                                  onSelect={e => {
+                                      this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
+                                  }}
+                                  value={this.state.rack}
+                                  suggestions={this.state.rackSuggestions}
+                                  onClick={() => assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
+                                  title='Rack'
+                              />
+                          </FormField>
+                          :
+                          <FormField name="rack" label="Chassis Hostname" >
 
-                        <FormField name="rackU" label="RackU" >
+                              <TextInput name="rack"
+                                  placeholder="Update Chassis Hostname"
+                                  onChange={e => {
+                                      const value = e.target.value
+                                      this.setState(oldState => ({ ...oldState, rack: value }))
+                                      assetutils.getSuggestedChassis(this.state.datacenter, value, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))
+                                  }}
+                                  onSelect={e => {
+                                      this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
+                                  }}
+                                  value={this.state.rack}
+                                  suggestions={this.state.rackSuggestions}
+                                  onClick={() => assetutils.getSuggestedChassis(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
+                                  title='Chassis Hostname'
+                              />
+                          </FormField>
+                        )}
 
-                            <TextInput name="rackU" placeholder="Update RackU" onChange={this.handleChange}
-                                value={this.state.rackU} required="true" />
-                        </FormField>
+                        {(this.isNonBlade
+                          ?
+                          <FormField name="rackU" label="RackU" >
+
+                              <TextInput name="rackU" placeholder="Update RackU" onChange={this.handleChange}
+                                  value={this.state.rackU} required="true" />
+                          </FormField>
+                          :
+                          <FormField name="rackU" label="Slot" >
+
+                              <TextInput name="rackU" placeholder="Update Slot" onChange={this.handleChange}
+                                  value={this.state.rackU} required="true" />
+                          </FormField>
+                        )}
 
                         <FormField name="owner" label="Owner" >
 
@@ -495,82 +543,89 @@ export default class EditAssetForm extends Component {
                             />
                         </FormField>
 
-                        <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"}
-                            toggle={true} onChange={(e) => {
-                                let panel = document.getElementById("powerPortConnectionsPanel");
-                                let display = !this.state.showPowerConnections;
-                                this.setState({
-                                    showPowerConnections: display
-                                }, function () {
-                                    panel.style.display = display ? "block" : "none";
-                                })
-                            }} />
+                        {(this.isNonBlade
+                          ?
+                          <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"}
+                              toggle={true} onChange={(e) => {
+                                  let panel = document.getElementById("powerPortConnectionsPanel");
+                                  let display = !this.state.showPowerConnections;
+                                  this.setState({
+                                      showPowerConnections: display
+                                  }, function () {
+                                      panel.style.display = display ? "block" : "none";
+                                  })
+                              }} />
+                          :
+                          <Box></Box>
+                        )}
+
+                        {(this.isNonBlade
+                          ?
+                          <Accordion >
+
+                              <div id={"powerPortConnectionsPanel"} style={{ display: "none" }}>
+                                  <AccordionPanel label="Power Port Connections">
+                                      <AssetPowerPortsForm
+
+                                          powerConnections={this.state.powerConnections}
+
+                                          deletePowerConnectionCallbackFromParent={this.deletePowerConnection}
+
+                                      />
+
+                                      <Button
+                                          onClick={this.addPowerConnection}
+                                          margin={{ horizontal: 'medium', vertical: 'small' }}
+
+                                          label="Add a power connection" />
 
 
-                        <Accordion >
+                                  </AccordionPanel>
+                              </div>
 
-                            <div id={"powerPortConnectionsPanel"} style={{ display: "none" }}>
-                                <AccordionPanel label="Power Port Connections">
-                                    <AssetPowerPortsForm
+                              <AccordionPanel label="MAC Addresses">
+                                  <AssetMACForm
 
-                                        powerConnections={this.state.powerConnections}
-
-                                        deletePowerConnectionCallbackFromParent={this.deletePowerConnection}
-
-                                    />
-
-                                    <Button
-                                        onClick={this.addPowerConnection}
-                                        margin={{ horizontal: 'medium', vertical: 'small' }}
-
-                                        label="Add a power connection" />
+                                      fieldCallback={this.handleDisplayMACFields}
+                                      popupMode={this.props.popupMode}
+                                      model={this.state.model}
+                                      macAddresses={this.state.macAddresses}
 
 
-                                </AccordionPanel>
-                            </div>
+                                  />
 
-                            <AccordionPanel label="MAC Addresses">
-                                <AssetMACForm
+                              </AccordionPanel>
 
-                                    fieldCallback={this.handleDisplayMACFields}
-                                    popupMode={this.props.popupMode}
-                                    model={this.state.model}
-                                    macAddresses={this.state.macAddresses}
+                              <AccordionPanel label="Network Port Connections">
+                                  <AssetNetworkPortsForm
 
+                                      model={this.state.model}
+                                      datacenter={this.state.datacenter}
+                                      currentId={this.state.asset_id}
+                                      networkConnections={this.state.networkConnections}
 
-                                />
+                                      deleteNetworkConnectionCallbackFromParent={this.deleteNetworkConnection}
 
-                            </AccordionPanel>
+                                  />
 
-                            <AccordionPanel label="Network Port Connections">
-                                <AssetNetworkPortsForm
+                                  <Button
+                                      onClick={this.addNetworkConnection}
+                                      margin={{ horizontal: 'medium', vertical: 'small' }}
 
-                                    model={this.state.model}
-                                    datacenter={this.state.datacenter}
-                                    currentId={this.state.asset_id}
-                                    networkConnections={this.state.networkConnections}
+                                      label="Add a network connection" />
 
-                                    deleteNetworkConnectionCallbackFromParent={this.deleteNetworkConnection}
+                                  {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
+                                  {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
+                                  {/* <Button onClick={this.handleConnect}
+                                          margin={{ horizontal: 'medium', vertical: 'small' }}
+                                          label="Validate Connections" /> */}
 
-                                />
+                              </AccordionPanel>
 
-                                <Button
-                                    onClick={this.addNetworkConnection}
-                                    margin={{ horizontal: 'medium', vertical: 'small' }}
-
-                                    label="Add a network connection" />
-
-                                {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
-                                {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
-                                {/* <Button onClick={this.handleConnect}
-                                        margin={{ horizontal: 'medium', vertical: 'small' }}
-                                        label="Validate Connections" /> */}
-
-                            </AccordionPanel>
-
-                        </Accordion>
-
-
+                          </Accordion>
+                          :
+                          <Box></Box>
+                        )}
 
                         <FormField name="asset_id" label="Override Asset ID">
                             <TextInput name="asset_id" placeholder="Update Asset ID" onChange={this.handleChange}
