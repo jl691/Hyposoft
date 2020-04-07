@@ -14,6 +14,7 @@ import {
 } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
+import * as bladeutils from '../utils/bladeutils'
 import * as assetmacutils from '../utils/assetmacutils'
 import * as formvalidationutils from "../utils/formvalidationutils";
 import * as assetpowerportutils from '../utils/assetpowerportutils'
@@ -31,6 +32,10 @@ import AssetMACForm from './AssetMACForm';
 //Instance table has a layer, that holds the button to add instance and the form
 
 export default class EditAssetForm extends Component {
+    updateFunction = null
+    isNonBlade = true
+    previousModel = null
+
     constructor(props) {
         super(props);
         this.state = {
@@ -48,7 +53,7 @@ export default class EditAssetForm extends Component {
             editDeletedNetworkConnections: [],
             showPowerConnections: this.props.updatePowerConnectionsFromParent.length ? true : false
 
-        } 
+        }
         this.handleUpdate = this.handleUpdate.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.addNetworkConnection = this.addNetworkConnection.bind(this);
@@ -197,6 +202,30 @@ export default class EditAssetForm extends Component {
         }
     }
 
+    determineUpdateForm(callback) {
+       modelutils.getModelByModelname(this.state.model, doc => {
+           if (doc) {
+               switch (doc.data().mount) {
+                 case 'chassis':
+                   this.updateFunction = bladeutils.updateChassis
+                   this.isNonBlade = true
+                   break
+                 // case 'blade':
+                 //   this.updateFunction = bladeutils.updateServer
+                 //   this.isNonBlade = false
+                 //   break
+                 default:
+                   this.updateFunction = assetutils.updateAsset
+                   this.isNonBlade = true
+               }
+           } else {
+               this.updateFunction = assetutils.updateAsset
+               this.isNonBlade = true
+           }
+           callback()
+       })
+    }
+
     handleUpdate(event) {
 
         if (event.target.name === "updateInst") {
@@ -208,7 +237,7 @@ export default class EditAssetForm extends Component {
             } else if (this.state.hostname && !/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)) {
                 //not a valid hostname
                 ToastsStore.error("Invalid hostname. It must start with a letter or number, contain only letters, numbers, or hyphens, and end with a letter or number. It must be 63 characters or less.");
-            } else if (!/[A-Z]\d+/.test(this.state.rack)) {
+            } else if (this.isNonBlade && !/[A-Z]\d+/.test(this.state.rack)) {
                 //not a valid rack
                 ToastsStore.error("Invalid rack.");
             } else if (!parseInt(this.state.rackU)) {
@@ -218,7 +247,7 @@ export default class EditAssetForm extends Component {
                 ToastsStore.error("Rack U must be positive.");
             }
             else {
-              
+
                 if (this.state.showPowerConnections) {
                     let existingConnections = [];
                     Object.keys(this.state.powerConnections).forEach(connection => {
@@ -240,7 +269,7 @@ export default class EditAssetForm extends Component {
                                                 console.log(this.props.changeDocID)
                                                 ToastsStore.info('Please wait...', 750);
 
-                                                assetutils.updateAsset(
+                                                this.updateFunction(
                                                     this.state.asset_id,
                                                     this.state.model,
                                                     this.state.hostname,
@@ -284,7 +313,7 @@ export default class EditAssetForm extends Component {
                                 if (fixedAddr) {
                                     console.log(fixedAddr)
                                     ToastsStore.info('Please wait...', 750);
-                                    assetutils.updateAsset(
+                                    this.updateFunction(
                                         this.state.asset_id,
                                         this.state.model,
                                         this.state.hostname,
@@ -347,6 +376,11 @@ export default class EditAssetForm extends Component {
             return <Redirect to='/' />
         }
         //console.log(this.state.macAddresses)
+        if (this.state.model !== this.previousModel) {
+            this.previousModel = this.state.model
+            // force render to be called again after updating variables
+            this.determineUpdateForm(() => this.setState(oldState => ({ ...oldState})))
+        }
 
         return (
 

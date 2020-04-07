@@ -15,6 +15,7 @@ function addChassis(overrideAssetID, model, hostname, rack, racku, owner, commen
                         // added fields copied from rack
                         // don't really need the number field so will hardcode to something
                         firebaseutils.racksRef.doc(qs.docs[0].id).collection('blades').doc(id).set({
+                            id: id,
                             letter: hostname,
                             number: 1,
                             height: 14,
@@ -27,6 +28,76 @@ function addChassis(overrideAssetID, model, hostname, rack, racku, owner, commen
             })
         }
         callback(errorMessage)
+    }, changePlanID, changeDocID)
+}
+
+function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
+    networkConnectionsArray, deletedNCThisPort, powerConnections, callback, changePlanID = null, changeDocID = null) {
+    assetutils.updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
+        networkConnectionsArray, deletedNCThisPort, powerConnections, (errorMessage,id) => {
+        if (!errorMessage && id) {
+            // add collection to rack
+            let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
+            let rackRow = splitRackArray[0]
+            let rackNum = parseInt(splitRackArray[1])
+            datacenterutils.getDataFromName(datacenter, (datacenterID,datacenterAbbrev) => {
+                firebaseutils.racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", datacenterID).get().then(qs => {
+                    if (!qs.empty) {
+                        // update self attributes within blades subcollection
+                        firebaseutils.db.collectionGroup('blades').where("id","==",id).get().then(querySnapshot => {
+                            const prevData = querySnapshot.docs[0].data()
+                            querySnapshot.docs[0].ref.delete().then(() => {
+                              firebaseutils.racksRef.doc(qs.docs[0].id).collection('blades').doc(id).set({
+                                  id: id,
+                                  letter: hostname,
+                                  number: prevData.number,
+                                  height: prevData.height,
+                                  assets: prevData.assets,
+                                  powerPorts: prevData.powerPorts,
+                                  datacenter: datacenterID
+                              }).then(async() => {
+                                // update all my assets
+                                const assets = prevData.assets
+                                for (var i = 0; i < assets.length; i++) {
+                                    await new Promise(function(resolve, reject) {
+                                      firebaseutils.assetRef.doc(assets[i]).update({
+                                          datacenter: datacenter,
+                                          datacenterID: datacenterID,
+                                          datacenterAbbrev: datacenterAbbrev,
+                                          rack: rack,
+                                          rackU: rackU,
+                                          rackRow: rackRow,
+                                          rackNum: rackNum,
+                                          rackID: qs.docs[0].id
+                                      }).then(() => resolve())
+                                    })
+                                    await new Promise(function(resolve, reject) {
+                                      firebaseutils.bladeRef.doc(assets[i]).update({
+                                          chassisId: id,
+                                          rack: hostname,
+                                          rackId: qs.docs[0].id
+                                      }).then(() => resolve())
+                                    })
+                                }
+                                callback(errorMessage)
+                                return
+                              })
+                            })
+                        })
+                    } else {
+                        callback(errorMessage)
+                        return
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    callback(errorMessage)
+                    return
+                })
+            })
+        } else {
+            callback(errorMessage)
+        }
     }, changePlanID, changeDocID)
 }
 
@@ -65,4 +136,4 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
     })
 }
 
-export { addChassis, addServer }
+export { addChassis, addServer, updateChassis }

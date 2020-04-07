@@ -892,15 +892,15 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                         suffixes_list.push(_owner)
                                                                                                     }
 
-                                                                                                    index.saveObject({
-                                                                                                        ...assetObject,
-                                                                                                        objectID: assetID,
-                                                                                                        suffixes: suffixes_list.join(' ')
-                                                                                                    })
+                                                                                                    // index.saveObject({
+                                                                                                    //     ...assetObject,
+                                                                                                    //     objectID: assetID,
+                                                                                                    //     suffixes: suffixes_list.join(' ')
+                                                                                                    // })
                                                                                                     assetRef.doc(String(assetID)).update(assetObject).then(function () {
                                                                                                         console.log("Updated model successfully")
                                                                                                         // log needs to be added before calling back for DetailedAssetScreen
-                                                                                                        logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null))
+                                                                                                        logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null,String(assetID)))
                                                                                                     })
                                                                                                         .catch(function (error) {
                                                                                                             callback(error);
