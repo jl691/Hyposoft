@@ -280,6 +280,9 @@ export default class AddAssetForm extends Component {
                   this.addFunction = assetutils.addAsset
                   this.isNonBlade = true
               }
+          } else {
+              this.addFunction = assetutils.addAsset
+              this.isNonBlade = true
           }
           callback()
       })
@@ -503,51 +506,68 @@ export default class AddAssetForm extends Component {
                                     required={true}
                                 />
                             </FormField>
-
-                            <FormField name="rack" label="Rack">
-
-
-                                <TextInput name="rack"
-                                    placeholder="eg. B12"
-                                    onChange={e => {
-                                        const value = e.target.value
-                                        this.setState(oldState => ({ ...oldState, rack: value }))
-                                        assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({
-                                            ...oldState,
-                                            rackSuggestions: results
-                                        })))
-                                        //Update the default power port fields
-                                        //this.defaultPDUFields(this.state.model, e.suggestion, this.state.datacenter)
-                                    }}
-                                    onSelect={e => {
-                                        this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
-
-                                    }}
-                                    value={this.state.rack}
-                                    suggestions={this.state.rackSuggestions}
-                                    onClick={() => {
-                                        if (this.state.datacenter) {
-                                            assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
-                                                ...oldState,
-                                                rackSuggestions: results
-                                            })))
-
-                                        }
-                                    }
-                                    }
-                                    title='Rack'
-                                    required={true}
-                                />
-                            </FormField>
+                            {(this.isNonBlade
+                              ?
+                              <FormField name="rack" label="Rack">
 
 
-                            <FormField name="rackU" label="RackU">
+                                  <TextInput name="rack"
+                                      placeholder="eg. B12"
+                                      onChange={e => {
+                                          const value = e.target.value
+                                          this.setState(oldState => ({ ...oldState, rack: value }))
+                                          assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({
+                                              ...oldState,
+                                              rackSuggestions: results
+                                          })))
+                                          //Update the default power port fields
+                                          //this.defaultPDUFields(this.state.model, e.suggestion, this.state.datacenter)
+                                      }}
+                                      onSelect={e => {
+                                          this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
+
+                                      }}
+                                      value={this.state.rack}
+                                      suggestions={this.state.rackSuggestions}
+                                      onClick={() => {
+                                          if (this.state.datacenter) {
+                                              assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
+                                                  ...oldState,
+                                                  rackSuggestions: results
+                                              })))
+
+                                          }
+                                      }
+                                      }
+                                      title='Rack'
+                                      required={true}
+                                  />
+                              </FormField>
+                              :
+                              <FormField name="rack" label="Chassis Hostname">
+
+                                  <TextInput padding="medium" name="rack" placeholder="eg. chassis1"
+                                      onChange={this.handleChange}
+                                      value={this.state.rack} />
+                              </FormField>
+                            )}
+
+                            {(this.isNonBlade
+                              ?
+                              <FormField name="rackU" label="RackU">
 
 
-                                <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
-                                    value={this.state.rackU} required={true} />
-                            </FormField>
+                                  <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
+                                      value={this.state.rackU} required={true} />
+                              </FormField>
+                              :
+                              <FormField name="rackU" label="Slot">
 
+
+                                  <TextInput name="rackU" placeholder="eg. 5" onChange={this.handleChange}
+                                      value={this.state.rackU} required={true} />
+                              </FormField>
+                            )}
 
                             <FormField name="owner" label="Owner">
 
