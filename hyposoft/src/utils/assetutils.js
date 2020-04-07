@@ -1,4 +1,4 @@
-import { assetRef, racksRef, modelsRef, usersRef, firebase, datacentersRef, changeplansRef } from './firebaseutils'
+import { db, assetRef, racksRef, modelsRef, usersRef, firebase, datacentersRef, changeplansRef } from './firebaseutils'
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
 import * as userutils from './userutils'
@@ -1047,15 +1047,14 @@ function getSuggestedChassis(datacenter, userInput, callback) {
     let count = 0
     datacentersRef.where('name', '==', datacenter).get().then(docSnaps => {
         const datacenterID = docSnaps.docs[0].id
-        racksRef.where('datacenter', '==', datacenterID).get().then(querySnapshot => {
-            querySnapshot.forEach(async(docRef) => {
-                modelArray = await helpChassisSuggestions(docRef,modelArray,userInput)
-                count++;
-                if (count === querySnapshot.size) {
-                    modelArray.sort()
-                    callback(modelArray)
+        db.collectionGroup('blades').where('datacenter', '==', datacenterID).orderBy('letter').get().then(querySnapshot => {
+            querySnapshot.forEach(doc => {
+                const data = doc.data().letter
+                if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
+                    modelArray.push(data)
                 }
             })
+            callback(modelArray)
         })
             .catch(error => {
                 callback(null)
@@ -1064,23 +1063,6 @@ function getSuggestedChassis(datacenter, userInput, callback) {
         .catch(error => {
             callback(null)
         })
-}
-
-function helpChassisSuggestions(docRef,modelArray,userInput) {
-  return new Promise(function(resolve, reject) {
-    let suggest = modelArray
-    docRef.ref.collection('blades').get().then(qs => {
-        if (!qs.empty) {
-            qs.forEach(doc => {
-                const data = doc.data().letter
-                if (shouldAddToSuggestedItems(suggest, data, userInput)) {
-                    suggest.push(data)
-                }
-            })
-        }
-        resolve(suggest)
-    })
-  })
 }
 
 function getNetworkPorts(model, userInput, callback) {
