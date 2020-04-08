@@ -14,6 +14,7 @@ import theme from "../theme";
 export default class DeleteAssetPopup extends Component {
     deleteFunction = null
     isNonBlade = true
+    previousModel = null
 
     constructor(props) {
         super(props);
@@ -51,10 +52,10 @@ export default class DeleteAssetPopup extends Component {
                    this.deleteFunction = bladeutils.deleteChassis
                    this.isNonBlade = true
                    break
-                 // case 'blade':
-                 //   this.deleteFunction = bladeutils.deleteServer
-                 //   this.isNonBlade = false
-                 //   break
+                 case 'blade':
+                   this.deleteFunction = bladeutils.deleteServer
+                   this.isNonBlade = false
+                   break
                  default:
                    this.deleteFunction = assetutils.deleteAsset
                    this.isNonBlade = true
@@ -72,7 +73,8 @@ export default class DeleteAssetPopup extends Component {
             return <Redirect to='/' />
         }
 
-        if (!this.deleteFunction) {
+        if (this.previousModel !== this.props.deleteModel) {
+            this.previousModel = this.props.deleteModel
             this.determineDeleteFunction(() => this.setState(oldState => ({ ...oldState})))
         }
 

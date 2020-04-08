@@ -219,6 +219,41 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
     })
 }
 
+function deleteServer(assetID, callback, isDecommission = false) {
+    assetutils.deleteAsset(assetID, deletedId => {
+        if (deletedId) {
+            // sequential delete to be safe
+            firebaseutils.bladeRef.doc(deletedId).get().then(doc => {
+                const chassisId = doc.data().chassisId
+                doc.ref.delete().then(() => {
+                    firebaseutils.db.collectionGroup('blades').where("id","==",chassisId).get().then(qs => {
+                        if (!qs.empty) {
+                            const qsAssets = qs.docs[0].data().assets
+                            const ind = qsAssets.indexOf(deletedId)
+                            if (ind !== -1) {
+                                qs.docs[0].ref.update({
+                                    assets: qsAssets.slice(0, ind).concat(qsAssets.slice(ind + 1, qsAssets.length))
+                                }).then(() => callback(deletedId))
+                            } else {
+                                callback(null)
+                            }
+                        } else {
+                            callback(null)
+                        }
+                    })
+                })
+            }).catch(function (error) {
+                console.log(error);
+                // maybe add the asset back and add error message?
+                callback(null)
+                return
+            })
+        } else {
+            callback(null)
+        }
+    }, isDecommission)
+}
+
 function getBladeInfo(id,callback) {
     firebaseutils.bladeRef.doc(id).get().then(doc => {
         let data = null
@@ -229,4 +264,4 @@ function getBladeInfo(id,callback) {
     })
 }
 
-export { addChassis, addServer, updateChassis, updateServer, deleteChassis, getBladeInfo }
+export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo }
