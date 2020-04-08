@@ -1263,7 +1263,7 @@ function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, ch
                 }).catch(function () {
                     callback(null);
                 })
-            } else if (!newPowerPorts.length && !oldPowerPorts.length) {
+            } else if (!newPowerPorts.length && oldPowerPorts.length) {
                 racksRef.doc(String(oldRack)).update({
                     powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({
                         ...obj,
@@ -1302,10 +1302,10 @@ function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, ch
                 return
             }
             // temporary fix for blades, probably should change for all cases
-            if (!oldPowerPorts.length && !newPowerPorts.length) {
-                callback(true);
-                return
-            }
+            // if (!oldPowerPorts.length && !newPowerPorts.length) {
+            //     callback(true);
+            //     return
+            // }
             racksRef.doc(String(oldRack)).update({
                 assets: firebase.firestore.FieldValue.arrayRemove(id),
                 powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({ ...obj, assetID: id })))
