@@ -276,7 +276,6 @@ function getBladeInfo(id,callback) {
 function getSuggestedChassis(datacenter, userInput, callback) {
     // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
     var modelArray = []
-    let count = 0
     firebaseutils.datacentersRef.where('name', '==', datacenter).get().then(docSnaps => {
         const datacenterID = docSnaps.docs[0].id
         firebaseutils.db.collectionGroup('blades').where('datacenter', '==', datacenterID).orderBy('letter').get().then(querySnapshot => {
@@ -297,4 +296,31 @@ function getSuggestedChassis(datacenter, userInput, callback) {
         })
 }
 
-export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo, getSuggestedChassis }
+function getSuggestedSlots(chassis, userInput, callback, selfId = null) {
+    var modelArray = []
+    // need to do this in case input is an int
+    userInput = userInput.toString()
+    firebaseutils.bladeRef.where('rack', '==', chassis).get().then(querySnapshot => {
+        var taken = []
+        querySnapshot.forEach(doc => {
+            // mark self as free
+            if (doc.id !== selfId) {
+                taken.push(doc.data().rackU)
+            }
+        })
+        // assuming height of 14
+        for (var i = 1; i <= 14; i++) {
+            const data = i.toString()
+            if (assetutils.shouldAddToSuggestedItems(modelArray, data, userInput)) {
+                const prefix = taken.includes(i) ? 'Taken: ' : 'Free: '
+                modelArray.push(prefix + data)
+            }
+        }
+        callback(modelArray)
+    })
+        .catch(error => {
+            callback(null)
+        })
+}
+
+export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo, getSuggestedChassis, getSuggestedSlots }

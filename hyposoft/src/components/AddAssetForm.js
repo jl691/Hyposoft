@@ -584,10 +584,31 @@ export default class AddAssetForm extends Component {
                               </FormField>
                               :
                               <FormField name="rackU" label="Slot">
-
-
-                                  <TextInput name="rackU" placeholder="eg. 5" onChange={this.handleChange}
-                                      value={this.state.rackU} required={true} />
+                                      <TextInput name="rackU" placeholder="eg. 5"
+                                          onChange={e => {
+                                              const value = e.target.value
+                                              this.setState(oldState => ({ ...oldState, rackU: value }))
+                                              bladeutils.getSuggestedSlots(this.state.rack, value, results => this.setState(oldState => ({
+                                                  ...oldState,
+                                                  slotSuggestions: results
+                                              })))
+                                          }}
+                                          onSelect={e => {
+                                              this.setState(oldState => ({ ...oldState, rackU: (e.suggestion.split(' '))[1].trim() }))
+                                          }}
+                                          value={this.state.rackU}
+                                          suggestions={this.state.slotSuggestions}
+                                          onClick={() => {
+                                              if (this.state.rack) {
+                                                  bladeutils.getSuggestedSlots(this.state.rack, this.state.rackU, results => this.setState(oldState => ({
+                                                      ...oldState,
+                                                      slotSuggestions: results
+                                                  })))
+                                              }
+                                          }}
+                                          title='Slot'
+                                          required={true}
+                                        />
                               </FormField>
                             )}
 
