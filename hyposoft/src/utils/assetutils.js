@@ -691,7 +691,7 @@ function deleteAsset(assetID, callback, isDecommission = false) {
                                                 if (!isDecommission) {
                                                     logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
                                                 }
-                                                index.deleteObject(assetID)
+                                                // index.deleteObject(assetID)
                                                 callback(assetID);
                                             })
                                     })
@@ -721,7 +721,7 @@ function deleteAsset(assetID, callback, isDecommission = false) {
                                             if (!isDecommission) {
                                                 logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
                                             }
-                                            index.deleteObject(assetID)
+                                            // index.deleteObject(assetID)
                                             callback(assetID);
                                         })
                                 })

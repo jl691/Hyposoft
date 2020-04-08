@@ -102,6 +102,22 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
     }, changePlanID, changeDocID)
 }
 
+function deleteChassis(assetID, callback, isDecommission = false) {
+    firebaseutils.db.collectionGroup('blades').where("id","==",assetID).get().then(qs => {
+        if (!qs.empty && qs.docs[0].data().assets.length === 0) {
+            assetutils.deleteAsset(assetID, deletedId => {
+                if (deletedId) {
+                    qs.docs[0].ref.delete().then(() => callback(deletedId))
+                } else {
+                    callback(null)
+                }
+            }, isDecommission)
+        } else {
+            callback(null)
+        }
+    })
+}
+
 function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, callback, changePlanID = null, changeDocID = null) {
     firebaseutils.assetRef.where('hostname','==',chassisHostname).get().then(qs => {
         if (!qs.empty) {
@@ -213,4 +229,4 @@ function getBladeInfo(id,callback) {
     })
 }
 
-export { addChassis, addServer, updateChassis, updateServer, getBladeInfo }
+export { addChassis, addServer, updateChassis, updateServer, deleteChassis, getBladeInfo }
