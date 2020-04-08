@@ -1,5 +1,6 @@
 import * as firebaseutils from './firebaseutils'
 import * as assetutils from './assetutils'
+import * as decomutils from '../utils/decommissionutils'
 import * as datacenterutils from './datacenterutils'
 
 function addChassis(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, callback, changePlanID = null, changeDocID = null) {
@@ -92,7 +93,7 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
                 .catch(function (error) {
                     console.log(error);
                     // maybe remove the asset and add error message?
-                    callback(errorMessage)
+                    callback(errorMessage || 'updating failed even though chassis got updated in assets')
                     return
                 })
             })
@@ -100,6 +101,30 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
             callback(errorMessage)
         }
     }, changePlanID, changeDocID)
+}
+
+function deleteChassis(assetID, callback, isDecommission = false) {
+    firebaseutils.db.collectionGroup('blades').where("id","==",assetID).get().then(qs => {
+        if (!qs.empty && (qs.docs[0].data().assets.length === 0 || isDecommission)) {
+            assetutils.deleteAsset(assetID, async(deletedId) => {
+                if (deletedId) {
+                    if (isDecommission) {
+                        const qsAssets = qs.docs[0].data().assets
+                        for (var i = 0; i < qsAssets.length; i++) {
+                            await new Promise(function(resolve, reject) {
+                                decomutils.decommissionAsset(qsAssets[i],doNothing => resolve(),deleteServer)
+                            })
+                        }
+                    }
+                    qs.docs[0].ref.delete().then(() => callback(deletedId))
+                } else {
+                    callback(null)
+                }
+            }, isDecommission)
+        } else {
+            callback(null)
+        }
+    })
 }
 
 function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, callback, changePlanID = null, changeDocID = null) {
@@ -189,7 +214,7 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
                   }).catch(function (error) {
                       console.log(error);
                       // maybe remove the asset and add error message?
-                      callback(errorMessage)
+                      callback(errorMessage || 'updating failed even though server got updated in assets')
                       return
                   })
                 } else {
@@ -203,6 +228,41 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
     })
 }
 
+function deleteServer(assetID, callback, isDecommission = false) {
+    assetutils.deleteAsset(assetID, deletedId => {
+        if (deletedId) {
+            // sequential delete to be safe
+            firebaseutils.bladeRef.doc(deletedId).get().then(doc => {
+                const chassisId = doc.data().chassisId
+                doc.ref.delete().then(() => {
+                    firebaseutils.db.collectionGroup('blades').where("id","==",chassisId).get().then(qs => {
+                        if (!qs.empty) {
+                            const qsAssets = qs.docs[0].data().assets
+                            const ind = qsAssets.indexOf(deletedId)
+                            if (ind !== -1) {
+                                qs.docs[0].ref.update({
+                                    assets: qsAssets.slice(0, ind).concat(qsAssets.slice(ind + 1, qsAssets.length))
+                                }).then(() => callback(deletedId))
+                            } else {
+                                callback(null)
+                            }
+                        } else {
+                            callback(null)
+                        }
+                    })
+                })
+            }).catch(function (error) {
+                console.log(error);
+                // maybe add the asset back and add error message?
+                callback(null)
+                return
+            })
+        } else {
+            callback(null)
+        }
+    }, isDecommission)
+}
+
 function getBladeInfo(id,callback) {
     firebaseutils.bladeRef.doc(id).get().then(doc => {
         let data = null
@@ -213,4 +273,4 @@ function getBladeInfo(id,callback) {
     })
 }
 
-export { addChassis, addServer, updateChassis, updateServer, getBladeInfo }
+export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo }

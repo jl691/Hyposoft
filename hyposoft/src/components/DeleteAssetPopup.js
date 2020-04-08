@@ -2,6 +2,8 @@ import React, { Component } from 'react'
 import { Button, Grommet, Form, Heading, Text, Box } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
+import * as bladeutils from '../utils/bladeutils'
+import * as modelutils from '../utils/modelutils'
 import * as userutils from "../utils/userutils";
 import {Redirect} from "react-router-dom";
 import theme from "../theme";
@@ -10,6 +12,10 @@ import theme from "../theme";
 //Instance table has a layer, that holds the button to add instance and the form
 
 export default class DeleteAssetPopup extends Component {
+    deleteFunction = null
+    isNonBlade = true
+    previousModel = null
+
     constructor(props) {
         super(props);
         this.state = {
@@ -23,7 +29,7 @@ export default class DeleteAssetPopup extends Component {
     handleDelete(event) {
         console.log(this.props.deleteIDFromParent)
         if (event.target.name === "deleteInst") {
-            assetutils.deleteAsset(this.props.deleteIDFromParent, status => {
+            this.deleteFunction(this.props.deleteIDFromParent, status => {
                 if (status) {
 
                     ToastsStore.success('Deleted asset');
@@ -38,9 +44,38 @@ export default class DeleteAssetPopup extends Component {
 
     }
 
+    determineDeleteFunction(callback) {
+       modelutils.getModelByModelname(this.props.deleteModel, doc => {
+           if (doc) {
+               switch (doc.data().mount) {
+                 case 'chassis':
+                   this.deleteFunction = bladeutils.deleteChassis
+                   this.isNonBlade = true
+                   break
+                 case 'blade':
+                   this.deleteFunction = bladeutils.deleteServer
+                   this.isNonBlade = false
+                   break
+                 default:
+                   this.deleteFunction = assetutils.deleteAsset
+                   this.isNonBlade = true
+               }
+           } else {
+               this.deleteFunction = assetutils.deleteAsset
+               this.isNonBlade = true
+           }
+           callback()
+       })
+    }
+
     render() {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
+        }
+
+        if (this.previousModel !== this.props.deleteModel) {
+            this.previousModel = this.props.deleteModel
+            this.determineDeleteFunction(() => this.setState(oldState => ({ ...oldState})))
         }
 
         return (

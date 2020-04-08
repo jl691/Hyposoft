@@ -691,7 +691,7 @@ function deleteAsset(assetID, callback, isDecommission = false) {
                                                 if (!isDecommission) {
                                                     logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
                                                 }
-                                                index.deleteObject(assetID)
+                                                // index.deleteObject(assetID)
                                                 callback(assetID);
                                             })
                                     })
@@ -721,7 +721,7 @@ function deleteAsset(assetID, callback, isDecommission = false) {
                                             if (!isDecommission) {
                                                 logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
                                             }
-                                            index.deleteObject(assetID)
+                                            // index.deleteObject(assetID)
                                             callback(assetID);
                                         })
                                 })
@@ -1308,14 +1308,14 @@ function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, ch
             // }
             racksRef.doc(String(oldRack)).update({
                 assets: firebase.firestore.FieldValue.arrayRemove(id),
-                powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({ ...obj, assetID: id })))
+                // powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({ ...obj, assetID: id })))
             }).then(() => {
                 racksRef.doc(String(newRack)).update({
                     assets: firebase.firestore.FieldValue.arrayUnion(id),
-                    powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj => ({
-                        ...obj,
-                        assetID: id
-                    })))
+                    // powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj => ({
+                    //     ...obj,
+                    //     assetID: id
+                    // })))
                 }).then(() => {
                     callback(true);
                 }).catch(function (error) {
