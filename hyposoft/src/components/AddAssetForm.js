@@ -550,7 +550,7 @@ export default class AddAssetForm extends Component {
                                       onChange={e => {
                                           const value = e.target.value
                                           this.setState(oldState => ({ ...oldState, rack: value }))
-                                          assetutils.getSuggestedChassis(this.state.datacenter, value, results => this.setState(oldState => ({
+                                          bladeutils.getSuggestedChassis(this.state.datacenter, value, results => this.setState(oldState => ({
                                               ...oldState,
                                               rackSuggestions: results
                                           })))
@@ -562,7 +562,7 @@ export default class AddAssetForm extends Component {
                                       suggestions={this.state.rackSuggestions}
                                       onClick={() => {
                                           if (this.state.datacenter) {
-                                              assetutils.getSuggestedChassis(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
+                                              bladeutils.getSuggestedChassis(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
                                                   ...oldState,
                                                   rackSuggestions: results
                                               })))

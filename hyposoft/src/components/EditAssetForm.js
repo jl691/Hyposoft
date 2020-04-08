@@ -496,14 +496,14 @@ export default class EditAssetForm extends Component {
                                   onChange={e => {
                                       const value = e.target.value
                                       this.setState(oldState => ({ ...oldState, rack: value }))
-                                      assetutils.getSuggestedChassis(this.state.datacenter, value, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))
+                                      bladeutils.getSuggestedChassis(this.state.datacenter, value, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))
                                   }}
                                   onSelect={e => {
                                       this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
                                   }}
                                   value={this.state.rack}
                                   suggestions={this.state.rackSuggestions}
-                                  onClick={() => assetutils.getSuggestedChassis(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
+                                  onClick={() => bladeutils.getSuggestedChassis(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
                                   title='Chassis Hostname'
                               />
                           </FormField>

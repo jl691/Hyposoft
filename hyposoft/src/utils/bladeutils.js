@@ -273,4 +273,28 @@ function getBladeInfo(id,callback) {
     })
 }
 
-export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo }
+function getSuggestedChassis(datacenter, userInput, callback) {
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    var modelArray = []
+    let count = 0
+    firebaseutils.datacentersRef.where('name', '==', datacenter).get().then(docSnaps => {
+        const datacenterID = docSnaps.docs[0].id
+        firebaseutils.db.collectionGroup('blades').where('datacenter', '==', datacenterID).orderBy('letter').get().then(querySnapshot => {
+            querySnapshot.forEach(doc => {
+                const data = doc.data().letter
+                if (assetutils.shouldAddToSuggestedItems(modelArray, data, userInput)) {
+                    modelArray.push(data)
+                }
+            })
+            callback(modelArray)
+        })
+            .catch(error => {
+                callback(null)
+            })
+    })
+        .catch(error => {
+            callback(null)
+        })
+}
+
+export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo, getSuggestedChassis }
