@@ -92,7 +92,7 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
                 .catch(function (error) {
                     console.log(error);
                     // maybe remove the asset and add error message?
-                    callback(errorMessage)
+                    callback(errorMessage || 'updating failed even though chassis got updated in assets')
                     return
                 })
             })
@@ -205,7 +205,7 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
                   }).catch(function (error) {
                       console.log(error);
                       // maybe remove the asset and add error message?
-                      callback(errorMessage)
+                      callback(errorMessage || 'updating failed even though server got updated in assets')
                       return
                   })
                 } else {
