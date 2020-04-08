@@ -128,7 +128,7 @@ function deleteChassis(assetID, callback, isDecommission = false) {
 }
 
 function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, callback, changePlanID = null, changeDocID = null) {
-    firebaseutils.assetRef.where('hostname','==',chassisHostname).get().then(qs => {
+    firebaseutils.assetRef.where('hostname','==',chassisHostname).where('datacenter','==',datacenter).get().then(qs => {
         if (!qs.empty) {
             const rack = qs.docs[0].data().rack
             const racku = qs.docs[0].data().rackU
@@ -157,7 +157,7 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
                 return
             }, changePlanID, changeDocID, {hostname: chassisHostname, slot: slot, id: chassisId})
         } else {
-            callback('blade chassis ' + chassisHostname +' does not exist')
+            callback('blade chassis ' + chassisHostname +' does not exist in datacenter ' + datacenter)
         }
     })
 }
