@@ -4,7 +4,7 @@ import * as userutils from './userutils'
 import * as assetnetworkportutils from '../utils/assetnetworkportutils'
 import * as assetutils from "../utils/assetutils"
 
-function decommissionAsset(id,callback) {
+function decommissionAsset(id,callback,decommissionFunction=assetutils.deleteAsset) {
     firebaseutils.assetRef.doc(id).get().then(doc => {
         if (!doc.exists) {
             callback(false)
@@ -17,7 +17,7 @@ function decommissionAsset(id,callback) {
                 callback(false)
                 return
             }
-            assetutils.deleteAsset(id, result => {
+            decommissionFunction(id, result => {
                 if (result) {
                   logutils.addLog(id,logutils.ASSET(),logutils.DECOMMISSION(),docData)
                   firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username,graph: graph}).then(() => callback(true))

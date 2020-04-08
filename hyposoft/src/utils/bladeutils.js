@@ -1,5 +1,6 @@
 import * as firebaseutils from './firebaseutils'
 import * as assetutils from './assetutils'
+import * as decomutils from '../utils/decommissionutils'
 import * as datacenterutils from './datacenterutils'
 
 function addChassis(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, callback, changePlanID = null, changeDocID = null) {
@@ -104,9 +105,17 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
 
 function deleteChassis(assetID, callback, isDecommission = false) {
     firebaseutils.db.collectionGroup('blades').where("id","==",assetID).get().then(qs => {
-        if (!qs.empty && qs.docs[0].data().assets.length === 0) {
-            assetutils.deleteAsset(assetID, deletedId => {
+        if (!qs.empty && (qs.docs[0].data().assets.length === 0 || isDecommission)) {
+            assetutils.deleteAsset(assetID, async(deletedId) => {
                 if (deletedId) {
+                    if (isDecommission) {
+                        const qsAssets = qs.docs[0].data().assets
+                        for (var i = 0; i < qsAssets.length; i++) {
+                            await new Promise(function(resolve, reject) {
+                                decomutils.decommissionAsset(qsAssets[i],doNothing => resolve(),deleteServer)
+                            })
+                        }
+                    }
                     qs.docs[0].ref.delete().then(() => callback(deletedId))
                 } else {
                     callback(null)
