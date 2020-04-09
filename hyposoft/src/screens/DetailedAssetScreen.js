@@ -429,7 +429,7 @@ export default class DetailedAssetScreen extends Component {
                     <Route path={`/assets/${this.props.match.params.assetID}`}/>
 
                     <Grommet theme={theme} full className='fade'>
-                        <Box fill background='light-2'>
+                        <Box fill background='light-2' overflow={"auto"}>
                             {popup}
                             <AppBar>
                                 {/* {this.props.match.params.vendor} {this.props.match.params.modelNumber} */}
@@ -574,6 +574,24 @@ export default class DetailedAssetScreen extends Component {
                                              :
                                              <Table></Table>
                                            )}
+                                           {(this.chassisSlots
+                                             ?
+                                             <Box flex margin={{top: 'small', bottom: 'small'}}
+                                                  direction='column' justify='start'>
+                                                 <Heading level='4' margin='none'>Blade Chassis View</Heading>
+                                                 <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                                      gap='small' align='center'>
+                                                     <BladeChassisView
+                                                         chassisId={!this.bladeData ? this.state.asset.assetID : this.bladeData.chassisId}
+                                                         chassisHostname={!this.bladeData ? this.state.asset.hostname : this.bladeData.rack}
+                                                         chassisSlots={this.chassisSlots}
+                                                         slot={!this.bladeData ? null : this.bladeData.rackU}
+                                                     />
+                                                 </Box>
+                                             </Box>
+                                             :
+                                             <Box></Box>
+                                           )}
                                            <span style={{maxHeight: 100, overflow: 'auto'}}>
                                             {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
                                                 return <div key={key}>{i}</div>
@@ -630,40 +648,6 @@ export default class DetailedAssetScreen extends Component {
                                   </Box>
                                 )}
                             </Box>
-                            {(this.chassisSlots
-                              ?
-                              <Box
-                                  align='start'
-                                  direction='row'
-                                  margin={{left: 'medium', right: 'medium'}}
-                                  justify='start'>
-                                  <Box style={{
-                                      borderRadius: 10,
-                                      borderColor: '#EDEDED'
-                                  }}
-                                       direction='column'
-                                       background='#FFFFFF'
-                                       width={'xxlarge'}
-                                       margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                                       pad='small'>
-                                      <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                           direction='column' justify='start'>
-                                          <Heading level='4' margin='none'>Blade Chassis View</Heading>
-                                          <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
-                                               gap='small' align='center'>
-                                              <BladeChassisView
-                                                  chassisId={!this.bladeData ? this.state.asset.assetID : this.bladeData.chassisId}
-                                                  chassisHostname={!this.bladeData ? this.state.asset.hostname : this.bladeData.rack}
-                                                  chassisSlots={this.chassisSlots}
-                                                  slot={!this.bladeData ? null : this.bladeData.rackU}
-                                              />
-                                          </Box>
-                                      </Box>
-                                  </Box>
-                              </Box>
-                              :
-                              <Box></Box>
-                            )}
                             <ToastsContainer store={ToastsStore}/>
                         </Box>
                     </Grommet>
