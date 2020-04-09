@@ -135,7 +135,7 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
             const rackId = qs.docs[0].data().rackID
             const chassisId = qs.docs[0].id
 
-            assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, (errorMessage,id) => {
+            assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, {}, [], [], (errorMessage,id) => {
                 if (!errorMessage && id) {
                     // need to fix this, need to get doc with collection
                     firebaseutils.racksRef.doc(rackId).collection('blades').doc(chassisId).get().then(doc => {
@@ -171,8 +171,8 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
             const rackId = qs.docs[0].data().rackID
             const chassisId = qs.docs[0].id
 
-            assetutils.updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
-                networkConnectionsArray, deletedNCThisPort, powerConnections, (errorMessage,id) => {
+            assetutils.updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, {},
+                [], [], [], (errorMessage,id) => {
                 if (!errorMessage && id) {
                   firebaseutils.bladeRef.doc(id).get().then(docRef => {
                     firebaseutils.db.collectionGroup('blades').where("id","==",docRef.data().chassisId).get().then(async(qs) => {
