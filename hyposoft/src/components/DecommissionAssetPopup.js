@@ -99,8 +99,8 @@ export default class DecommissionAssetPopup extends Component {
                     <Form onSubmit={this.handleDecommission}
                         name="decommissionInst"
                     >
-                        <Text>{!this.isNonChassis ? 'This decommission will decommission all of the blades inside this chassis as well. ' 
-                        : ''}Are you sure you want to decommission asset #<strong>{this.props.decommissionIDFromParent}</strong>? {
+                        <Text>{!this.isNonChassis ? 'This decommission will decommission all of the blades inside this chassis as well. '
+                        : ''}Are you sure you want to decommission asset <strong>{this.props.decommissionModel} {this.props.decommissionHostname}</strong>? {
                             this.props.changePlanID ? "This will only take effect in the change plan." : "This cannot be undone."
                         } </Text>
                         <Box direction={"row"}>
