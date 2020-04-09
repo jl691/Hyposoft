@@ -273,6 +273,22 @@ function getBladeInfo(id,callback) {
     })
 }
 
+function getDetailBladeInfo(id,hostname,callback) {
+    getBladeInfo(id,data => {
+      firebaseutils.bladeRef.where('rack','==',data ? data.rack : hostname).get().then(qs => {
+          if (!qs.empty) {
+            var taken = []
+            qs.forEach(doc => {
+                taken.push({slot: doc.data().rackU, id: doc.id})
+            })
+            callback(data,taken)
+          } else {
+              callback(data,null)
+          }
+      })
+    })
+}
+
 function getSuggestedChassis(datacenter, userInput, callback) {
     // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
     var modelArray = []
@@ -323,4 +339,4 @@ function getSuggestedSlots(chassis, userInput, callback, selfId = null) {
         })
 }
 
-export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo, getSuggestedChassis, getSuggestedSlots }
+export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo, getDetailBladeInfo, getSuggestedChassis, getSuggestedSlots }

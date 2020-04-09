@@ -20,6 +20,7 @@ import * as assetmacutils from "../utils/assetmacutils"
 import * as assetnetworkportutils from "../utils/assetnetworkportutils"
 import theme from '../theme'
 import BackButton from '../components/BackButton'
+import BladeChassisView from '../components/BladeChassisView'
 import AppBar from '../components/AppBar'
 import UserMenu from '../components/UserMenu'
 import {FormEdit, Power, Clear, PowerCycle, View, ShareOption} from "grommet-icons"
@@ -32,6 +33,7 @@ export default class DetailedAssetScreen extends Component {
     powerPorts;
     connectedPDU;
     bladeData = null
+    chassisSlots = null
 
     constructor(props) {
         super(props);
@@ -75,7 +77,7 @@ export default class DetailedAssetScreen extends Component {
             assetutils.getAssetDetails(
                 this.props.match.params.assetID,
                 assetsdb => {
-                    this.determineBladeData(assetsdb.assetID, () => {
+                    this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
                       this.setState({
                           asset: assetsdb,
                           initialLoaded: true
@@ -87,9 +89,10 @@ export default class DetailedAssetScreen extends Component {
         });
     }
 
-    determineBladeData(id,callback) {
-       bladeutils.getBladeInfo(id, data => {
+    determineBladeData(id,hostname,callback) {
+       bladeutils.getDetailBladeInfo(id, hostname, (data,chassisSlots) => {
            this.bladeData = data
+           this.chassisSlots = chassisSlots
            callback()
        })
     }
@@ -627,7 +630,7 @@ export default class DetailedAssetScreen extends Component {
                                   </Box>
                                 )}
                             </Box>
-                            {(this.bladeData
+                            {(this.chassisSlots
                               ?
                               <Box
                                   align='start'
@@ -647,8 +650,13 @@ export default class DetailedAssetScreen extends Component {
                                            direction='column' justify='start'>
                                           <Heading level='4' margin='none'>Blade Chassis View</Heading>
                                           <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
-                                               gap='small'>
-                                              {/* fill in with view */}
+                                               gap='small' align='center'>
+                                              <BladeChassisView
+                                                  chassisId={!this.bladeData ? this.state.asset.assetID : this.bladeData.chassisId}
+                                                  chassisHostname={!this.bladeData ? this.state.asset.hostname : this.bladeData.rack}
+                                                  chassisSlots={this.chassisSlots}
+                                                  slot={!this.bladeData ? null : this.bladeData.rackU}
+                                              />
                                           </Box>
                                       </Box>
                                   </Box>
