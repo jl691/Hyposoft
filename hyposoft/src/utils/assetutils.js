@@ -171,7 +171,6 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
     validateAssetForm(null, model, hostname, rack, racku, owner, datacenter).then(
         _ => {
             validateAssetVariances(displayColor, cpu, memory, storage, errorMsg => {
-
                 if (errorMsg) {
                     callback(errorMsg)
                 }
@@ -188,8 +187,11 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                             } else {
 
                                 if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(datacenterAbbrev) || userutils.doesLoggedInUserHaveAssetPerm(null)) {
-                                    assetFitsOnRack(rack, racku, model, datacenter, function (errorMessage, modelNum, modelVendor, rackID) {
-
+                                    assetFitsOnRack(rack, racku, model, datacenter, (errorMessage, modelNum, modelVendor, rackID) => {
+                                        console.log(errorMessage)
+                                        console.log(modelNum)
+                                        console.log(modelVendor)
+                                        console.log(rackID)
                                         if (errorMessage) {
                                             callback(errorMessage)
                                         }
@@ -254,7 +256,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                 //this is for asset variances
                                                                                 variances: {
                                                                                     displayColor: displayColor,
-                                                                                    memory: parseInt(memory),
+                                                                                    memory: memory,
                                                                                     cpu: cpu,
                                                                                     storage: storage
                                                                                 }
@@ -386,7 +388,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                             //this is for assetvariances
                                                                             variances: {
                                                                                 displayColor: displayColor,
-                                                                                memory: parseInt(memory),
+                                                                                memory: memory,
                                                                                 cpu: cpu,
                                                                                 storage: storage
                                                                             }
@@ -1336,83 +1338,83 @@ function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, ch
             }
 
             if (oldPowerPorts.length && newPowerPorts.length) {
-              racksRef.doc(String(oldRack)).update({
-                  assets: firebase.firestore.FieldValue.arrayRemove(id),
-                  powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({ ...obj, assetID: id })))
-              }).then(() => {
-                  racksRef.doc(String(newRack)).update({
-                      assets: firebase.firestore.FieldValue.arrayUnion(id),
-                      powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj => ({
-                          ...obj,
-                          assetID: id
-                      })))
-                  }).then(() => {
-                      callback(true);
-                      return
-                  }).catch(function (error) {
-                      callback(false);
-                      return
-                  })
-              }).catch(function (error) {
-                  callback(false);
-                  return
-              })
+                racksRef.doc(String(oldRack)).update({
+                    assets: firebase.firestore.FieldValue.arrayRemove(id),
+                    powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({ ...obj, assetID: id })))
+                }).then(() => {
+                    racksRef.doc(String(newRack)).update({
+                        assets: firebase.firestore.FieldValue.arrayUnion(id),
+                        powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj => ({
+                            ...obj,
+                            assetID: id
+                        })))
+                    }).then(() => {
+                        callback(true);
+                        return
+                    }).catch(function (error) {
+                        callback(false);
+                        return
+                    })
+                }).catch(function (error) {
+                    callback(false);
+                    return
+                })
             } else if (!oldPowerPorts.length && newPowerPorts.length) {
-              racksRef.doc(String(oldRack)).update({
-                  assets: firebase.firestore.FieldValue.arrayRemove(id),
-              }).then(() => {
-                  racksRef.doc(String(newRack)).update({
-                      assets: firebase.firestore.FieldValue.arrayUnion(id),
-                      powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj => ({
-                          ...obj,
-                          assetID: id
-                      })))
-                  }).then(() => {
-                      callback(true);
-                      return
-                  }).catch(function (error) {
-                      callback(false);
-                      return
-                  })
-              }).catch(function (error) {
-                  callback(false);
-                  return
-              })
+                racksRef.doc(String(oldRack)).update({
+                    assets: firebase.firestore.FieldValue.arrayRemove(id),
+                }).then(() => {
+                    racksRef.doc(String(newRack)).update({
+                        assets: firebase.firestore.FieldValue.arrayUnion(id),
+                        powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj => ({
+                            ...obj,
+                            assetID: id
+                        })))
+                    }).then(() => {
+                        callback(true);
+                        return
+                    }).catch(function (error) {
+                        callback(false);
+                        return
+                    })
+                }).catch(function (error) {
+                    callback(false);
+                    return
+                })
             } else if (oldPowerPorts.length && !newPowerPorts.length) {
-              racksRef.doc(String(oldRack)).update({
-                  assets: firebase.firestore.FieldValue.arrayRemove(id),
-                  powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({ ...obj, assetID: id })))
-              }).then(() => {
-                  racksRef.doc(String(newRack)).update({
-                      assets: firebase.firestore.FieldValue.arrayUnion(id),
-                  }).then(() => {
-                      callback(true);
-                      return
-                  }).catch(function (error) {
-                      callback(false);
-                      return
-                  })
-              }).catch(function (error) {
-                  callback(false);
-                  return
-              })
+                racksRef.doc(String(oldRack)).update({
+                    assets: firebase.firestore.FieldValue.arrayRemove(id),
+                    powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({ ...obj, assetID: id })))
+                }).then(() => {
+                    racksRef.doc(String(newRack)).update({
+                        assets: firebase.firestore.FieldValue.arrayUnion(id),
+                    }).then(() => {
+                        callback(true);
+                        return
+                    }).catch(function (error) {
+                        callback(false);
+                        return
+                    })
+                }).catch(function (error) {
+                    callback(false);
+                    return
+                })
             } else {
-              racksRef.doc(String(oldRack)).update({
-                  assets: firebase.firestore.FieldValue.arrayRemove(id),
-              }).then(() => {
-                  racksRef.doc(String(newRack)).update({
-                      assets: firebase.firestore.FieldValue.arrayUnion(id),
-                  }).then(() => {
-                      callback(true);
-                      return
-                  }).catch(function (error) {
-                      callback(false);
-                      return
-                  })
-              }).catch(function (error) {
-                  callback(false);
-                  return
-              })
+                racksRef.doc(String(oldRack)).update({
+                    assets: firebase.firestore.FieldValue.arrayRemove(id),
+                }).then(() => {
+                    racksRef.doc(String(newRack)).update({
+                        assets: firebase.firestore.FieldValue.arrayUnion(id),
+                    }).then(() => {
+                        callback(true);
+                        return
+                    }).catch(function (error) {
+                        callback(false);
+                        return
+                    })
+                }).catch(function (error) {
+                    callback(false);
+                    return
+                })
             }
         }
     } else {

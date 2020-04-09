@@ -348,6 +348,11 @@ export default class AddAssetForm extends Component {
                                                     fixedAddr,
                                                     this.state.networkConnections,
                                                     this.state.showPowerConnections ? this.state.powerConnections : [],
+                                                    this.state.displayColor,
+                                                    (this.state.memory),
+                                                    this.state.storage,
+                                                    this.state.cpu,
+
                                                     errorMessage => {
                                                         if (errorMessage) {
                                                             ToastsStore.error(errorMessage, 10000)
@@ -391,6 +396,10 @@ export default class AddAssetForm extends Component {
                                         fixedAddr,
                                         this.state.networkConnections,
                                         this.state.showPowerConnections ? this.state.powerConnections : [],
+                                        this.state.displayColor,
+                                        (this.state.memory),
+                                        this.state.storage,
+                                        this.state.cpu,
 
                                         errorMessage => {
                                             if (errorMessage) {
@@ -517,7 +526,7 @@ export default class AddAssetForm extends Component {
 
                                         </FormField>
                                         <FormField name="storage" label="Storage">
-                                            <TextInput padding="medium" name="storage" placeholder="eg. 2x500GB HDD RAID0"
+                                            <TextInput padding="medium" name="storage" placeholder="in GB"
                                                 onChange={this.handleChange}
                                                 value={this.state.storage} />
 
