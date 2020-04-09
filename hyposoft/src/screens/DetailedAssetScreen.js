@@ -448,6 +448,7 @@ export default class DetailedAssetScreen extends Component {
                                      direction='row'
                                      background='#FFFFFF'
                                      width={'xxlarge'}
+                                     justify='center'
                                      margin={{top: 'medium', left: 'medium', right: 'medium'}}
                                      pad='small'>
                                      {(!this.state.initialLoaded
@@ -578,48 +579,53 @@ export default class DetailedAssetScreen extends Component {
                                        </Box>
                                      )}
                                 </Box>
-                                <Box style={{
-                                    borderRadius: 10,
-                                    borderColor: '#EDEDED'
-                                }}
-                                     direction='row'
-                                     background='#FFFFFF'
-                                     width={'large'}
-                                     margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                                     pad='small'>
-                                    <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                         direction='column' justify='start'>
-                                        <Heading level='4' margin='none'>Asset Actions</Heading>
-                                        <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
-                                             gap='small'>
-                                            {(this.connectedPDU && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
-                                            <Box direction='column' flex alignSelf='stretch'
-                                                 gap='small'>
-                                                <Button icon={<Power/>} label="Power Asset On" onClick={() => {
-                                                    this.turnAssetOn()
-                                                }}/>
-                                                <Button icon={<Clear/>} label="Power Asset Off" onClick={() => {
-                                                    this.turnAssetOff()
-                                                }}/>
-                                                <Button icon={<PowerCycle/>} label="Power Cycle Asset" onClick={() => {
-                                                    this.powerCycleAsset()
-                                                }}/>
-                                            </Box>}
-                                            {(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.doesLoggedInUserHaveAssetPerm(this.state.asset.datacenterAbbrev)) &&
-                                            <Button icon={<FormEdit/>} label="Edit Asset" onClick={() => {
-                                                this.setState({
-                                                    popupType: "Update"
-                                                })
-                                            }}/>}
-                                            <Button icon={<View/>} label="View Model Details" onClick={() => {
-                                                this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNum)
-                                            }}/>
-                                            <Button icon={<ShareOption/>} label="Network Neighborhood" onClick={() => {
-                                                this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
-                                            }}/>
-                                        </Box>
-                                    </Box>
-                                </Box>
+                                {(!this.state.initialLoaded
+                                  ?
+                                  <Box></Box>
+                                  :
+                                  <Box style={{
+                                      borderRadius: 10,
+                                      borderColor: '#EDEDED'
+                                  }}
+                                       direction='row'
+                                       background='#FFFFFF'
+                                       width={'large'}
+                                       margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                                       pad='small'>
+                                      <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                           direction='column' justify='start'>
+                                          <Heading level='4' margin='none'>Asset Actions</Heading>
+                                          <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                               gap='small'>
+                                              {(this.connectedPDU && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
+                                              <Box direction='column' flex alignSelf='stretch'
+                                                   gap='small'>
+                                                  <Button icon={<Power/>} label="Power Asset On" onClick={() => {
+                                                      this.turnAssetOn()
+                                                  }}/>
+                                                  <Button icon={<Clear/>} label="Power Asset Off" onClick={() => {
+                                                      this.turnAssetOff()
+                                                  }}/>
+                                                  <Button icon={<PowerCycle/>} label="Power Cycle Asset" onClick={() => {
+                                                      this.powerCycleAsset()
+                                                  }}/>
+                                              </Box>}
+                                              {(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.doesLoggedInUserHaveAssetPerm(this.state.asset.datacenterAbbrev)) &&
+                                              <Button icon={<FormEdit/>} label="Edit Asset" onClick={() => {
+                                                  this.setState({
+                                                      popupType: "Update"
+                                                  })
+                                              }}/>}
+                                              <Button icon={<View/>} label="View Model Details" onClick={() => {
+                                                  this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNum)
+                                              }}/>
+                                              <Button icon={<ShareOption/>} label="Network Neighborhood" onClick={() => {
+                                                  this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
+                                              }}/>
+                                          </Box>
+                                      </Box>
+                                  </Box>
+                                )}
                             </Box>
                             {(this.bladeData
                               ?
