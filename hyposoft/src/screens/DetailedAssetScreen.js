@@ -10,7 +10,7 @@ import {
     TableHeader,
     TableRow,
     TableCell,
-    TableBody, Layer
+    TableBody, Layer, Text
 } from 'grommet'
 import * as assetutils from '../utils/assetutils'
 import * as bladeutils from '../utils/bladeutils'
@@ -38,7 +38,8 @@ export default class DetailedAssetScreen extends Component {
         this.state = {
             asset: "",
             powerMap: false,
-            popupType: ""
+            popupType: "",
+            initialLoaded: false
         }
 
         this.generatePDUStatus = this.generatePDUStatus.bind(this);
@@ -57,7 +58,8 @@ export default class DetailedAssetScreen extends Component {
         this.setState({
             asset: "",
             powerMap: false,
-            popupType: ""
+            popupType: "",
+            initialLoaded: false
         });
         this.powerPorts = null;
         this.connectedPDU = null;
@@ -75,8 +77,8 @@ export default class DetailedAssetScreen extends Component {
                 assetsdb => {
                     this.determineBladeData(assetsdb.assetID, () => {
                       this.setState({
-                          asset: assetsdb
-
+                          asset: assetsdb,
+                          initialLoaded: true
                       }, function () {
                           this.generatePDUStatus();
                       });
@@ -448,128 +450,133 @@ export default class DetailedAssetScreen extends Component {
                                      width={'xxlarge'}
                                      margin={{top: 'medium', left: 'medium', right: 'medium'}}
                                      pad='small'>
-                                    <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                         direction='column' justify='start'>
-                                        <Heading level='4' margin='none'>Asset Details</Heading>
-                                        <table style={{marginTop: '10px', marginBottom: '10px'}}>
-                                            <tbody>
-                                            <tr>
-                                                <td><b>Hostname</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.hostname}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><b>Model</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.model}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><b>Datacenter</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.datacenter || 'N/A'}</td>
-                                            </tr>
-                                            {(this.bladeData
-                                              ?
-                                              <tr>
-                                                  <td><b>Chassis Hostname</b></td>
-                                                  <td style={{textAlign: 'right'}}>{this.bladeData.rack}</td>
-                                              </tr>
-                                              :
-                                              <tr></tr>
-                                            )}
-                                            {(this.bladeData
-                                              ?
-                                              <tr>
-                                                  <td><b>Slot</b></td>
-                                                  <td style={{textAlign: 'right'}}>{this.bladeData.rackU}</td>
-                                              </tr>
-                                              :
-                                              <tr></tr>
-                                            )}
-                                            <tr>
-                                                <td><b>{!this.bladeData ? 'Rack' : 'Chassis Rack'}</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.rack}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><b>{!this.bladeData ? 'Rack U' : 'Chassis Rack U'}</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.rackU}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><b>Owner</b></td>
-                                                <td style={{textAlign: 'right'}}>@{this.state.asset.owner || 'N/A'}</td>
-                                            </tr>
-                                            {this.renderPDUStatus()}
-                                            </tbody>
-                                        </table>
-                                        {(!this.bladeData
-                                          ?
-                                          <Table>
-                                              <TableHeader>
-                                                  <TableRow>
-                                                      <TableCell scope="col" border="bottom">
-                                                          <strong>Network Port Name</strong>
-                                                      </TableCell>
-                                                      <TableCell scope="col" border="bottom">
-                                                          <strong>Connected Asset ID</strong>
-                                                      </TableCell>
-                                                      <TableCell scope="col" border="bottom">
-                                                          <strong>Connected Port Name</strong>
-                                                      </TableCell>
-                                                  </TableRow>
-                                              </TableHeader>
-                                              <TableBody>
-                                                  {this.generateNetworkTable()}
-                                              </TableBody>
-                                          </Table>
-                                          :
-                                          <Table></Table>
-                                        )}
-                                        {(!this.bladeData
-                                          ?
-                                          <Table>
-                                              <TableHeader>
-                                                  <TableRow>
-                                                      <TableCell scope="col" border="bottom">
-                                                          <strong>Power Port Name</strong>
-                                                      </TableCell>
-                                                      <TableCell scope="col" border="bottom">
-                                                          <strong>Connected PDU Side</strong>
-                                                      </TableCell>
-                                                      <TableCell scope="col" border="bottom">
-                                                          <strong>Connected PDU Port</strong>
-                                                      </TableCell>
-                                                  </TableRow>
-                                              </TableHeader>
-                                              <TableBody>
-                                                  {this.generatePowerTable()}
-                                              </TableBody>
-                                          </Table>
-                                          :
-                                          <Table></Table>
-                                        )}
-                                        {(!this.bladeData
-                                          ?
-                                          <Table>
-                                              <TableHeader>
-                                                  <TableRow>
-                                                      <TableCell scope="col" border="bottom">
-                                                          <strong>Network Port</strong>
-                                                      </TableCell>
-                                                      <TableCell scope="col" border="bottom">
-                                                          <strong>MAC Address</strong>
-                                                      </TableCell>
-                                                  </TableRow>
-                                              </TableHeader>
-                                              <TableBody>
-                                                  {this.generateMACTable()}
-                                              </TableBody>
-                                          </Table>
-                                          :
-                                          <Table></Table>
-                                        )}
-                                        <span style={{maxHeight: 100, overflow: 'auto'}}>
-                                         {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
-                                             return <div key={key}>{i}</div>
-                                         })}
-                                         </span>
-                                    </Box>
+                                     {(!this.state.initialLoaded
+                                       ?
+                                       <Box align="center"><Text>Please wait...</Text></Box>
+                                       :
+                                       <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                            direction='column' justify='start'>
+                                           <Heading level='4' margin='none'>Asset Details</Heading>
+                                           <table style={{marginTop: '10px', marginBottom: '10px'}}>
+                                               <tbody>
+                                               <tr>
+                                                   <td><b>Hostname</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.hostname}</td>
+                                               </tr>
+                                               <tr>
+                                                   <td><b>Model</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.model}</td>
+                                               </tr>
+                                               <tr>
+                                                   <td><b>Datacenter</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.datacenter || 'N/A'}</td>
+                                               </tr>
+                                               {(this.bladeData
+                                                 ?
+                                                 <tr>
+                                                     <td><b>Chassis Hostname</b></td>
+                                                     <td style={{textAlign: 'right'}}>{this.bladeData.rack}</td>
+                                                 </tr>
+                                                 :
+                                                 <tr></tr>
+                                               )}
+                                               {(this.bladeData
+                                                 ?
+                                                 <tr>
+                                                     <td><b>Slot</b></td>
+                                                     <td style={{textAlign: 'right'}}>{this.bladeData.rackU}</td>
+                                                 </tr>
+                                                 :
+                                                 <tr></tr>
+                                               )}
+                                               <tr>
+                                                   <td><b>{!this.bladeData ? 'Rack' : 'Chassis Rack'}</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.rack}</td>
+                                               </tr>
+                                               <tr>
+                                                   <td><b>{!this.bladeData ? 'Rack U' : 'Chassis Rack U'}</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.rackU}</td>
+                                               </tr>
+                                               <tr>
+                                                   <td><b>Owner</b></td>
+                                                   <td style={{textAlign: 'right'}}>@{this.state.asset.owner || 'N/A'}</td>
+                                               </tr>
+                                               {this.renderPDUStatus()}
+                                               </tbody>
+                                           </table>
+                                           {(!this.bladeData
+                                             ?
+                                             <Table>
+                                                 <TableHeader>
+                                                     <TableRow>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>Network Port Name</strong>
+                                                         </TableCell>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>Connected Asset ID</strong>
+                                                         </TableCell>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>Connected Port Name</strong>
+                                                         </TableCell>
+                                                     </TableRow>
+                                                 </TableHeader>
+                                                 <TableBody>
+                                                     {this.generateNetworkTable()}
+                                                 </TableBody>
+                                             </Table>
+                                             :
+                                             <Table></Table>
+                                           )}
+                                           {(!this.bladeData
+                                             ?
+                                             <Table>
+                                                 <TableHeader>
+                                                     <TableRow>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>Power Port Name</strong>
+                                                         </TableCell>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>Connected PDU Side</strong>
+                                                         </TableCell>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>Connected PDU Port</strong>
+                                                         </TableCell>
+                                                     </TableRow>
+                                                 </TableHeader>
+                                                 <TableBody>
+                                                     {this.generatePowerTable()}
+                                                 </TableBody>
+                                             </Table>
+                                             :
+                                             <Table></Table>
+                                           )}
+                                           {(!this.bladeData
+                                             ?
+                                             <Table>
+                                                 <TableHeader>
+                                                     <TableRow>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>Network Port</strong>
+                                                         </TableCell>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>MAC Address</strong>
+                                                         </TableCell>
+                                                     </TableRow>
+                                                 </TableHeader>
+                                                 <TableBody>
+                                                     {this.generateMACTable()}
+                                                 </TableBody>
+                                             </Table>
+                                             :
+                                             <Table></Table>
+                                           )}
+                                           <span style={{maxHeight: 100, overflow: 'auto'}}>
+                                            {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
+                                                return <div key={key}>{i}</div>
+                                            })}
+                                            </span>
+                                       </Box>
+                                     )}
                                 </Box>
                                 <Box style={{
                                     borderRadius: 10,
