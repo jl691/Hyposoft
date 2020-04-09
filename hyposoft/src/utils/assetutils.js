@@ -1098,30 +1098,6 @@ function getSuggestedRacks(datacenter, userInput, callback) {
         })
 }
 
-function getSuggestedChassis(datacenter, userInput, callback) {
-    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
-    var modelArray = []
-    let count = 0
-    datacentersRef.where('name', '==', datacenter).get().then(docSnaps => {
-        const datacenterID = docSnaps.docs[0].id
-        db.collectionGroup('blades').where('datacenter', '==', datacenterID).orderBy('letter').get().then(querySnapshot => {
-            querySnapshot.forEach(doc => {
-                const data = doc.data().letter
-                if (shouldAddToSuggestedItems(modelArray, data, userInput)) {
-                    modelArray.push(data)
-                }
-            })
-            callback(modelArray)
-        })
-            .catch(error => {
-                callback(null)
-            })
-    })
-        .catch(error => {
-            callback(null)
-        })
-}
-
 function getNetworkPorts(model, userInput, callback) {
     var modelArray = []
     // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
@@ -1358,29 +1334,86 @@ function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, ch
                 callback(true)
                 return
             }
-            // temporary fix for blades, probably should change for all cases
-            // if (!oldPowerPorts.length && !newPowerPorts.length) {
-            //     callback(true);
-            //     return
-            // }
-            racksRef.doc(String(oldRack)).update({
-                assets: firebase.firestore.FieldValue.arrayRemove(id),
-                // powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({ ...obj, assetID: id })))
-            }).then(() => {
-                racksRef.doc(String(newRack)).update({
-                    assets: firebase.firestore.FieldValue.arrayUnion(id),
-                    // powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj => ({
-                    //     ...obj,
-                    //     assetID: id
-                    // })))
-                }).then(() => {
-                    callback(true);
-                }).catch(function (error) {
-                    callback(false);
-                })
-            }).catch(function (error) {
-                callback(false);
-            })
+
+            if (oldPowerPorts.length && newPowerPorts.length) {
+              racksRef.doc(String(oldRack)).update({
+                  assets: firebase.firestore.FieldValue.arrayRemove(id),
+                  powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({ ...obj, assetID: id })))
+              }).then(() => {
+                  racksRef.doc(String(newRack)).update({
+                      assets: firebase.firestore.FieldValue.arrayUnion(id),
+                      powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj => ({
+                          ...obj,
+                          assetID: id
+                      })))
+                  }).then(() => {
+                      callback(true);
+                      return
+                  }).catch(function (error) {
+                      callback(false);
+                      return
+                  })
+              }).catch(function (error) {
+                  callback(false);
+                  return
+              })
+            } else if (!oldPowerPorts.length && newPowerPorts.length) {
+              racksRef.doc(String(oldRack)).update({
+                  assets: firebase.firestore.FieldValue.arrayRemove(id),
+              }).then(() => {
+                  racksRef.doc(String(newRack)).update({
+                      assets: firebase.firestore.FieldValue.arrayUnion(id),
+                      powerPorts: firebase.firestore.FieldValue.arrayUnion(...newPowerPorts.map(obj => ({
+                          ...obj,
+                          assetID: id
+                      })))
+                  }).then(() => {
+                      callback(true);
+                      return
+                  }).catch(function (error) {
+                      callback(false);
+                      return
+                  })
+              }).catch(function (error) {
+                  callback(false);
+                  return
+              })
+            } else if (oldPowerPorts.length && !newPowerPorts.length) {
+              racksRef.doc(String(oldRack)).update({
+                  assets: firebase.firestore.FieldValue.arrayRemove(id),
+                  powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({ ...obj, assetID: id })))
+              }).then(() => {
+                  racksRef.doc(String(newRack)).update({
+                      assets: firebase.firestore.FieldValue.arrayUnion(id),
+                  }).then(() => {
+                      callback(true);
+                      return
+                  }).catch(function (error) {
+                      callback(false);
+                      return
+                  })
+              }).catch(function (error) {
+                  callback(false);
+                  return
+              })
+            } else {
+              racksRef.doc(String(oldRack)).update({
+                  assets: firebase.firestore.FieldValue.arrayRemove(id),
+              }).then(() => {
+                  racksRef.doc(String(newRack)).update({
+                      assets: firebase.firestore.FieldValue.arrayUnion(id),
+                  }).then(() => {
+                      callback(true);
+                      return
+                  }).catch(function (error) {
+                      callback(false);
+                      return
+                  })
+              }).catch(function (error) {
+                  callback(false);
+                  return
+              })
+            }
         }
     } else {
         callback(true);
@@ -1586,9 +1619,9 @@ export {
     getAssetFromModel,
     getSuggestedOwners,
     getSuggestedRacks,
-    getSuggestedChassis,
     getSuggestedAssetIds,
     getSuggestedOtherAssetPorts,
+    shouldAddToSuggestedItems,
     getNetworkPorts,
     getAssetAt,
     validateAssetForm,

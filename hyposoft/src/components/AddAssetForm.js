@@ -574,69 +574,69 @@ export default class AddAssetForm extends Component {
                                 />
                             </FormField>
                             {(this.isNonBlade
-                                ?
-                                <FormField name="rack" label="Rack">
+                              ?
+                              <FormField name="rack" label="Rack">
 
 
-                                    <TextInput name="rack"
-                                        placeholder="eg. B12"
-                                        onChange={e => {
-                                            const value = e.target.value
-                                            this.setState(oldState => ({ ...oldState, rack: value }))
-                                            assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({
-                                                ...oldState,
-                                                rackSuggestions: results
-                                            })))
-                                            //Update the default power port fields
-                                            //this.defaultPDUFields(this.state.model, e.suggestion, this.state.datacenter)
-                                        }}
-                                        onSelect={e => {
-                                            this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
+                                  <TextInput name="rack"
+                                      placeholder="eg. B12"
+                                      onChange={e => {
+                                          const value = e.target.value
+                                          this.setState(oldState => ({ ...oldState, rack: value }))
+                                          assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({
+                                              ...oldState,
+                                              rackSuggestions: results
+                                          })))
+                                          //Update the default power port fields
+                                          //this.defaultPDUFields(this.state.model, e.suggestion, this.state.datacenter)
+                                      }}
+                                      onSelect={e => {
+                                          this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
 
-                                        }}
-                                        value={this.state.rack}
-                                        suggestions={this.state.rackSuggestions}
-                                        onClick={() => {
-                                            if (this.state.datacenter) {
-                                                assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
-                                                    ...oldState,
-                                                    rackSuggestions: results
-                                                })))
+                                      }}
+                                      value={this.state.rack}
+                                      suggestions={this.state.rackSuggestions}
+                                      onClick={() => {
+                                          if (this.state.datacenter) {
+                                              assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
+                                                  ...oldState,
+                                                  rackSuggestions: results
+                                              })))
 
-                                            }
-                                        }
-                                        }
-                                        title='Rack'
-                                        required={true}
-                                    />
-                                </FormField>
-                                :
-                                <FormField name="rack" label="Chassis Hostname">
+                                          }
+                                      }
+                                      }
+                                      title='Rack'
+                                      required={true}
+                                  />
+                              </FormField>
+                              :
+                              <FormField name="rack" label="Chassis Hostname">
 
-                                    <TextInput name="rack" placeholder="eg. chassis1"
-                                        onChange={e => {
-                                            const value = e.target.value
-                                            this.setState(oldState => ({ ...oldState, rack: value }))
-                                            assetutils.getSuggestedChassis(this.state.datacenter, value, results => this.setState(oldState => ({
-                                                ...oldState,
-                                                rackSuggestions: results
-                                            })))
-                                        }}
-                                        onSelect={e => {
-                                            this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
-                                        }}
-                                        value={this.state.rack}
-                                        suggestions={this.state.rackSuggestions}
-                                        onClick={() => {
-                                            if (this.state.datacenter) {
-                                                assetutils.getSuggestedChassis(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
-                                                    ...oldState,
-                                                    rackSuggestions: results
-                                                })))
-                                            }
-                                        }}
-                                        title='Chassis Hostname'
-                                        required={true}
+                                  <TextInput name="rack" placeholder="eg. chassis1"
+                                      onChange={e => {
+                                          const value = e.target.value
+                                          this.setState(oldState => ({ ...oldState, rack: value }))
+                                          bladeutils.getSuggestedChassis(this.state.datacenter, value, results => this.setState(oldState => ({
+                                              ...oldState,
+                                              rackSuggestions: results
+                                          })))
+                                      }}
+                                      onSelect={e => {
+                                          this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
+                                      }}
+                                      value={this.state.rack}
+                                      suggestions={this.state.rackSuggestions}
+                                      onClick={() => {
+                                          if (this.state.datacenter) {
+                                              bladeutils.getSuggestedChassis(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({
+                                                  ...oldState,
+                                                  rackSuggestions: results
+                                              })))
+                                          }
+                                      }}
+                                      title='Chassis Hostname'
+                                      required={true}
                                     />
                                 </FormField>
                             )}
@@ -646,16 +646,37 @@ export default class AddAssetForm extends Component {
                                 <FormField name="rackU" label="RackU">
 
 
-                                    <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
-                                        value={this.state.rackU} required={true} />
-                                </FormField>
-                                :
-                                <FormField name="rackU" label="Slot">
-
-
-                                    <TextInput name="rackU" placeholder="eg. 5" onChange={this.handleChange}
-                                        value={this.state.rackU} required={true} />
-                                </FormField>
+                                  <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
+                                      value={this.state.rackU} required={true} />
+                              </FormField>
+                              :
+                              <FormField name="rackU" label="Slot">
+                                      <TextInput name="rackU" placeholder="eg. 5"
+                                          onChange={e => {
+                                              const value = e.target.value
+                                              this.setState(oldState => ({ ...oldState, rackU: value }))
+                                              bladeutils.getSuggestedSlots(this.state.rack, value, results => this.setState(oldState => ({
+                                                  ...oldState,
+                                                  slotSuggestions: results
+                                              })))
+                                          }}
+                                          onSelect={e => {
+                                              this.setState(oldState => ({ ...oldState, rackU: (e.suggestion.split(' '))[1].trim() }))
+                                          }}
+                                          value={this.state.rackU}
+                                          suggestions={this.state.slotSuggestions}
+                                          onClick={() => {
+                                              if (this.state.rack) {
+                                                  bladeutils.getSuggestedSlots(this.state.rack, this.state.rackU, results => this.setState(oldState => ({
+                                                      ...oldState,
+                                                      slotSuggestions: results
+                                                  })))
+                                              }
+                                          }}
+                                          title='Slot'
+                                          required={true}
+                                        />
+                              </FormField>
                             )}
 
                             <FormField name="owner" label="Owner">

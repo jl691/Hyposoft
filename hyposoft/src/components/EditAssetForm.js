@@ -496,14 +496,14 @@ export default class EditAssetForm extends Component {
                                   onChange={e => {
                                       const value = e.target.value
                                       this.setState(oldState => ({ ...oldState, rack: value }))
-                                      assetutils.getSuggestedChassis(this.state.datacenter, value, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))
+                                      bladeutils.getSuggestedChassis(this.state.datacenter, value, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))
                                   }}
                                   onSelect={e => {
                                       this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
                                   }}
                                   value={this.state.rack}
                                   suggestions={this.state.rackSuggestions}
-                                  onClick={() => assetutils.getSuggestedChassis(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
+                                  onClick={() => bladeutils.getSuggestedChassis(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
                                   title='Chassis Hostname'
                               />
                           </FormField>
@@ -519,8 +519,29 @@ export default class EditAssetForm extends Component {
                           :
                           <FormField name="rackU" label="Slot" >
 
-                              <TextInput name="rackU" placeholder="Update Slot" onChange={this.handleChange}
-                                  value={this.state.rackU} required="true" />
+                                  <TextInput name="rackU" placeholder="Update Slot"
+                                      onChange={e => {
+                                          const value = e.target.value
+                                          this.setState(oldState => ({ ...oldState, rackU: value }))
+                                          bladeutils.getSuggestedSlots(this.state.rack, value, results => this.setState(oldState => ({
+                                              ...oldState,
+                                              slotSuggestions: results
+                                          })),this.state.asset_id)
+                                      }}
+                                      onSelect={e => {
+                                          this.setState(oldState => ({ ...oldState, rackU: (e.suggestion.split(' '))[1].trim() }))
+                                      }}
+                                      value={this.state.rackU}
+                                      suggestions={this.state.slotSuggestions}
+                                      onClick={() => {
+                                          bladeutils.getSuggestedSlots(this.state.rack, this.state.rackU, results => this.setState(oldState => ({
+                                              ...oldState,
+                                              slotSuggestions: results
+                                          })),this.state.asset_id)
+                                      }}
+                                      title='Slot'
+                                      required={true}
+                                    />
                           </FormField>
                         )}
 

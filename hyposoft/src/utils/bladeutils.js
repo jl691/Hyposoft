@@ -128,14 +128,14 @@ function deleteChassis(assetID, callback, isDecommission = false) {
 }
 
 function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, callback, changePlanID = null, changeDocID = null) {
-    firebaseutils.assetRef.where('hostname','==',chassisHostname).get().then(qs => {
+    firebaseutils.assetRef.where('hostname','==',chassisHostname).where('datacenter','==',datacenter).get().then(qs => {
         if (!qs.empty) {
             const rack = qs.docs[0].data().rack
             const racku = qs.docs[0].data().rackU
             const rackId = qs.docs[0].data().rackID
             const chassisId = qs.docs[0].id
 
-            assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, (errorMessage,id) => {
+            assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, {}, [], [], (errorMessage,id) => {
                 if (!errorMessage && id) {
                     // need to fix this, need to get doc with collection
                     firebaseutils.racksRef.doc(rackId).collection('blades').doc(chassisId).get().then(doc => {
@@ -157,22 +157,22 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
                 return
             }, changePlanID, changeDocID, {hostname: chassisHostname, slot: slot, id: chassisId})
         } else {
-            callback('blade chassis ' + chassisHostname +' does not exist')
+            callback('blade chassis ' + chassisHostname +' does not exist in datacenter ' + datacenter)
         }
     })
 }
 
 function updateServer(assetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses,
     networkConnectionsArray, deletedNCThisPort, powerConnections, callback, changePlanID = null, changeDocID = null) {
-    firebaseutils.assetRef.where('hostname','==',chassisHostname).get().then(qs => {
+    firebaseutils.assetRef.where('hostname','==',chassisHostname).where('datacenter','==',datacenter).get().then(qs => {
         if (!qs.empty) {
             const rack = qs.docs[0].data().rack
             const rackU = qs.docs[0].data().rackU
             const rackId = qs.docs[0].data().rackID
             const chassisId = qs.docs[0].id
 
-            assetutils.updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
-                networkConnectionsArray, deletedNCThisPort, powerConnections, (errorMessage,id) => {
+            assetutils.updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, {},
+                [], [], [], (errorMessage,id) => {
                 if (!errorMessage && id) {
                   firebaseutils.bladeRef.doc(id).get().then(docRef => {
                     firebaseutils.db.collectionGroup('blades').where("id","==",docRef.data().chassisId).get().then(async(qs) => {
@@ -223,7 +223,7 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
                 }
             }, changePlanID, changeDocID, {hostname: chassisHostname, slot: slot, id: chassisId})
         } else {
-            callback('blade chassis ' + chassisHostname +' does not exist')
+            callback('blade chassis ' + chassisHostname +' does not exist in datacenter ' + datacenter)
         }
     })
 }
@@ -273,4 +273,70 @@ function getBladeInfo(id,callback) {
     })
 }
 
-export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo }
+function getDetailBladeInfo(id,hostname,callback) {
+    getBladeInfo(id,data => {
+      firebaseutils.bladeRef.where('rack','==',data ? data.rack : hostname).get().then(qs => {
+          if (!qs.empty) {
+            var taken = []
+            qs.forEach(doc => {
+                taken.push({slot: doc.data().rackU, id: doc.id})
+            })
+            callback(data,taken)
+          } else {
+              callback(data,null)
+          }
+      })
+    })
+}
+
+function getSuggestedChassis(datacenter, userInput, callback) {
+    // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
+    var modelArray = []
+    firebaseutils.datacentersRef.where('name', '==', datacenter).get().then(docSnaps => {
+        const datacenterID = docSnaps.docs[0].id
+        firebaseutils.db.collectionGroup('blades').where('datacenter', '==', datacenterID).orderBy('letter').get().then(querySnapshot => {
+            querySnapshot.forEach(doc => {
+                const data = doc.data().letter
+                if (assetutils.shouldAddToSuggestedItems(modelArray, data, userInput)) {
+                    modelArray.push(data)
+                }
+            })
+            callback(modelArray)
+        })
+            .catch(error => {
+                callback(null)
+            })
+    })
+        .catch(error => {
+            callback(null)
+        })
+}
+
+function getSuggestedSlots(chassis, userInput, callback, selfId = null) {
+    var modelArray = []
+    // need to do this in case input is an int
+    userInput = userInput.toString()
+    firebaseutils.bladeRef.where('rack', '==', chassis).get().then(querySnapshot => {
+        var taken = []
+        querySnapshot.forEach(doc => {
+            // mark self as free
+            if (doc.id !== selfId) {
+                taken.push(doc.data().rackU)
+            }
+        })
+        // assuming height of 14
+        for (var i = 1; i <= 14; i++) {
+            const data = i.toString()
+            if (assetutils.shouldAddToSuggestedItems(modelArray, data, userInput)) {
+                const prefix = taken.includes(i) ? 'Taken: ' : 'Free: '
+                modelArray.push(prefix + data)
+            }
+        }
+        callback(modelArray)
+    })
+        .catch(error => {
+            callback(null)
+        })
+}
+
+export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo, getDetailBladeInfo, getSuggestedChassis, getSuggestedSlots }
