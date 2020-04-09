@@ -614,6 +614,35 @@ export default class DetailedAssetScreen extends Component {
                                     </Box>
                                 </Box>
                             </Box>
+                            {(this.bladeData
+                              ?
+                              <Box
+                                  align='start'
+                                  direction='row'
+                                  margin={{left: 'medium', right: 'medium'}}
+                                  justify='start'>
+                                  <Box style={{
+                                      borderRadius: 10,
+                                      borderColor: '#EDEDED'
+                                  }}
+                                       direction='column'
+                                       background='#FFFFFF'
+                                       width={'xxlarge'}
+                                       margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                                       pad='small'>
+                                      <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                           direction='column' justify='start'>
+                                          <Heading level='4' margin='none'>Blade Chassis View</Heading>
+                                          <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                               gap='small'>
+                                              {/* fill in with view */}
+                                          </Box>
+                                      </Box>
+                                  </Box>
+                              </Box>
+                              :
+                              <Box></Box>
+                            )}
                             <ToastsContainer store={ToastsStore}/>
                         </Box>
                     </Grommet>
