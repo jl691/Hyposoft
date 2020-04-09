@@ -13,6 +13,7 @@ import {
     TableBody, Layer
 } from 'grommet'
 import * as assetutils from '../utils/assetutils'
+import * as bladeutils from '../utils/bladeutils'
 import * as userutils from '../utils/userutils'
 import * as powerutils from '../utils/powerutils'
 import * as assetmacutils from "../utils/assetmacutils"
@@ -30,6 +31,7 @@ export default class DetailedAssetScreen extends Component {
 
     powerPorts;
     connectedPDU;
+    bladeData = null
 
     constructor(props) {
         super(props);
@@ -71,14 +73,23 @@ export default class DetailedAssetScreen extends Component {
             assetutils.getAssetDetails(
                 this.props.match.params.assetID,
                 assetsdb => {
-                    this.setState({
-                        asset: assetsdb
+                    this.determineBladeData(assetsdb.assetID, () => {
+                      this.setState({
+                          asset: assetsdb
 
-                    }, function () {
-                        this.generatePDUStatus();
-                    });
+                      }, function () {
+                          this.generatePDUStatus();
+                      });
+                    })
                 })
         });
+    }
+
+    determineBladeData(id,callback) {
+       bladeutils.getBladeInfo(id, data => {
+           this.bladeData = data
+           callback()
+       })
     }
 
     generateNetworkTable() {
@@ -454,12 +465,30 @@ export default class DetailedAssetScreen extends Component {
                                                 <td><b>Datacenter</b></td>
                                                 <td style={{textAlign: 'right'}}>{this.state.asset.datacenter || 'N/A'}</td>
                                             </tr>
+                                            {(this.bladeData
+                                              ?
+                                              <tr>
+                                                  <td><b>Chassis Hostname</b></td>
+                                                  <td style={{textAlign: 'right'}}>{this.bladeData.rack}</td>
+                                              </tr>
+                                              :
+                                              <tr></tr>
+                                            )}
+                                            {(this.bladeData
+                                              ?
+                                              <tr>
+                                                  <td><b>Slot</b></td>
+                                                  <td style={{textAlign: 'right'}}>{this.bladeData.rackU}</td>
+                                              </tr>
+                                              :
+                                              <tr></tr>
+                                            )}
                                             <tr>
-                                                <td><b>Rack</b></td>
+                                                <td><b>{!this.bladeData ? 'Rack' : 'Chassis Rack'}</b></td>
                                                 <td style={{textAlign: 'right'}}>{this.state.asset.rack}</td>
                                             </tr>
                                             <tr>
-                                                <td><b>Rack U</b></td>
+                                                <td><b>{!this.bladeData ? 'Rack U' : 'Chassis Rack U'}</b></td>
                                                 <td style={{textAlign: 'right'}}>{this.state.asset.rackU}</td>
                                             </tr>
                                             <tr>
@@ -469,57 +498,72 @@ export default class DetailedAssetScreen extends Component {
                                             {this.renderPDUStatus()}
                                             </tbody>
                                         </table>
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Network Port Name</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Connected Asset ID</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Connected Port Name</strong>
-                                                    </TableCell>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {this.generateNetworkTable()}
-                                            </TableBody>
-                                        </Table>
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Power Port Name</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Connected PDU Side</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Connected PDU Port</strong>
-                                                    </TableCell>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {this.generatePowerTable()}
-                                            </TableBody>
-                                        </Table>
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Network Port</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>MAC Address</strong>
-                                                    </TableCell>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {this.generateMACTable()}
-                                            </TableBody>
-                                        </Table>
+                                        {(!this.bladeData
+                                          ?
+                                          <Table>
+                                              <TableHeader>
+                                                  <TableRow>
+                                                      <TableCell scope="col" border="bottom">
+                                                          <strong>Network Port Name</strong>
+                                                      </TableCell>
+                                                      <TableCell scope="col" border="bottom">
+                                                          <strong>Connected Asset ID</strong>
+                                                      </TableCell>
+                                                      <TableCell scope="col" border="bottom">
+                                                          <strong>Connected Port Name</strong>
+                                                      </TableCell>
+                                                  </TableRow>
+                                              </TableHeader>
+                                              <TableBody>
+                                                  {this.generateNetworkTable()}
+                                              </TableBody>
+                                          </Table>
+                                          :
+                                          <Table></Table>
+                                        )}
+                                        {(!this.bladeData
+                                          ?
+                                          <Table>
+                                              <TableHeader>
+                                                  <TableRow>
+                                                      <TableCell scope="col" border="bottom">
+                                                          <strong>Power Port Name</strong>
+                                                      </TableCell>
+                                                      <TableCell scope="col" border="bottom">
+                                                          <strong>Connected PDU Side</strong>
+                                                      </TableCell>
+                                                      <TableCell scope="col" border="bottom">
+                                                          <strong>Connected PDU Port</strong>
+                                                      </TableCell>
+                                                  </TableRow>
+                                              </TableHeader>
+                                              <TableBody>
+                                                  {this.generatePowerTable()}
+                                              </TableBody>
+                                          </Table>
+                                          :
+                                          <Table></Table>
+                                        )}
+                                        {(!this.bladeData
+                                          ?
+                                          <Table>
+                                              <TableHeader>
+                                                  <TableRow>
+                                                      <TableCell scope="col" border="bottom">
+                                                          <strong>Network Port</strong>
+                                                      </TableCell>
+                                                      <TableCell scope="col" border="bottom">
+                                                          <strong>MAC Address</strong>
+                                                      </TableCell>
+                                                  </TableRow>
+                                              </TableHeader>
+                                              <TableBody>
+                                                  {this.generateMACTable()}
+                                              </TableBody>
+                                          </Table>
+                                          :
+                                          <Table></Table>
+                                        )}
                                         <span style={{maxHeight: 100, overflow: 'auto'}}>
                                          {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
                                              return <div key={key}>{i}</div>
