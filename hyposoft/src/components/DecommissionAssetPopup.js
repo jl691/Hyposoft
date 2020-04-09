@@ -15,7 +15,7 @@ import theme from "../theme";
 
 export default class DecommissionAssetPopup extends Component {
     decommissionFunction = null
-    isNonBlade = true
+    isNonChassis = true
     previousModel = null
 
     constructor(props) {
@@ -60,19 +60,19 @@ export default class DecommissionAssetPopup extends Component {
                switch (doc.data().mount) {
                  case 'chassis':
                    this.decommissionFunction = bladeutils.deleteChassis
-                   this.isNonBlade = true
+                   this.isNonChassis = false
                    break
                  case 'blade':
                    this.decommissionFunction = bladeutils.deleteServer
-                   this.isNonBlade = false
+                   this.isNonChassis = true
                    break
                  default:
                    this.decommissionFunction = assetutils.deleteAsset
-                   this.isNonBlade = true
+                   this.isNonChassis = true
                }
            } else {
                this.decommissionFunction = assetutils.deleteAsset
-               this.isNonBlade = true
+               this.isNonChassis = true
            }
            callback()
        })
@@ -99,7 +99,8 @@ export default class DecommissionAssetPopup extends Component {
                     <Form onSubmit={this.handleDecommission}
                         name="decommissionInst"
                     >
-                        <Text>Are you sure you want to decommission asset #<strong>{this.props.decommissionIDFromParent}</strong>? {
+                        <Text>{!this.isNonChassis ? 'This decommission will decommission all of the blades inside this chassis as well. ' 
+                        : ''}Are you sure you want to decommission asset #<strong>{this.props.decommissionIDFromParent}</strong>? {
                             this.props.changePlanID ? "This will only take effect in the change plan." : "This cannot be undone."
                         } </Text>
                         <Box direction={"row"}>
