@@ -20,7 +20,7 @@ function decommissionAsset(id,callback,decommissionFunction=assetutils.deleteAss
             decommissionFunction(id, (result,myParams) => {
                 if (result) {
                   logutils.addLog(id,logutils.ASSET(),logutils.DECOMMISSION(),docData)
-                  firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username,graph: graph,chassisParams: myParams ? myParams : chassisParams}).then(() => callback(true))
+                  firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username,graph: graph,chassisParams: chassisParams ? chassisParams : (myParams ? myParams : null)}).then(() => callback(true))
                   .catch( error => {
                       console.log("Error getting documents: ", error)
                       callback(false)
