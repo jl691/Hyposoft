@@ -485,7 +485,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                             })
 
                                         }
-                                    }, null, -1, chassis)
+                                    }, null, null, chassis)
                                 } else {
                                     callback("You do not have permissions for this datacenter");
                                 }
@@ -972,7 +972,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                                 console.log("checkpoint16")
                                                                                                                 console.log("Updated model successfully")
                                                                                                                 // log needs to be added before calling back for DetailedAssetScreen
-                                                                                                                logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null))
+                                                                                                                logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null,String(assetID)))
                                                                                                             }).catch(function (error) {
                                                                                                                 callback(error);
                                                                                                             })
@@ -981,7 +981,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                         assetRef.doc(String(assetID)).update(assetObject).then(function () {
                                                                                                             console.log("Updated model successfully")
                                                                                                             // log needs to be added before calling back for DetailedAssetScreen
-                                                                                                            logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null))
+                                                                                                            logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null,String(assetID)))
                                                                                                         }).catch(function (error) {
                                                                                                             callback(error);
                                                                                                         })
