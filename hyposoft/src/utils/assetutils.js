@@ -1251,7 +1251,12 @@ function getAssetDetails(assetID, callback) {
             datacenterAbbrev: doc.data().datacenterAbbrev.trim(),
             powerConnections: doc.data().powerConnections,
             macAddresses: doc.data().macAddresses,
-            networkConnections: doc.data().networkConnections
+            networkConnections: doc.data().networkConnections,
+            variances:doc.data().variances
+            // displayColor: doc.data().variances.displayColor,
+            // cpu: doc.data().variances.cpu,
+            // memory: doc.data().variances.memory,
+            // storage: doc.data().variances.storage
         }
         callback(inst)
     }
