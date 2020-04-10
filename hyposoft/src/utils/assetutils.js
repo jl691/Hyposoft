@@ -959,11 +959,11 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                     let _owner = assetObject.owner
 
 
-                                                                                                    index.saveObject({
-                                                                                                        ...assetObject,
-                                                                                                        objectID: assetID,
-                                                                                                        suffixes: suffixes_list.join(' ')
-                                                                                                    })
+                                                                                                    // index.saveObject({
+                                                                                                    //     ...assetObject,
+                                                                                                    //     objectID: assetID,
+                                                                                                    //     suffixes: suffixes_list.join(' ')
+                                                                                                    // })
                                                                                                     if (offlineStorageAbbrev) {
                                                                                                         console.log("checkpoint15")
                                                                                                         offlinestorageutils.getInfoFromAbbrev(offlineStorageAbbrev, (offlineName, offlineID) => {
