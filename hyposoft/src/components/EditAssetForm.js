@@ -10,8 +10,11 @@ import {
     Accordion,
     AccordionPanel,
     CheckBox,
-    TextArea
+    TextArea,
+    Text,
+
 } from 'grommet'
+import { SketchPicker } from 'react-color'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as assetutils from '../utils/assetutils'
 import * as bladeutils from '../utils/bladeutils'
@@ -52,7 +55,13 @@ export default class EditAssetForm extends Component {
             powerConnections: this.props.updatePowerConnectionsFromParent,
             networkConnections: this.props.updateNetworkConnectionsFromParent,
             editDeletedNetworkConnections: [],
-            showPowerConnections: this.props.updatePowerConnectionsFromParent.length ? true : false
+            showPowerConnections: this.props.updatePowerConnectionsFromParent.length ? true : false,
+
+            assetVariance: this.props.updateDisplayColorFromParent !== "" || this.props.updateCpuFromParent !== "" || this.props.updateMemoryFromParent !== "" || this.props.updateStorageFromParent !== "" ? true : false, //need to prefill these fields
+            displayColor: this.props.updateDisplayColorFromParent,
+            cpu: this.props.updateCpuFromParent,
+            memory: this.props.updateMemoryFromParent,
+            storage: this.props.updateStorageFromParent
 
         }
         this.handleUpdate = this.handleUpdate.bind(this);
@@ -63,7 +72,9 @@ export default class EditAssetForm extends Component {
         this.deleteNetworkConnection = this.deleteNetworkConnection.bind(this)
         this.deletePowerConnection = this.deletePowerConnection.bind(this);
 
-        this.originalRackRackU = {rack: this.state.rack, rackU: this.state.rackU}
+        this.resetAssetVariance = this.resetAssetVariance.bind(this)
+
+        this.originalRackRackU = { rack: this.state.rack, rackU: this.state.rackU }
     }
 
     componentDidMount() {
@@ -84,55 +95,15 @@ export default class EditAssetForm extends Component {
         //     this.defaultPDUFields(this.state.model, this.state.rack, this.state.datacenter)
         // }
     }
+    resetAssetVariance() {
+        this.setState(prevState => ({
+            displayColor: "",
+            cpu: "",
+            memory: "",
+            storage: ""
+        }));
+    }
 
-    // defaultPDUFields(model, rack, datacenter) {
-    //     //if the model has 2 or more ports, need to do these default fields
-    //     //find the first available spot
-    //     let numPorts = 0;
-    //     //instead of going into modelsRef, use a backend method
-    //     try {
-    //         modelutils.getModelByModelname(model, status => {
-
-    //             if (status) {
-    //                 //test with model lenovo foobar
-    //                 numPorts = status.data().powerPorts
-
-    //                 if (numPorts >= 2) {
-    //                     assetpowerportutils.getFirstFreePort(rack, datacenter, returnedPort => {
-    //                         console.log("In AddAssetForm. returned power port: " + returnedPort)
-    //                         if (returnedPort) {
-
-    //                             this.setState(oldState => ({
-    //                                 ...oldState,
-    //                                 powerConnections: [{
-    //                                     pduSide: "Left",
-    //                                     port: returnedPort.toString()
-    //                                 },
-    //                                 {
-    //                                     pduSide: "Right",
-    //                                     port: returnedPort.toString()
-    //                                 },
-
-    //                                 ]
-    //                             }))
-
-    //                             console.log(this.state.powerConnections)
-    //                         }
-
-
-    //                     });
-
-
-    //                 }
-    //             }
-    //         })
-
-
-    //     } catch (error) {
-    //         console.log(error)
-    //     }
-
-    // }
 
 
     addNetworkConnection(event) {
@@ -154,7 +125,7 @@ export default class EditAssetForm extends Component {
     deleteNetworkConnection(event, idx) {
 
         //this is so we can call symmetricSingleDelete in assetutils updateAsset()
-        let packedVals=this.state.networkConnections[idx]['thisPort']+ ":"+this.state.networkConnections[idx]['otherAssetID']+ ":"+this.state.networkConnections[idx]['otherPort']
+        let packedVals = this.state.networkConnections[idx]['thisPort'] + ":" + this.state.networkConnections[idx]['otherAssetID'] + ":" + this.state.networkConnections[idx]['otherPort']
         this.state.editDeletedNetworkConnections.push(packedVals)
         this.setState(prevState => ({
 
@@ -182,22 +153,22 @@ export default class EditAssetForm extends Component {
         }));
     }
 
-    checkNetworkPortUniqueness(networkPorts, callback){
-        if(!networkPorts.length){
+    checkNetworkPortUniqueness(networkPorts, callback) {
+        if (!networkPorts.length) {
             callback(true);
         } else {
             let thisPortArray = [];
             let otherIDPortArray = [];
             let count = 0;
-            networkPorts.forEach(networkConnection =>{
+            networkPorts.forEach(networkConnection => {
                 let otherIDPortTemp = networkConnection.otherAssetID + networkConnection.otherPort;
-                if(thisPortArray.includes(networkConnection.thisPort) || otherIDPortArray.includes(otherIDPortTemp)){
+                if (thisPortArray.includes(networkConnection.thisPort) || otherIDPortArray.includes(otherIDPortTemp)) {
                     callback(null);
                 } else {
                     thisPortArray.push(networkConnection.thisPort);
                     otherIDPortArray.push(otherIDPortTemp);
                     count++;
-                    if(count === networkPorts.length){
+                    if (count === networkPorts.length) {
                         callback(true);
                     }
                 }
@@ -206,41 +177,41 @@ export default class EditAssetForm extends Component {
     }
 
     determineUpdateForm(callback) {
-       modelutils.getModelByModelname(this.state.model, doc => {
-           if (doc) {
-               switch (doc.data().mount) {
-                 case 'chassis':
-                   this.updateFunction = bladeutils.updateChassis
-                   this.isNonBlade = true
-                   break
-                 case 'blade':
-                   this.updateFunction = bladeutils.updateServer
-                   this.isNonBlade = false
-                   break
-                 default:
-                   this.updateFunction = assetutils.updateAsset
-                   this.isNonBlade = true
-               }
-           } else {
-               this.updateFunction = assetutils.updateAsset
-               this.isNonBlade = true
-           }
-           if (!this.isNonBlade) {
-              bladeutils.getBladeInfo(this.state.asset_id,data => {
-                  if (data) {
-                      // purposefully not using setState so render is not called!!!
-                      this.state.rack = data.rack
-                      this.state.rackU = data.rackU
-                  }
-                  callback()
-              })
-           } else {
-              // purposefully not using setState so render is not called!!!
-              this.state.rack = this.originalRackRackU.rack
-              this.state.rackU = this.originalRackRackU.rackU
-              callback()
-           }
-       })
+        modelutils.getModelByModelname(this.state.model, doc => {
+            if (doc) {
+                switch (doc.data().mount) {
+                    case 'chassis':
+                        this.updateFunction = bladeutils.updateChassis
+                        this.isNonBlade = true
+                        break
+                    case 'blade':
+                        this.updateFunction = bladeutils.updateServer
+                        this.isNonBlade = false
+                        break
+                    default:
+                        this.updateFunction = assetutils.updateAsset
+                        this.isNonBlade = true
+                }
+            } else {
+                this.updateFunction = assetutils.updateAsset
+                this.isNonBlade = true
+            }
+            if (!this.isNonBlade) {
+                bladeutils.getBladeInfo(this.state.asset_id, data => {
+                    if (data) {
+                        // purposefully not using setState so render is not called!!!
+                        this.state.rack = data.rack
+                        this.state.rackU = data.rackU
+                    }
+                    callback()
+                })
+            } else {
+                // purposefully not using setState so render is not called!!!
+                this.state.rack = this.originalRackRackU.rack
+                this.state.rackU = this.originalRackRackU.rackU
+                callback()
+            }
+        })
     }
 
     handleUpdate(event) {
@@ -277,7 +248,7 @@ export default class EditAssetForm extends Component {
                                 //TODO: fix this in assetmacutils
 
                                 this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
-                                    if(result) {
+                                    if (result) {
                                         assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
 
@@ -299,6 +270,10 @@ export default class EditAssetForm extends Component {
                                                     this.state.networkConnections,
                                                     this.state.editDeletedNetworkConnections,
                                                     this.state.showPowerConnections ? this.state.powerConnections : [],
+                                                    this.state.displayColor,
+                                                    (this.state.memory),
+                                                    this.state.storage,
+                                                    this.state.cpu,
 
                                                     errorMsg => {
                                                         if (errorMsg) {
@@ -324,7 +299,7 @@ export default class EditAssetForm extends Component {
                 } else {
 
                     this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
-                        if(result) {
+                        if (result) {
                             assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
                                 if (fixedAddr) {
@@ -343,6 +318,10 @@ export default class EditAssetForm extends Component {
                                         this.state.networkConnections,
                                         this.state.editDeletedNetworkConnections,
                                         this.state.showPowerConnections ? this.state.powerConnections : [],
+                                        this.state.displayColor,
+                                        (this.state.memory),
+                                        this.state.storage,
+                                        this.state.cpu,
 
                                         errorMessage => {
                                             if (errorMessage) {
@@ -396,7 +375,7 @@ export default class EditAssetForm extends Component {
         if (this.state.model !== this.previousModel) {
             this.previousModel = this.state.model
             // force render to be called again after updating variables
-            this.determineUpdateForm(() => this.setState(oldState => ({ ...oldState})))
+            this.determineUpdateForm(() => this.setState(oldState => ({ ...oldState })))
         }
 
         return (
@@ -413,7 +392,7 @@ export default class EditAssetForm extends Component {
                         {this.props.changePlanID && (<Box style={{
                             borderRadius: 10
                         }} width={"large"} background={"status-warning"} align={"center"} alignSelf={"center"}
-                                                          margin={{top: "medium"}}>
+                            margin={{ top: "medium" }}>
                             <Heading level={"3"} margin={"small"}>Warning</Heading>
                             <Box>This asset will only be edited within the change plan.</Box>
                         </Box>)}
@@ -436,6 +415,65 @@ export default class EditAssetForm extends Component {
                             {/* or value can be */}
                             {/* this.props.updateModelFromParent */}
                         </FormField>
+
+                        <CheckBox checked={this.state.assetVariance} label={"Customize asset's model?"}
+                            toggle={true} onChange={(e) => {
+                                let display = !this.state.assetVariance;
+                                this.resetAssetVariance()
+                                this.setState({
+                                    assetVariance: display
+                                })
+                            }} />
+
+                        {this.state.assetVariance &&
+                            <div >
+                                {/* make it obvious that you are changing the model */}
+                                <Box background={{
+                                    "color": "status-warning",
+                                    "opacity": "45",
+
+                                }}>
+                                    <Heading level="4" margin={{ top: 'medium' }}>Modifying the model of this asset. If fields are left blank, no modifications will be made.</Heading>
+                                    <Text margin={{ top: 'medium' }}>Display color</Text>
+                                    <Box align="center">
+                                        <SketchPicker disableAlpha
+                                            color={this.state.displayColor}
+                                            onChange={color => {
+                                                this.setState(oldState => ({ ...oldState, displayColor: color.hex }))
+                                            }} />
+
+                                    </Box>
+
+                                    <FormField name="cpu" label="CPU">
+                                        <TextInput padding="medium" name="cpu" placeholder="eg. HP 755396-B21"
+                                            onChange={this.handleChange}
+                                            value={this.state.cpu} />
+
+                                    </FormField>
+                                    <FormField name="memory" label="Memory">
+                                        <TextInput padding="medium" name="memory" placeholder="in GB"
+                                            onChange={this.handleChange}
+                                            value={this.state.memory} />
+
+                                    </FormField>
+                                    <FormField name="storage" label="Storage">
+                                        <TextInput padding="medium" name="storage" placeholder="in GB"
+                                            onChange={this.handleChange}
+                                            value={this.state.storage} />
+
+                                    </FormField>
+                                    <Box margin="small">
+                                        <Button
+                                            onClick={this.resetAssetVariance}
+                                            margin={{ horizontal: 'medium', vertical: 'small' }}
+
+                                            label="Reset to Model Defaults" />
+
+
+                                    </Box>
+                                </Box>
+                            </div>
+                        }
 
                         <FormField name="hostname" label="Hostname" >
 
@@ -469,80 +507,80 @@ export default class EditAssetForm extends Component {
                         </FormField>
 
                         {(this.isNonBlade
-                          ?
-                          <FormField name="rack" label="Rack" >
+                            ?
+                            <FormField name="rack" label="Rack" >
 
-                              <TextInput name="rack"
-                                  placeholder="Update Rack"
-                                  onChange={e => {
-                                      const value = e.target.value
-                                      this.setState(oldState => ({ ...oldState, rack: value }))
-                                      assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))
-                                  }}
-                                  onSelect={e => {
-                                      this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
-                                  }}
-                                  value={this.state.rack}
-                                  suggestions={this.state.rackSuggestions}
-                                  onClick={() => assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
-                                  title='Rack'
-                              />
-                          </FormField>
-                          :
-                          <FormField name="rack" label="Chassis Hostname" >
+                                <TextInput name="rack"
+                                    placeholder="Update Rack"
+                                    onChange={e => {
+                                        const value = e.target.value
+                                        this.setState(oldState => ({ ...oldState, rack: value }))
+                                        assetutils.getSuggestedRacks(this.state.datacenter, value, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))
+                                    }}
+                                    onSelect={e => {
+                                        this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
+                                    }}
+                                    value={this.state.rack}
+                                    suggestions={this.state.rackSuggestions}
+                                    onClick={() => assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
+                                    title='Rack'
+                                />
+                            </FormField>
+                            :
+                            <FormField name="rack" label="Chassis Hostname" >
 
-                              <TextInput name="rack"
-                                  placeholder="Update Chassis Hostname"
-                                  onChange={e => {
-                                      const value = e.target.value
-                                      this.setState(oldState => ({ ...oldState, rack: value }))
-                                      bladeutils.getSuggestedChassis(this.state.datacenter, value, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))
-                                  }}
-                                  onSelect={e => {
-                                      this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
-                                  }}
-                                  value={this.state.rack}
-                                  suggestions={this.state.rackSuggestions}
-                                  onClick={() => bladeutils.getSuggestedChassis(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
-                                  title='Chassis Hostname'
-                              />
-                          </FormField>
+                                <TextInput name="rack"
+                                    placeholder="Update Chassis Hostname"
+                                    onChange={e => {
+                                        const value = e.target.value
+                                        this.setState(oldState => ({ ...oldState, rack: value }))
+                                        bladeutils.getSuggestedChassis(this.state.datacenter, value, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))
+                                    }}
+                                    onSelect={e => {
+                                        this.setState(oldState => ({ ...oldState, rack: e.suggestion }))
+                                    }}
+                                    value={this.state.rack}
+                                    suggestions={this.state.rackSuggestions}
+                                    onClick={() => bladeutils.getSuggestedChassis(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
+                                    title='Chassis Hostname'
+                                />
+                            </FormField>
                         )}
 
                         {(this.isNonBlade
-                          ?
-                          <FormField name="rackU" label="RackU" >
+                            ?
+                            <FormField name="rackU" label="RackU" >
 
-                              <TextInput name="rackU" placeholder="Update RackU" onChange={this.handleChange}
-                                  value={this.state.rackU} required="true" />
-                          </FormField>
-                          :
-                          <FormField name="rackU" label="Slot" >
+                                <TextInput name="rackU" placeholder="Update RackU" onChange={this.handleChange}
+                                    value={this.state.rackU} required="true" />
+                            </FormField>
+                            :
+                            <FormField name="rackU" label="Slot" >
 
-                                  <TextInput name="rackU" placeholder="Update Slot"
-                                      onChange={e => {
-                                          const value = e.target.value
-                                          this.setState(oldState => ({ ...oldState, rackU: value }))
-                                          bladeutils.getSuggestedSlots(this.state.rack, value, results => this.setState(oldState => ({
-                                              ...oldState,
-                                              slotSuggestions: results
-                                          })),this.state.asset_id)
-                                      }}
-                                      onSelect={e => {
-                                          this.setState(oldState => ({ ...oldState, rackU: (e.suggestion.split(' '))[1].trim() }))
-                                      }}
-                                      value={this.state.rackU}
-                                      suggestions={this.state.slotSuggestions}
-                                      onClick={() => {
-                                          bladeutils.getSuggestedSlots(this.state.rack, this.state.rackU, results => this.setState(oldState => ({
-                                              ...oldState,
-                                              slotSuggestions: results
-                                          })),this.state.asset_id)
-                                      }}
-                                      title='Slot'
-                                      required={true}
-                                    />
-                          </FormField>
+                                <TextInput name="rackU" placeholder="Update Slot"
+                                    onChange={e => {
+                                        const value = e.target.value
+                                        this.setState(oldState => ({ ...oldState, rackU: value }))
+                                        bladeutils.getSuggestedSlots(this.state.rack, value, results => this.setState(oldState => ({
+                                            ...oldState,
+                                            slotSuggestions: results
+                                        })), this.state.asset_id)
+                                    }}
+                                    onSelect={e => {
+                                        this.setState(oldState => ({ ...oldState, rackU: (e.suggestion.split(' '))[1].trim() }))
+                                    }}
+                                    value={this.state.rackU}
+                                    suggestions={this.state.slotSuggestions}
+                                    onClick={() => {
+                                        bladeutils.getSuggestedSlots(this.state.rack, this.state.rackU, results => this.setState(oldState => ({
+                                            ...oldState,
+                                            slotSuggestions: results
+                                        })), this.state.asset_id)
+                                    }}
+                                    title='Slot'
+                                    required={true}
+                                />
+                            </FormField>
                         )}
 
                         <FormField name="owner" label="Owner" >
@@ -565,87 +603,87 @@ export default class EditAssetForm extends Component {
                         </FormField>
 
                         {(this.isNonBlade
-                          ?
-                          <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"}
-                              toggle={true} onChange={(e) => {
-                                  let panel = document.getElementById("powerPortConnectionsPanel");
-                                  let display = !this.state.showPowerConnections;
-                                  this.setState({
-                                      showPowerConnections: display
-                                  }, function () {
-                                      panel.style.display = display ? "block" : "none";
-                                  })
-                              }} />
-                          :
-                          <Box></Box>
+                            ?
+                            <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"}
+                                toggle={true} onChange={(e) => {
+                                    let panel = document.getElementById("powerPortConnectionsPanel");
+                                    let display = !this.state.showPowerConnections;
+                                    this.setState({
+                                        showPowerConnections: display
+                                    }, function () {
+                                        panel.style.display = display ? "block" : "none";
+                                    })
+                                }} />
+                            :
+                            <Box></Box>
                         )}
 
                         {(this.isNonBlade
-                          ?
-                          <Accordion >
+                            ?
+                            <Accordion >
 
-                              <div id={"powerPortConnectionsPanel"} style={{ display: "none" }}>
-                                  <AccordionPanel label="Power Port Connections">
-                                      <AssetPowerPortsForm
+                                <div id={"powerPortConnectionsPanel"} style={{ display: "none" }}>
+                                    <AccordionPanel label="Power Port Connections">
+                                        <AssetPowerPortsForm
 
-                                          powerConnections={this.state.powerConnections}
+                                            powerConnections={this.state.powerConnections}
 
-                                          deletePowerConnectionCallbackFromParent={this.deletePowerConnection}
+                                            deletePowerConnectionCallbackFromParent={this.deletePowerConnection}
 
-                                      />
+                                        />
 
-                                      <Button
-                                          onClick={this.addPowerConnection}
-                                          margin={{ horizontal: 'medium', vertical: 'small' }}
+                                        <Button
+                                            onClick={this.addPowerConnection}
+                                            margin={{ horizontal: 'medium', vertical: 'small' }}
 
-                                          label="Add a power connection" />
-
-
-                                  </AccordionPanel>
-                              </div>
-
-                              <AccordionPanel label="MAC Addresses">
-                                  <AssetMACForm
-
-                                      fieldCallback={this.handleDisplayMACFields}
-                                      popupMode={this.props.popupMode}
-                                      model={this.state.model}
-                                      macAddresses={this.state.macAddresses}
+                                            label="Add a power connection" />
 
 
-                                  />
+                                    </AccordionPanel>
+                                </div>
 
-                              </AccordionPanel>
+                                <AccordionPanel label="MAC Addresses">
+                                    <AssetMACForm
 
-                              <AccordionPanel label="Network Port Connections">
-                                  <AssetNetworkPortsForm
+                                        fieldCallback={this.handleDisplayMACFields}
+                                        popupMode={this.props.popupMode}
+                                        model={this.state.model}
+                                        macAddresses={this.state.macAddresses}
 
-                                      model={this.state.model}
-                                      datacenter={this.state.datacenter}
-                                      currentId={this.state.asset_id}
-                                      networkConnections={this.state.networkConnections}
 
-                                      deleteNetworkConnectionCallbackFromParent={this.deleteNetworkConnection}
+                                    />
 
-                                  />
+                                </AccordionPanel>
 
-                                  <Button
-                                      onClick={this.addNetworkConnection}
-                                      margin={{ horizontal: 'medium', vertical: 'small' }}
+                                <AccordionPanel label="Network Port Connections">
+                                    <AssetNetworkPortsForm
 
-                                      label="Add a network connection" />
+                                        model={this.state.model}
+                                        datacenter={this.state.datacenter}
+                                        currentId={this.state.asset_id}
+                                        networkConnections={this.state.networkConnections}
 
-                                  {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
-                                  {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
-                                  {/* <Button onClick={this.handleConnect}
+                                        deleteNetworkConnectionCallbackFromParent={this.deleteNetworkConnection}
+
+                                    />
+
+                                    <Button
+                                        onClick={this.addNetworkConnection}
+                                        margin={{ horizontal: 'medium', vertical: 'small' }}
+
+                                        label="Add a network connection" />
+
+                                    {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
+                                    {/* The connect is confusing...how will the user know to connect each connection? Or enter everything then press ito nce? */}
+                                    {/* <Button onClick={this.handleConnect}
                                           margin={{ horizontal: 'medium', vertical: 'small' }}
                                           label="Validate Connections" /> */}
 
-                              </AccordionPanel>
+                                </AccordionPanel>
 
-                          </Accordion>
-                          :
-                          <Box></Box>
+                            </Accordion>
+                            :
+                            <Box></Box>
                         )}
 
                         <FormField name="asset_id" label="Override Asset ID">

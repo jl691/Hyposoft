@@ -104,7 +104,7 @@ export default class AssetTable extends Component {
                         <FormEdit
                             style={{cursor: 'pointer', backgroundColor: this.colors[data.asset_id + '_edit_color']}}
                             onClick={(e) => {
-                                console.log(data.macAddresses);
+                                console.log(data);
                                 console.log(assetmacutils.unfixMacAddressesForMACForm(data.macAddresses));
                                 e.persist()
                                 e.nativeEvent.stopImmediatePropagation()
@@ -120,7 +120,13 @@ export default class AssetTable extends Component {
                                     data.datacenter,
                                     assetmacutils.unfixMacAddressesForMACForm(data.macAddresses),
                                     assetnetworkportutils.networkConnectionsToArray(data.networkConnections),
-                                    data.powerConnections
+                                    data.powerConnections,
+
+                                    //no need to do data.variances.displayColor, since getAsset just gets the fields below directly
+                                    data.displayColor,
+                                    data.cpu,
+                                    data.memory,
+                                    data.storage
                                 )
                                 console.log("Getting data from AssetTable: " + data.powerConnections)
 
@@ -190,7 +196,7 @@ export default class AssetTable extends Component {
     restoreDefault() {
         for (var index = 0; index < this.defaultAssets.length; index++) {
             this.defaultAssets[index].checked = this.state.selectedAssets.includes(this.defaultAssets[index].asset_id)
-        }
+        } 
         this.setState({assets: this.defaultAssets});
     }
 

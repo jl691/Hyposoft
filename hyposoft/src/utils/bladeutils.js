@@ -33,9 +33,9 @@ function addChassis(overrideAssetID, model, hostname, rack, racku, owner, commen
 }
 
 function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
-    networkConnectionsArray, deletedNCThisPort, powerConnections, callback, changePlanID = null, changeDocID = null) {
+    networkConnectionsArray, deletedNCThisPort, powerConnections, displayColor, memory, storage, cpu,callback, changePlanID = null, changeDocID = null) {
     assetutils.updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
-        networkConnectionsArray, deletedNCThisPort, powerConnections, (errorMessage,id) => {
+        networkConnectionsArray, deletedNCThisPort, powerConnections,displayColor, memory, storage, cpu, (errorMessage,id) => {
         if (!errorMessage && id) {
             // add collection to rack
             let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
@@ -181,7 +181,7 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
 }
 
 function updateServer(assetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses,
-    networkConnectionsArray, deletedNCThisPort, powerConnections, callback, changePlanID = null, changeDocID = null) {
+    networkConnectionsArray, deletedNCThisPort, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null) {
     firebaseutils.assetRef.where('hostname','==',chassisHostname).where('datacenter','==',datacenter).get().then(qs => {
         if (!qs.empty) {
             const rack = qs.docs[0].data().rack
@@ -190,7 +190,7 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
             const chassisId = qs.docs[0].id
 
             assetutils.updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, {},
-                [], [], [], (errorMessage,id) => {
+                [], [], [], displayColor, memory, storage, cpu, (errorMessage,id) => {
                 if (!errorMessage && id) {
                   firebaseutils.bladeRef.doc(id).get().then(docRef => {
                     firebaseutils.db.collectionGroup('blades').where("id","==",docRef.data().chassisId).get().then(async(qs) => {
