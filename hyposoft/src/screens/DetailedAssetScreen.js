@@ -78,12 +78,15 @@ export default class DetailedAssetScreen extends Component {
                 assetutils.getAssetDetails(
                     this.props.match.params.assetID,
                     assetsdb => {
+                      this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
                         this.setState({
-                            asset: assetsdb
+                            asset: assetsdb,
+                            initialLoaded: true
 
                         }, function () {
                             this.generatePDUStatus();
                         });
+                      })
                     })
             });
         }
