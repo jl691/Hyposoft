@@ -4,13 +4,13 @@ import {
     Grommet,
     Form,
     FormField,
-    Heading,
+    Heading, 
     TextInput,
     Box,
     Accordion,
     AccordionPanel,
     CheckBox, Text, TextArea,
-    Meter
+
 } from 'grommet'
 import { SketchPicker } from 'react-color'
 
