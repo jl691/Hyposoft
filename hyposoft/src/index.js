@@ -29,6 +29,7 @@ import LogScreen from "./screens/LogScreen"
 import DetailedChangeScreen from "./screens/DetailedChangeScreen"
 import DecommissionedAssetScreen from "./screens/DecommissionedAssetScreen"
 import DetailedDecommissionedAssetScreen from "./screens/DetailedDecommissionedAssetScreen"
+import OfflineStorageScreen from "./screens/OfflineStorageScreen";
 
 import PostOAuthHandler from './handlers/PostOAuthHandler'
 import NetworkNeighborhood from "./components/NetworkNeighborhood";
@@ -42,6 +43,9 @@ ReactDOM.render((
                     <Route exact path='/racks' component={RackView} />
                     <Route exact path='/rackelevation' component={RackElevations} />
                     <Route exact path='/datacenters' component={DatacenterScreen} />
+                    <Route exact path='/offlinestorage' component={OfflineStorageScreen} />
+                    <Route exact path='/offlinestorage/:storageSiteAbbrev' component={AssetScreen}/>
+                    <Route exact path='/offlinestorage/:storageSiteAbbrev/:assetID' component={DetailedAssetScreen}/>
                     <Route exact path='/logs' component={LogScreen} />
                     <Route exact path='/dashboard' component={DashboardScreen} />
                     <Route exact path='/settings' component={SettingsScreen} />

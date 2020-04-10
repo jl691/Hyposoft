@@ -59,26 +59,38 @@ export default class DetailedAssetScreen extends Component {
         });
         this.powerPorts = null;
         this.connectedPDU = null;
-        powerutils.checkConnectedToPDU(this.props.match.params.assetID, result => {
-            if (!(result === null)) {
-                console.log(result)
-                if (result) {
-                    this.connectedPDU = true;
-                } else {
-                    this.connectedPDU = false;
+        if(!this.props.match.params.storageSiteAbbrev){
+            powerutils.checkConnectedToPDU(this.props.match.params.assetID, result => {
+                if (!(result === null)) {
+                    console.log(result)
+                    if (result) {
+                        this.connectedPDU = true;
+                    } else {
+                        this.connectedPDU = false;
+                    }
                 }
-            }
+                assetutils.getAssetDetails(
+                    this.props.match.params.assetID,
+                    assetsdb => {
+                        this.setState({
+                            asset: assetsdb
+
+                        }, function () {
+                            this.generatePDUStatus();
+                        });
+                    })
+            });
+        }
+        else {
             assetutils.getAssetDetails(
                 this.props.match.params.assetID,
                 assetsdb => {
                     this.setState({
                         asset: assetsdb
 
-                    }, function () {
-                        this.generatePDUStatus();
                     });
-                })
-        });
+                }, this.props.match.params.storageSiteAbbrev);
+        }
     }
 
     generateNetworkTable() {
@@ -450,26 +462,26 @@ export default class DetailedAssetScreen extends Component {
                                                 <td><b>Model</b></td>
                                                 <td style={{textAlign: 'right'}}>{this.state.asset.model}</td>
                                             </tr>
-                                            <tr>
+                                            {!this.props.match.params.storageSiteAbbrev && <tr>
                                                 <td><b>Datacenter</b></td>
                                                 <td style={{textAlign: 'right'}}>{this.state.asset.datacenter || 'N/A'}</td>
-                                            </tr>
-                                            <tr>
+                                            </tr>}
+                                            {!this.props.match.params.storageSiteAbbrev && <tr>
                                                 <td><b>Rack</b></td>
                                                 <td style={{textAlign: 'right'}}>{this.state.asset.rack}</td>
-                                            </tr>
-                                            <tr>
+                                            </tr>}
+                                            {!this.props.match.params.storageSiteAbbrev && <tr>
                                                 <td><b>Rack U</b></td>
                                                 <td style={{textAlign: 'right'}}>{this.state.asset.rackU}</td>
-                                            </tr>
+                                            </tr>}
                                             <tr>
                                                 <td><b>Owner</b></td>
                                                 <td style={{textAlign: 'right'}}>@{this.state.asset.owner || 'N/A'}</td>
                                             </tr>
-                                            {this.renderPDUStatus()}
+                                            {!this.props.match.params.storageSiteAbbrev && this.renderPDUStatus()}
                                             </tbody>
                                         </table>
-                                        <Table>
+                                        {!this.props.match.params.storageSiteAbbrev && <Table>
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableCell scope="col" border="bottom">
@@ -486,8 +498,8 @@ export default class DetailedAssetScreen extends Component {
                                             <TableBody>
                                                 {this.generateNetworkTable()}
                                             </TableBody>
-                                        </Table>
-                                        <Table>
+                                        </Table>}
+                                        {!this.props.match.params.storageSiteAbbrev && <Table>
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableCell scope="col" border="bottom">
@@ -504,7 +516,7 @@ export default class DetailedAssetScreen extends Component {
                                             <TableBody>
                                                 {this.generatePowerTable()}
                                             </TableBody>
-                                        </Table>
+                                        </Table>}
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
@@ -541,7 +553,7 @@ export default class DetailedAssetScreen extends Component {
                                         <Heading level='4' margin='none'>Asset Actions</Heading>
                                         <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
                                              gap='small'>
-                                            {(this.connectedPDU && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
+                                            {(this.connectedPDU && !this.props.match.params.storageSiteAbbrev && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
                                             <Box direction='column' flex alignSelf='stretch'
                                                  gap='small'>
                                                 <Button icon={<Power/>} label="Power Asset On" onClick={() => {
@@ -563,9 +575,9 @@ export default class DetailedAssetScreen extends Component {
                                             <Button icon={<View/>} label="View Model Details" onClick={() => {
                                                 this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNum)
                                             }}/>
-                                            <Button icon={<ShareOption/>} label="Network Neighborhood" onClick={() => {
+                                            {!this.props.match.params.storageSiteAbbrev && <Button icon={<ShareOption/>} label="Network Neighborhood" onClick={() => {
                                                 this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
-                                            }}/>
+                                            }}/>}
                                         </Box>
                                     </Box>
                                 </Box>

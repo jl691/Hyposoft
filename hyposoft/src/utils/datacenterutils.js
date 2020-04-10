@@ -211,14 +211,18 @@ function updateAssets(datacenterName, newName, newAbbrev, callback){
 }
 
 
-function getDataFromName(name, callback) {
-    firebaseutils.datacentersRef.where("name", "==", name).get().then(querySnapshot => {
-        if (querySnapshot.empty) {
-            callback(null);
-        } else {
-            callback(querySnapshot.docs[0].id, querySnapshot.docs[0].data().abbreviation);
-        }
-    })
+function getDataFromName(name, callback, offlineStorage = null) {
+    if(offlineStorage){
+        callback(true, true);
+    } else {
+        firebaseutils.datacentersRef.where("name", "==", name).get().then(querySnapshot => {
+            if (querySnapshot.empty) {
+                callback(null);
+            } else {
+                callback(querySnapshot.docs[0].id, querySnapshot.docs[0].data().abbreviation);
+            }
+        })
+    }
 }
 
 function getAbbreviationFromID(id, callback) {

@@ -37,6 +37,7 @@ class DashboardScreen extends Component {
         actions.push({id: 6, title: 'Logs', desc: 'View global logs'})
       }
       actions.push({id: 7, title: 'Change Plans', desc: 'View change plans'})
+        actions.push({id: 8, title: 'Offline Storage', desc: 'View and manage offline storage sites'})
       return actions
     }
 
@@ -65,6 +66,9 @@ class DashboardScreen extends Component {
                 break
             case 7:
                 this.setState({redirect: '/changeplans'})
+                break
+            case 8:
+                this.setState({redirect: '/offlinestorage'})
                 break
             default:
                 alert(action)
