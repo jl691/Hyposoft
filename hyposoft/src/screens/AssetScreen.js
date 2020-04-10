@@ -33,6 +33,8 @@ import * as datacenterutils from "../utils/datacenterutils";
 import * as bulkassetutils from "../utils/bulkassetsutils";
 import * as bulkconnectionstutils from "../utils/bulkconnectionsutils";
 import * as labelutils from "../utils/labelutils";
+import * as offlinestorageutils from "../utils/offlinestorageutils";
+import MoveAssetForm from "../components/MoveAssetForm";
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
@@ -221,6 +223,15 @@ class AssetScreen extends Component {
         }
     }
 
+    handleMoveButton = (datum) => {
+        this.setState({
+            popupType: 'Move',
+            moveID: datum.asset_id,
+            moveLocation: this.props.match.params.storageSiteAbbrev ? "offline" : "rack",
+            moveCurrentLocation: this.props.match.params.storageSiteAbbrev ? "offline storage site " + this.props.match.params.storageSiteAbbrev : "datacenter " + datum.datacenter + " on rack " + datum.rack + " at height " + datum.rackU
+        })
+    }
+
     handleDeleteButton = (datum) => {
         console.log(datum.model);
         this.setState({
@@ -271,6 +282,19 @@ class AssetScreen extends Component {
         if (localStorage.getItem('tipShown') !== 'yes') {
             ToastsStore.info("Tip: Click on column headers to sort", 3000, 'burntToast')
             localStorage.setItem('tipShown', 'yes')
+        }
+        if(this.props.match.params.storageSiteAbbrev){
+            offlinestorageutils.getInfoFromAbbrev(this.props.match.params.storageSiteAbbrev, (name, id) => {
+                this.setState({
+                    offlineStorageName: name,
+                    offlineStorageID: id,
+                    offlineStorageLoaded: true
+                })
+            })
+        } else {
+            this.setState({
+                offlineStorageLoaded: true
+            })
         }
         this.fetchDatacenters();
     }
@@ -437,6 +461,8 @@ class AssetScreen extends Component {
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
 
+                        offlineStorage={this.props.match.params.storageSiteAbbrev}
+
                         popupMode={this.state.popupType}
                         updateIDFromParent={this.state.updateID}
                         updateModelFromParent={this.state.updateModel}
@@ -460,6 +486,15 @@ class AssetScreen extends Component {
                 </Layer>
             )
 
+        } else if (popupType === 'Move') {
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+
+                    <MoveAssetForm location={this.state.moveLocation} assetID={this.state.moveID} currentLocation={this.state.moveCurrentLocation}
+                    success={this.handleCancelRefreshPopupChange}/>
+                </Layer>
+            )
         } else if (popupType === 'Filters') {
             popup = (<Layer
                 position="right"
@@ -620,7 +655,7 @@ class AssetScreen extends Component {
                                     <HomeMenu alignSelf='start' this={this}/>
                                     <Heading alignSelf='center' level='4' margin={{
                                         top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
-                                    }}>Assets</Heading>
+                                    }}>Assets{this.props.match.params.storageSiteAbbrev && " in storage site " + this.props.match.params.storageSiteAbbrev}</Heading>
                                     <UserMenu alignSelf='end' this={this}/>
                                 </AppBar>
                                 <Button primary icon={<Filter size={"medium"}/>}
@@ -679,19 +714,24 @@ class AssetScreen extends Component {
                                                         right: 'medium'
                                                     }} direction='column'
                                                          justify='start' alignSelf='stretch' flex>
-                                                            <AssetTable
+                                                        {this.state.offlineStorageLoaded && <AssetTable
                                                                 deleteButtonCallbackFromParent={this.handleDeleteButton}
                                                                 decommissionButtonCallbackFromParent={this.handleDecommissionButton}
 
                                                                 UpdateButtonCallbackFromParent={this.handleUpdateButton}
 
+                                                                moveButton={this.handleMoveButton}
+
                                                                 handleToast={this.handleChildToast}
+
+                                                                storageSiteID={this.state.offlineStorageID}
+                                                                storageSiteAbbrev={this.props.match.params.storageSiteAbbrev}
 
                                                                 ref={this.assetTable}
                                                                 searchResults={this.state.searchResults}
                                                                 parent={this}
 
-                                                            />
+                                                            />}
                                                     </Box>
                                                 </Box>
                                                 {(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) && (

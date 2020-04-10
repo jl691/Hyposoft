@@ -27,6 +27,7 @@ class HomeMenu extends Component {
       items = items.concat(
         [
             {label: 'Models', onClick: () => this.setState({clicked:true, redirect: '/models'})},
+            {label: 'Offline Storage', onClick: () => this.setState({clicked:true, redirect: '/offlinestorage'})},
             {label: 'Racks', onClick: () => this.setState({clicked:true, redirect: '/racks'})},
             {label: 'Users', onClick: () => this.setState({clicked:true, redirect: '/users'})},
         ]

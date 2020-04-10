@@ -11,7 +11,7 @@ import {
     Clear,
     PowerCycle,
     FormUp,
-    FormDown
+    FormDown, Transaction
 } from "grommet-icons"
 import * as assetutils from '../utils/assetutils'
 import * as assetmacutils from '../utils/assetmacutils'
@@ -82,6 +82,7 @@ export default class AssetTable extends Component {
     }
 
     componentDidMount() {
+        console.log(this.props.storageSiteID)
         assetutils.getAsset((newStartAfter, assetdb, empty) => {
             if ((!(newStartAfter === null) && !(assetdb === null)) || empty) {
                 console.log(assetdb)
@@ -89,7 +90,7 @@ export default class AssetTable extends Component {
                 this.defaultAssets = assetdb;
                 this.setState({assets: assetdb, initialLoaded: true})
             }
-        })
+        }, null, null, null, this.props.storageSiteID)
     }
 
     getAdminColumns() {
@@ -176,6 +177,30 @@ export default class AssetTable extends Component {
                         }} onMouseOver={e => this.colors[datum.asset_id + '_decommission_color'] = '#dddddd'}
                         onMouseLeave={e => this.colors[datum.asset_id + '_decommission_color'] = ''}/>
                 ) : ( <Text>-</Text> )
+            },
+            {
+                property: "move",
+                header: <Text size={'small'}>Move</Text>,
+                sortable: false,
+                align: 'center',
+                render: datum => true ?
+                    (
+                        <Transaction
+                            data-tip="Move asset"
+                            style={{
+                                cursor: 'pointer',
+                                backgroundColor: this.colors[datum.asset_id + '_move_color']
+                            }}
+                            onClick={(e) => {
+                                e.persist()
+                                e.nativeEvent.stopImmediatePropagation()
+                                e.stopPropagation()
+                                this.props.moveButton(datum)
+                            }} onMouseOver={e => this.colors[datum.asset_id + '_move_color'] = '#dddddd'}
+                            onMouseLeave={e => this.colors[datum.asset_id + '_move_color'] = ''}
+                            />
+                    )
+                : ( <Text>-</Text> )
             }]
     }
 
@@ -352,6 +377,278 @@ export default class AssetTable extends Component {
         }, this.state.sortField ? this.state.sortField : null, this.state.sortField ? this.state.sortAscending : null)
     }
 
+    generateColumns(){
+        let columns = [
+            {
+                property: 'checked',
+                // todo somehow change size to small
+                header: <Text size='small' style={{cursor: "pointer"}}>
+                    {(this.updateSelectAll()
+                            ? <CheckboxSelected onClick={() => {
+                                this.handleSelectAllOrNone()
+                            }}/>
+                            : <Checkbox onClick={() => {
+                                this.handleSelectAllOrNone()
+                            }}/>
+                    )}{(<Menu icon={<FormDown/>}
+                              items={[
+                                  {label: 'All', onClick: () => this.handleSelectAllOrNone(true)},
+                                  {label: 'None', onClick: () => this.handleSelectAllOrNone(false)}
+                              ]}/>
+                )}</Text>,
+                render: datum => this.handleSelect(datum),
+                sortable: false
+            },
+            {
+                property: 'assetID',
+                header: <Text size='small' onClick={() => {
+                    this.setSort("assetId")
+                }} style={{cursor: "pointer"}}>Asset
+                    ID {this.state.sortField === 'assetId' && (this.state.sortAscending ? <FormDown/> :
+                        <FormUp/>)}</Text>,
+                primary: true,
+                render: datum => <Text size='small'>
+                    {datum.asset_id}
+                </Text>
+            },
+            {
+                property: 'model',
+                header: <Text size='small' onClick={() => {
+                    this.setSort("model")
+                }}
+                              style={{cursor: "pointer"}}>Model {this.state.sortField === 'model' && (this.state.sortAscending ?
+                    <FormDown/> : <FormUp/>)}</Text>,
+                render: datum => <Text size='small'>{datum.model}</Text>,
+            },
+            {
+                property: 'hostname',
+                header: <Text size='small' onClick={() => {
+                    this.setSort("hostname")
+                }}
+                              style={{cursor: "pointer"}}>Hostname {this.state.sortField === 'hostname' && (this.state.sortAscending ?
+                    <FormDown/> : <FormUp/>)}</Text>,
+                render: datum => <Text wordBreak="break-all" size='small'>{datum.hostname}</Text>,
+            },
+            {
+                property: 'owner',
+                header: <Text size='small' onClick={() => {
+                    this.setSort("owner")
+                }}
+                              style={{cursor: "pointer"}}>Owner {this.state.sortField === 'owner' && (this.state.sortAscending ?
+                    <FormDown/> : <FormUp/>)}</Text>,
+                render: datum => <Text size='small'>{datum.owner}</Text>,
+            },
+            // {
+            //     property: 'powerConnections',
+            //     header: <Text size='small'> Power Connections</Text>,
+            //     render: datum => <Text size='small'>
+            //         {/* {datum.owner} */}
+            //     </Text>,
+
+            // },
+            //...this.getAdminColumns()
+        ];
+        if(!this.props.storageSiteID){
+            columns.push(
+                {
+                    property: 'rack',
+                    header: <Text size='small' onClick={() => {
+                        this.setSort("rack")
+                    }}
+                                  style={{cursor: "pointer"}}>Rack {this.state.sortField === 'rack' && (this.state.sortAscending ?
+                        <FormDown/> : <FormUp/>)}</Text>,
+                    //align:"end",
+                    render: datum => <Text size='small'>{datum.rack}</Text>,
+
+                },
+                {
+                    property: 'rackU',
+                    header: <Text size='small' onClick={() => {
+                        this.setSort("rackU")
+                    }} style={{cursor: "pointer"}}>Rack
+                        U {this.state.sortField === 'rackU' && (this.state.sortAscending ? <FormDown/> :
+                            <FormUp/>)}</Text>,
+                    render: datum => <Text size='small'>{datum.rackU}</Text>,
+
+                },
+                {
+                    property: 'datacenterAbbrev',
+                    header: <Text size='small' onClick={() => {
+                        this.setSort("datacenterAbbrev")
+                    }} style={{cursor: "pointer"}}> Datacenter
+                        Abbrev. {this.state.sortField === 'datacenterAbbrev' && (this.state.sortAscending ?
+                            <FormDown/> : <FormUp/>)}</Text>,
+                    render: datum => <Text size='small'>
+                        {datum.datacenterAbbrev}
+                    </Text>,
+
+                },
+                {
+                    property: "power",
+                    header: <Text
+                        size='small'>Power {this.state.sortField === 'power' && (this.state.sortAscending ?
+                        <FormDown/> : <FormUp/>)}</Text>,
+                    sortable: false,
+                    align: 'center',
+
+                    render: datum => {
+                        //if(docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1" && docSnapshot.data().rackRow.charCodeAt(0) >= 65 && docSnapshot.data().rackRow.charCodeAt(0) <= 69 && parseInt(docSnapshot.data().rackNum) >= 1 && parseInt(docSnapshot.data().rackNum) <= 19 && docSnapshot.data().powerConnections && docSnapshot.data().powerConnections.length){
+
+
+                        if ((userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === datum.owner) && datum.datacenterAbbrev.toUpperCase() === "RTP1" && datum.rackRow.charCodeAt(0) >= 65 && datum.rackRow.charCodeAt(0) <= 69 && parseInt(datum.rackNum) >= 1 && parseInt(datum.rackNum) <= 19 && datum.powerConnections && datum.powerConnections.length) {
+                            return (<Box direction={"row"} justify={"center"}>
+                                <Power data-tip="Power on"
+                                       style={{backgroundColor: this.colors[datum.asset_id + '_on_color']}}
+                                       onClick={(e) => {
+                                           e.persist()
+                                           e.nativeEvent.stopImmediatePropagation()
+                                           e.stopPropagation()
+                                           //turn on all ports
+                                           let count = 0;
+                                           Object.keys(datum.powerConnections).forEach((connection) => {
+                                               let formattedNum;
+                                               console.log(datum);
+                                               if (datum.rackNum.toString().length === 1) {
+                                                   formattedNum = "0" + datum.rackNum;
+                                               } else {
+                                                   formattedNum = datum.rackNum;
+                                               }
+                                               powerutils.powerPortOn("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                                   if (result) {
+                                                       count++;
+                                                       if (count === Object.keys(datum.powerConnections).length) {
+                                                           this.props.handleToast({
+                                                               type: "success",
+                                                               message: "Successfully powered on the asset!"
+                                                           })
+                                                       }
+                                                   } else {
+                                                       this.props.handleToast({
+                                                           type: "error",
+                                                           message: "Something went wrong. Please try again later."
+                                                       })
+                                                   }
+                                               })
+                                           })
+                                       }
+                                       }
+                                       onMouseOver={e => this.colors[datum.asset_id + '_on_color'] = '#dddddd'}
+                                       onMouseLeave={e => this.colors[datum.asset_id + '_on_color'] = ''}/>
+                                <Clear data-tip="Power off"
+                                       style={{backgroundColor: this.colors[datum.asset_id + '_off_color']}}
+                                       onClick={(e) => {
+                                           e.persist()
+                                           e.nativeEvent.stopImmediatePropagation()
+                                           e.stopPropagation()
+                                           //turn on all ports
+                                           let count = 0;
+                                           Object.keys(datum.powerConnections).forEach((connection) => {
+                                               let formattedNum;
+                                               console.log(datum);
+                                               if (datum.rackNum.toString().length === 1) {
+                                                   formattedNum = "0" + datum.rackNum;
+                                               } else {
+                                                   formattedNum = datum.rackNum;
+                                               }
+                                               powerutils.powerPortOff("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                                   if (result) {
+                                                       count++;
+                                                       if (count === Object.keys(datum.powerConnections).length) {
+                                                           this.props.handleToast({
+                                                               type: "success",
+                                                               message: "Successfully powered off the asset!"
+                                                           })
+                                                       }
+                                                   } else {
+                                                       this.props.handleToast({
+                                                           type: "error",
+                                                           message: "Something went wrong. Please try again later."
+                                                       })
+                                                   }
+                                               })
+                                           })
+                                       }
+                                       }
+                                       onMouseOver={e => this.colors[datum.asset_id + '_off_color'] = '#dddddd'}
+                                       onMouseLeave={e => this.colors[datum.asset_id + '_off_color'] = ''}/>
+                                <PowerCycle data-tip="Power cycle"
+                                            style={{backgroundColor: this.colors[datum.asset_id + '_cycle_color']}}
+                                            onClick={(e) => {
+                                                e.persist()
+                                                e.nativeEvent.stopImmediatePropagation()
+                                                e.stopPropagation()
+                                                //turn on all ports
+                                                this.props.handleToast({
+                                                    type: "info",
+                                                    message: "Power cycling the asset. Please wait..."
+                                                })
+                                                let count = 0;
+                                                Object.keys(datum.powerConnections).forEach((connection) => {
+                                                    let formattedNum;
+                                                    console.log(datum);
+                                                    if (datum.rackNum.toString().length === 1) {
+                                                        formattedNum = "0" + datum.rackNum;
+                                                    } else {
+                                                        formattedNum = datum.rackNum;
+                                                    }
+                                                    powerutils.powerPortOff("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                                        if (result) {
+                                                            count++;
+                                                            if (count === Object.keys(datum.powerConnections).length) {
+                                                                //wait
+                                                                setTimeout(() => {
+                                                                    let count = 0;
+                                                                    Object.keys(datum.powerConnections).forEach((connection) => {
+                                                                        let formattedNum;
+                                                                        console.log(datum);
+                                                                        if (datum.rackNum.toString().length === 1) {
+                                                                            formattedNum = "0" + datum.rackNum;
+                                                                        } else {
+                                                                            formattedNum = datum.rackNum;
+                                                                        }
+                                                                        powerutils.powerPortOn("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                                                            if (result) {
+                                                                                count++;
+                                                                                if (count === Object.keys(datum.powerConnections).length) {
+                                                                                    this.props.handleToast({
+                                                                                        type: "success",
+                                                                                        message: "Successfully powered cycled the asset!"
+                                                                                    })
+                                                                                }
+                                                                            } else {
+                                                                                this.props.handleToast({
+                                                                                    type: "error",
+                                                                                    message: "Something went wrong. Please try again later."
+                                                                                })
+                                                                            }
+                                                                        })
+                                                                    })
+                                                                }, 2000);
+                                                            }
+                                                        } else {
+                                                            this.props.handleToast({
+                                                                type: "error",
+                                                                message: "Something went wrong. Please try again later."
+                                                            })
+                                                        }
+                                                    })
+                                                })
+                                            }
+                                            }
+                                            onMouseOver={e => this.colors[datum.asset_id + '_cycle_color'] = '#dddddd'}
+                                            onMouseLeave={e => this.colors[datum.asset_id + '_cycle_color'] = ''}/>
+                            </Box>)
+                        } else {
+                            return (<Text size={"small"} data-tip="No power options available">-</Text>)
+                        }
+                    }
+                }
+            )
+        }
+        columns.push(...this.getAdminColumns())
+        return columns;
+    }
+
     render() {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/'/>
@@ -487,287 +784,16 @@ export default class AssetTable extends Component {
                         }
                     }}
 
-                    columns={[
-                        {
-                            property: 'checked',
-                            // todo somehow change size to small
-                            header: <Text size='small' style={{cursor: "pointer"}}>
-                                {(this.updateSelectAll()
-                                        ? <CheckboxSelected onClick={() => {
-                                            this.handleSelectAllOrNone()
-                                        }}/>
-                                        : <Checkbox onClick={() => {
-                                            this.handleSelectAllOrNone()
-                                        }}/>
-                                )}{(<Menu icon={<FormDown/>}
-                                          items={[
-                                              {label: 'All', onClick: () => this.handleSelectAllOrNone(true)},
-                                              {label: 'None', onClick: () => this.handleSelectAllOrNone(false)}
-                                          ]}/>
-                            )}</Text>,
-                            render: datum => this.handleSelect(datum),
-                            sortable: false
-                        },
-                        {
-                            property: 'assetID',
-                            header: <Text size='small' onClick={() => {
-                                this.setSort("assetId")
-                            }} style={{cursor: "pointer"}}>Asset
-                                ID {this.state.sortField === 'assetId' && (this.state.sortAscending ? <FormDown/> :
-                                    <FormUp/>)}</Text>,
-                            primary: true,
-                            render: datum => <Text size='small'>
-                                {datum.asset_id}
-                            </Text>
-
-                        },
-                        {
-                            property: 'model',
-                            header: <Text size='small' onClick={() => {
-                                this.setSort("model")
-                            }}
-                                          style={{cursor: "pointer"}}>Model {this.state.sortField === 'model' && (this.state.sortAscending ?
-                                <FormDown/> : <FormUp/>)}</Text>,
-                            // align:"start",
-                            render: datum => <Text size='small'>{datum.model}</Text>,
-
-                        },
-                        {
-                            property: 'hostname',
-                            header: <Text size='small' onClick={() => {
-                                this.setSort("hostname")
-                            }}
-                                          style={{cursor: "pointer"}}>Hostname {this.state.sortField === 'hostname' && (this.state.sortAscending ?
-                                <FormDown/> : <FormUp/>)}</Text>,
-                            // align:"start",
-                            render: datum => <Text wordBreak="break-all" size='small'>{datum.hostname}</Text>,
-                        },
-                        {
-                            property: 'rack',
-                            header: <Text size='small' onClick={() => {
-                                this.setSort("rack")
-                            }}
-                                          style={{cursor: "pointer"}}>Rack {this.state.sortField === 'rack' && (this.state.sortAscending ?
-                                <FormDown/> : <FormUp/>)}</Text>,
-                            //align:"end",
-                            render: datum => <Text size='small'>{datum.rack}</Text>,
-
-                        },
-                        {
-                            property: 'rackU',
-                            header: <Text size='small' onClick={() => {
-                                this.setSort("rackU")
-                            }} style={{cursor: "pointer"}}>Rack
-                                U {this.state.sortField === 'rackU' && (this.state.sortAscending ? <FormDown/> :
-                                    <FormUp/>)}</Text>,
-                            render: datum => <Text size='small'>{datum.rackU}</Text>,
-
-                        },
-                        {
-                            property: 'owner',
-                            header: <Text size='small' onClick={() => {
-                                this.setSort("owner")
-                            }}
-                                          style={{cursor: "pointer"}}>Owner {this.state.sortField === 'owner' && (this.state.sortAscending ?
-                                <FormDown/> : <FormUp/>)}</Text>,
-                            render: datum => <Text size='small'>{datum.owner}</Text>,
-
-                        },
-                        // {
-                        //     property: 'datacenterName',
-                        //     header: <Text size='small'> Datacenter Name</Text>,
-                        //     render: datum => <Text size='small'>
-                        //         {/* {datum.owner} */}
-                        //     </Text>,
-
-                        // },
-                        {
-                            property: 'datacenterAbbrev',
-                            header: <Text size='small' onClick={() => {
-                                this.setSort("datacenterAbbrev")
-                            }} style={{cursor: "pointer"}}> Datacenter
-                                Abbrev. {this.state.sortField === 'datacenterAbbrev' && (this.state.sortAscending ?
-                                    <FormDown/> : <FormUp/>)}</Text>,
-                            render: datum => <Text size='small'>
-                                {datum.datacenterAbbrev}
-                            </Text>,
-
-                        },
-                        {
-                            property: "power",
-                            header: <Text
-                                size='small'>Power {this.state.sortField === 'power' && (this.state.sortAscending ?
-                                <FormDown/> : <FormUp/>)}</Text>,
-                            sortable: false,
-                            align: 'center',
-
-                            render: datum => {
-                                //if(docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1" && docSnapshot.data().rackRow.charCodeAt(0) >= 65 && docSnapshot.data().rackRow.charCodeAt(0) <= 69 && parseInt(docSnapshot.data().rackNum) >= 1 && parseInt(docSnapshot.data().rackNum) <= 19 && docSnapshot.data().powerConnections && docSnapshot.data().powerConnections.length){
-
-
-                                if ((userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === datum.owner) && datum.datacenterAbbrev.toUpperCase() === "RTP1" && datum.rackRow.charCodeAt(0) >= 65 && datum.rackRow.charCodeAt(0) <= 69 && parseInt(datum.rackNum) >= 1 && parseInt(datum.rackNum) <= 19 && datum.powerConnections && datum.powerConnections.length) {
-                                    return (<Box direction={"row"} justify={"center"}>
-                                        <Power data-tip="Power on"
-                                               style={{backgroundColor: this.colors[datum.asset_id + '_on_color']}}
-                                               onClick={(e) => {
-                                                   e.persist()
-                                                   e.nativeEvent.stopImmediatePropagation()
-                                                   e.stopPropagation()
-                                                   //turn on all ports
-                                                   let count = 0;
-                                                   Object.keys(datum.powerConnections).forEach((connection) => {
-                                                       let formattedNum;
-                                                       console.log(datum);
-                                                       if (datum.rackNum.toString().length === 1) {
-                                                           formattedNum = "0" + datum.rackNum;
-                                                       } else {
-                                                           formattedNum = datum.rackNum;
-                                                       }
-                                                       powerutils.powerPortOn("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
-                                                           if (result) {
-                                                               count++;
-                                                               if (count === Object.keys(datum.powerConnections).length) {
-                                                                   this.props.handleToast({
-                                                                       type: "success",
-                                                                       message: "Successfully powered on the asset!"
-                                                                   })
-                                                               }
-                                                           } else {
-                                                               this.props.handleToast({
-                                                                   type: "error",
-                                                                   message: "Something went wrong. Please try again later."
-                                                               })
-                                                           }
-                                                       })
-                                                   })
-                                               }
-                                               }
-                                               onMouseOver={e => this.colors[datum.asset_id + '_on_color'] = '#dddddd'}
-                                               onMouseLeave={e => this.colors[datum.asset_id + '_on_color'] = ''}/>
-                                        <Clear data-tip="Power off"
-                                               style={{backgroundColor: this.colors[datum.asset_id + '_off_color']}}
-                                               onClick={(e) => {
-                                                   e.persist()
-                                                   e.nativeEvent.stopImmediatePropagation()
-                                                   e.stopPropagation()
-                                                   //turn on all ports
-                                                   let count = 0;
-                                                   Object.keys(datum.powerConnections).forEach((connection) => {
-                                                       let formattedNum;
-                                                       console.log(datum);
-                                                       if (datum.rackNum.toString().length === 1) {
-                                                           formattedNum = "0" + datum.rackNum;
-                                                       } else {
-                                                           formattedNum = datum.rackNum;
-                                                       }
-                                                       powerutils.powerPortOff("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
-                                                           if (result) {
-                                                               count++;
-                                                               if (count === Object.keys(datum.powerConnections).length) {
-                                                                   this.props.handleToast({
-                                                                       type: "success",
-                                                                       message: "Successfully powered off the asset!"
-                                                                   })
-                                                               }
-                                                           } else {
-                                                               this.props.handleToast({
-                                                                   type: "error",
-                                                                   message: "Something went wrong. Please try again later."
-                                                               })
-                                                           }
-                                                       })
-                                                   })
-                                               }
-                                               }
-                                               onMouseOver={e => this.colors[datum.asset_id + '_off_color'] = '#dddddd'}
-                                               onMouseLeave={e => this.colors[datum.asset_id + '_off_color'] = ''}/>
-                                        <PowerCycle data-tip="Power cycle"
-                                                    style={{backgroundColor: this.colors[datum.asset_id + '_cycle_color']}}
-                                                    onClick={(e) => {
-                                                        e.persist()
-                                                        e.nativeEvent.stopImmediatePropagation()
-                                                        e.stopPropagation()
-                                                        //turn on all ports
-                                                        this.props.handleToast({
-                                                            type: "info",
-                                                            message: "Power cycling the asset. Please wait..."
-                                                        })
-                                                        let count = 0;
-                                                        Object.keys(datum.powerConnections).forEach((connection) => {
-                                                            let formattedNum;
-                                                            console.log(datum);
-                                                            if (datum.rackNum.toString().length === 1) {
-                                                                formattedNum = "0" + datum.rackNum;
-                                                            } else {
-                                                                formattedNum = datum.rackNum;
-                                                            }
-                                                            powerutils.powerPortOff("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
-                                                                if (result) {
-                                                                    count++;
-                                                                    if (count === Object.keys(datum.powerConnections).length) {
-                                                                        //wait
-                                                                        setTimeout(() => {
-                                                                            let count = 0;
-                                                                            Object.keys(datum.powerConnections).forEach((connection) => {
-                                                                                let formattedNum;
-                                                                                console.log(datum);
-                                                                                if (datum.rackNum.toString().length === 1) {
-                                                                                    formattedNum = "0" + datum.rackNum;
-                                                                                } else {
-                                                                                    formattedNum = datum.rackNum;
-                                                                                }
-                                                                                powerutils.powerPortOn("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
-                                                                                    if (result) {
-                                                                                        count++;
-                                                                                        if (count === Object.keys(datum.powerConnections).length) {
-                                                                                            this.props.handleToast({
-                                                                                                type: "success",
-                                                                                                message: "Successfully powered cycled the asset!"
-                                                                                            })
-                                                                                        }
-                                                                                    } else {
-                                                                                        this.props.handleToast({
-                                                                                            type: "error",
-                                                                                            message: "Something went wrong. Please try again later."
-                                                                                        })
-                                                                                    }
-                                                                                })
-                                                                            })
-                                                                        }, 2000);
-                                                                    }
-                                                                } else {
-                                                                    this.props.handleToast({
-                                                                        type: "error",
-                                                                        message: "Something went wrong. Please try again later."
-                                                                    })
-                                                                }
-                                                            })
-                                                        })
-                                                    }
-                                                    }
-                                                    onMouseOver={e => this.colors[datum.asset_id + '_cycle_color'] = '#dddddd'}
-                                                    onMouseLeave={e => this.colors[datum.asset_id + '_cycle_color'] = ''}/>
-                                    </Box>)
-                                } else {
-                                    return (<Text size={"small"} data-tip="No power options available">-</Text>)
-                                }
-                            }
-                        },
-                        // {
-                        //     property: 'powerConnections',
-                        //     header: <Text size='small'> Power Connections</Text>,
-                        //     render: datum => <Text size='small'>
-                        //         {/* {datum.owner} */}
-                        //     </Text>,
-
-                        // },
-                        ...this.getAdminColumns()
-                    ]}
+                    columns={this.generateColumns()}
                     size="medium"
                     //pad={{ horizontal: "medium", vertical: "xsmall" }}
 
                     onClickRow={({datum}) => {
-                        this.props.parent.props.history.push('/assets/' + datum.asset_id)
+                        if(this.props.storageSiteAbbrev){
+                            this.props.parent.props.history.push('/offlinestorage/' + this.props.storageSiteAbbrev + '/' + datum.asset_id)
+                        } else {
+                            this.props.parent.props.history.push('/assets/' + datum.asset_id)
+                        }
                     }}
 
                     data={this.props.searchResults || this.state.assets}

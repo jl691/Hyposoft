@@ -5,93 +5,98 @@ import * as firebaseutils from './firebaseutils'
 //Toast message at the front end level
 
 
-async function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerConnections, model, callback, assetID = null) {
-    // assuming all or nothing. If an asset has 2 power ports, can't just plug one in
-    console.log(powerConnections);
-    //How to handle when the rack does not have a network managed port?? How does this affect the detailed view? Getting the status?
-    let success = 0;
-    let allOrNothingCount=0;
-  console.log("Validating power ports, this is power ports : "+ powerConnections)
-    if(!powerConnections.length){
-        console.log("Calling back cause no power connections")
+async function validatePowerConnections(inputDatacenter, inputRack, inputRackU, powerConnections, model, callback, assetID = null, offlineStorage = null) {
+    if(offlineStorage){
         callback(null);
     }
-    for (let i = 0; i < powerConnections.length; i++) {
-        console.log("in the for loop");
-        let pduSide = powerConnections[i].pduSide;
-        let port = powerConnections[i].port;
-
-        if (pduSide.trim() === "" && port.trim() === "") {
-            console.log("incrementing successes for pduside " + pduSide + " and port " + port)
-            success++;
-
-            if (success == powerConnections.length) {
-                console.log("Returning successfully")
-                callback(null)
-            }
+   else {
+        // assuming all or nothing. If an asset has 2 power ports, can't just plug one in
+        console.log(powerConnections);
+        //How to handle when the rack does not have a network managed port?? How does this affect the detailed view? Getting the status?
+        let success = 0;
+        let allOrNothingCount=0;
+        console.log("Validating power ports, this is power ports : "+ powerConnections)
+        if(!powerConnections.length){
+            console.log("Calling back cause no power connections")
+            callback(null);
         }
+        for (let i = 0; i < powerConnections.length; i++) {
+            console.log("in the for loop");
+            let pduSide = powerConnections[i].pduSide;
+            let port = powerConnections[i].port;
 
-        else if (pduSide.trim() !== "" && port.trim() !== "") {
+            if (pduSide.trim() === "" && port.trim() === "") {
+                console.log("incrementing successes for pduside " + pduSide + " and port " + port)
+                success++;
 
-            modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
-                let numPowerPorts = querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : 0;
-                console.log("Num powerPorts for this model: " + numPowerPorts)
-             
-                allOrNothingCount++;
-
-                if (parseInt(port) >= 1 && parseInt(port) <= 24) {
-
-                    //all or nothing
-                    if (powerConnections.length === numPowerPorts) {
-                        //check for conflicts
-                        checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, status => {
-                            console.log(status)
-                            if (status) {
-                                callback(status)
-                            }
-                            else {
-                                console.log("incrementing successes for pduside " + pduSide + " and port " + port)
-                                success++;
-                                if (success == powerConnections.length) {
-                                    console.log("Returning successfully")
-                                    callback(null)
-                                }
-                            }
-
-                        }, assetID)
-
-                    }
-                   
-                    else if (numPowerPorts != null && allOrNothingCount === 1) {
-
-                        if(numPowerPorts > 0){
-                            callback("To make power connections for this model " + model + ", you need to make " + numPowerPorts + " connections.")
-
-                        }
-                        else{
-                            //the model has 0 powerPorts on it
-                            callback("Cannot make power connections. The model " + model + " has " + numPowerPorts + " power ports.")
-
-                        }
-                        
-                    }
-
-                } else {
-
-                    callback("To make a power connection, please enter a valid port number. Valid port numbers range from 1 to 24.")
-
+                if (success == powerConnections.length) {
+                    console.log("Returning successfully")
+                    callback(null)
                 }
+            }
 
-            }).catch(function (error) { console.log("Could not find the model: " + error) })
+            else if (pduSide.trim() !== "" && port.trim() !== "") {
+
+                modelsRef.where("modelName", "==", model).get().then(function (querySnapshot) {
+                    let numPowerPorts = querySnapshot.docs[0].data().powerPorts ? querySnapshot.docs[0].data().powerPorts : 0;
+                    console.log("Num powerPorts for this model: " + numPowerPorts)
+
+                    allOrNothingCount++;
+
+                    if (parseInt(port) >= 1 && parseInt(port) <= 24) {
+
+                        //all or nothing
+                        if (powerConnections.length === numPowerPorts) {
+                            //check for conflicts
+                            checkConflicts(inputDatacenter, inputRack, inputRackU, pduSide, port, status => {
+                                console.log(status)
+                                if (status) {
+                                    callback(status)
+                                }
+                                else {
+                                    console.log("incrementing successes for pduside " + pduSide + " and port " + port)
+                                    success++;
+                                    if (success == powerConnections.length) {
+                                        console.log("Returning successfully")
+                                        callback(null)
+                                    }
+                                }
+
+                            }, assetID)
+
+                        }
+
+                        else if (numPowerPorts != null && allOrNothingCount === 1) {
+
+                            if(numPowerPorts > 0){
+                                callback("To make power connections for this model " + model + ", you need to make " + numPowerPorts + " connections.")
+
+                            }
+                            else{
+                                //the model has 0 powerPorts on it
+                                callback("Cannot make power connections. The model " + model + " has " + numPowerPorts + " power ports.")
+
+                            }
+
+                        }
+
+                    } else {
+
+                        callback("To make a power connection, please enter a valid port number. Valid port numbers range from 1 to 24.")
+
+                    }
+
+                }).catch(function (error) { console.log("Could not find the model: " + error) })
+
+
+            }
+            else {
+                callback("To make a power connection, must fill out all fields.")
+
+            }
 
 
         }
-        else {
-            callback("To make a power connection, must fill out all fields.")
-
-        }
-
-
     }
 
 }
