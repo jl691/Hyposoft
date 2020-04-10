@@ -127,7 +127,7 @@ function deleteChassis(assetID, callback, isDecommission = false) {
     })
 }
 
-function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, callback, changePlanID = null, changeDocID = null) {
+function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null) {
     firebaseutils.assetRef.where('hostname','==',chassisHostname).where('datacenter','==',datacenter).get().then(qs => {
         if (!qs.empty) {
             const rack = qs.docs[0].data().rack
@@ -135,7 +135,7 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
             const rackId = qs.docs[0].data().rackID
             const chassisId = qs.docs[0].id
 
-            assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, {}, [], [], (errorMessage,id) => {
+            assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, {}, [], [], displayColor, memory, storage, cpu, (errorMessage,id) => {
                 if (!errorMessage && id) {
                     // need to fix this, need to get doc with collection
                     firebaseutils.racksRef.doc(rackId).collection('blades').doc(chassisId).get().then(doc => {

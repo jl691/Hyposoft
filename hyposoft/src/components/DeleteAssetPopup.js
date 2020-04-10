@@ -13,7 +13,7 @@ import theme from "../theme";
 
 export default class DeleteAssetPopup extends Component {
     deleteFunction = null
-    isNonBlade = true
+    isNonChassis = true
     previousModel = null
 
     constructor(props) {
@@ -50,19 +50,19 @@ export default class DeleteAssetPopup extends Component {
                switch (doc.data().mount) {
                  case 'chassis':
                    this.deleteFunction = bladeutils.deleteChassis
-                   this.isNonBlade = true
+                   this.isNonChassis = false
                    break
                  case 'blade':
                    this.deleteFunction = bladeutils.deleteServer
-                   this.isNonBlade = false
+                   this.isNonChassis = true
                    break
                  default:
                    this.deleteFunction = assetutils.deleteAsset
-                   this.isNonBlade = true
+                   this.isNonChassis = true
                }
            } else {
                this.deleteFunction = assetutils.deleteAsset
-               this.isNonBlade = true
+               this.isNonChassis = true
            }
            callback()
        })
@@ -90,7 +90,8 @@ export default class DeleteAssetPopup extends Component {
                         name="deleteInst"
                     >
 
-                        <Text>Are you sure you want to delete asset <strong>{this.props.deleteModel} {this.props.deleteHostname}</strong>? This cannot be undone. </Text>
+                        <Text>{!this.isNonChassis ? 'This deletion will not succeed if the chassis contains any blades. '
+                        : ''}Are you sure you want to delete asset <strong>{this.props.deleteModel} {this.props.deleteHostname}</strong>? This cannot be undone. </Text>
 
                         <Box direction={"row"}>
                             <Button
