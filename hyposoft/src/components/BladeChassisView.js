@@ -28,6 +28,7 @@ class BladeChassisView extends React.Component {
     componentDidMount() {
         let canvas = new fabric.Canvas(this.props.chassisId);
         this.drawDiagram(this.props.chassisId, canvas);
+        canvas.hoverCursor = 'pointer'
     }
 
     drawDiagram(chassisId, canvas) {

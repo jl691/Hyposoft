@@ -26,6 +26,7 @@ class SingleRackElevation extends React.Component {
     componentDidMount() {
         let canvas = new fabric.Canvas(this.props.rackID);
         this.drawDiagram(this.props.rackID, canvas);
+        canvas.hoverCursor = 'pointer'
         //this.sendPNGToParent(canvas, this.state.letter, this.state.number);
     }
 
