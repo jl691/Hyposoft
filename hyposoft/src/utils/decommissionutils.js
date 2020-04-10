@@ -4,7 +4,7 @@ import * as userutils from './userutils'
 import * as assetnetworkportutils from '../utils/assetnetworkportutils'
 import * as assetutils from "../utils/assetutils"
 
-function decommissionAsset(id,callback,decommissionFunction=assetutils.deleteAsset) {
+function decommissionAsset(id,callback,decommissionFunction=assetutils.deleteAsset,chassisParams=null) {
     firebaseutils.assetRef.doc(id).get().then(doc => {
         if (!doc.exists) {
             callback(false)
@@ -17,10 +17,10 @@ function decommissionAsset(id,callback,decommissionFunction=assetutils.deleteAss
                 callback(false)
                 return
             }
-            decommissionFunction(id, result => {
+            decommissionFunction(id, (result,myParams) => {
                 if (result) {
                   logutils.addLog(id,logutils.ASSET(),logutils.DECOMMISSION(),docData)
-                  firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username,graph: graph}).then(() => callback(true))
+                  firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username,graph: graph,chassisParams: myParams ? myParams : chassisParams}).then(() => callback(true))
                   .catch( error => {
                       console.log("Error getting documents: ", error)
                       callback(false)

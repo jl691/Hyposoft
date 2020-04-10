@@ -108,15 +108,33 @@ function deleteChassis(assetID, callback, isDecommission = false) {
         if (!qs.empty && (qs.docs[0].data().assets.length === 0 || isDecommission)) {
             assetutils.deleteAsset(assetID, async(deletedId) => {
                 if (deletedId) {
+                    var myParams = null
                     if (isDecommission) {
-                        const qsAssets = qs.docs[0].data().assets
-                        for (var i = 0; i < qsAssets.length; i++) {
-                            await new Promise(function(resolve, reject) {
-                                decomutils.decommissionAsset(qsAssets[i],doNothing => resolve(),deleteServer)
+                        await new Promise(function(resolve, reject) {
+                            getBladeChassisViewParams(qs.docs[0].data().letter,async(chassisSlots,mySlot)=> {
+                              const qsAssets = qs.docs[0].data().assets
+                              for (var i = 0; i < qsAssets.length; i++) {
+                                  await new Promise(function(resolve, reject) {
+                                      const chassisParams = {
+                                        chassisId: qs.docs[0].data().id,
+                                        chassisHostname: qs.docs[0].data().letter,
+                                        chassisSlots: chassisSlots,
+                                        slot: mySlot[qsAssets[i]]
+                                      }
+                                      decomutils.decommissionAsset(qsAssets[i],doNothing => resolve(),deleteServer,chassisParams)
+                                  })
+                              }
+                              myParams = {
+                                chassisId: qs.docs[0].data().id,
+                                chassisHostname: qs.docs[0].data().letter,
+                                chassisSlots: chassisSlots,
+                                slot: null
+                              }
+                              resolve()
                             })
-                        }
+                        })
                     }
-                    qs.docs[0].ref.delete().then(() => callback(deletedId))
+                    qs.docs[0].ref.delete().then(() => callback(deletedId,myParams))
                 } else {
                     callback(null)
                 }
@@ -337,6 +355,22 @@ function getSuggestedSlots(chassis, userInput, callback, selfId = null) {
         .catch(error => {
             callback(null)
         })
+}
+
+function getBladeChassisViewParams(hostname,callback) {
+  firebaseutils.bladeRef.where('rack','==',hostname).get().then(qs => {
+      var taken = []
+      var slots = {}
+      if (!qs.empty) {
+        qs.forEach(doc => {
+            taken.push({slot: doc.data().rackU, id: doc.id})
+            slots[doc.id] = doc.data().rackU
+        })
+      }
+      console.log(taken);
+      console.log(slots);
+      callback(taken,slots)
+  })
 }
 
 export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo, getDetailBladeInfo, getSuggestedChassis, getSuggestedSlots }
