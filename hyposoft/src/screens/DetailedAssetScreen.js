@@ -574,29 +574,29 @@ export default class DetailedAssetScreen extends Component {
                                              :
                                              <Table></Table>
                                            )}
-                                           {(this.chassisSlots
-                                             ?
-                                             <Box flex margin={{top: 'small', bottom: 'small'}}
-                                                  direction='column' justify='start'>
-                                                 <Heading level='4' margin='none'>Blade Chassis View</Heading>
-                                                 <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
-                                                      gap='small' align='center'>
-                                                     <BladeChassisView
-                                                         chassisId={!this.bladeData ? this.state.asset.assetID : this.bladeData.chassisId}
-                                                         chassisHostname={!this.bladeData ? this.state.asset.hostname : this.bladeData.rack}
-                                                         chassisSlots={this.chassisSlots}
-                                                         slot={!this.bladeData ? null : this.bladeData.rackU}
-                                                     />
-                                                 </Box>
-                                             </Box>
-                                             :
-                                             <Box></Box>
-                                           )}
                                            <span style={{maxHeight: 100, overflow: 'auto'}}>
                                             {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
                                                 return <div key={key}>{i}</div>
                                             })}
                                             </span>
+                                            {(this.chassisSlots
+                                              ?
+                                              <Box flex margin={{top: 'small', bottom: 'small'}}
+                                                   direction='column' justify='start'>
+                                                  <Heading level='4' margin='none'>Blade Chassis View</Heading>
+                                                  <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                                       gap='small' align='center'>
+                                                      <BladeChassisView
+                                                          chassisId={!this.bladeData ? this.state.asset.assetID : this.bladeData.chassisId}
+                                                          chassisHostname={!this.bladeData ? this.state.asset.hostname : this.bladeData.rack}
+                                                          chassisSlots={this.chassisSlots}
+                                                          slot={!this.bladeData ? null : this.bladeData.rackU}
+                                                      />
+                                                  </Box>
+                                              </Box>
+                                              :
+                                              <Box></Box>
+                                            )}
                                        </Box>
                                      )}
                                 </Box>
