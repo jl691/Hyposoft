@@ -333,7 +333,7 @@ export default class EditAssetForm extends Component {
                                                 ToastsStore.success('Successfully updated asset!');
                                             }
                                         }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null,
-                                        this.props.offlineStorage ? this.props.offlineStorage : null
+                                        null, this.props.offlineStorage ? this.props.offlineStorage : null
                                     );
 
 
@@ -616,7 +616,7 @@ export default class EditAssetForm extends Component {
                                     }, function () {
                                         panel.style.display = display ? "block" : "none";
                                     })
-                                }} />)
+                                }} />
 
                         }
 

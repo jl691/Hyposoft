@@ -100,7 +100,7 @@ export default class DetailedAssetScreen extends Component {
                       });
                     })
                 }, this.props.match.params.storageSiteAbbrev)
-        });
+        };
     }
 
     determineBladeData(id,hostname,callback) {
