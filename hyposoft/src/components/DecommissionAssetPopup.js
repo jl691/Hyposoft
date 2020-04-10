@@ -2,6 +2,9 @@ import React, { Component } from 'react'
 import { Button, Grommet, Form, Heading, Text, Box } from 'grommet'
 import { ToastsContainer, ToastsStore } from 'react-toasts';
 import * as decomutils from '../utils/decommissionutils'
+import * as assetutils from '../utils/assetutils'
+import * as bladeutils from '../utils/bladeutils'
+import * as modelutils from '../utils/modelutils'
 import * as userutils from "../utils/userutils";
 import * as changeplanutils from "../utils/changeplanutils";
 import {Redirect} from "react-router-dom";
@@ -11,6 +14,10 @@ import theme from "../theme";
 //Instance table has a layer, that holds the button to add instance and the form
 
 export default class DecommissionAssetPopup extends Component {
+    decommissionFunction = null
+    isNonChassis = true
+    previousModel = null
+
     constructor(props) {
         super(props)
         this.state = {}
@@ -31,8 +38,8 @@ export default class DecommissionAssetPopup extends Component {
                         ToastsStore.error('Error decommissioning asset.');
                     }
                 })
-            } else { 
-        
+            } else {
+
                 decomutils.decommissionAsset(this.props.decommissionIDFromParent, status => {
                         if (status) {
                             ToastsStore.success('Decommissioned asset successfully')
@@ -41,16 +48,44 @@ export default class DecommissionAssetPopup extends Component {
                         } else {
                             ToastsStore.error('Error decommissioning asset.')
                         }
-                    }
-                )
+                    }, this.decommissionFunction)
             }
         }
 
     }
 
+    determineDecommissionFunction(callback) {
+       modelutils.getModelByModelname(this.props.decommissionModel, doc => {
+           if (doc) {
+               switch (doc.data().mount) {
+                 case 'chassis':
+                   this.decommissionFunction = bladeutils.deleteChassis
+                   this.isNonChassis = false
+                   break
+                 case 'blade':
+                   this.decommissionFunction = bladeutils.deleteServer
+                   this.isNonChassis = true
+                   break
+                 default:
+                   this.decommissionFunction = assetutils.deleteAsset
+                   this.isNonChassis = true
+               }
+           } else {
+               this.decommissionFunction = assetutils.deleteAsset
+               this.isNonChassis = true
+           }
+           callback()
+       })
+    }
+
     render() {
         if (!userutils.isUserLoggedIn()) {
             return <Redirect to='/' />
+        }
+
+        if (this.previousModel !== this.props.decommissionModel) {
+            this.previousModel = this.props.decommissionModel
+            this.determineDecommissionFunction(() => this.setState(oldState => ({ ...oldState})))
         }
 
         return (
@@ -64,7 +99,8 @@ export default class DecommissionAssetPopup extends Component {
                     <Form onSubmit={this.handleDecommission}
                         name="decommissionInst"
                     >
-                        <Text>Are you sure you want to decommission asset #<strong>{this.props.decommissionIDFromParent}</strong>? {
+                        <Text>{!this.isNonChassis ? 'This decommission will decommission all of the blades inside this chassis as well. '
+                        : ''}Are you sure you want to decommission asset <strong>{this.props.decommissionModel} {this.props.decommissionHostname}</strong>? {
                             this.props.changePlanID ? "This will only take effect in the change plan." : "This cannot be undone."
                         } </Text>
                         <Box direction={"row"}>

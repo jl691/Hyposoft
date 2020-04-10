@@ -10,15 +10,17 @@ import {
     TableHeader,
     TableRow,
     TableCell,
-    TableBody, Layer
+    TableBody, Layer, Text
 } from 'grommet'
 import * as assetutils from '../utils/assetutils'
+import * as bladeutils from '../utils/bladeutils'
 import * as userutils from '../utils/userutils'
 import * as powerutils from '../utils/powerutils'
 import * as assetmacutils from "../utils/assetmacutils"
 import * as assetnetworkportutils from "../utils/assetnetworkportutils"
 import theme from '../theme'
 import BackButton from '../components/BackButton'
+import BladeChassisView from '../components/BladeChassisView'
 import AppBar from '../components/AppBar'
 import UserMenu from '../components/UserMenu'
 import {FormEdit, Power, Clear, PowerCycle, View, ShareOption} from "grommet-icons"
@@ -30,13 +32,16 @@ export default class DetailedAssetScreen extends Component {
 
     powerPorts;
     connectedPDU;
+    bladeData = null
+    chassisSlots = null
 
     constructor(props) {
         super(props);
         this.state = {
             asset: "",
             powerMap: false,
-            popupType: ""
+            popupType: "",
+            initialLoaded: false
         }
 
         this.generatePDUStatus = this.generatePDUStatus.bind(this);
@@ -55,7 +60,8 @@ export default class DetailedAssetScreen extends Component {
         this.setState({
             asset: "",
             powerMap: false,
-            popupType: ""
+            popupType: "",
+            initialLoaded: false
         });
         this.powerPorts = null;
         this.connectedPDU = null;
@@ -85,12 +91,24 @@ export default class DetailedAssetScreen extends Component {
             assetutils.getAssetDetails(
                 this.props.match.params.assetID,
                 assetsdb => {
-                    this.setState({
-                        asset: assetsdb
+                    this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
+                      this.setState({
+                          asset: assetsdb,
+                          initialLoaded: true
+                      }, function () {
+                          this.generatePDUStatus();
+                      });
+                    })
+                }, this.props.match.params.storageSiteAbbrev)
+        });
+    }
 
-                    });
-                }, this.props.match.params.storageSiteAbbrev);
-        }
+    determineBladeData(id,hostname,callback) {
+       bladeutils.getDetailBladeInfo(id, hostname, (data,chassisSlots) => {
+           this.bladeData = data
+           this.chassisSlots = chassisSlots
+           callback()
+       })
     }
 
     generateNetworkTable() {
@@ -425,7 +443,7 @@ export default class DetailedAssetScreen extends Component {
                     <Route path={`/assets/${this.props.match.params.assetID}`}/>
 
                     <Grommet theme={theme} full className='fade'>
-                        <Box fill background='light-2'>
+                        <Box fill background='light-2' overflow={"auto"}>
                             {popup}
                             <AppBar>
                                 {/* {this.props.match.params.vendor} {this.props.match.params.modelNumber} */}
@@ -447,140 +465,196 @@ export default class DetailedAssetScreen extends Component {
                                      direction='row'
                                      background='#FFFFFF'
                                      width={'xxlarge'}
+                                     justify='center'
                                      margin={{top: 'medium', left: 'medium', right: 'medium'}}
                                      pad='small'>
-                                    <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                         direction='column' justify='start'>
-                                        <Heading level='4' margin='none'>Asset Details</Heading>
-                                        <table style={{marginTop: '10px', marginBottom: '10px'}}>
-                                            <tbody>
-                                            <tr>
-                                                <td><b>Hostname</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.hostname}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><b>Model</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.model}</td>
-                                            </tr>
-                                            {!this.props.match.params.storageSiteAbbrev && <tr>
-                                                <td><b>Datacenter</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.datacenter || 'N/A'}</td>
-                                            </tr>}
-                                            {!this.props.match.params.storageSiteAbbrev && <tr>
-                                                <td><b>Rack</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.rack}</td>
-                                            </tr>}
-                                            {!this.props.match.params.storageSiteAbbrev && <tr>
-                                                <td><b>Rack U</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.rackU}</td>
-                                            </tr>}
-                                            <tr>
-                                                <td><b>Owner</b></td>
-                                                <td style={{textAlign: 'right'}}>@{this.state.asset.owner || 'N/A'}</td>
-                                            </tr>
-                                            {!this.props.match.params.storageSiteAbbrev && this.renderPDUStatus()}
-                                            </tbody>
-                                        </table>
-                                        {!this.props.match.params.storageSiteAbbrev && <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Network Port Name</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Connected Asset ID</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Connected Port Name</strong>
-                                                    </TableCell>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {this.generateNetworkTable()}
-                                            </TableBody>
-                                        </Table>}
-                                        {!this.props.match.params.storageSiteAbbrev && <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Power Port Name</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Connected PDU Side</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Connected PDU Port</strong>
-                                                    </TableCell>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {this.generatePowerTable()}
-                                            </TableBody>
-                                        </Table>}
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Network Port</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>MAC Address</strong>
-                                                    </TableCell>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {this.generateMACTable()}
-                                            </TableBody>
-                                        </Table>
-                                        <span style={{maxHeight: 100, overflow: 'auto'}}>
-                                         {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
-                                             return <div key={key}>{i}</div>
-                                         })}
-                                         </span>
-                                    </Box>
+                                     {(!this.state.initialLoaded
+                                       ?
+                                       <Box align="center"><Text>Please wait...</Text></Box>
+                                       :
+                                       <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                            direction='column' justify='start'>
+                                           <Heading level='4' margin='none'>Asset Details</Heading>
+                                           <table style={{marginTop: '10px', marginBottom: '10px'}}>
+                                               <tbody>
+                                               <tr>
+                                                   <td><b>Hostname</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.hostname}</td>
+                                               </tr>
+                                               <tr>
+                                                   <td><b>Model</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.model}</td>
+                                               </tr>
+                                               {!this.props.match.params.storageSiteAbbrev && <tr>
+                                                   <td><b>Datacenter</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.datacenter || 'N/A'}</td>
+                                               </tr>}
+                                               {(this.bladeData
+                                                 ?
+                                                 <tr>
+                                                     <td><b>Chassis Hostname</b></td>
+                                                     <td style={{textAlign: 'right'}}>{this.bladeData.rack}</td>
+                                                 </tr>
+                                                 :
+                                                 <tr></tr>
+                                               )}
+                                               {(this.bladeData
+                                                 ?
+                                                 <tr>
+                                                     <td><b>Slot</b></td>
+                                                     <td style={{textAlign: 'right'}}>{this.bladeData.rackU}</td>
+                                                 </tr>
+                                                 :
+                                                 <tr></tr>
+                                               )}
+                                               {!this.props.match.params.storageSiteAbbrev && <tr>
+                                                   <td><b>{!this.bladeData ? 'Rack' : 'Chassis Rack'}</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.rack}</td>
+                                               </tr>}
+                                               {!this.props.match.params.storageSiteAbbrev && <tr>
+                                                   <td><b>{!this.bladeData ? 'Rack U' : 'Chassis Rack U'}</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.rackU}</td>
+                                               </tr>}
+                                               <tr>
+                                                   <td><b>Owner</b></td>
+                                                   <td style={{textAlign: 'right'}}>@{this.state.asset.owner || 'N/A'}</td>
+                                               </tr>
+                                               {this.renderPDUStatus()}
+                                               </tbody>
+                                           </table>
+                                           {(!this.bladeData && !this.props.match.params.storageSiteAbbrev) &&
+                                             <Table>
+                                                 <TableHeader>
+                                                     <TableRow>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>Network Port Name</strong>
+                                                         </TableCell>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>Connected Asset ID</strong>
+                                                         </TableCell>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>Connected Port Name</strong>
+                                                         </TableCell>
+                                                     </TableRow>
+                                                 </TableHeader>
+                                                 <TableBody>
+                                                     {this.generateNetworkTable()}
+                                                 </TableBody>
+                                             </Table>
+                                           }
+                                           {(!this.bladeData && !this.props.match.params.storageSiteAbbrev) &&
+                                             <Table>
+                                                 <TableHeader>
+                                                     <TableRow>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>Power Port Name</strong>
+                                                         </TableCell>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>Connected PDU Side</strong>
+                                                         </TableCell>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>Connected PDU Port</strong>
+                                                         </TableCell>
+                                                     </TableRow>
+                                                 </TableHeader>
+                                                 <TableBody>
+                                                     {this.generatePowerTable()}
+                                                 </TableBody>
+                                             </Table>}
+
+                                           {(!this.bladeData
+                                             ?
+                                             <Table>
+                                                 <TableHeader>
+                                                     <TableRow>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>Network Port</strong>
+                                                         </TableCell>
+                                                         <TableCell scope="col" border="bottom">
+                                                             <strong>MAC Address</strong>
+                                                         </TableCell>
+                                                     </TableRow>
+                                                 </TableHeader>
+                                                 <TableBody>
+                                                     {this.generateMACTable()}
+                                                 </TableBody>
+                                             </Table>
+                                             :
+                                             <Table></Table>
+                                           )}
+                                           <span style={{maxHeight: 100, overflow: 'auto'}}>
+                                            {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
+                                                return <div key={key}>{i}</div>
+                                            })}
+                                            </span>
+                                            {(this.chassisSlots
+                                              ?
+                                              <Box flex margin={{top: 'small', bottom: 'small'}}
+                                                   direction='column' justify='start'>
+                                                  <Heading level='4' margin='none'>Blade Chassis View</Heading>
+                                                  <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                                       gap='small' align='center'>
+                                                      <BladeChassisView
+                                                          chassisId={!this.bladeData ? this.state.asset.assetID : this.bladeData.chassisId}
+                                                          chassisHostname={!this.bladeData ? this.state.asset.hostname : this.bladeData.rack}
+                                                          chassisSlots={this.chassisSlots}
+                                                          slot={!this.bladeData ? null : this.bladeData.rackU}
+                                                      />
+                                                  </Box>
+                                              </Box>
+                                              :
+                                              <Box></Box>
+                                            )}
+                                       </Box>
+                                     )}
                                 </Box>
-                                <Box style={{
-                                    borderRadius: 10,
-                                    borderColor: '#EDEDED'
-                                }}
-                                     direction='row'
-                                     background='#FFFFFF'
-                                     width={'large'}
-                                     margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                                     pad='small'>
-                                    <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                         direction='column' justify='start'>
-                                        <Heading level='4' margin='none'>Asset Actions</Heading>
-                                        <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
-                                             gap='small'>
-                                            {(this.connectedPDU && !this.props.match.params.storageSiteAbbrev && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
-                                            <Box direction='column' flex alignSelf='stretch'
-                                                 gap='small'>
-                                                <Button icon={<Power/>} label="Power Asset On" onClick={() => {
-                                                    this.turnAssetOn()
-                                                }}/>
-                                                <Button icon={<Clear/>} label="Power Asset Off" onClick={() => {
-                                                    this.turnAssetOff()
-                                                }}/>
-                                                <Button icon={<PowerCycle/>} label="Power Cycle Asset" onClick={() => {
-                                                    this.powerCycleAsset()
-                                                }}/>
-                                            </Box>}
-                                            {(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.doesLoggedInUserHaveAssetPerm(this.state.asset.datacenterAbbrev)) &&
-                                            <Button icon={<FormEdit/>} label="Edit Asset" onClick={() => {
-                                                this.setState({
-                                                    popupType: "Update"
-                                                })
-                                            }}/>}
-                                            <Button icon={<View/>} label="View Model Details" onClick={() => {
-                                                this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNum)
-                                            }}/>
-                                            {!this.props.match.params.storageSiteAbbrev && <Button icon={<ShareOption/>} label="Network Neighborhood" onClick={() => {
-                                                this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
-                                            }}/>}
-                                        </Box>
-                                    </Box>
-                                </Box>
+                                {(!this.state.initialLoaded
+                                  ?
+                                  <Box></Box>
+                                  :
+                                  <Box style={{
+                                      borderRadius: 10,
+                                      borderColor: '#EDEDED'
+                                  }}
+                                       direction='row'
+                                       background='#FFFFFF'
+                                       width={'large'}
+                                       margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                                       pad='small'>
+                                      <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                           direction='column' justify='start'>
+                                          <Heading level='4' margin='none'>Asset Actions</Heading>
+                                          <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                               gap='small'>
+                                              {(this.connectedPDU && !this.props.match.params.storageSiteAbbrev (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
+                                              <Box direction='column' flex alignSelf='stretch'
+                                                   gap='small'>
+                                                  <Button icon={<Power/>} label="Power Asset On" onClick={() => {
+                                                      this.turnAssetOn()
+                                                  }}/>
+                                                  <Button icon={<Clear/>} label="Power Asset Off" onClick={() => {
+                                                      this.turnAssetOff()
+                                                  }}/>
+                                                  <Button icon={<PowerCycle/>} label="Power Cycle Asset" onClick={() => {
+                                                      this.powerCycleAsset()
+                                                  }}/>
+                                              </Box>}
+                                              {(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.doesLoggedInUserHaveAssetPerm(this.state.asset.datacenterAbbrev)) &&
+                                              <Button icon={<FormEdit/>} label="Edit Asset" onClick={() => {
+                                                  this.setState({
+                                                      popupType: "Update"
+                                                  })
+                                              }}/>}
+                                              <Button icon={<View/>} label="View Model Details" onClick={() => {
+                                                  this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNum)
+                                              }}/>
+                                              {!this.props.match.params.storageSiteAbbrev && <Button icon={<ShareOption/>} label="Network Neighborhood" onClick={() => {
+                                                  this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
+                                              }}/>}
+                                          </Box>
+                                      </Box>
+                                  </Box>
+                                )}
                             </Box>
                             <ToastsContainer store={ToastsStore}/>
                         </Box>

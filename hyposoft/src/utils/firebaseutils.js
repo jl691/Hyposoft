@@ -52,9 +52,10 @@ var datacentersRef = db.collection('datacenters')
 var logsRef = db.collection('logs')
 var changeplansRef = db.collection('changeplans')
 var decommissionRef = db.collection('decommission')
+var bladeRef = db.collection('bladeInfo')
 var offlinestorageRef = db.collection('offlinestorage')
 
-export { hashAndSalt, hashAndSalt2, usersRef, racksRef, assetRef, modelsRef, claimsRef, recoveriesRef, datacentersRef, logsRef, db, firebase, changeplansRef, decommissionRef, offlinestorageRef }
+export { hashAndSalt, hashAndSalt2, usersRef, racksRef, assetRef, modelsRef, claimsRef, recoveriesRef, datacentersRef, logsRef, db, firebase, changeplansRef, decommissionRef, offlinestorageRef, bladeRef }
 
 // import * as firebase from 'firebase/app'
 // import 'firebase/firestore'

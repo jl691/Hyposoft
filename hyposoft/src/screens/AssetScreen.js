@@ -87,6 +87,12 @@ class AssetScreen extends Component {
                 pduSide: "",
                 port: ""
             }],
+
+
+            updateDisplayColor: "",
+            updateCpu: "",
+            updateMemory: "",
+            updateStorage: "",
             datacentersLoaded: false,
             rangeStart: "",
             rangeEnd: ""
@@ -243,7 +249,7 @@ class AssetScreen extends Component {
             decommissionHostname: datum.hostname
         });
     }
-    handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter, datumMACAddresses, datumNetworkConnections, datumPowerConnections) => {
+    handleUpdateButton = (datumID, datumModel, datumHostname, datumRack, datumRackU, datumOwner, datumComment, datumDatacenter, datumMACAddresses, datumNetworkConnections, datumPowerConnections, datumDisplayColor, datumCpu, datumMemory, datumStorage) => {
 
         this.setState({
             popupType: 'Update',
@@ -257,7 +263,12 @@ class AssetScreen extends Component {
             updateDatacenter: datumDatacenter,
             updateMacAddresses: datumMACAddresses,
             updateNetworkConnections: datumNetworkConnections,
-            updatePowerConnections: datumPowerConnections
+            updatePowerConnections: datumPowerConnections,
+
+            updateDisplayColor: datumDisplayColor,
+            updateCpu: datumCpu,
+            updateMemory: datumMemory,
+            updateStorage: datumStorage
 
 
         });
@@ -465,6 +476,12 @@ class AssetScreen extends Component {
                         updateMacAddressesFromParent={this.state.updateMacAddresses}
                         updatePowerConnectionsFromParent={this.state.updatePowerConnections}
                         updateNetworkConnectionsFromParent={this.state.updateNetworkConnections}
+
+                        updateDisplayColorFromParent={this.state.updateDisplayColor}
+                        updateCpuFromParent = {this.state.updateCpu}
+                        updateMemoryFromParent={this.state.updateMemory}
+                        updateStorageFromParent={this.state.updateStorage}
+
                     />
                 </Layer>
             )
