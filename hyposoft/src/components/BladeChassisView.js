@@ -75,21 +75,23 @@ class BladeChassisView extends React.Component {
 
         canvas.add(rect, rect2, rect3, rect4);
 
-        rect.on("mousedown", function (options) {
-            window.location.href = "/assets/" + chassisId;
-        })
+        if (!this.props.notClickable) {
+          rect.on("mousedown", function (options) {
+              window.location.href = "/assets/" + chassisId;
+          })
 
-        rect2.on("mousedown", function (options) {
-            window.location.href = "/assets/" + chassisId;
-        })
+          rect2.on("mousedown", function (options) {
+              window.location.href = "/assets/" + chassisId;
+          })
 
-        rect3.on("mousedown", function (options) {
-            window.location.href = "/assets/" + chassisId;
-        })
+          rect3.on("mousedown", function (options) {
+              window.location.href = "/assets/" + chassisId;
+          })
 
-        rect4.on("mousedown", function (options) {
-            window.location.href = "/assets/" + chassisId;
-        })
+          rect4.on("mousedown", function (options) {
+              window.location.href = "/assets/" + chassisId;
+          })
+        }
 
         let header = new fabric.Text(this.props.chassisHostname, {
             fill: 'white',
@@ -102,10 +104,11 @@ class BladeChassisView extends React.Component {
             left: (this.width - Math.round(header.getScaledWidth())) / 2
         })
         canvas.add(header)
-
-        header.on("mousedown", function (options) {
-            window.location.href = "/assets/" + chassisId;
-        })
+        if (!this.props.notClickable) {
+          header.on("mousedown", function (options) {
+              window.location.href = "/assets/" + chassisId;
+          })
+        }
 
         for(var count = 1; count < this.numSlots+1; count++){
             // add side numbers
@@ -121,10 +124,11 @@ class BladeChassisView extends React.Component {
                        +((this.bladeWidth - Math.round(number.getScaledWidth())) / 2)
             })
             canvas.add(number);
-
-            number.on("mousedown", function (options) {
-                window.location.href = "/assets/" + chassisId;
-            })
+            if (!this.props.notClickable) {
+              number.on("mousedown", function (options) {
+                  window.location.href = "/assets/" + chassisId;
+              })
+            }
         }
         console.log("generating for chassisId of " + chassisId)
 
@@ -163,10 +167,11 @@ class BladeChassisView extends React.Component {
 
             // canvas.add(assetBox, assetText, assetHostname);
             // canvas.add(assetBox);
-
-            assetBox.on("mousedown", function (options) {
-                window.location.href = "/assets/" + asset.id;
-            })
+            if (!this.props.notClickable) {
+              assetBox.on("mousedown", function (options) {
+                  window.location.href = "/assets/" + asset.id;
+              })
+            }
         });
     }
 
