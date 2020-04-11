@@ -863,7 +863,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                             //get instance id
                                                             console.log(powerConnections);
                                                             replaceAssetRack(oldResult, result, oldPowerConnections, powerConnections, assetID, changePlanID, result => {
-                                                                logutils.getObjectData(String(assetID), offlineStorageAbbrev ? logutils.OFFLINE : logutils.ASSET, assetData => {
+                                                                logutils.getObjectData(String(assetID), offlineStorageAbbrev ? logutils.OFFLINE() : logutils.ASSET(), assetData => {
                                                                     console.log("checkpoint9")
 
                                                                     //console.log(assetnetworkportutils.networkConnectionsToArray(networkConnections))
