@@ -48,7 +48,7 @@ export default class DecommissionAssetPopup extends Component {
                         } else {
                             ToastsStore.error('Error decommissioning asset.')
                         }
-                    }, this.decommissionFunction)
+                    }, this.decommissionFunction, null, this.props.offlineStorage ? this.props.offlineStorage : null)
             }
         }
 

@@ -448,6 +448,8 @@ class AssetScreen extends Component {
                         decommissionIDFromParent={this.state.decommissionID}
                         decommissionModel={this.state.decommissionModel}
                         decommissionHostname={this.state.decommissionHostname}
+
+                        offlineStorage = {this.props.match.params.storageSiteAbbrev}
                     />
                 </Layer>
             )
