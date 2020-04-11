@@ -1,5 +1,7 @@
 import * as firebaseutils from "./firebaseutils";
 import * as assetutils from "./assetutils";
+import {offlinestorageRef} from "./firebaseutils";
+import {db} from "./firebaseutils";
 
 function getStorageSites(itemCount, callback, start = null) {
     let storageSites = [];
@@ -225,6 +227,29 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback){
     })
 }
 
+function moveAssetFromOfflineStorage(assetID, datacenter, rack, rackU, callback){
+    db.collectionGroup("offlineAssets").where("assetId", "==", String(assetID)).get().then(function (querySnapshot) {
+        if(querySnapshot.empty){
+            callback(null);
+        } else {
+            let data = querySnapshot.docs[0].data();
+            assetutils.addAsset(data.assetId, data.model, data.hostname, rack, rackU, data.owner, data.comment, datacenter, [], [], [],
+                data.variances["displayColor"], data.variances["memory"], data.variances["storage"], data.variances["cpu"], result => {
+                    if(!result){
+                        let parentDoc = querySnapshot.docs[0].ref.parent.parent;
+                        offlinestorageRef.doc(parentDoc.id).collection("offlineAssets").doc(String(assetID)).delete().then(function () {
+                            callback(true);
+                        }).catch(function () {
+                            callback(null);
+                        })
+                    } else {
+                        callback(null);
+                    }
+                })
+        }
+    })
+}
+
 export {
     getStorageSites,
     getAllStorageSiteNames,
@@ -234,5 +259,6 @@ export {
     deleteStorageSite,
     updateStorageSite,
     getInfoFromAbbrev,
-    moveAssetToOfflineStorage
+    moveAssetToOfflineStorage,
+    moveAssetFromOfflineStorage
 }

@@ -5,6 +5,7 @@ import * as datacenterutils from "../utils/datacenterutils";
 import * as assetutils from "../utils/assetutils";
 import theme from "../theme";
 import {ToastsContainer, ToastsStore} from "react-toasts";
+import * as formvalidationutils from "../utils/formvalidationutils";
 
 class MoveAssetForm extends React.Component {
     //if in offline storage => choose datacenter, rack, rack U
@@ -15,6 +16,9 @@ class MoveAssetForm extends React.Component {
             initialLoaded: false,
             storageSite: ""
         }
+
+        this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleChange = this.handleChange.bind(this);
     }
 
     componentDidMount() {
@@ -43,6 +47,32 @@ class MoveAssetForm extends React.Component {
         }
     }
 
+    handleSubmit(event) {
+        if (!/[A-Z]\d+/.test(this.state.rack)) {
+            //not a valid rack
+            ToastsStore.error("Invalid rack.");
+        } else if (!parseInt(this.state.rackU)) {
+            //invalid number
+            ToastsStore.error("Rack U must be a number.");
+        } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
+            ToastsStore.error("Rack U must be positive.");
+            //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
+        }
+        else {
+            offlinestorageutils.moveAssetFromOfflineStorage(this.props.assetID, this.state.datacenter, this.state.rack, this.state.rackU, result => {
+                if(result){
+                    this.props.success(true);
+                }
+            })
+        }
+    }
+
+    handleChange(event) {
+        this.setState({
+            [event.target.name]: event.target.value
+        });
+    }
+
     generateContent(){
         if(this.props.location === "rack"){
             return !this.state.initialLoaded ?
@@ -50,7 +80,7 @@ class MoveAssetForm extends React.Component {
                     <Menu label="Please wait..."/>
                 ) :
                 (
-                    <Select
+                    <Box><Select
                     placeholder="Select one..."
                     options={this.state.storageSiteNames}
                     value={this.state.storageSite}
@@ -62,7 +92,11 @@ class MoveAssetForm extends React.Component {
                                 ToastsStore.error("Error moving asset - please try again later.")
                             }
                         })
-                    }}/>
+                    }}/><Button
+                        margin="small"
+                        label="Cancel"
+                        onClick={() => this.props.cancelCallback()}
+                    /></Box>
             );
         } else {
             return (
@@ -132,6 +166,19 @@ class MoveAssetForm extends React.Component {
                         <TextInput name="rackU" placeholder="eg. 9" onChange={this.handleChange}
                                    value={this.state.rackU} required={true} />
                     </FormField>
+                    <Box direction={"row"}>
+
+                        <Button
+                            margin="small"
+                            type="submit"
+                            primary label="Submit"
+                        />
+                        <Button
+                            margin="small"
+                            label="Cancel"
+                            onClick={() => this.props.cancelCallback()}
+                        />
+                    </Box>
                 </Form>
             )
         }

@@ -496,7 +496,7 @@ class AssetScreen extends Component {
                        onClickOutside={() => this.setState({popupType: undefined})}>
 
                     <MoveAssetForm location={this.state.moveLocation} assetID={this.state.moveID} currentLocation={this.state.moveCurrentLocation}
-                    success={this.handleCancelRefreshPopupChange}/>
+                    success={this.handleCancelRefreshPopupChange} cancelCallback={this.handleCancelPopupChange}/>
                 </Layer>
             )
         } else if (popupType === 'Filters') {
