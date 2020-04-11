@@ -658,7 +658,7 @@ export default class EditAssetForm extends Component {
 
                                 </AccordionPanel>
 
-                                (!this.props.offlineStorage && <AccordionPanel label="Network Port Connections">
+                                {!this.props.offlineStorage && <AccordionPanel label="Network Port Connections">
                                     <AssetNetworkPortsForm
 
                                         model={this.state.model}
@@ -683,7 +683,7 @@ export default class EditAssetForm extends Component {
                                           margin={{ horizontal: 'medium', vertical: 'small' }}
                                           label="Validate Connections" /> */}
 
-                                </AccordionPanel>)
+                                </AccordionPanel>}
 
                             </Accordion>
                             :
