@@ -84,12 +84,13 @@ function getAssetAt(start, callback, field = null, direction = null, selected = 
     })
 }
 
-function getAllAssetIDs(callback, field = null, direction = null) {
+function getAllAssetIDs(callback, field = null, direction = null, storageSite=null) {
     let query
+    let ref = storageSite ? offlinestorageRef.doc(storageSite).collection("offlineAssets") : assetRef
     if (field && direction !== null) {
-        query = direction ? assetRef.orderBy(field) : assetRef.orderBy(field, "desc")
+        query = direction ? ref.orderBy(field) : ref.orderBy(field, "desc")
     } else {
-        query = assetRef
+        query = ref
     }
     let assetIDs = []
     let count = 0

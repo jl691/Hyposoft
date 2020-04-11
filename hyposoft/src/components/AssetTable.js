@@ -221,7 +221,7 @@ export default class AssetTable extends Component {
     restoreDefault() {
         for (var index = 0; index < this.defaultAssets.length; index++) {
             this.defaultAssets[index].checked = this.state.selectedAssets.includes(this.defaultAssets[index].asset_id)
-        } 
+        }
         this.setState({assets: this.defaultAssets});
     }
 
@@ -374,7 +374,7 @@ export default class AssetTable extends Component {
             this.totalAssetIDs = result
             // need to re-render
             this.setState(oldState => ({...oldState}))
-        }, this.state.sortField ? this.state.sortField : null, this.state.sortField ? this.state.sortAscending : null)
+        }, this.state.sortField ? this.state.sortField : null, this.state.sortField ? this.state.sortAscending : null, this.props.storageSiteID)
     }
 
     generateColumns(){
