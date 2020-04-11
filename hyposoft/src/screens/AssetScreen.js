@@ -431,6 +431,8 @@ class AssetScreen extends Component {
                         deleteModel={this.state.deleteModel}
                         deleteHostname={this.state.deleteHostname}
 
+                        offlineStorage = {this.props.match.params.storageSiteAbbrev}
+
                     />
                 </Layer>
             )
