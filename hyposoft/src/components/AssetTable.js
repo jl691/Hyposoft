@@ -78,7 +78,7 @@ export default class AssetTable extends Component {
                 this.startAfter = newStartAfter;
                 this.setState({assets: assetdb, initialLoaded: true})
             }
-        }, field, newSort, this.state.selectedAssets)
+        }, field, newSort, this.state.selectedAssets, this.props.storageSiteID)
     }
 
     componentDidMount() {
