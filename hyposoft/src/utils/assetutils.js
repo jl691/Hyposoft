@@ -863,7 +863,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                             //get instance id
                                                             console.log(powerConnections);
                                                             replaceAssetRack(oldResult, result, oldPowerConnections, powerConnections, assetID, changePlanID, result => {
-                                                                logutils.getObjectData(String(assetID), logutils.ASSET(), assetData => {
+                                                                logutils.getObjectData(String(assetID), offlineStorageAbbrev ? logutils.OFFLINE() : logutils.ASSET(), assetData => {
                                                                     console.log("checkpoint9")
 
                                                                     //console.log(assetnetworkportutils.networkConnectionsToArray(networkConnections))
@@ -967,15 +967,20 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                     if (offlineStorageAbbrev) {
                                                                                                         console.log("checkpoint15")
                                                                                                         offlinestorageutils.getInfoFromAbbrev(offlineStorageAbbrev, (offlineName, offlineID) => {
-                                                                                                            console.log(offlineID)
-                                                                                                            offlinestorageRef.doc(offlineID).collection("offlineAssets").doc(String(assetID)).update(assetObject).then(function () {
-                                                                                                                console.log("checkpoint16")
-                                                                                                                console.log("Updated model successfully")
-                                                                                                                // log needs to be added before calling back for DetailedAssetScreen
-                                                                                                                logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null,String(assetID)))
-                                                                                                            }).catch(function (error) {
-                                                                                                                callback(error);
-                                                                                                            })
+                                                                                                            console.log(offlineName, offlineID)
+                                                                                                            if(offlineName){
+                                                                                                                console.log(offlineID)
+                                                                                                                offlinestorageRef.doc(offlineID).collection("offlineAssets").doc(String(assetID)).update(assetObject).then(function () {
+                                                                                                                    console.log("checkpoint16")
+                                                                                                                    console.log("Updated model successfully")
+                                                                                                                    // log needs to be added before calling back for DetailedAssetScreen
+                                                                                                                    logutils.addLog(String(assetID), logutils.OFFLINE(), logutils.MODIFY(), assetData, () => callback(null,String(assetID)))
+                                                                                                                }).catch(function (error) {
+                                                                                                                    callback(error);
+                                                                                                                })
+                                                                                                            } else {
+                                                                                                                callback("Error getting offline storage site info.")
+                                                                                                            }
                                                                                                         })
                                                                                                     } else {
                                                                                                         assetRef.doc(String(assetID)).update(assetObject).then(function () {

@@ -153,6 +153,7 @@ function getInfoFromAbbrev(abbrev, callback){
         if(querySnapshot.empty){
             callback(null);
         } else {
+            console.log(querySnapshot.docs[0].data().name, querySnapshot.docs[0].id)
             callback(querySnapshot.docs[0].data().name, querySnapshot.docs[0].id)
         }
     }).catch(function () {
