@@ -215,7 +215,7 @@ export default class AssetTable extends Component {
                 this.startAfter = newStartAfter;
                 this.setState({assets: assetdb, initialLoaded: true})
             }
-        }, null, null, this.state.selectedAssets)
+        }, null, null, this.state.selectedAssets, this.props.storageSiteID)
     }
 
     restoreDefault() {
