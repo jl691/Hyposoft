@@ -54,19 +54,33 @@ class DetailedChangeScreen extends React.Component {
         })
     }
 
+    generateVarianceTableLabel() {
+        let thisState = this.state.change.changes.variances.old
+        console.log(...Object.keys(thisState))
+        return Object.keys(thisState).map((field) => (
+
+
+            // <TableRow>
+            <TableCell scope="row">
+                {field}
+            </TableCell>
+            // </TableRow>
+
+
+        ))
+
+    }
+
     generateVariancesRow(old) {
         //see if table generates normally
         let thisState = old ? this.state.change.changes.variances.old : this.state.change.changes.variances.new;
 
-        if (thisState && Object.keys(thisState).length) {
+        if (thisState && thisState.displayColor !== "" || thisState.cpu !== "" || thisState.memory !== "" || thisState.storage !== "") {
             return Object.keys(thisState).map((field) => (
 
-                this.state.change.changes.variances[field] !== "" &&
+                thisState[field] !== "" &&
 
                 <TableRow>
-                    <TableCell scope="row">
-                        {field}
-                    </TableCell>
                     <TableCell>{thisState[field]}</TableCell>
                 </TableRow>
             ))
@@ -74,7 +88,7 @@ class DetailedChangeScreen extends React.Component {
             return (
                 <TableRow>
                     <TableCell scope="row">
-                        <strong>No model variances for this asset.</strong>
+                        <strong>No model variances.</strong>
                     </TableCell>
                 </TableRow>
             )
@@ -263,7 +277,7 @@ class DetailedChangeScreen extends React.Component {
                 } else if (change === "macAddresses") {
                     let oldExists = Boolean(this.state.change.changes.macAddresses.old && Object.keys(this.state.change.changes.macAddresses.old).length);
                     let newExists = Boolean(this.state.change.changes.macAddresses.new && Object.keys(this.state.change.changes.macAddresses.new).length);
-            
+
                     return (
                         <TableRow>
                             <TableCell scope={"row"}>
@@ -310,48 +324,33 @@ class DetailedChangeScreen extends React.Component {
                     let oldExists = Boolean(this.state.change.changes.variances.old && Object.keys(this.state.change.changes.variances.old).length);
                     let newExists = Boolean(this.state.change.changes.variances.new && Object.keys(this.state.change.changes.variances.new).length);
 
-                    return (
-                        <TableRow>
-                            <TableCell scope={"row"}>
-                                Model Variances
+
+                    let getFields = this.state.change.changes.variances.new
+                    let thisState = this.state.change.changes.variances
+
+                    if (getFields && Object.keys(getFields).length) {
+                        return Object.keys(getFields).map((field) => (
+
+                            <TableRow>
+                                <TableCell scope={"row"}>
+                                    {field}
+                                </TableCell>
+                                <TableCell style={{ backgroundColor: "#ff4040", color: "#ffffff" }}>
+                                    {/* {this.state.change.changes.variances.displayColor["old"]} */}
+                                    {thisState['old'][field]}
+                       
                             </TableCell>
-                            <TableCell style={{ backgroundColor: "#ff4040", color: "#ffffff" }}>
-                                {oldExists && <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableCell scope="col" border="bottom">
-                                                <strong>Model Field</strong>
-                                            </TableCell>
-                                            <TableCell scope="col" border="bottom">
-                                                <strong>Modified</strong>
-                                            </TableCell>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {this.generateVariancesRow(true)}
-                                        {/* {this.generateMACRow(true)} */}
-                                    </TableBody>
-                                </Table>}
+                                <TableCell style={{ backgroundColor: "#00c781" }}>
+                                    {/* {this.state.change.changes[change]["new"]} */}
+                                    {thisState['new'][field]}
+                              
                             </TableCell>
-                            <TableCell style={{ backgroundColor: "#00c781" }}>
-                                {newExists && <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableCell scope="col" border="bottom">
-                                                <strong>Model Field</strong>
-                                            </TableCell>
-                                            <TableCell scope="col" border="bottom">
-                                                <strong>Modified</strong>
-                                            </TableCell>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {this.generateVariancesRow(false)}
-                                    </TableBody>
-                                </Table>}
-                            </TableCell>
-                        </TableRow>
-                    )
+                            </TableRow>
+
+
+                        ))
+                    }
+
 
                 } else {
                     return (<TableRow>
