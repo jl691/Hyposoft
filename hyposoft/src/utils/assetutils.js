@@ -1,4 +1,14 @@
-import { db, assetRef, racksRef, modelsRef, usersRef, firebase, datacentersRef, changeplansRef, offlinestorageRef } from './firebaseutils'
+import {
+    db,
+    assetRef,
+    racksRef,
+    modelsRef,
+    usersRef,
+    firebase,
+    datacentersRef,
+    changeplansRef,
+    offlinestorageRef
+} from './firebaseutils'
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
 import * as userutils from './userutils'
@@ -17,7 +27,7 @@ const index = client.initIndex('assets')
 
 function getAsset(callback, field = null, direction = null, selected = null, storageSite = null) {
     console.log(storageSite)
-    let query = storageSite ? ((field && direction !== null) ? (direction ? offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).orderBy(field) :  offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).orderBy(field, "desc")) : offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25)) : ((field && direction !== null) ? (direction ? assetRef.limit(25).orderBy(field) : assetRef.limit(25).orderBy(field, "desc")) : assetRef.limit(25));
+    let query = storageSite ? ((field && direction !== null) ? (direction ? offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).orderBy(field) : offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).orderBy(field, "desc")) : offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25)) : ((field && direction !== null) ? (direction ? assetRef.limit(25).orderBy(field) : assetRef.limit(25).orderBy(field, "desc")) : assetRef.limit(25));
     let assets = [];
     let count = 0;
 
@@ -54,13 +64,14 @@ function getAsset(callback, field = null, direction = null, selected = null, sto
 }
 
 
-function getAssetAt(start, callback, field = null, direction = null, selected = null, selectAll = null) {
+function getAssetAt(start, callback, field = null, direction = null, selected = null, selectAll = null, storageSite = null) {
 
     let query;
+    let ref = storageSite ? offlinestorageRef.doc(storageSite).collection("offlineAssets") : assetRef
     if (field && direction !== null) {
-        query = direction ? assetRef.limit(25).orderBy(field).startAfter(start) : assetRef.limit(25).orderBy(field, "desc").startAfter(start);
+        query = direction ? ref.limit(25).orderBy(field).startAfter(start) : ref.limit(25).orderBy(field, "desc").startAfter(start);
     } else {
-        query = assetRef.limit(25).startAfter(start);
+        query = ref.limit(25).startAfter(start);
     }
 
     let assets = [];
@@ -84,12 +95,13 @@ function getAssetAt(start, callback, field = null, direction = null, selected = 
     })
 }
 
-function getAllAssetIDs(callback, field = null, direction = null) {
+function getAllAssetIDs(callback, field = null, direction = null, storageSite=null) {
     let query
+    let ref = storageSite ? offlinestorageRef.doc(storageSite).collection("offlineAssets") : assetRef
     if (field && direction !== null) {
-        query = direction ? assetRef.orderBy(field) : assetRef.orderBy(field, "desc")
+        query = direction ? ref.orderBy(field) : ref.orderBy(field, "desc")
     } else {
-        query = assetRef
+        query = ref
     }
     let assetIDs = []
     let count = 0
@@ -119,20 +131,18 @@ function validateAssetVariances(displayColor, cpu, memory, storage, callback) {
 
         callback('Memory should be a non-negative integer less than 1000')
     }
-    // else if (memory.trim() !== '') {
-    //     memory = parseInt(memory)
+        // else if (memory.trim() !== '') {
+        //     memory = parseInt(memory)
     // }
     else {
         if (storage.trim() !== '' && storage.trim().length > 50) {
             callback('Storage should be less than 50 characters long')
 
-        }
-        else {
+        } else {
 
             if (cpu.trim() !== '' && cpu.trim().length > 50) {
                 callback("CPU should be less than 50 characters long")
-            }
-            else {
+            } else {
                 callback(null)
             }
         }
@@ -150,8 +160,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
             validateAssetVariances(displayColor, cpu, memory, storage, errorMsg => {
                 if (errorMsg) {
                     callback(errorMsg)
-                }
-                else {
+                } else {
                     //everything else....goes in here
                     //     }
 
@@ -331,8 +340,8 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                             }
 
                                                                         }).catch(errMessage => {
-                                                                            callback(errMessage)
-                                                                        })
+                                                                        callback(errMessage)
+                                                                    })
 
                                                                 } else {
 
@@ -415,46 +424,46 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
                                                                             assetRef.doc(newID)
                                                                                 .set(assetObject).then(function (docRef) {
-                                                                                    console.log("set the itme")
+                                                                                console.log("set the itme")
 
-                                                                                    assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, newID);
+                                                                                assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, newID);
 
-                                                                                    if (powerConnections.length != 0) {
-                                                                                        racksRef.doc(String(rackID)).get().then(doc => {
-                                                                                            racksRef.doc(String(rackID)).update({
-                                                                                                assets: chassis ? doc.data().assets : firebase.firestore.FieldValue.arrayUnion(newID),
-                                                                                                powerPorts: chassis ? doc.data().powerPorts : firebase.firestore.FieldValue.arrayUnion(...powerConnections.map(obj => ({
-                                                                                                    ...obj,
-                                                                                                    assetID: newID
-                                                                                                })))
-                                                                                            }).then(function () {
+                                                                                if (powerConnections.length != 0) {
+                                                                                    racksRef.doc(String(rackID)).get().then(doc => {
+                                                                                        racksRef.doc(String(rackID)).update({
+                                                                                            assets: chassis ? doc.data().assets : firebase.firestore.FieldValue.arrayUnion(newID),
+                                                                                            powerPorts: chassis ? doc.data().powerPorts : firebase.firestore.FieldValue.arrayUnion(...powerConnections.map(obj => ({
+                                                                                                ...obj,
+                                                                                                assetID: newID
+                                                                                            })))
+                                                                                        }).then(function () {
 
-                                                                                                console.log("Document successfully updated in racks");
-                                                                                                logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
-                                                                                                callback(null, newID);
-                                                                                            })
+                                                                                            console.log("Document successfully updated in racks");
+                                                                                            logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                                            callback(null, newID);
                                                                                         })
+                                                                                    })
 
 
-                                                                                    } else {
-                                                                                        racksRef.doc(String(rackID)).get().then(doc => {
-                                                                                            racksRef.doc(String(rackID)).update({
-                                                                                                assets: chassis ? doc.data().assets : firebase.firestore.FieldValue.arrayUnion(newID)
-                                                                                            }).then(function () {
+                                                                                } else {
+                                                                                    racksRef.doc(String(rackID)).get().then(doc => {
+                                                                                        racksRef.doc(String(rackID)).update({
+                                                                                            assets: chassis ? doc.data().assets : firebase.firestore.FieldValue.arrayUnion(newID)
+                                                                                        }).then(function () {
 
-                                                                                                console.log("Document successfully updated in racks");
-                                                                                                logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
-                                                                                                callback(null, newID);
-                                                                                            })
+                                                                                            console.log("Document successfully updated in racks");
+                                                                                            logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                                            callback(null, newID);
                                                                                         })
+                                                                                    })
 
 
-                                                                                    }
+                                                                                }
 
-                                                                                }).catch(function (error) {
-                                                                                    // callback("Error");
-                                                                                    console.log(error)
-                                                                                })
+                                                                            }).catch(function (error) {
+                                                                                // callback("Error");
+                                                                                console.log(error)
+                                                                            })
                                                                         } else {
                                                                             delete assetObject["assetId"];
                                                                             //duplicate this!!
@@ -501,25 +510,26 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
             })
         }).catch(errMessage => {
-            callback(errMessage)
-            console.log(errMessage)
+        callback(errMessage)
+        console.log(errMessage)
 
-        })
+    })
 }
 
 // rackAsc should be a boolean corresponding to true if rack is ascending
 // rackUAsc should be a boolean corresponding to true if rackU is ascending
-function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback, selected = null) {
+function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback, selected = null, offlineStorage = null) {
     var vendorArray = []
-    var query = assetRef
+    var query;
+    let ref = offlineStorage ? offlinestorageRef.doc(offlineStorage).collection("offlineAssets") : assetRef;
     if (!rackAsc && !rackUAsc) {
-        query = assetRef.orderBy("rackRow", "desc").orderBy("rackNum", "desc").orderBy("rackU", "desc")
+        query = ref.orderBy("rackRow", "desc").orderBy("rackNum", "desc").orderBy("rackU", "desc")
     } else if (rackAsc && !rackUAsc) {
-        query = assetRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU", "desc")
+        query = ref.orderBy("rackRow").orderBy("rackNum").orderBy("rackU", "desc")
     } else if (!rackAsc && rackUAsc) {
-        query = assetRef.orderBy("rackRow", "desc").orderBy("rackNum", "desc").orderBy("rackU")
+        query = ref.orderBy("rackRow", "desc").orderBy("rackNum", "desc").orderBy("rackU")
     } else {
-        query = assetRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU")
+        query = ref.orderBy("rackRow").orderBy("rackNum").orderBy("rackU")
     }
     query.get().then(querySnapshot => {
         let count = 0;
@@ -594,7 +604,7 @@ function sortAssetsByRackAndRackUFilter(rackAsc, rackUAsc, datacenter, rowStart,
 // The echo param was added by Anshu and will be passed back via callback to the import functions as-is
 // The param does NOT affect this function at all
 function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id = null, offlineStorage = null, chassis = null, echo = -1) {
-    if(offlineStorage){
+    if (offlineStorage) {
         callback(null);
     } else {
         let splitRackArray = assetRack.split(/(\d+)/).filter(Boolean)
@@ -613,7 +623,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                             console.log(model)
                             modelutils.getModelByModelname(model, doc => {
                                 //doc.data().height refers to model height
-                                if (rackHeight+1 >= parseInt(chassis ? chassis.slot : rackU) + doc.data().height) {
+                                if (rackHeight + 1 >= parseInt(chassis ? chassis.slot : rackU) + doc.data().height) {
                                     //We know the instance will fit on the rack, but now does it conflict with anything?
 
                                     rackutils.checkAssetFits(chassis ? chassis.slot : rackU, doc.data().height, rackID, function (status) {
@@ -636,7 +646,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                                                         if (echo < 0) {
                                                             callback(errMessage);
                                                         } else {
-                                                            callback({ error: errMessage, echo: echo })
+                                                            callback({error: errMessage, echo: echo})
                                                         }
                                                     }
                                                 });
@@ -645,7 +655,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                                             if (echo < 0) {
                                                 callback(null, doc.data().modelNumber, doc.data().vendor, rackID)
                                             } else {
-                                                callback({ error: null, echo: echo })
+                                                callback({error: null, echo: echo})
                                             }
 
                                         }
@@ -655,7 +665,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                                     if (echo < 0) {
                                         callback(errMessage);
                                     } else {
-                                        callback({ error: errMessage, echo: echo })
+                                        callback({error: errMessage, echo: echo})
                                     }
 
                                 }
@@ -665,7 +675,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                             if (echo < 0) {
                                 callback(errMessage2)
                             } else {
-                                callback({ error: errMessage2, echo: echo })
+                                callback({error: errMessage2, echo: echo})
                             }
                         }
                     })
@@ -674,7 +684,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                     if (echo < 0) {
                         callback(errMessage);
                     } else {
-                        callback({ error: errMessage, echo: echo })
+                        callback({error: errMessage, echo: echo})
                     }
                 }
             })
@@ -683,23 +693,28 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
 
 }
 
-function deleteAsset(assetID, callback, isDecommission = false) {
+function deleteAsset(assetID, callback, isDecommission = false, offlineStorage = null) {
 
-    assetRef.doc(assetID).get().then(function (doc) {
+    let query = offlineStorage ? db.collectionGroup("offlineAssets").where("assetId", "==", String(assetID)) : assetRef.doc(assetID);
+
+    query.get().then(function (snap) {
+        console.log("checkpoint 1", snap, assetID)
+        let doc = offlineStorage ? snap.docs[0] : snap;
 
         //This is so I can go into racks collection and delete instances associated with the rack
         if (doc.exists) {
-            let assetRack = doc.data().rack
-            let splitRackArray = assetRack.split(/(\d+)/).filter(Boolean)
-            let rackRow = splitRackArray[0]
-            let rackNum = parseInt(splitRackArray[1])
-            let datacenter = doc.data().datacenter;
-
-            let rackID = null;
-
+            let rackID, rackRow, rackNum, datacenter;
+            if(!offlineStorage){
+                let assetRack = doc.data().rack
+                let splitRackArray = assetRack.split(/(\d+)/).filter(Boolean)
+                rackRow = splitRackArray[0]
+                rackNum = parseInt(splitRackArray[1])
+                datacenter = doc.data().datacenter;
+            }
 
             rackutils.getRackID(rackRow, rackNum, datacenter, id => {
                 if (id) {
+                    console.log("checkpoint 2")
                     rackID = id
                     console.log(rackID)
 
@@ -708,13 +723,12 @@ function deleteAsset(assetID, callback, isDecommission = false) {
                     let deleteAssetConnections = docData.powerConnections
                     console.log(deleteAssetConnections)
 
-                    if (deleteAssetConnections.length != 0) {//
+                    if (deleteAssetConnections.length != 0 && !offlineStorage) {//
                         console.log("THere are asset connections to delete")
                         //need to get the datacenter, rack that the asset it on
                         racksRef.doc(String(rackID)).update({
                             //Can you do this??
                             powerPorts: firebase.firestore.FieldValue.arrayRemove(...deleteAssetConnections)
-
                         }).then(function () {
                             //THIS RETURNS A NULL
                             //so if there are network connections, won't ever delete the asset
@@ -724,39 +738,7 @@ function deleteAsset(assetID, callback, isDecommission = false) {
                                     assetRef.doc(assetID).delete().then(function () {
                                         racksRef.doc(String(rackID)).update({
                                             assets: firebase.firestore.FieldValue.arrayRemove(assetID)
-
-                                        })
-                                            .then(function () {
-                                                console.log("Document successfully deleted!");
-                                                if (!isDecommission) {
-                                                    logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
-                                                }
-                                                // index.deleteObject(assetID)
-                                                callback(assetID);
-                                            })
-                                    })
-                                        .catch(function (error) {
-                                            console.log(error)
-                                            callback(null);
-                                        })
-                                } else {
-                                    callback(null);
-                                }
-                            })
-                        })
-
-                    } else {
-                        //MY b, duplicated code again
-                        //There were no powerConnections made in the asset in the first place
-
-                        assetnetworkportutils.symmetricNetworkConnectionsDelete(assetID, result => {
-                            if (result) {
-                                assetRef.doc(assetID).delete().then(function () {
-                                    racksRef.doc(String(rackID)).update({
-                                        assets: firebase.firestore.FieldValue.arrayRemove(assetID)
-
-                                    })
-                                        .then(function () {
+                                        }).then(function () {
                                             console.log("Document successfully deleted!");
                                             if (!isDecommission) {
                                                 logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
@@ -764,25 +746,65 @@ function deleteAsset(assetID, callback, isDecommission = false) {
                                             // index.deleteObject(assetID)
                                             callback(assetID);
                                         })
-                                })
-                                    .catch(function (error) {
+                                    }).catch(function (error) {
                                         console.log(error)
                                         callback(null);
                                     })
+                                } else {
+                                    callback(null);
+                                }
+                            })
+                        })
+                    } else {
+                        //MY b, duplicated code again
+                        //There were no powerConnections made in the asset in the first place
+                        assetnetworkportutils.symmetricNetworkConnectionsDelete(assetID, result => {
+                            if (result) {
+                                console.log("checkpoint 3")
+                                if(offlineStorage){
+                                    offlinestorageutils.getInfoFromAbbrev(offlineStorage, (offlineName, offlineID) => {
+                                        if(offlineName){
+                                            offlinestorageRef.doc(offlineID).collection("offlineAssets").doc(assetID).delete().then(function () {
+                                                console.log("Document successfully deleted!");
+                                                if (!isDecommission) {
+                                                    logutils.addLog(assetID, logutils.OFFLINE(), logutils.DELETE(), docData)
+                                                }
+                                                // index.deleteObject(assetID)
+                                                callback(assetID);
+                                            })
+                                        } else {
+                                            callback(null);
+                                        }
+                                    })
+                                } else {
+                                    assetRef.doc(assetID).delete().then(function () {
+                                        racksRef.doc(String(rackID)).update({
+                                            assets: firebase.firestore.FieldValue.arrayRemove(assetID)
+                                        }).then(function () {
+                                            console.log("Document successfully deleted!");
+                                            if (!isDecommission) {
+                                                logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
+                                            }
+                                            // index.deleteObject(assetID)
+                                            callback(assetID);
+                                        })
+                                    }).catch(function (error) {
+                                        console.log(error)
+                                        callback(null);
+                                    })
+                                }
                             } else {
                                 callback(null);
                             }
-                        });
+                        }, offlineStorage);
                     }
-
-
                 } else {
                     console.log("no rack for this letter and number")
                     callback(null)
                 }
-            })
-
+            }, offlineStorage)
         } else {
+            console.log("doc doesnt exist")
             callback(null);
         }
     })
@@ -792,247 +814,251 @@ function deleteAsset(assetID, callback, isDecommission = false) {
 //hostname updating works, owner updating works, conflicts, etc.
 
 function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
-    networkConnectionsArray, deletedNCThisPort, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null, chassis = null, offlineStorageAbbrev = null) {
+                     networkConnectionsArray, deletedNCThisPort, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null, chassis = null, offlineStorageAbbrev = null) {
     console.log(offlineStorageAbbrev)
     validateAssetForm(assetID, model, hostname, rack, rackU, owner, datacenter, offlineStorageAbbrev).then(
         _ => {
             console.log("checkpoint", datacenter)
-          validateAssetVariances(displayColor, cpu, memory, storage, errorMsg => {
+            validateAssetVariances(displayColor, cpu, memory, storage, errorMsg => {
                 if (errorMsg) {
                     callback(errorMsg)
-                }
-                else {
-            datacenterutils.getDataFromName(datacenter, (datacenterID, datacenterAbbrev) => {
-                if (datacenterID) {
-                    console.log("checkpoint2")
-                    modelutils.getModelByModelname(model, doc => {
-                        if (!doc) {
-                            var errMessage = "Model does not exist"
-                            callback(errMessage)
-                        } else {
-                            console.log("checkpoint3", doc)
-                            if (userutils.isLoggedInUserAdmin() || (!offlineStorageAbbrev && userutils.doesLoggedInUserHaveAssetPerm(datacenterAbbrev)) || userutils.doesLoggedInUserHaveAssetPerm(null)) {
-                                assetFitsOnRack(rack, rackU, model, datacenter, stat => {
-                                    //returned an error message
-                                    if (stat) {
+                } else {
+                    datacenterutils.getDataFromName(datacenter, (datacenterID, datacenterAbbrev) => {
+                        if (datacenterID) {
+                            console.log("checkpoint2")
+                            modelutils.getModelByModelname(model, doc => {
+                                if (!doc) {
+                                    var errMessage = "Model does not exist"
+                                    callback(errMessage)
+                                } else {
+                                    console.log("checkpoint3", doc)
+                                    if (userutils.isLoggedInUserAdmin() || (!offlineStorageAbbrev && userutils.doesLoggedInUserHaveAssetPerm(datacenterAbbrev)) || userutils.doesLoggedInUserHaveAssetPerm(null)) {
+                                        assetFitsOnRack(rack, rackU, model, datacenter, stat => {
+                                            //returned an error message
+                                            if (stat) {
 
-                                        var errMessage = stat
-                                        //need to pass up errormessage if model updated and instance no longer fits
-                                        callback(errMessage)
-                                    }
-                                    //returns null if no issues/conflicts.
-                                    else {
-                                        console.log("No conflictss updates")
-                                        let splitRackArray = offlineStorageAbbrev ? null : rack.split(/(\d+)/).filter(Boolean)
-                                        let rackRow = offlineStorageAbbrev ? null : splitRackArray[0]
-                                        let rackNum = offlineStorageAbbrev ? null : parseInt(splitRackArray[1])
-                                        //get new rack document
-                                        rackutils.getRackID(rackRow, rackNum, datacenter, result => {
-                                            if (result) {
-                                                console.log("checkpoint4")
-                                                //get old rack document
-                                                let query = offlineStorageAbbrev ? db.collectionGroup("offlineAssets").where("assetId", "==", assetID) : assetRef.doc(assetID);
-
-                                                query.get().then(snapShot => {
-                                                    console.log("checkpoint5")
-                                                    let docSnap = offlineStorageAbbrev ? snapShot.docs[0] : snapShot;
-                                                    console.log(assetID, docSnap)
-                                                    let oldRack = offlineStorageAbbrev ? null : docSnap.data().rack;
-                                                    let oldSplitRackArray = offlineStorageAbbrev ? null : oldRack.split(/(\d+)/).filter(Boolean)
-                                                    let oldRackRow = offlineStorageAbbrev ? null : oldSplitRackArray[0]
-                                                    let oldRackNum = offlineStorageAbbrev ? null : parseInt(oldSplitRackArray[1])
-                                                    let oldDatacenter = offlineStorageAbbrev ? null : docSnap.data().datacenter
-                                                    let oldPowerConnections = docSnap.data().powerConnections;
-                                                    let oldNetworkConnections = docSnap.data().networkConnections;
-                                                    var modelStuff = []
-                                                    modelutils.getVendorAndNumberFromModel(model, name => modelStuff = name)
-                                                    var rackId = ''
-                                                    console.log("checkpoint6")
-                                                    if(!offlineStorageAbbrev){
-                                                        rackutils.getRackID(rack.slice(0, 1), rack.slice(1, rack.length), datacenter, name => rackId = name)
-                                                    }
-                                                    var modelId = ''
-                                                    modelutils.getModelIdFromModelName(model, name => modelId = name)
-                                                    rackutils.getRackID(oldRackRow, oldRackNum, oldDatacenter, oldResult => {
-                                                        console.log("checkpoint7")
-                                                        console.log(oldRackRow, oldRackNum, oldDatacenter, oldResult)
-                                                        if (oldResult) {
-                                                            console.log("up in this bitch")
-                                                            console.log("checkpoint8")
-                                                            //get new rack document
-                                                            //get instance id
-                                                            console.log(powerConnections);
-                                                            replaceAssetRack(oldResult, result, oldPowerConnections, powerConnections, assetID, changePlanID, result => {
-                                                                logutils.getObjectData(String(assetID), logutils.ASSET(), assetData => {
-                                                                    console.log("checkpoint9")
-
-                                                                    //console.log(assetnetworkportutils.networkConnectionsToArray(networkConnections))
-                                                                    //the reason why we have networkConnections to array is because validateNetworkConnections expects an array. networkConnections is a JSON object because we got in from the db, and to send connectiosn to the db, it must be transformed into a JSON obj first
-
-                                                                    assetnetworkportutils.validateNetworkConnections(model, networkConnectionsArray, ncStatus => {
-                                                                        assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray, mapResult => {
-                                                                            console.log("checkpoint10")
-                                                                            let networkConnections = mapResult;
-
-                                                                            //console.log("In updateAsset: " + powerConnectionsInput)
-                                                                            // let powerConnections = assetpowerportutils.formatPowerConnections(powerConnectionsInput)
-                                                                            console.log(ncStatus)
-
-                                                                            if (ncStatus) {
-                                                                                console.log("Couldn't hang")
-                                                                                callback(ncStatus)
-                                                                            } else {
-                                                                                console.log("checkpoint11")
-
-                                                                                console.log(powerConnections)
-                                                                                assetpowerportutils.validatePowerConnections(datacenter, rack, rackU, powerConnections, model, ppStatus => {
-                                                                                    console.log("checkpoint12")
-                                                                                    console.log(ppStatus)
-                                                                                    if (ppStatus) {
-                                                                                        console.log("breakpoint")
-                                                                                        callback(ppStatus)
-                                                                                    } else {
-                                                                                        let assetObject = {
-                                                                                            assetId: assetID,
-                                                                                            model: model,
-                                                                                            modelId: modelId,
-                                                                                            vendor: modelStuff[0],
-                                                                                            modelNumber: modelStuff[1],
-                                                                                            hostname: hostname,
-                                                                                            owner: owner,
-                                                                                            comment: comment,
-                                                                                            rackRow: rackRow,
-                                                                                            rackNum: rackNum,
-                                                                                            macAddresses,
-                                                                                            networkConnections,
-                                                                                            powerConnections,
-                                                                                            //these are the fields in the document to update
-                                                                                        };
-                                                                                        if (!offlineStorageAbbrev) {
-                                                                                            assetObject = {
-                                                                                                ...assetObject,
-                                                                                                rack: rack,
-                                                                                                rackU: rackU,
-                                                                                                rackID: rackId,
-                                                                                                datacenter: datacenter,
-                                                                                                datacenterID: datacenterID,
-                                                                                                datacenterAbbrev: datacenterAbbrev
-                                                                                            }
-                                                                                        }
-
-                                                                                        if (!changePlanID) {
-                                                                                            console.log("checkpoint13")
-                                                                                            assetnetworkportutils.symmetricNetworkConnectionsDelete(assetID, deleteResult => {
-                                                                                                if (deleteResult) {
-                                                                                                    assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, assetID);
-                                                                                                    console.log("checkpoint14")
-                                                                                                    let suffixes_list = []
-                                                                                                    let _model = assetObject.model
-
-                                                                                                    while (_model.length > 1) {
-                                                                                                        _model = _model.substr(1)
-                                                                                                        suffixes_list.push(_model)
-                                                                                                    }
-
-                                                                                                    let _hostname = assetObject.hostname
-
-                                                                                                    while (_hostname.length > 1) {
-                                                                                                        _hostname = _hostname.substr(1)
-                                                                                                        suffixes_list.push(_hostname)
-                                                                                                    }
-
-                                                                                                    if (!offlineStorageAbbrev) {
-                                                                                                        let _datacenter = assetObject.datacenter
-
-                                                                                                        while (_datacenter.length > 1) {
-                                                                                                            _datacenter = _datacenter.substr(1)
-                                                                                                            suffixes_list.push(_datacenter)
-                                                                                                        }
-
-                                                                                                        let _datacenterAbbrev = assetObject.datacenterAbbrev
-
-                                                                                                        while (_datacenterAbbrev.length > 1) {
-                                                                                                            _datacenterAbbrev = _datacenterAbbrev.substr(1)
-                                                                                                            suffixes_list.push(_datacenterAbbrev)
-                                                                                                        }
-                                                                                                    }
-                                                                                                    let _owner = assetObject.owner
-
-
-                                                                                                    // index.saveObject({
-                                                                                                    //     ...assetObject,
-                                                                                                    //     objectID: assetID,
-                                                                                                    //     suffixes: suffixes_list.join(' ')
-                                                                                                    // })
-                                                                                                    if (offlineStorageAbbrev) {
-                                                                                                        console.log("checkpoint15")
-                                                                                                        offlinestorageutils.getInfoFromAbbrev(offlineStorageAbbrev, (offlineName, offlineID) => {
-                                                                                                            console.log(offlineID)
-                                                                                                            offlinestorageRef.doc(offlineID).collection("offlineAssets").doc(String(assetID)).update(assetObject).then(function () {
-                                                                                                                console.log("checkpoint16")
-                                                                                                                console.log("Updated model successfully")
-                                                                                                                // log needs to be added before calling back for DetailedAssetScreen
-                                                                                                                logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null,String(assetID)))
-                                                                                                            }).catch(function (error) {
-                                                                                                                callback(error);
-                                                                                                            })
-                                                                                                        })
-                                                                                                    } else {
-                                                                                                        assetRef.doc(String(assetID)).update(assetObject).then(function () {
-                                                                                                            console.log("Updated model successfully")
-                                                                                                            // log needs to be added before calling back for DetailedAssetScreen
-                                                                                                            logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null,String(assetID)))
-                                                                                                        }).catch(function (error) {
-                                                                                                            callback(error);
-                                                                                                        })
-                                                                                                    }
-                                                                                                } else {
-                                                                                                    callback("Couldn't delete existing network connections.");
-                                                                                                }
-                                                                                            }, offlineStorageAbbrev)
-                                                                                        } else {
-                                                                                            console.log(changeDocID);
-                                                                                            changeplanutils.editAssetChange(assetObject, assetID, changePlanID, (result) => {
-                                                                                                if (result) {
-                                                                                                    callback(null)
-                                                                                                } else {
-                                                                                                    callback("Error adding asset to the specified change plan.")
-                                                                                                }
-                                                                                                //assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, assetID);
-                                                                                            }, changeDocID);
-                                                                                        }
-                                                                                    }
-                                                                                }, assetID, offlineStorageAbbrev)
-                                                                            }
-
-
-                                                                        }, offlineStorageAbbrev)
-                                                                    }, oldNetworkConnections, offlineStorageAbbrev)
-                                                                })
-                                                            }, offlineStorageAbbrev, chassis)
-                                                        }
-                                                    }, offlineStorageAbbrev)
-                                                })
+                                                var errMessage = stat
+                                                //need to pass up errormessage if model updated and instance no longer fits
+                                                callback(errMessage)
                                             }
-                                        }, offlineStorageAbbrev)
-                                    }
-                                }, assetID, offlineStorageAbbrev, chassis)
-                            } else {
-                                callback("You don't have the permissions for this datacenter");
-                            }
-                        }
-                    })
+                                            //returns null if no issues/conflicts.
+                                            else {
+                                                console.log("No conflictss updates")
+                                                let splitRackArray = offlineStorageAbbrev ? null : rack.split(/(\d+)/).filter(Boolean)
+                                                let rackRow = offlineStorageAbbrev ? null : splitRackArray[0]
+                                                let rackNum = offlineStorageAbbrev ? null : parseInt(splitRackArray[1])
+                                                //get new rack document
+                                                rackutils.getRackID(rackRow, rackNum, datacenter, result => {
+                                                    if (result) {
+                                                        console.log("checkpoint4")
+                                                        //get old rack document
+                                                        let query = offlineStorageAbbrev ? db.collectionGroup("offlineAssets").where("assetId", "==", assetID) : assetRef.doc(assetID);
 
+                                                        query.get().then(snapShot => {
+                                                            console.log("checkpoint5")
+                                                            let docSnap = offlineStorageAbbrev ? snapShot.docs[0] : snapShot;
+                                                            console.log(assetID, docSnap)
+                                                            let oldRack = offlineStorageAbbrev ? null : docSnap.data().rack;
+                                                            let oldSplitRackArray = offlineStorageAbbrev ? null : oldRack.split(/(\d+)/).filter(Boolean)
+                                                            let oldRackRow = offlineStorageAbbrev ? null : oldSplitRackArray[0]
+                                                            let oldRackNum = offlineStorageAbbrev ? null : parseInt(oldSplitRackArray[1])
+                                                            let oldDatacenter = offlineStorageAbbrev ? null : docSnap.data().datacenter
+                                                            let oldPowerConnections = docSnap.data().powerConnections;
+                                                            let oldNetworkConnections = docSnap.data().networkConnections;
+                                                            var modelStuff = []
+                                                            modelutils.getVendorAndNumberFromModel(model, name => modelStuff = name)
+                                                            var rackId = ''
+                                                            console.log("checkpoint6")
+                                                            if (!offlineStorageAbbrev) {
+                                                                rackutils.getRackID(rack.slice(0, 1), rack.slice(1, rack.length), datacenter, name => rackId = name)
+                                                            }
+                                                            var modelId = ''
+                                                            modelutils.getModelIdFromModelName(model, name => modelId = name)
+                                                            rackutils.getRackID(oldRackRow, oldRackNum, oldDatacenter, oldResult => {
+                                                                console.log("checkpoint7")
+                                                                console.log(oldRackRow, oldRackNum, oldDatacenter, oldResult)
+                                                                if (oldResult) {
+                                                                    console.log("up in this bitch")
+                                                                    console.log("checkpoint8")
+                                                                    //get new rack document
+                                                                    //get instance id
+                                                                    console.log(powerConnections);
+                                                                    replaceAssetRack(oldResult, result, oldPowerConnections, powerConnections, assetID, changePlanID, result => {
+                                                                        logutils.getObjectData(String(assetID), offlineStorageAbbrev ? logutils.OFFLINE() : logutils.ASSET(), assetData => {
+                                                                            console.log("checkpoint9")
+
+                                                                            //console.log(assetnetworkportutils.networkConnectionsToArray(networkConnections))
+                                                                            //the reason why we have networkConnections to array is because validateNetworkConnections expects an array. networkConnections is a JSON object because we got in from the db, and to send connectiosn to the db, it must be transformed into a JSON obj first
+
+                                                                            assetnetworkportutils.validateNetworkConnections(model, networkConnectionsArray, ncStatus => {
+                                                                                assetnetworkportutils.networkConnectionsToMap(networkConnectionsArray, mapResult => {
+                                                                                    console.log("checkpoint10")
+                                                                                    let networkConnections = mapResult;
+
+                                                                                    //console.log("In updateAsset: " + powerConnectionsInput)
+                                                                                    // let powerConnections = assetpowerportutils.formatPowerConnections(powerConnectionsInput)
+                                                                                    console.log(ncStatus)
+
+                                                                                    if (ncStatus) {
+                                                                                        console.log("Couldn't hang")
+                                                                                        callback(ncStatus)
+                                                                                    } else {
+                                                                                        console.log("checkpoint11")
+
+                                                                                        console.log(powerConnections)
+                                                                                        assetpowerportutils.validatePowerConnections(datacenter, rack, rackU, powerConnections, model, ppStatus => {
+                                                                                            console.log("checkpoint12")
+                                                                                            console.log(ppStatus)
+                                                                                            if (ppStatus) {
+                                                                                                console.log("breakpoint")
+                                                                                                callback(ppStatus)
+                                                                                            } else {
+                                                                                                let assetObject = {
+                                                                                                    assetId: assetID,
+                                                                                                    model: model,
+                                                                                                    modelId: modelId,
+                                                                                                    vendor: modelStuff[0],
+                                                                                                    modelNumber: modelStuff[1],
+                                                                                                    hostname: hostname,
+                                                                                                    owner: owner,
+                                                                                                    comment: comment,
+                                                                                                    rackRow: rackRow,
+                                                                                                    rackNum: rackNum,
+                                                                                                    macAddresses,
+                                                                                                    networkConnections,
+                                                                                                    powerConnections,
+                                                                                                    //these are the fields in the document to update
+                                                                                                };
+                                                                                                if (!offlineStorageAbbrev) {
+                                                                                                    assetObject = {
+                                                                                                        ...assetObject,
+                                                                                                        rack: rack,
+                                                                                                        rackU: rackU,
+                                                                                                        rackID: rackId,
+                                                                                                        datacenter: datacenter,
+                                                                                                        datacenterID: datacenterID,
+                                                                                                        datacenterAbbrev: datacenterAbbrev
+                                                                                                    }
+                                                                                                }
+
+                                                                                                if (!changePlanID) {
+                                                                                                    console.log("checkpoint13")
+                                                                                                    assetnetworkportutils.symmetricNetworkConnectionsDelete(assetID, deleteResult => {
+                                                                                                        if (deleteResult) {
+                                                                                                            assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, assetID);
+                                                                                                            console.log("checkpoint14")
+                                                                                                            let suffixes_list = []
+                                                                                                            let _model = assetObject.model
+
+                                                                                                            while (_model.length > 1) {
+                                                                                                                _model = _model.substr(1)
+                                                                                                                suffixes_list.push(_model)
+                                                                                                            }
+
+                                                                                                            let _hostname = assetObject.hostname
+
+                                                                                                            while (_hostname.length > 1) {
+                                                                                                                _hostname = _hostname.substr(1)
+                                                                                                                suffixes_list.push(_hostname)
+                                                                                                            }
+
+                                                                                                            if (!offlineStorageAbbrev) {
+                                                                                                                let _datacenter = assetObject.datacenter
+
+                                                                                                                while (_datacenter.length > 1) {
+                                                                                                                    _datacenter = _datacenter.substr(1)
+                                                                                                                    suffixes_list.push(_datacenter)
+                                                                                                                }
+
+                                                                                                                let _datacenterAbbrev = assetObject.datacenterAbbrev
+
+                                                                                                                while (_datacenterAbbrev.length > 1) {
+                                                                                                                    _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                                                                                                                    suffixes_list.push(_datacenterAbbrev)
+                                                                                                                }
+                                                                                                            }
+                                                                                                            let _owner = assetObject.owner
+
+
+                                                                                                            // index.saveObject({
+                                                                                                            //     ...assetObject,
+                                                                                                            //     objectID: assetID,
+                                                                                                            //     suffixes: suffixes_list.join(' ')
+                                                                                                            // })
+                                                                                                            if (offlineStorageAbbrev) {
+                                                                                                                console.log("checkpoint15")
+                                                                                                                offlinestorageutils.getInfoFromAbbrev(offlineStorageAbbrev, (offlineName, offlineID) => {
+                                                                                                                    console.log(offlineName, offlineID)
+                                                                                                                    if (offlineName) {
+                                                                                                                        console.log(offlineID)
+                                                                                                                        offlinestorageRef.doc(offlineID).collection("offlineAssets").doc(String(assetID)).update(assetObject).then(function () {
+                                                                                                                            console.log("checkpoint16")
+                                                                                                                            console.log("Updated model successfully")
+                                                                                                                            // log needs to be added before calling back for DetailedAssetScreen
+                                                                                                                            logutils.addLog(String(assetID), logutils.OFFLINE(), logutils.MODIFY(), assetData, () => callback(null, String(assetID)))
+                                                                                                                        }).catch(function (error) {
+                                                                                                                            callback(error);
+                                                                                                                        })
+                                                                                                                    } else {
+                                                                                                                        callback("Error getting offline storage site info.")
+                                                                                                                    }
+                                                                                                                })
+                                                                                                            } else {
+                                                                                                                assetRef.doc(String(assetID)).update(assetObject).then(function () {
+                                                                                                                    console.log("Updated model successfully")
+                                                                                                                    // log needs to be added before calling back for DetailedAssetScreen
+                                                                                                                    logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null, String(assetID)))
+                                                                                                                }).catch(function (error) {
+                                                                                                                    callback(error);
+                                                                                                                })
+                                                                                                            }
+                                                                                                        } else {
+                                                                                                            callback("Couldn't delete existing network connections.");
+                                                                                                        }
+                                                                                                    }, offlineStorageAbbrev)
+                                                                                                } else {
+                                                                                                    console.log(changeDocID);
+                                                                                                    changeplanutils.editAssetChange(assetObject, assetID, changePlanID, (result) => {
+                                                                                                        if (result) {
+                                                                                                            callback(null)
+                                                                                                        } else {
+                                                                                                            callback("Error adding asset to the specified change plan.")
+                                                                                                        }
+                                                                                                        //assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, assetID);
+                                                                                                    }, changeDocID);
+                                                                                                }
+                                                                                            }
+                                                                                        }, assetID, offlineStorageAbbrev)
+                                                                                    }
+
+
+                                                                                }, offlineStorageAbbrev)
+                                                                            }, oldNetworkConnections, offlineStorageAbbrev)
+                                                                        })
+                                                                    }, offlineStorageAbbrev, chassis)
+                                                                }
+                                                            }, offlineStorageAbbrev)
+                                                        })
+                                                    }
+                                                }, offlineStorageAbbrev)
+                                            }
+                                        }, assetID, offlineStorageAbbrev, chassis)
+                                    } else {
+                                        callback("You don't have the permissions for this datacenter");
+                                    }
+                                }
+                            })
+
+                        }
+                    }, offlineStorageAbbrev)
                 }
-            }, offlineStorageAbbrev)
-                                                                              }
             })
         }).catch(errMessage => {
-            console.log(errMessage)
+        console.log(errMessage)
         callback(errMessage)
 
 
-        })
+    })
 
 }
 
@@ -1040,7 +1066,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
 function getAssetFromModel(model, callback) {
     assetRef.where('model', '==', model).get().then(docSnaps => {
         const assets = docSnaps.docs.map(doc => (
-            { id: doc.id, ...doc.data() }
+            {id: doc.id, ...doc.data()}
         ))
         callback(assets)
     })
@@ -1054,7 +1080,7 @@ function sortByKeyword(keyword, callback) {
     assetRef.orderBy(keyword.toLowerCase()).get().then(
         docSnaps => {
             const assets = docSnaps.docs.map(doc => (
-                { id: doc.id }
+                {id: doc.id}
             ))
             callback(assets)
         })
@@ -1232,11 +1258,11 @@ function shouldAddToSuggestedItems(array, data, userInput) {
 
 function getAssetDetails(assetID, callback, offlineStorageAbbrev = null) {
 
-    if(offlineStorageAbbrev){
+    if (offlineStorageAbbrev) {
         offlinestorageutils.getInfoFromAbbrev(offlineStorageAbbrev, (name, id) => {
-            if(id){
+            if (id) {
                 offlinestorageRef.doc(id).collection("offlineAssets").doc(assetID).get().then(function (docSnap) {
-                    if(docSnap.exists){
+                    if (docSnap.exists) {
                         callback({
                             assetID: assetID,
                             ...docSnap.data(),
@@ -1319,10 +1345,9 @@ function validateAssetForm(assetID, model, hostname, rack, racku, owner, datacen
 
 
 function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, changePlanID, callback, offlineStorage = null, chassis = null) {
-    if(offlineStorage){
+    if (offlineStorage) {
         callback(true);
-    }
-    else {
+    } else {
         if (!changePlanID) {
             if (String(oldRack) === String(newRack)) {
 
@@ -1385,7 +1410,10 @@ function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, ch
                 if (oldPowerPorts.length && newPowerPorts.length) {
                     racksRef.doc(String(oldRack)).update({
                         assets: firebase.firestore.FieldValue.arrayRemove(id),
-                        powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({ ...obj, assetID: id })))
+                        powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({
+                            ...obj,
+                            assetID: id
+                        })))
                     }).then(() => {
                         racksRef.doc(String(newRack)).update({
                             assets: firebase.firestore.FieldValue.arrayUnion(id),
@@ -1428,7 +1456,10 @@ function replaceAssetRack(oldRack, newRack, oldPowerPorts, newPowerPorts, id, ch
                 } else if (oldPowerPorts.length && !newPowerPorts.length) {
                     racksRef.doc(String(oldRack)).update({
                         assets: firebase.firestore.FieldValue.arrayRemove(id),
-                        powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({ ...obj, assetID: id })))
+                        powerPorts: firebase.firestore.FieldValue.arrayRemove(...oldPowerPorts.map(obj => ({
+                            ...obj,
+                            assetID: id
+                        })))
                     }).then(() => {
                         racksRef.doc(String(newRack)).update({
                             assets: firebase.firestore.FieldValue.arrayUnion(id),
@@ -1479,9 +1510,9 @@ function checkHostnameExists(hostname, id, callback) {
 function getAssetByHostname(hostname, callback, echo = null) {
     assetRef.where("hostname", "==", hostname).get().then(function (docSnaps) {
         if (!docSnaps.empty) {
-            callback({ ...docSnaps.docs[0].data(), found: true, echo: echo, id: docSnaps.docs[0].id })
+            callback({...docSnaps.docs[0].data(), found: true, echo: echo, id: docSnaps.docs[0].id})
         } else {
-            callback({ found: false, echo: echo, id: null })
+            callback({found: false, echo: echo, id: null})
         }
     })
 }
@@ -1526,7 +1557,7 @@ function validateImportedAssets(data, callback) {
             function checkAndCallback() {
                 assetsProcessed++
                 if (assetsProcessed === data.length) {
-                    callback({ errors, toBeAdded, toBeModified, toBeIgnored })
+                    callback({errors, toBeAdded, toBeModified, toBeIgnored})
                 }
             }
 
@@ -1616,7 +1647,7 @@ function validateImportedAssets(data, callback) {
                                 checkAndCallback()
                             } else {
                                 // MODIFY CASE
-                                assetFitsOnRack(datum.rack, datum.rack_position, datum.vendor + ' ' + datum.model_number, ({ error, echo }) => {
+                                assetFitsOnRack(datum.rack, datum.rack_position, datum.vendor + ' ' + datum.model_number, ({error, echo}) => {
                                     const datum = data[asset.echo]
                                     if (error) {
                                         errors = [...errors, [asset.echo + 1, 'This asset could not be placed at the requested location']]
@@ -1633,7 +1664,7 @@ function validateImportedAssets(data, callback) {
                             }
                         } else {
                             // ADDITION CASE
-                            assetFitsOnRack(datum.rack, datum.rack_position, datum.vendor + ' ' + datum.model_number, ({ error, echo }) => {
+                            assetFitsOnRack(datum.rack, datum.rack_position, datum.vendor + ' ' + datum.model_number, ({error, echo}) => {
                                 const datum = data[asset.echo]
                                 if (error) {
                                     errors = [...errors, [asset.echo + 1, 'This asset could not be placed at the requested location']]

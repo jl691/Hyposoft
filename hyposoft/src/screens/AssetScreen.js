@@ -195,7 +195,7 @@ class AssetScreen extends Component {
 
             }
 
-        }, this.assetTable.current.state.selectedAssets)
+        }, this.assetTable.current.state.selectedAssets, this.state.offlineStorageID)
     }
 
     handleCancelRefreshPopupChange() {
@@ -431,6 +431,8 @@ class AssetScreen extends Component {
                         deleteModel={this.state.deleteModel}
                         deleteHostname={this.state.deleteHostname}
 
+                        offlineStorage = {this.props.match.params.storageSiteAbbrev}
+
                     />
                 </Layer>
             )
@@ -446,6 +448,8 @@ class AssetScreen extends Component {
                         decommissionIDFromParent={this.state.decommissionID}
                         decommissionModel={this.state.decommissionModel}
                         decommissionHostname={this.state.decommissionHostname}
+
+                        offlineStorage = {this.props.match.params.storageSiteAbbrev}
                     />
                 </Layer>
             )
@@ -492,7 +496,7 @@ class AssetScreen extends Component {
                        onClickOutside={() => this.setState({popupType: undefined})}>
 
                     <MoveAssetForm location={this.state.moveLocation} assetID={this.state.moveID} currentLocation={this.state.moveCurrentLocation}
-                    success={this.handleCancelRefreshPopupChange}/>
+                    success={this.handleCancelRefreshPopupChange} cancelCallback={this.handleCancelPopupChange}/>
                 </Layer>
             )
         } else if (popupType === 'Filters') {
@@ -519,7 +523,7 @@ class AssetScreen extends Component {
                         justify='start' >
 
                         {/* This box below is for range of racks */}
-                        <Box style={{
+                        {!this.props.match.params.storageSiteAbbrev && <Box style={{
                             borderRadius: 10,
                             borderColor: '#EDEDED'
                         }}
@@ -540,7 +544,7 @@ class AssetScreen extends Component {
 
                                 </Stack>
                             </Box>
-                        </Box>
+                        </Box>}
 
 
                         {/* Box for Combined Rack and Rack U sort */}

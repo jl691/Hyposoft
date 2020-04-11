@@ -26,6 +26,7 @@ import AssetScreen from './screens/AssetScreen'
 import RackElevations from "./components/RackElevations";
 import DatacenterScreen from "./screens/DatacenterScreen";
 import LogScreen from "./screens/LogScreen"
+import OfflineAssetScreen from "./screens/OfflineAssetScreen"
 import DetailedChangeScreen from "./screens/DetailedChangeScreen"
 import DecommissionedAssetScreen from "./screens/DecommissionedAssetScreen"
 import DetailedDecommissionedAssetScreen from "./screens/DetailedDecommissionedAssetScreen"
@@ -44,7 +45,7 @@ ReactDOM.render((
                     <Route exact path='/rackelevation' component={RackElevations} />
                     <Route exact path='/datacenters' component={DatacenterScreen} />
                     <Route exact path='/offlinestorage' component={OfflineStorageScreen} />
-                    <Route exact path='/offlinestorage/:storageSiteAbbrev' component={AssetScreen}/>
+                    <Route exact path='/offlinestorage/:storageSiteAbbrev' component={OfflineAssetScreen}/>
                     <Route exact path='/offlinestorage/:storageSiteAbbrev/:assetID' component={DetailedAssetScreen}/>
                     <Route exact path='/logs' component={LogScreen} />
                     <Route exact path='/dashboard' component={DashboardScreen} />

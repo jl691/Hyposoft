@@ -23,10 +23,11 @@ import BackButton from '../components/BackButton'
 import BladeChassisView from '../components/BladeChassisView'
 import AppBar from '../components/AppBar'
 import UserMenu from '../components/UserMenu'
-import {FormEdit, Power, Clear, PowerCycle, View, ShareOption} from "grommet-icons"
+import {FormEdit, Power, Clear, PowerCycle, View, ShareOption, Transaction} from "grommet-icons"
 import {ToastsContainer, ToastsStore} from "react-toasts";
 import EditAssetForm from "../components/EditAssetForm";
 import ReactTooltip from "react-tooltip";
+import MoveAssetForm from "../components/MoveAssetForm";
 
 export default class DetailedAssetScreen extends Component {
 
@@ -46,6 +47,7 @@ export default class DetailedAssetScreen extends Component {
 
         this.generatePDUStatus = this.generatePDUStatus.bind(this);
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
+        this.handleCancelRefreshPopupChange = this.handleCancelRefreshPopupChange.bind(this);
     }
 
     static contextTypes = {
@@ -391,9 +393,29 @@ export default class DetailedAssetScreen extends Component {
         }
     }
 
-    handleCancelRefreshPopupChange() {
-        ToastsStore.success("Successfully updated asset.");
-        window.location.reload();
+    handleCancelRefreshPopupChange(offlineStorageAbbrev) {
+        ToastsStore.success("Successfully " + this.props.match.params.storageSiteAbbrev ? "moved" : "updated" + " asset.");
+        if(this.state.popupType === 'Move'){
+            if(this.props.match.params.storageSiteAbbrev){
+                console.log("1")
+                this.setState({
+                    popupType: ""
+                }, function () {
+                    this.props.history.push('/assets/' + this.state.asset.assetID)
+                });
+
+            } else {
+                console.log("2")
+                this.setState({
+                    popupType: ""
+                }, function () {
+                    this.props.history.push('/offlinestorage/' + offlineStorageAbbrev + '/' + this.state.asset.assetID)
+                });
+            }
+        } else {
+            console.log("3")
+            window.location.reload();
+        }
     }
 
     handleCancelPopupChange() {
@@ -407,13 +429,9 @@ export default class DetailedAssetScreen extends Component {
         let popup;
 
         if (popupType === 'Update') {
-            console.log("In parent: updateID is " + this.state.updateID)
-
             popup = (
-
                 <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
-
                     <EditAssetForm
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
@@ -434,7 +452,16 @@ export default class DetailedAssetScreen extends Component {
                     />
                 </Layer>
             )
+        } else if (popupType === 'Move') {
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
 
+                    <MoveAssetForm location={this.props.match.params.storageSiteAbbrev ? "offline" : "rack"} assetID={this.state.asset.assetID}
+                                   currentLocation={this.props.match.params.storageSiteAbbrev ? "offline storage site " + this.props.match.params.storageSiteAbbrev : "datacenter " + this.state.asset.datacenter + " on rack " + this.state.asset.rack + " at height " + this.state.asset.rackU}
+                                   success={this.handleCancelRefreshPopupChange} cancelCallback={this.handleCancelPopupChange}/>
+                </Layer>
+            )
         }
 
         return (
@@ -646,6 +673,12 @@ export default class DetailedAssetScreen extends Component {
                                               <Button icon={<FormEdit/>} label="Edit Asset" onClick={() => {
                                                   this.setState({
                                                       popupType: "Update"
+                                                  })
+                                              }}/>}
+                                              {(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.doesLoggedInUserHaveAssetPerm(this.state.asset.datacenterAbbrev)) &&
+                                              <Button icon={<Transaction/>} label="Move Asset" onClick={() => {
+                                                  this.setState({
+                                                      popupType: "Move"
                                                   })
                                               }}/>}
                                               <Button icon={<View/>} label="View Model Details" onClick={() => {
