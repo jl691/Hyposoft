@@ -66,7 +66,13 @@ function getAsset(callback, field = null, direction = null, selected = null, sto
 
 function getAssetAt(start, callback, field = null, direction = null, selected = null, selectAll = null, storageSite = null) {
 
-    let query = storageSite ? ((field && direction !== null) ? direction ? offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).orderBy(field).startAfter(start) : offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).orderBy(field, "desc").startAfter(start) : offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).startAfter(start)) : ((field && direction !== null) ? direction ? offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).orderBy(field).startAfter(start) : offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).orderBy(field, "desc").startAfter(start) : offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).startAfter(start));
+    let query;
+    let ref = storageSite ? offlinestorageRef.doc(storageSite).collection("offlineAssets") : assetRef
+    if (field && direction !== null) {
+        query = direction ? ref.limit(25).orderBy(field).startAfter(start) : ref.limit(25).orderBy(field, "desc").startAfter(start);
+    } else {
+        query = ref.limit(25).startAfter(start);
+    }
 
     let assets = [];
     let count = 0;
