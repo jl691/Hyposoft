@@ -184,8 +184,8 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback){
                             let assetData = assetDocumentSnapshot.data();
                             assetData.networkConnections = {};
                             assetData.powerConnections = [];
+                            assetData.datacenter = offlineStorageName;
                             delete assetData.datacenterAbbrev;
-                            delete assetData.datacenter;
                             delete assetData.datacenterID;
                             delete assetData.rack;
                             delete assetData.rackID;
