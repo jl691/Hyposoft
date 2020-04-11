@@ -197,7 +197,7 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback){
                             firebaseutils.offlinestorageRef.doc(offlineStorageID).collection("offlineAssets").doc(String(assetID)).set(assetData).then(function () {
                                 assetutils.deleteAsset(assetID, result => {
                                     if(result){
-                                        callback(true);
+                                        callback(true, offlineStorageAbbrev);
                                     } else {
                                         console.log("6")
                                         callback(null);

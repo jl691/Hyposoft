@@ -85,9 +85,9 @@ class MoveAssetForm extends React.Component {
                     options={this.state.storageSiteNames}
                     value={this.state.storageSite}
                     onChange={(option) => {
-                        offlinestorageutils.moveAssetToOfflineStorage(this.props.assetID, option.value, result => {
+                        offlinestorageutils.moveAssetToOfflineStorage(this.props.assetID, option.value, (result, abbrev) => {
                             if(result){
-                                this.props.success(true);
+                                this.props.success(abbrev);
                             } else {
                                 ToastsStore.error("Error moving asset - please try again later.")
                             }
