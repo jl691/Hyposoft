@@ -38,7 +38,7 @@ export default class DeleteAssetPopup extends Component {
                 } else {
                     ToastsStore.error('Error deleting asset.');
                 }
-            }
+            }, null, this.props.offlineStorage ? this.props.offlineStorage : null
             );
         }
 
