@@ -455,6 +455,8 @@ function assetDiff(data,field) {
         return !findArrayAndMapDiff(flattenArrayOrMap(data.previousData[field]),flattenArrayOrMap(data.currentData[field]),true) ? '' : (field + arrayAndMapDiffString)
       case 'macAddresses':
         return !findArrayAndMapDiff(data.previousData[field],data.currentData[field],true) ? '' : (field + arrayAndMapDiffString)
+      case 'variances':
+        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       case 'id':
           return ''
       default:
