@@ -30,6 +30,10 @@ function PDU() {
     return 'pdu'
 }
 
+function OFFLINE() {
+    return 'offline asset'
+}
+
 // ACTIONS
 function CREATE() {
     return 'created'
@@ -104,6 +108,9 @@ function addLog(objectId, objectType, action, data = null, callback = null, want
             case PDU():
                 getPDUName(data,action,(pdu,assetId) => finishAddingLog(pdu, assetId, objectType, action, callback))
                 break
+            case OFFLINE():
+                getAssetName(objectId,data,action,asset => finishAddingLog(asset, objectId, objectType, action, callback),true)
+                break
             default:
                 console.log("Could not create log due to unknown type: " + objectType)
                 if (callback) {
@@ -173,6 +180,13 @@ function getObjectData(objectId, objectType, callback, wantPromise = false) {
                 break
             case DATACENTER():
                 firebaseutils.datacentersRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case OFFLINE():
+                firebaseutils.db.collectionGroup("offlineAssets").where("assetId", "==", objectId).get().then(qs => callback(qs.docs[0].data()))
                 .catch( error => {
                     console.log("Error getting documents: ", error)
                     callback(null)
@@ -308,6 +322,7 @@ function buildDiff(data) {
 function buildSpecificDiff(data,field) {
     switch (data.objectType) {
       case ASSET():
+      case OFFLINE():
           return assetDiff(data,field)
       case MODEL():
           return modelDiff(data,field)
@@ -339,15 +354,23 @@ function getUserName(id,data,action,callback) {
     }
 }
 
-function getAssetName(id,data,action,callback) {
+function getAssetName(id,data,action,callback,offline=false) {
     if (data && (action === DELETE() || action === DECOMMISSION())) {
         callback({name: data.model+' '+data.hostname, data: data, previousData: null, datacenter: data.datacenter})
     } else {
-        firebaseutils.assetRef.doc(id).get().then(doc => callback({name: doc.data().model+' '+doc.data().hostname, data: doc.data(), previousData: data, datacenter: doc.data().datacenter}))
-        .catch( error => {
-          console.log("Error getting documents: ", error)
-          callback(null)
-        })
+        if (offline) {
+          firebaseutils.db.collectionGroup("offlineAssets").where("assetId", "==", id).get().then(qs => callback({name: qs.docs[0].data().model+' '+qs.docs[0].data().hostname, data: qs.docs[0].data(), previousData: data, datacenter: qs.docs[0].data().datacenter}))
+          .catch( error => {
+            console.log("Error getting documents: ", error)
+            callback(null)
+          })
+        } else {
+          firebaseutils.assetRef.doc(id).get().then(doc => callback({name: doc.data().model+' '+doc.data().hostname, data: doc.data(), previousData: data, datacenter: doc.data().datacenter}))
+          .catch( error => {
+            console.log("Error getting documents: ", error)
+            callback(null)
+          })
+        }
     }
 }
 
