@@ -57,11 +57,11 @@ export default class AddAssetForm extends Component {
             editDeletedNetworkConnections: [],
             showPowerConnections: this.props.updatePowerConnectionsFromParent.length ? true : false,
 
-            assetVariance: false,
-            displayColor: "",
-            cpu: "",
-            memory: "",
-            storage: ""
+            assetVariance: this.props.updateDisplayColorFromParent !== "" || this.props.updateCpuFromParent !== "" || this.props.updateMemoryFromParent !== "" || this.props.updateStorageFromParent !== "" ? true : false,
+            displayColor: this.props.updateDisplayColorFromParent,
+            cpu: this.props.updateCpuFromParent,
+            memory: this.props.updateMemoryFromParent,
+            storage: this.props.updateStorageFromParent
 
         }
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -97,7 +97,6 @@ export default class AddAssetForm extends Component {
 
                     if (numPorts >= 2) {
                         assetpowerportutils.getFirstFreePort(rack, datacenter, returnedPort => {
-                            console.log("In AddAssetForm. returned power port: " + returnedPort)
                             if (returnedPort) {
 
                                 this.setState(oldState => ({

@@ -116,6 +116,11 @@ class AddChangeForm extends React.Component {
                         updateCommentFromParent={""}
                         updateDatacenterFromParent={""}
                         updateAssetIDFromParent={""}
+
+                        updateDisplayColorFromParent={""}
+                        updateCpuFromParent={""}
+                        updateMemoryFromParent={""}
+                        updateStorageFromParent={""}
                     />
 
                 </Layer>
@@ -149,6 +154,7 @@ class AddChangeForm extends React.Component {
             )
         } else if (popupType === 'delete'){
             let selectedData = this.assetData.get(this.state.selected);
+            console.log(selectedData)
             popup = (
                 <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
@@ -161,6 +167,7 @@ class AddChangeForm extends React.Component {
                     <DecommissionAssetPopup
                         changePlanID={this.props.match.params.changePlanID}
                         decommissionIDFromParent={selectedData.assetId}
+                        decommissionModel={selectedData.model}
                         parentCallback={this.handleCancelPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
                     />
