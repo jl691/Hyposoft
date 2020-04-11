@@ -23,12 +23,15 @@ function addChassis(overrideAssetID, model, hostname, rack, racku, owner, commen
                             assets: [],
                             powerPorts:[],
                             datacenter: datacenterID
-                        })
+                        }).then(() => callback(errorMessage))
+                    } else {
+                        callback(errorMessage)
                     }
                 })
             })
+        } else {
+            callback(errorMessage)
         }
-        callback(errorMessage)
     }, changePlanID, changeDocID)
 }
 
