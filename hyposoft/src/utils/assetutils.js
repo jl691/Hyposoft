@@ -54,14 +54,9 @@ function getAsset(callback, field = null, direction = null, selected = null, sto
 }
 
 
-function getAssetAt(start, callback, field = null, direction = null, selected = null, selectAll = null) {
+function getAssetAt(start, callback, field = null, direction = null, selected = null, selectAll = null, storageSite = null) {
 
-    let query;
-    if (field && direction !== null) {
-        query = direction ? assetRef.limit(25).orderBy(field).startAfter(start) : assetRef.limit(25).orderBy(field, "desc").startAfter(start);
-    } else {
-        query = assetRef.limit(25).startAfter(start);
-    }
+    let query = storageSite ? ((field && direction !== null) ? direction ? offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).orderBy(field).startAfter(start) : offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).orderBy(field, "desc").startAfter(start) : offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).startAfter(start)) : ((field && direction !== null) ? direction ? offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).orderBy(field).startAfter(start) : offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).orderBy(field, "desc").startAfter(start) : offlinestorageRef.doc(storageSite).collection("offlineAssets").limit(25).startAfter(start));
 
     let assets = [];
     let count = 0;
@@ -509,17 +504,18 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
 
 // rackAsc should be a boolean corresponding to true if rack is ascending
 // rackUAsc should be a boolean corresponding to true if rackU is ascending
-function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback, selected = null) {
+function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback, selected = null, offlineStorage = null) {
     var vendorArray = []
-    var query = assetRef
+    var query;
+    let ref = offlineStorage ? offlinestorageRef.doc(offlineStorage).collection("offlineAssets") : assetRef;
     if (!rackAsc && !rackUAsc) {
-        query = assetRef.orderBy("rackRow", "desc").orderBy("rackNum", "desc").orderBy("rackU", "desc")
+        query = ref.orderBy("rackRow", "desc").orderBy("rackNum", "desc").orderBy("rackU", "desc")
     } else if (rackAsc && !rackUAsc) {
-        query = assetRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU", "desc")
+        query = ref.orderBy("rackRow").orderBy("rackNum").orderBy("rackU", "desc")
     } else if (!rackAsc && rackUAsc) {
-        query = assetRef.orderBy("rackRow", "desc").orderBy("rackNum", "desc").orderBy("rackU")
+        query = ref.orderBy("rackRow", "desc").orderBy("rackNum", "desc").orderBy("rackU")
     } else {
-        query = assetRef.orderBy("rackRow").orderBy("rackNum").orderBy("rackU")
+        query = ref.orderBy("rackRow").orderBy("rackNum").orderBy("rackU")
     }
     query.get().then(querySnapshot => {
         let count = 0;

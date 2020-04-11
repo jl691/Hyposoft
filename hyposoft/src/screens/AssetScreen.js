@@ -195,7 +195,7 @@ class AssetScreen extends Component {
 
             }
 
-        }, this.assetTable.current.state.selectedAssets)
+        }, this.assetTable.current.state.selectedAssets, this.state.offlineStorageID)
     }
 
     handleCancelRefreshPopupChange() {
@@ -519,7 +519,7 @@ class AssetScreen extends Component {
                         justify='start' >
 
                         {/* This box below is for range of racks */}
-                        <Box style={{
+                        {!this.props.match.params.storageSiteAbbrev && <Box style={{
                             borderRadius: 10,
                             borderColor: '#EDEDED'
                         }}
@@ -540,7 +540,7 @@ class AssetScreen extends Component {
 
                                 </Stack>
                             </Box>
-                        </Box>
+                        </Box>}
 
 
                         {/* Box for Combined Rack and Rack U sort */}
