@@ -13,15 +13,19 @@ function getStorageSites(itemCount, callback, start = null) {
             const newStart = docSnaps.docs[docSnaps.docs.length - 1];
             let count = 0;
             docSnaps.forEach(doc => {
-                storageSites.push({
-                    count: itemCount++,
-                    id: doc.id,
-                    ...doc.data()
+                firebaseutils.offlinestorageRef.doc(doc.id).collection("offlineAssets").get().then(function (sizeSnap) {
+                    console.log(sizeSnap)
+                    storageSites.push({
+                        count: itemCount++,
+                        id: doc.id,
+                        assetCount: sizeSnap.size,
+                        ...doc.data()
+                    });
+                    count++;
+                    if (count === docSnaps.docs.length) {
+                        callback(itemCount, newStart, storageSites, false);
+                    }
                 });
-                count++;
-                if (count === docSnaps.docs.length) {
-                    callback(itemCount, newStart, storageSites, false);
-                }
             });
         }
     }).catch(function (error) {
