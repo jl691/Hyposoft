@@ -642,7 +642,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                                                     conflictCount++;
                                                     if (conflictCount === status.length) {
                                                         console.log(conflictNew)
-                                                        var errMessage = "Asset of height " + height + " racked at " + rackedAt + "U conflicts with asset(s) " + conflictNew.join(', ').toString();
+                                                        var errMessage = "Asset of height " + height + (chassis ? " slotted at " : " racked at ") + rackedAt + (chassis ? "" : "U") + " conflicts with asset(s) " + conflictNew.join(', ').toString();
                                                         if (echo < 0) {
                                                             callback(errMessage);
                                                         } else {
@@ -661,7 +661,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                                         }
                                     }, asset_id, chassis) //if you pass in a null to checkInstanceFits
                                 } else {
-                                    var errMessage = "Asset of this model at this RackU will not fit on this rack";
+                                    var errMessage = "Asset of this model at this "+(chassis ? "Slot" : "RackU")+" will not fit on this "+(chassis ? "chassis" : "rack");
                                     if (echo < 0) {
                                         callback(errMessage);
                                     } else {
@@ -671,7 +671,7 @@ function assetFitsOnRack(assetRack, rackU, model, datacenter, callback, asset_id
                                 }
                             })
                         } else {
-                            var errMessage2 = "Rack does not exist"
+                            var errMessage2 = (chassis ? "Chassis" : "Rack") + " does not exist"
                             if (echo < 0) {
                                 callback(errMessage2)
                             } else {
