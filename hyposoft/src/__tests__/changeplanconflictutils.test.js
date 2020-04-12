@@ -15,6 +15,7 @@ describe('change plan add asset tests: basic test', () => {
     })
 
     //the issues with these tests is in the setup. Trying to get docs that dont exist. Works fine manually though
+    //can set up another datacenter and rack that you will not delete in the set up
 
     // test('changeplan add asset conflicts: rack', done => {
     //     //trying to simulate someone clicking on the detail view of the change plan step and retriggering the check
@@ -42,7 +43,7 @@ describe('change plan add asset tests: basic test', () => {
     test('changeplan add asset conflicts: hostname', done => {
         changeplanconflictutils.hostnameConflict(ids['changePlan'], ids['changePlanStep'], '123456','asset1', hostnameStatus => {
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
-                expect(docRef.data().database.hostname[0]).toBe('hostnameErrID')
+                expect(docRef.data().database.hostname[0]).toBe('hostnameDBErrID')
                 done()
             })
 
@@ -63,7 +64,7 @@ describe('change plan add asset tests: basic test', () => {
     test('changeplan add asset conflicts: assetID', done => {
         changeplanconflictutils.assetIDConflict(ids['changePlan'], ids['changePlanStep'], '999999', assetIDStatus => {
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
-                expect(docRef.data().database.assetID[0]).toBe('assetIDErrID')
+                expect(docRef.data().database.assetID[0]).toBe('assetIDDBErrID')
                 done()
             })
 

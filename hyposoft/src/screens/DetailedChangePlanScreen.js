@@ -468,10 +468,17 @@ class DetailedChangePlanScreen extends React.Component {
                         updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses)}
                         updatePowerConnectionsFromParent={this.state.currentChange.powerConnections}
                         updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.currentChange.networkConnections)}
+
+                        updateDisplayColorFromParent={this.state.currentChange.variances.displayColor}
+                        updateCpuFromParent={this.state.currentChange.variances.cpu}
+                        updateMemoryFromParent={this.state.currentChange.variances.memory}
+                        updateStorageFromParent={this.state.currentChange.variances.storage}
+                        
                     />
                 </Layer>
             )
         } else if (popupType === 'Editadd') {
+            console.log(this.state.currentChange)
             console.log(this.state.currentChange.macAddresses, this.state.currentChange, assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses))
             popup = (
                 <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
@@ -495,6 +502,11 @@ class DetailedChangePlanScreen extends React.Component {
                         updateCommentFromParent={this.state.currentChange.comment}
                         updateDatacenterFromParent={this.state.currentChange.datacenter}
                         updateAssetIDFromParent={this.state.currentChange.assetId ? this.state.currentChange.assetId : ""}
+
+                        updateDisplayColorFromParent={this.state.currentChange.variances.displayColor}
+                        updateCpuFromParent={this.state.currentChange.variances.cpu}
+                        updateMemoryFromParent={this.state.currentChange.variances.memory}
+                        updateStorageFromParent={this.state.currentChange.variances.storage}
                     />
                 </Layer>
             )
