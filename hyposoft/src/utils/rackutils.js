@@ -195,22 +195,25 @@ function deleteSingleRack(id, callback) {
     })
 }
 
-function getRackID(row, number, datacenter, callback) {
+function getRackID(row, number, datacenter, callback, offlineStorage) {
+    if(offlineStorage){
+        callback(true);
+    } else {
+        datacenterutils.getDataFromName(datacenter, datacenterID => {
 
-    datacenterutils.getDataFromName(datacenter, datacenterID => {
-
-        if (datacenterID) {
-            firebaseutils.racksRef.where("letter", "==", row).where("number", "==", parseInt(number)).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
-                if (!querySnapshot.empty) {
-                    callback(querySnapshot.docs[0].id);
-                } else {
-                    callback(null);
-                }
-            })
-        } else {
-            callback(null);
-        }
-    })
+            if (datacenterID) {
+                firebaseutils.racksRef.where("letter", "==", row).where("number", "==", parseInt(number)).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
+                    if (!querySnapshot.empty) {
+                        callback(querySnapshot.docs[0].id);
+                    } else {
+                        callback(null);
+                    }
+                })
+            } else {
+                callback(null);
+            }
+        })
+    }
 }
 
 function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, datacenter, callback) {

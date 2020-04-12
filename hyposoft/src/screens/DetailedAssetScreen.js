@@ -24,10 +24,11 @@ import BackButton from '../components/BackButton'
 import BladeChassisView from '../components/BladeChassisView'
 import AppBar from '../components/AppBar'
 import UserMenu from '../components/UserMenu'
-import { FormEdit, Power, Clear, PowerCycle, View, ShareOption } from "grommet-icons"
+import { FormEdit, Power, Clear, PowerCycle, View, ShareOption, Transaction } from "grommet-icons"
 import { ToastsContainer, ToastsStore } from "react-toasts";
 import EditAssetForm from "../components/EditAssetForm";
 import ReactTooltip from "react-tooltip";
+import MoveAssetForm from "../components/MoveAssetForm";
 
 export default class DetailedAssetScreen extends Component {
 
@@ -48,6 +49,7 @@ export default class DetailedAssetScreen extends Component {
 
         this.generatePDUStatus = this.generatePDUStatus.bind(this);
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
+        this.handleCancelRefreshPopupChange = this.handleCancelRefreshPopupChange.bind(this);
     }
 
     static contextTypes = {
@@ -68,15 +70,40 @@ export default class DetailedAssetScreen extends Component {
         });
         this.powerPorts = null;
         this.connectedPDU = null;
-        powerutils.checkConnectedToPDU(this.props.match.params.assetID, result => {
-            if (!(result === null)) {
-                console.log(result)
-                if (result) {
-                    this.connectedPDU = true;
-                } else {
-                    this.connectedPDU = false;
+        if (!this.props.match.params.storageSiteAbbrev) {
+            powerutils.checkConnectedToPDU(this.props.match.params.assetID, result => {
+                if (!(result === null)) {
+                    console.log(result)
+                    if (result) {
+                        this.connectedPDU = true;
+                    } else {
+                        this.connectedPDU = false;
+                    }
                 }
-            }
+                assetutils.getAssetDetails(
+                    this.props.match.params.assetID,
+                    assetsdb => {
+                        this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
+                            this.setState({
+                                asset: assetsdb,
+                                initialLoaded: true
+
+                            }, function () {
+
+                                this.generatePDUStatus();
+                                modelutils.getModelByModelname(assetsdb.model, modelDoc => {
+                                    console.log(modelDoc.data())
+                                    this.setState({
+                                        model: modelDoc.data(),
+                                        initialLoaded: true
+                                    })
+                                })
+                            });
+                        })
+                    })
+            });
+        }
+        else {
             assetutils.getAssetDetails(
                 this.props.match.params.assetID,
                 assetsdb => {
@@ -95,8 +122,8 @@ export default class DetailedAssetScreen extends Component {
                             })
                         });
                     })
-                })
-        });
+                }, this.props.match.params.storageSiteAbbrev)
+        };
     }
 
     determineBladeData(id, hostname, callback) {
@@ -179,11 +206,12 @@ export default class DetailedAssetScreen extends Component {
 
     generateVariancesTable() {
         if (this.state.asset.variances.displayColor !== "" || this.state.asset.variances.cpu !== "" || this.state.asset.variances.memory !== "" || this.state.asset.variances.storage !== "") {
-            console.log(...Object.keys(this.state.asset.variances))
+            //console.log(...Object.keys(this.state.asset.variances))
+            console.log(this.state.model.displayColor)
 
             return Object.keys(this.state.asset.variances).map((field) => (
 
-                this.state.asset.variances[field]!== "" &&
+                this.state.asset.variances[field] !== "" &&
 
                 <TableRow>
                     <TableCell scope="row">
@@ -412,9 +440,29 @@ export default class DetailedAssetScreen extends Component {
         }
     }
 
-    handleCancelRefreshPopupChange() {
-        ToastsStore.success("Successfully updated asset.");
-        window.location.reload();
+    handleCancelRefreshPopupChange(offlineStorageAbbrev) {
+        ToastsStore.success("Successfully " + this.props.match.params.storageSiteAbbrev ? "moved" : "updated" + " asset.");
+        if (this.state.popupType === 'Move') {
+            if (this.props.match.params.storageSiteAbbrev) {
+                console.log("1")
+                this.setState({
+                    popupType: ""
+                }, function () {
+                    this.props.history.push('/assets/' + this.state.asset.assetID)
+                });
+
+            } else {
+                console.log("2")
+                this.setState({
+                    popupType: ""
+                }, function () {
+                    this.props.history.push('/offlinestorage/' + offlineStorageAbbrev + '/' + this.state.asset.assetID)
+                });
+            }
+        } else {
+            console.log("3")
+            window.location.reload();
+        }
     }
 
     handleCancelPopupChange() {
@@ -428,13 +476,9 @@ export default class DetailedAssetScreen extends Component {
         let popup;
 
         if (popupType === 'Update') {
-            console.log("In parent: updateID is " + this.state.updateID)
-
             popup = (
-
                 <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
                     onClickOutside={() => this.setState({ popupType: undefined })}>
-
                     <EditAssetForm
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
@@ -454,13 +498,22 @@ export default class DetailedAssetScreen extends Component {
                         updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.asset.networkConnections)}
 
                         updateDisplayColorFromParent={this.state.asset.variances.displayColor}
-                        updateCpuFromParent = {this.state.asset.variances.cpu}
+                        updateCpuFromParent={this.state.asset.variances.cpu}
                         updateMemoryFromParent={this.state.asset.variances.memory}
                         updateStorageFromParent={this.state.asset.variances.storage}
                     />
                 </Layer>
             )
+        } else if (popupType === 'Move') {
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
+                    onClickOutside={() => this.setState({ popupType: undefined })}>
 
+                    <MoveAssetForm location={this.props.match.params.storageSiteAbbrev ? "offline" : "rack"} assetID={this.state.asset.assetID}
+                        currentLocation={this.props.match.params.storageSiteAbbrev ? "offline storage site " + this.props.match.params.storageSiteAbbrev : "datacenter " + this.state.asset.datacenter + " on rack " + this.state.asset.rack + " at height " + this.state.asset.rackU}
+                        success={this.handleCancelRefreshPopupChange} cancelCallback={this.handleCancelPopupChange} />
+                </Layer>
+            )
         }
 
         return (
@@ -514,10 +567,10 @@ export default class DetailedAssetScreen extends Component {
                                                         <td><b>Model</b></td>
                                                         <td style={{ textAlign: 'right' }}>{this.state.asset.model}</td>
                                                     </tr>
-                                                    <tr>
+                                                    {!this.props.match.params.storageSiteAbbrev && <tr>
                                                         <td><b>Datacenter</b></td>
                                                         <td style={{ textAlign: 'right' }}>{this.state.asset.datacenter || 'N/A'}</td>
-                                                    </tr>
+                                                    </tr>}
                                                     {(this.bladeData
                                                         ?
                                                         <tr>
@@ -536,14 +589,14 @@ export default class DetailedAssetScreen extends Component {
                                                         :
                                                         <tr></tr>
                                                     )}
-                                                    <tr>
+                                                    {!this.props.match.params.storageSiteAbbrev && <tr>
                                                         <td><b>{!this.bladeData ? 'Rack' : 'Chassis Rack'}</b></td>
                                                         <td style={{ textAlign: 'right' }}>{this.state.asset.rack}</td>
-                                                    </tr>
-                                                    <tr>
+                                                    </tr>}
+                                                    {!this.props.match.params.storageSiteAbbrev && <tr>
                                                         <td><b>{!this.bladeData ? 'Rack U' : 'Chassis Rack U'}</b></td>
                                                         <td style={{ textAlign: 'right' }}>{this.state.asset.rackU}</td>
-                                                    </tr>
+                                                    </tr>}
                                                     <tr>
                                                         <td><b>Owner</b></td>
                                                         <td style={{ textAlign: 'right' }}>@{this.state.asset.owner || 'N/A'}</td>
@@ -551,8 +604,7 @@ export default class DetailedAssetScreen extends Component {
                                                     {this.renderPDUStatus()}
                                                 </tbody>
                                             </table>
-                                            {(!this.bladeData
-                                                ?
+                                            {(!this.bladeData && !this.props.match.params.storageSiteAbbrev) &&
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
@@ -571,11 +623,8 @@ export default class DetailedAssetScreen extends Component {
                                                         {this.generateNetworkTable()}
                                                     </TableBody>
                                                 </Table>
-                                                :
-                                                <Table></Table>
-                                            )}
-                                            {(!this.bladeData
-                                                ?
+                                            }
+                                            {(!this.bladeData && !this.props.match.params.storageSiteAbbrev) &&
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
@@ -593,10 +642,8 @@ export default class DetailedAssetScreen extends Component {
                                                     <TableBody>
                                                         {this.generatePowerTable()}
                                                     </TableBody>
-                                                </Table>
-                                                :
-                                                <Table></Table>
-                                            )}
+                                                </Table>}
+
                                             {(!this.bladeData
                                                 ?
                                                 <Table>
@@ -612,13 +659,13 @@ export default class DetailedAssetScreen extends Component {
                                                     </TableHeader>
                                                     <TableBody>
                                                         {this.generateMACTable()}
-
                                                     </TableBody>
                                                 </Table>
                                                 :
                                                 <Table></Table>
                                             )}
 
+                                            {/* TODO: need to change this after Bletsch's response on piazza post  */}
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow>
@@ -638,6 +685,13 @@ export default class DetailedAssetScreen extends Component {
                                                     {this.generateVariancesTable()}
                                                 </TableBody>
                                             </Table>
+
+
+                                            <span style={{ maxHeight: 100, overflow: 'auto' }}>
+                                                {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
+                                                    return <div key={key}>{i}</div>
+                                                })}
+                                            </span>
                                             {(this.chassisSlots
                                                 ?
                                                 <Box flex margin={{ top: 'small', bottom: 'small' }}
@@ -656,11 +710,6 @@ export default class DetailedAssetScreen extends Component {
                                                 :
                                                 <Box></Box>
                                             )}
-                                            <span style={{ maxHeight: 100, overflow: 'auto' }}>
-                                                {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
-                                                    return <div key={key}>{i}</div>
-                                                })}
-                                            </span>
                                         </Box>
                                     )}
                                 </Box>
@@ -682,7 +731,7 @@ export default class DetailedAssetScreen extends Component {
                                             <Heading level='4' margin='none'>Asset Actions</Heading>
                                             <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
                                                 gap='small'>
-                                                {(this.connectedPDU && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
+                                                {(this.connectedPDU && !this.props.match.params.storageSiteAbbrev(userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
                                                     <Box direction='column' flex alignSelf='stretch'
                                                         gap='small'>
                                                         <Button icon={<Power />} label="Power Asset On" onClick={() => {
@@ -701,12 +750,18 @@ export default class DetailedAssetScreen extends Component {
                                                             popupType: "Update"
                                                         })
                                                     }} />}
+                                                {(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.doesLoggedInUserHaveAssetPerm(this.state.asset.datacenterAbbrev)) &&
+                                                    <Button icon={<Transaction />} label="Move Asset" onClick={() => {
+                                                        this.setState({
+                                                            popupType: "Move"
+                                                        })
+                                                    }} />}
                                                 <Button icon={<View />} label="View Model Details" onClick={() => {
                                                     this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNum)
                                                 }} />
-                                                <Button icon={<ShareOption />} label="Network Neighborhood" onClick={() => {
+                                                {!this.props.match.params.storageSiteAbbrev && <Button icon={<ShareOption />} label="Network Neighborhood" onClick={() => {
                                                     this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
-                                                }} />
+                                                }} />}
                                             </Box>
                                         </Box>
                                     </Box>

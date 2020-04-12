@@ -219,19 +219,20 @@ export default class EditAssetForm extends Component {
         if (event.target.name === "updateInst") {
             //this is where you pass in props updateData from AssetScreen . Want to keep old unchanged data, ow
 
-            if (!this.state.model || !this.state.rack || !this.state.rackU || !this.state.datacenter) {
+            if (!this.state.model || (!this.props.offlineStorage && (!this.state.rack || !this.state.rackU || !this.state.datacenter))) {
                 //not all required fields filled out
                 ToastsStore.error("Please fill out all required fields.");
             } else if (this.state.hostname && !/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)) {
                 //not a valid hostname
                 ToastsStore.error("Invalid hostname. It must start with a letter or number, contain only letters, numbers, or hyphens, and end with a letter or number. It must be 63 characters or less.");
-            } else if (this.isNonBlade && !/[A-Z]\d+/.test(this.state.rack)) {
+
+            } else if (!this.props.offlineStorage && this.isNonBlade && !/[A-Z]\d+/.test(this.state.rack)) {
                 //not a valid rack
                 ToastsStore.error("Invalid rack.");
-            } else if (!parseInt(this.state.rackU)) {
+            } else if (!this.props.offlineStorage && !parseInt(this.state.rackU)) {
                 //invalid number
                 ToastsStore.error("Rack U must be a number.");
-            } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
+            } else if (!this.props.offlineStorage && !formvalidationutils.checkPositive(this.state.rackU)) {
                 ToastsStore.error("Rack U must be positive.");
             }
             else {
@@ -327,10 +328,12 @@ export default class EditAssetForm extends Component {
                                             if (errorMessage) {
                                                 ToastsStore.error(errorMessage, 10000)
                                             } else {
+                                                console.log("made it back")
                                                 this.props.parentCallback(true);
                                                 ToastsStore.success('Successfully updated asset!');
                                             }
-                                        }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null
+                                        }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null,
+                                        null, this.props.offlineStorage ? this.props.offlineStorage : null
                                     );
 
 
@@ -481,7 +484,7 @@ export default class EditAssetForm extends Component {
                                 value={this.state.hostname} />
                         </FormField>
 
-                        <FormField name="datacenter" label="Datacenter">
+                        {!this.props.offlineStorage && <FormField name="datacenter" label="Datacenter">
                             <TextInput name="datacenter"
                                 placeholder="Update Datacenter"
                                 onChange={e => {
@@ -502,13 +505,13 @@ export default class EditAssetForm extends Component {
                                     datacenterSuggestions: results
                                 })))}
                                 title='Datacenter'
-                                required="true"
+                                required={this.props.offlineStorage ? false : true}
                             />
-                        </FormField>
+                        </FormField>}
 
                         {(this.isNonBlade
                             ?
-                            <FormField name="rack" label="Rack" >
+                            (!this.props.offlineStorage && <FormField name="rack" label="Rack" >
 
                                 <TextInput name="rack"
                                     placeholder="Update Rack"
@@ -525,7 +528,7 @@ export default class EditAssetForm extends Component {
                                     onClick={() => assetutils.getSuggestedRacks(this.state.datacenter, this.state.rack, results => this.setState(oldState => ({ ...oldState, rackSuggestions: results })))}
                                     title='Rack'
                                 />
-                            </FormField>
+                            </FormField>)
                             :
                             <FormField name="rack" label="Chassis Hostname" >
 
@@ -549,11 +552,11 @@ export default class EditAssetForm extends Component {
 
                         {(this.isNonBlade
                             ?
-                            <FormField name="rackU" label="RackU" >
+                            (!this.props.offlineStorage && <FormField name="rackU" label="RackU" >
 
                                 <TextInput name="rackU" placeholder="Update RackU" onChange={this.handleChange}
                                     value={this.state.rackU} required="true" />
-                            </FormField>
+                            </FormField>)
                             :
                             <FormField name="rackU" label="Slot" >
 
@@ -603,8 +606,8 @@ export default class EditAssetForm extends Component {
                         </FormField>
 
                         {(this.isNonBlade
-                            ?
-                            <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"}
+                            &&
+                            !this.props.offlineStorage) && <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"}
                                 toggle={true} onChange={(e) => {
                                     let panel = document.getElementById("powerPortConnectionsPanel");
                                     let display = !this.state.showPowerConnections;
@@ -614,9 +617,8 @@ export default class EditAssetForm extends Component {
                                         panel.style.display = display ? "block" : "none";
                                     })
                                 }} />
-                            :
-                            <Box></Box>
-                        )}
+
+                        }
 
                         {(this.isNonBlade
                             ?
@@ -653,9 +655,10 @@ export default class EditAssetForm extends Component {
 
                                     />
 
+
                                 </AccordionPanel>
 
-                                <AccordionPanel label="Network Port Connections">
+                                {!this.props.offlineStorage && <AccordionPanel label="Network Port Connections">
                                     <AssetNetworkPortsForm
 
                                         model={this.state.model}
@@ -671,6 +674,7 @@ export default class EditAssetForm extends Component {
                                         onClick={this.addNetworkConnection}
                                         margin={{ horizontal: 'medium', vertical: 'small' }}
 
+
                                         label="Add a network connection" />
 
                                     {/* TODO: add a toast success on adding a connection/ Otherwise, error pops up */}
@@ -679,7 +683,7 @@ export default class EditAssetForm extends Component {
                                           margin={{ horizontal: 'medium', vertical: 'small' }}
                                           label="Validate Connections" /> */}
 
-                                </AccordionPanel>
+                                </AccordionPanel>}
 
                             </Accordion>
                             :
