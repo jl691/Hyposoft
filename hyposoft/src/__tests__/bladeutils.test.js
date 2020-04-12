@@ -5,7 +5,7 @@ import * as firebaseutils from '../utils/firebaseutils'
 
 // NOTE: please only have one assertion in each test
 var ids = {}
-jest.setTimeout(60000);
+jest.setTimeout(120000);
 
 describe('bladeutilsTest', () => {
   beforeAll(done => {
@@ -51,33 +51,54 @@ describe('bladeutilsTest', () => {
     })
   })
 
-  describe('updateChassisTests', () => {
-    test('updateChassis valid asset', done => {
-      bladeutils.updateChassis(ids['chassis'], 'Dell man5', 'chassisHostname', 'C24', 10, '', '', 'Test Datacenter',
-        {}, [], [], [], '', '', '', '',
-        result => {
-          expect(result).toBe(null)
-          done()
-      })
-    })
-
-    // add test checking servers inside were updated
-
-    test('updateChassis blades collection doc exists and was properly updated', done => {
-      firebaseutils.db.collectionGroup('blades').where('id','==',ids['chassis']).get().then(qs => {
-        expect(!qs.empty).toBe(true)
-        expect(qs.docs[0].ref.parent.parent.id).toBe(ids['rack2'])
-        expect(qs.docs[0].data().letter).toBe('chassisHostname')
+  describe('addServerTests', () => {
+    test('addServer valid asset', done => {
+      ids = {...ids,server: '999989'}
+      addServer(ids['server'],'chassisHostname',14,result => {
+        expect(result).toBe(null)
         done()
       })
     })
 
-    test('updateChassis log was added', done => {
+    test('addServer invalid chassis hostname', done => {
+      addServer('100000'/* shouldn't matter since fill fail*/,'nonexistent',1,result => {
+        expect(result).toBe('blade chassis nonexistent does not exist in datacenter Test Datacenter')
+        done()
+      })
+    })
+
+    test('addServer blades collection doc exists', done => {
+      firebaseutils.db.collectionGroup('blades').where('id','==',ids['chassis']).get().then(qs => {
+        firebaseutils.bladeRef.doc(ids['server']).get().then(doc => {
+          expect(doc.exists).toBe(true)
+          expect(!qs.empty).toBe(true)
+          expect(qs.docs[0].data().letter).toBe(doc.data().rack)
+          expect(qs.docs[0].data().assets.includes(ids['server'])).toBe(true)
+          done()
+        })
+      })
+    })
+
+    test('addServer asset data consistency', done => {
+      firebaseutils.assetRef.doc(ids['chassis']).get().then(docRef => {
+        firebaseutils.assetRef.doc(ids['server']).get().then(doc => {
+          expect(doc.exists).toBe(true)
+          expect(docRef.exists).toBe(true)
+          expect(docRef.data().rack).toBe(doc.data().rack)
+          expect(docRef.data().rackU).toBe(doc.data().rackU)
+          expect(docRef.data().rackID).toBe(doc.data().rackID)
+          expect(docRef.data().datacenterID).toBe(doc.data().datacenterID)
+          done()
+        })
+      })
+    })
+
+    test('addServer log was added', done => {
       firebaseutils.logsRef.get().then(docSnaps => {
           ids = {...ids,log: docSnaps.docs[0].id}
           firebaseutils.logsRef.doc(ids['log']).get().then(docRef => {
-            expect(docRef.data().action).toBe('modified')
-            expect(docRef.data().objectId).toBe('999990')
+            expect(docRef.data().action).toBe('created')
+            expect(docRef.data().objectId).toBe('999989')
             done()
           })
       })
@@ -91,124 +112,127 @@ describe('bladeutilsTest', () => {
     })
   })
 
-  describe('deleteChassisTests', () => {
-    test('deleteChassis valid asset', done => {
-      bladeutils.deleteChassis(ids['chassis'],
-        result => {
-          expect(result).toBe(ids['chassis'])
-          done()
-      })
-    })
-
-    // add test for no delete if servers inside
-
-    test('deleteChassis blades collection doc does not exist', done => {
-      firebaseutils.db.collectionGroup('blades').where('id','==',ids['chassis']).get().then(qs => {
-        expect(qs.empty).toBe(true)
-        done()
-      })
-    })
-
-    test('deleteChassis log was added', done => {
-      firebaseutils.logsRef.get().then(docSnaps => {
-          ids = {...ids,log: docSnaps.docs[0].id}
-          firebaseutils.logsRef.doc(ids['log']).get().then(docRef => {
-            expect(docRef.data().action).toBe('deleted')
-            expect(docRef.data().objectId).toBe('999990')
-            done()
-          })
-      })
-    })
-
-    // cleanup log and add a chassis back
-    afterAll(done => {
-      addChassis(ids['chassis'],'C24',10,result => {
-        firebaseutils.logsRef.orderBy('timestamp','desc').get().then(docSnaps => {
-            firebaseutils.logsRef.doc(docSnaps.docs[0].id).delete().then(docRef => {
-              firebaseutils.logsRef.doc(ids['log']).delete().then(docRef => {
-                  done()
-              })
-            })
-        })
-      })
-    })
-  })
-
-  // make last test in suite
-  describe('decommissionChassisTests', () => {
-    test('decommissionChassis valid asset', done => {
-      decomutils.decommissionAsset(ids['chassis'],
-        result => {
-          expect(result).toBe(true)
-          done()
-      },bladeutils.deleteChassis)
-    })
-
-    // add test for decommission all servers inside as well
-
-    test('decommissionChassis blades collection doc does not exist', done => {
-      firebaseutils.db.collectionGroup('blades').where('id','==',ids['chassis']).get().then(qs => {
-        expect(qs.empty).toBe(true)
-        done()
-      })
-    })
-
-    test('decommissionChassis log was added', done => {
-      firebaseutils.logsRef.get().then(docSnaps => {
-          ids = {...ids,log: docSnaps.docs[0].id}
-          firebaseutils.logsRef.doc(ids['log']).get().then(docRef => {
-            expect(docRef.data().action).toBe('decommissioned')
-            expect(docRef.data().objectId).toBe('999990')
-            done()
-          })
-      })
-    })
-
-    // cleanup log and add a chassis back
-    afterAll(done => {
-      firebaseutils.logsRef.doc(ids['log']).delete().then(docRef => {
-        firebaseutils.decommissionRef.orderBy('timestamp','desc').get().then(docSnaps => {
-            firebaseutils.decommissionRef.doc(docSnaps.docs[0].id).delete().then(docRef => {
-              done()
-            })
-        })
-      })
-    })
-  })
-
-  // describe('serverTests', () => {
-  //   test('decommissionAsset existing asset', done => {
-  //     decomutils.decommissionAsset('999999', result => {
-  //         expect(result).toBe(true)
+  // describe('updateChassisTests', () => {
+  //   test('updateChassis valid asset', done => {
+  //     bladeutils.updateChassis(ids['chassis'], 'Dell man5', 'chassisHost', 'C24', 10, '', '', 'Test Datacenter',
+  //       {}, [], [], [], '', '', '', '',
+  //       result => {
+  //         expect(result).toBe(null)
   //         done()
   //     })
   //   })
   //
-  //   test('decommissionAsset non-existing asset', done => {
-  //     decomutils.decommissionAsset('999998', result => {
-  //         expect(result).toBe(false)
-  //         done()
+  //   // add test checking servers inside were updated
+  //
+  //   test('updateChassis blades collection doc exists and was properly updated', done => {
+  //     firebaseutils.db.collectionGroup('blades').where('id','==',ids['chassis']).get().then(qs => {
+  //       expect(!qs.empty).toBe(true)
+  //       expect(qs.docs[0].ref.parent.parent.id).toBe(ids['rack2'])
+  //       expect(qs.docs[0].data().letter).toBe('chassisHost')
+  //       done()
   //     })
   //   })
   //
-  //   test('decommissionAsset collection and doc exist', done => {
-  //     firebaseutils.decommissionRef.get().then(docSnaps => {
-  //         ids = {...ids,decom: docSnaps.docs[0].id}
-  //         firebaseutils.decommissionRef.doc(ids['decom']).get().then(docRef => {
-  //           expect(docRef.exists).toBe(true)
+  //   test('updateChassis log was added', done => {
+  //     firebaseutils.logsRef.get().then(docSnaps => {
+  //         ids = {...ids,log: docSnaps.docs[0].id}
+  //         firebaseutils.logsRef.doc(ids['log']).get().then(docRef => {
+  //           expect(docRef.data().action).toBe('modified')
+  //           expect(docRef.data().objectId).toBe('999990')
   //           done()
   //         })
   //     })
   //   })
   //
-  //   test('decommissionAsset log was added', done => {
+  //   // cleanup log
+  //   afterAll(done => {
+  //     firebaseutils.logsRef.doc(ids['log']).delete().then(docRef => {
+  //         done()
+  //     })
+  //   })
+  // })
+  //
+  // describe('deleteChassisTests', () => {
+  //   test('deleteChassis valid asset', done => {
+  //     bladeutils.deleteChassis(ids['chassis'],
+  //       result => {
+  //         expect(result).toBe(ids['chassis'])
+  //         done()
+  //     })
+  //   })
+  //
+  //   // add test for no delete if servers inside
+  //
+  //   test('deleteChassis blades collection doc does not exist', done => {
+  //     firebaseutils.db.collectionGroup('blades').where('id','==',ids['chassis']).get().then(qs => {
+  //       expect(qs.empty).toBe(true)
+  //       done()
+  //     })
+  //   })
+  //
+  //   test('deleteChassis log was added', done => {
+  //     firebaseutils.logsRef.get().then(docSnaps => {
+  //         ids = {...ids,log: docSnaps.docs[0].id}
+  //         firebaseutils.logsRef.doc(ids['log']).get().then(docRef => {
+  //           expect(docRef.data().action).toBe('deleted')
+  //           expect(docRef.data().objectId).toBe('999990')
+  //           done()
+  //         })
+  //     })
+  //   })
+  //
+  //   // cleanup log and add a chassis back
+  //   afterAll(done => {
+  //     addChassis(ids['chassis'],'C24',10,result => {
+  //       firebaseutils.logsRef.orderBy('timestamp','desc').get().then(docSnaps => {
+  //           firebaseutils.logsRef.doc(docSnaps.docs[0].id).delete().then(docRef => {
+  //             firebaseutils.logsRef.doc(ids['log']).delete().then(docRef => {
+  //                 done()
+  //             })
+  //           })
+  //       })
+  //     })
+  //   })
+  // })
+  //
+  // // make last test in suite
+  // describe('decommissionChassisTests', () => {
+  //   test('decommissionChassis valid asset', done => {
+  //     decomutils.decommissionAsset(ids['chassis'],
+  //       result => {
+  //         expect(result).toBe(true)
+  //         done()
+  //     },bladeutils.deleteChassis)
+  //   })
+  //
+  //   // add test for decommission all servers inside as well
+  //
+  //   test('decommissionChassis blades collection doc does not exist', done => {
+  //     firebaseutils.db.collectionGroup('blades').where('id','==',ids['chassis']).get().then(qs => {
+  //       expect(qs.empty).toBe(true)
+  //       done()
+  //     })
+  //   })
+  //
+  //   test('decommissionChassis log was added', done => {
   //     firebaseutils.logsRef.get().then(docSnaps => {
   //         ids = {...ids,log: docSnaps.docs[0].id}
   //         firebaseutils.logsRef.doc(ids['log']).get().then(docRef => {
   //           expect(docRef.data().action).toBe('decommissioned')
-  //           expect(docRef.data().objectId).toBe('999999')
+  //           expect(docRef.data().objectId).toBe('999990')
   //           done()
   //         })
+  //     })
+  //   })
+  //
+  //   // cleanup log and add a chassis back
+  //   afterAll(done => {
+  //     firebaseutils.logsRef.doc(ids['log']).delete().then(docRef => {
+  //       firebaseutils.decommissionRef.orderBy('timestamp','desc').get().then(docSnaps => {
+  //           firebaseutils.decommissionRef.doc(docSnaps.docs[0].id).delete().then(docRef => {
+  //             done()
+  //           })
+  //       })
   //     })
   //   })
   // })
@@ -235,7 +259,11 @@ function addInitialAssets(callback) {
       const dell = makeModel('Dell','man5',1,'chassis')
       firebaseutils.modelsRef.add(dell).then(docRef => {
         ids = {...ids,model: docRef.id}
+        const cisco = makeModel('Cisco','bl3',1,'blade')
+        firebaseutils.modelsRef.add(cisco).then(docRef => {
+          ids = {...ids,serverModel: docRef.id}
         callback()
+      })
       })
       })
     })
@@ -244,24 +272,38 @@ function addInitialAssets(callback) {
 
 function tearDownAssets(callback) {
   firebaseutils.modelsRef.doc(ids['model']).delete().then(docRef => {
-    // firebaseutils.assetRef.doc(ids['chassis']).delete().then(docRef => {
+    firebaseutils.modelsRef.doc(ids['serverModel']).delete().then(docRef => {
+    firebaseutils.assetRef.doc(ids['chassis']).delete().then(docRef => {
+      firebaseutils.assetRef.doc(ids['server']).delete().then(docRef => {
+        firebaseutils.bladeRef.doc(ids['server']).delete().then(docRef => {
       firebaseutils.datacentersRef.doc(ids['datacenter']).delete().then(docRef => {
-        // firebaseutils.db.collectionGroup('blades').where('id','==',ids['chassis']).get().then(qs => {
-        //     qs.docs[0].ref.delete().then(docRef => {
+        firebaseutils.db.collectionGroup('blades').where('id','==',ids['chassis']).get().then(qs => {
+            qs.docs[0].ref.delete().then(docRef => {
               firebaseutils.racksRef.doc(ids['rack']).delete().then(docRef => {
                 firebaseutils.racksRef.doc(ids['rack2']).delete().then(docRef => {
                           callback()
                     })
                     })
-            // })
-        // })
+            })
         })
-      // })
+        })
+      })
+      })
+      })
+    })
     })
 }
 
 function addChassis(id,rack,rackU,callback) {
   bladeutils.addChassis(id, 'Dell man5', 'chassisHostname', rack, rackU, '', '', 'Test Datacenter',
+    {}, [], [], '', '', '', '',
+    result => {
+      callback(result)
+  })
+}
+
+function addServer(id,chassisHost,slot,callback) {
+  bladeutils.addServer(id, 'Cisco bl3', 'serverHostname', chassisHost, slot, '', '', 'Test Datacenter',
     {}, [], [], '', '', '', '',
     result => {
       callback(result)
