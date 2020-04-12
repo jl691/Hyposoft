@@ -71,6 +71,8 @@ export default class DetailedAssetScreen extends Component {
         this.powerPorts = null;
         this.connectedPDU = null;
         if (!this.props.match.params.storageSiteAbbrev) {
+
+            console.log("ABCD")
             powerutils.checkConnectedToPDU(this.props.match.params.assetID, result => {
                 if (!(result === null)) {
                     console.log(result)
@@ -104,6 +106,7 @@ export default class DetailedAssetScreen extends Component {
             });
         }
         else {
+            console.log("EDFG")
             assetutils.getAssetDetails(
                 this.props.match.params.assetID,
                 assetsdb => {
