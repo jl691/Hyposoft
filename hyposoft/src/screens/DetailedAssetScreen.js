@@ -452,6 +452,11 @@ export default class DetailedAssetScreen extends Component {
                         updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(this.state.asset.macAddresses)}
                         updatePowerConnectionsFromParent={this.state.asset.powerConnections}
                         updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.asset.networkConnections)}
+
+                        updateDisplayColorFromParent={this.state.asset.variances.displayColor}
+                        updateCpuFromParent = {this.state.asset.variances.cpu}
+                        updateMemoryFromParent={this.state.asset.variances.memory}
+                        updateStorageFromParent={this.state.asset.variances.storage}
                     />
                 </Layer>
             )

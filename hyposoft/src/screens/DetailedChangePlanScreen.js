@@ -468,6 +468,12 @@ class DetailedChangePlanScreen extends React.Component {
                         updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses)}
                         updatePowerConnectionsFromParent={this.state.currentChange.powerConnections}
                         updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.currentChange.networkConnections)}
+
+                        updateDisplayColorFromParent={this.state.currentChange.variances.displayColor}
+                        updateCpuFromParent={this.state.currentChange.variances.cpu}
+                        updateMemoryFromParent={this.state.currentChange.variances.memory}
+                        updateStorageFromParent={this.state.currentChange.variances.storage}
+                        
                     />
                 </Layer>
             )

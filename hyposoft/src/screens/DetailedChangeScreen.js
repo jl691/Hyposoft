@@ -472,6 +472,7 @@ class DetailedChangeScreen extends React.Component {
                     changePlanID={this.changePlanID} successfulEdit={this.successfulEdit} />
             )
         } else if (popupType === 'edit') {
+            console.log(this.state.currentChange.variances.displayColor)
             popup = (
                 <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
                     onClickOutside={() => this.setState({ popupType: undefined })}>
@@ -493,11 +494,16 @@ class DetailedChangeScreen extends React.Component {
                         updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses)}
                         updatePowerConnectionsFromParent={this.state.currentChange.powerConnections}
                         updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.currentChange.networkConnections)}
+
+                        updateDisplayColorFromParent={this.state.currentChange.variances.displayColor}
+                        updateCpuFromParent={this.state.currentChange.variances.cpu}
+                        updateMemoryFromParent={this.state.currentChange.variances.memory}
+                        updateStorageFromParent={this.state.currentChange.variances.storage}
                     />
                 </Layer>
             )
         } else if (popupType === 'add') {
-            console.log(this.state.currentChange)
+           // console.log(this.state.currentChange)
             // console.log(this.state.currentChange.macAddresses, this.state.currentChange, assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses))
             popup = (
                 <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
@@ -523,10 +529,10 @@ class DetailedChangeScreen extends React.Component {
                         updateAssetIDFromParent={this.state.currentChange.assetId ? this.state.currentChange.assetId : ""}
 
 
-                    // updateDisplayColorFromParent={this.state.currentChange.variances.displayColor}
-                    // updateCpuFromParent={this.state.currentChange.variances.cpu}
-                    // updateMemoryFromParent={this.state.currentChange.variances.memory}
-                    // updateStorageFromParent={this.state.currentChange.variances.storage}
+                    updateDisplayColorFromParent={this.state.currentChange.variances.displayColor}
+                    updateCpuFromParent={this.state.currentChange.variances.cpu}
+                    updateMemoryFromParent={this.state.currentChange.variances.memory}
+                    updateStorageFromParent={this.state.currentChange.variances.storage}
                     />
                 </Layer>
             )
