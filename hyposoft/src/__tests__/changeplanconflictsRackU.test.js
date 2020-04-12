@@ -31,7 +31,7 @@ describe('change plan add asset: rackU test', () => {
 
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
 
-                expect(docRef.data().database.rackU[0]).toBe('rackUConflictErrID')
+                expect(docRef.data().database.rackU[0]).toBe('rackUConflictDBErrID')
                 done()
             })
         })
