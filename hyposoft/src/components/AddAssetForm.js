@@ -4,7 +4,7 @@ import {
     Grommet,
     Form,
     FormField,
-    Heading, 
+    Heading,
     TextInput,
     Box,
     Accordion,
@@ -310,9 +310,9 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Invalid rack.");
             } else if (!parseInt(this.state.rackU)) {
                 //invalid number
-                ToastsStore.error("Rack U must be a number.");
+                ToastsStore.error((this.isNonBlade ? "Rack U" : "Slot") + " must be a number.");
             } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
-                ToastsStore.error("Rack U must be positive.");
+                ToastsStore.error((this.isNonBlade ? "Rack U" : "Slot") + " must be positive.");
 
                 //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
             }
