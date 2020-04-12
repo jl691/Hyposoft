@@ -57,4 +57,4 @@ var decommissionRef = db.collection('decommission')
 var bladeRef = db.collection('bladeInfo')
 var offlinestorageRef = db.collection('offlinestorage')
 
-export { hashAndSalt, hashAndSalt2, usersRef, racksRef, assetRef, modelsRef, claimsRef, recoveriesRef, datacentersRef, logsRef, db, firebase, changeplansRef, decommissionRef, offlinestorageRef, bladeRef }
+export { hashAndSalt, hashAndSalt2, usersRef, racksRef, assetRef, modelsRef, claimsRef, recoveriesRef, datacentersRef, logsRef, testDB, db, firebase, changeplansRef, decommissionRef, offlinestorageRef, bladeRef }

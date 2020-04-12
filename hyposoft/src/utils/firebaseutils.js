@@ -1,17 +1,16 @@
 import * as firebase from 'firebase/app'
 import 'firebase/firestore'
-import 'firebase/database'
 import { sha256 } from 'js-sha256'
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDYysL-YL2Q6Edyrukt2pMP9CZlKVzLfOs",
-    authDomain: "hyposoft-test.firebaseapp.com",
-    databaseURL: "https://hyposoft-test.firebaseio.com",
-    projectId: "hyposoft-test",
-    storageBucket: "hyposoft-test.appspot.com",
-    messagingSenderId: "505613544306",
-    appId: "1:505613544306:web:3f7e8074d506415eec0beb",
-    measurementId: "G-2XZ7TZ4NRT"
+    apiKey: "AIzaSyBE772y7XqZWwG5Q6Un0lu3zJsM12l-EDg",
+    authDomain: "hyposoft-dev.firebaseapp.com",
+    databaseURL: "https://hyposoft-dev.firebaseio.com",
+    projectId: "hyposoft-dev",
+    storageBucket: "hyposoft-dev.appspot.com",
+    messagingSenderId: "324524941581",
+    appId: "1:324524941581:web:ea302b22697fc9cc9ad044",
+    measurementId: "G-ZCSSY548ED"
 };
 
 // Initialize Firebase
@@ -42,7 +41,6 @@ function hashAndSalt2(data, randSalt=null) {
 }
 
 const db = firebase.firestore()
-const testDB = firebase.database()
 
 var usersRef = db.collection('users')
 var claimsRef = db.collection('claims')
@@ -57,4 +55,4 @@ var decommissionRef = db.collection('decommission')
 var bladeRef = db.collection('bladeInfo')
 var offlinestorageRef = db.collection('offlinestorage')
 
-export { hashAndSalt, hashAndSalt2, usersRef, racksRef, assetRef, modelsRef, claimsRef, recoveriesRef, datacentersRef, logsRef, testDB, db, firebase, changeplansRef, decommissionRef, offlinestorageRef, bladeRef }
+export { hashAndSalt, hashAndSalt2, usersRef, racksRef, assetRef, modelsRef, claimsRef, recoveriesRef, datacentersRef, logsRef, db, firebase, changeplansRef, decommissionRef, offlinestorageRef, bladeRef }
