@@ -162,7 +162,7 @@ describe('bladeutilsTest', () => {
     })
 
     test('updateServer log was added', done => {
-      firebaseutils.logsRef.get().then(docSnaps => {
+      firebaseutils.logsRef.orderBy('timestamp','desc').get().then(docSnaps => {
           ids = {...ids,log: docSnaps.docs[0].id}
           firebaseutils.logsRef.doc(ids['log']).get().then(docRef => {
             expect(docRef.data().action).toBe('modified')
@@ -217,7 +217,7 @@ describe('bladeutilsTest', () => {
     })
 
     test('updateChassis log was added', done => {
-      firebaseutils.logsRef.get().then(docSnaps => {
+      firebaseutils.logsRef.orderBy('timestamp','desc').get().then(docSnaps => {
           ids = {...ids,log: docSnaps.docs[0].id}
           firebaseutils.logsRef.doc(ids['log']).get().then(docRef => {
             expect(docRef.data().action).toBe('modified')
@@ -260,7 +260,7 @@ describe('bladeutilsTest', () => {
     })
 
     test('deleteChassis log was added', done => {
-      firebaseutils.logsRef.get().then(docSnaps => {
+      firebaseutils.logsRef.orderBy('timestamp','desc').get().then(docSnaps => {
           ids = {...ids,log: docSnaps.docs[0].id}
           firebaseutils.logsRef.doc(ids['log']).get().then(docRef => {
             expect(docRef.data().action).toBe('deleted')
@@ -299,7 +299,7 @@ describe('bladeutilsTest', () => {
     })
 
     test('deleteServer log was added', done => {
-      firebaseutils.logsRef.get().then(docSnaps => {
+      firebaseutils.logsRef.orderBy('timestamp','desc').get().then(docSnaps => {
           ids = {...ids,log: docSnaps.docs[0].id}
           firebaseutils.logsRef.doc(ids['log']).get().then(docRef => {
             expect(docRef.data().action).toBe('deleted')
@@ -312,53 +312,114 @@ describe('bladeutilsTest', () => {
     // cleanup log and add a chassis back
     afterAll(done => {
       // need to add two servers back for decom
-      firebaseutils.logsRef.doc(ids['log']).delete().then(docRef => {
-          done()
+      addServer(ids['server'],'newChassi',7,result => {
+              ids = {...ids,server2: '999988'}
+              addServer(ids['server2'],'newChassi',4,result => {
+                firebaseutils.logsRef.doc(ids['log']).delete().then(docRef => {
+                    done()
+                })
+            },'serverHost2')
       })
     })
   })
-  //
-  // // make last test in suite
-  // describe('decommissionChassisTests', () => {
-  //   test('decommissionChassis valid asset', done => {
-  //     decomutils.decommissionAsset(ids['chassis'],
-  //       result => {
-  //         expect(result).toBe(true)
-  //         done()
-  //     },bladeutils.deleteChassis)
-  //   })
-  //
-  //   // add test for decommission all servers inside as well
-  //
-  //   test('decommissionChassis blades collection doc does not exist', done => {
-  //     firebaseutils.db.collectionGroup('blades').where('id','==',ids['chassis']).get().then(qs => {
-  //       expect(qs.empty).toBe(true)
-  //       done()
-  //     })
-  //   })
-  //
-  //   test('decommissionChassis log was added', done => {
-  //     firebaseutils.logsRef.get().then(docSnaps => {
-  //         ids = {...ids,log: docSnaps.docs[0].id}
-  //         firebaseutils.logsRef.doc(ids['log']).get().then(docRef => {
-  //           expect(docRef.data().action).toBe('decommissioned')
-  //           expect(docRef.data().objectId).toBe('999990')
-  //           done()
-  //         })
-  //     })
-  //   })
-  //
-  //   // cleanup log and add a chassis back
-  //   afterAll(done => {
-  //     firebaseutils.logsRef.doc(ids['log']).delete().then(docRef => {
-  //       firebaseutils.decommissionRef.orderBy('timestamp','desc').get().then(docSnaps => {
-  //           firebaseutils.decommissionRef.doc(docSnaps.docs[0].id).delete().then(docRef => {
-  //             done()
-  //           })
-  //       })
-  //     })
-  //   })
-  // })
+
+  describe('decommissionServerTests', () => {
+    test('decommissionServer valid asset', done => {
+      decomutils.decommissionAsset(ids['server2'],
+        result => {
+          expect(result).toBe(true)
+          done()
+      },bladeutils.deleteServer)
+    })
+
+    // add test for decommission all servers inside as well
+
+    test('decommissionServer bladeInfo doc does not exist', done => {
+      firebaseutils.db.collectionGroup('blades').where('id','==',ids['chassis2']).get().then(qs => {
+        firebaseutils.bladeRef.doc(ids['server2']).get().then(doc => {
+          expect(doc.exists).toBe(false)
+          expect(!qs.empty).toBe(true)
+          expect(qs.docs[0].data().assets.includes(ids['server2'])).toBe(false)
+          done()
+        })
+      })
+    })
+
+    test('decommissionServer log was added', done => {
+      firebaseutils.logsRef.orderBy('timestamp','desc').get().then(docSnaps => {
+          ids = {...ids,log: docSnaps.docs[0].id}
+          firebaseutils.logsRef.doc(ids['log']).get().then(docRef => {
+            expect(docRef.data().action).toBe('decommissioned')
+            expect(docRef.data().objectId).toBe(ids['server2'])
+            done()
+          })
+      })
+    })
+
+    afterAll(done => {
+      firebaseutils.logsRef.doc(ids['log']).delete().then(docRef => {
+        firebaseutils.decommissionRef.orderBy('timestamp','desc').get().then(docSnaps => {
+            firebaseutils.decommissionRef.doc(docSnaps.docs[0].id).delete().then(docRef => {
+              done()
+            })
+        })
+      })
+    })
+  })
+
+  // make last test in suite
+  describe('decommissionChassisTests', () => {
+    test('decommissionChassis valid asset', done => {
+      decomutils.decommissionAsset(ids['chassis2'],
+        result => {
+          expect(result).toBe(true)
+          done()
+      },bladeutils.deleteChassis)
+    })
+
+    // add test for decommission all servers inside as well
+
+    test('decommissionChassis blades collection doc does not exist', done => {
+      firebaseutils.db.collectionGroup('blades').where('id','==',ids['chassis2']).get().then(qs => {
+        firebaseutils.bladeRef.doc(ids['server2']).get().then(doc => {
+          expect(doc.exists).toBe(false)
+          expect(qs.empty).toBe(true)
+          done()
+        })
+      })
+    })
+
+    test('decommissionChassis logs were added', done => {
+      firebaseutils.logsRef.orderBy('timestamp','desc').get().then(docSnaps => {
+          ids = {...ids,log: docSnaps.docs[0].id}
+          firebaseutils.logsRef.doc(ids['log']).get().then(docRef => {
+            ids = {...ids,log2: docSnaps.docs[1].id}
+            firebaseutils.logsRef.doc(docSnaps.docs[1].id).get().then(doc => {
+              expect(docRef.data().action).toBe('decommissioned')
+              expect(docRef.data().objectId).toBe(ids['chassis2'])
+              expect(doc.data().action).toBe('decommissioned')
+              expect(doc.data().objectId).toBe(ids['server'])
+              done()
+            })
+          })
+      })
+    })
+
+    // cleanup log and add a chassis back
+    afterAll(done => {
+      firebaseutils.logsRef.doc(ids['log']).delete().then(docRef => {
+        firebaseutils.logsRef.doc(ids['log2']).delete().then(docRef => {
+          firebaseutils.decommissionRef.orderBy('timestamp','desc').get().then(docSnaps => {
+            firebaseutils.decommissionRef.doc(docSnaps.docs[0].id).delete().then(docRef => {
+              firebaseutils.decommissionRef.doc(docSnaps.docs[1].id).delete().then(docRef => {
+                done()
+              })
+            })
+          })
+        })
+      })
+    })
+  })
 
   afterAll(done => {
     tearDownAssets(() => {
@@ -385,7 +446,7 @@ function addInitialAssets(callback) {
         const cisco = makeModel('Cisco','bl3',1,'blade')
         firebaseutils.modelsRef.add(cisco).then(docRef => {
           ids = {...ids,serverModel: docRef.id}
-        callback()
+        clearLogs(() => callback())
       })
       })
       })
@@ -396,31 +457,26 @@ function addInitialAssets(callback) {
 function tearDownAssets(callback) {
   firebaseutils.modelsRef.doc(ids['model']).delete().then(docRef => {
     firebaseutils.modelsRef.doc(ids['serverModel']).delete().then(docRef => {
-    // firebaseutils.assetRef.doc(ids['chassis']).delete().then(docRef => {
-      firebaseutils.assetRef.doc(ids['chassis2']).delete().then(docRef => {
-      // firebaseutils.assetRef.doc(ids['server']).delete().then(docRef => {
-        // firebaseutils.bladeRef.doc(ids['server']).delete().then(docRef => {
       firebaseutils.datacentersRef.doc(ids['datacenter']).delete().then(docRef => {
-        // firebaseutils.db.collectionGroup('blades').where('id','==',ids['chassis']).get().then(qs => {
-            // qs.docs[0].ref.delete().then(docRef => {
-              firebaseutils.db.collectionGroup('blades').where('id','==',ids['chassis2']).get().then(qs => {
-                  qs.docs[0].ref.delete().then(docRef => {
-              firebaseutils.racksRef.doc(ids['rack']).delete().then(docRef => {
-                firebaseutils.racksRef.doc(ids['rack2']).delete().then(docRef => {
-                          callback()
-                    })
-                    })
-                  })
-              })
-            // })
-        // })
+        firebaseutils.racksRef.doc(ids['rack']).delete().then(docRef => {
+          firebaseutils.racksRef.doc(ids['rack2']).delete().then(docRef => {
+            clearLogs(() => callback())
+          })
         })
-      // })
-      // })
       })
-      // })
     })
+  })
+}
+
+function clearLogs(callback) {
+  firebaseutils.logsRef.get().then(docSnaps => {
+    docSnaps.forEach(async(doc) => {
+      await new Promise(function(resolve, reject) {
+        doc.ref.delete().then(() => resolve())
+      })
     })
+    callback()
+  })
 }
 
 function addChassis(id,rack,rackU,callback,hostname='') {
@@ -431,8 +487,8 @@ function addChassis(id,rack,rackU,callback,hostname='') {
   })
 }
 
-function addServer(id,chassisHost,slot,callback) {
-  bladeutils.addServer(id, 'Cisco bl3', 'serverHostname', chassisHost, slot, '', '', 'Test Datacenter',
+function addServer(id,chassisHost,slot,callback,hostname='') {
+  bladeutils.addServer(id, 'Cisco bl3', hostname ? hostname : 'serverHostname', chassisHost, slot, '', '', 'Test Datacenter',
     {}, [], [], '', '', '', '',
     result => {
       callback(result)
