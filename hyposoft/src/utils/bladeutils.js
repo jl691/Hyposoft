@@ -107,13 +107,13 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
     }, changePlanID, changeDocID)
 }
 
-function deleteChassis(assetID, callback, isDecommission = false) {
+function deleteChassis(assetID, callback, isDecommission = false, offline = false) {
     firebaseutils.db.collectionGroup('blades').where("id","==",assetID).get().then(qs => {
-        if (!qs.empty && (qs.docs[0].data().assets.length === 0 || isDecommission)) {
+        if (!qs.empty && (qs.docs[0].data().assets.length === 0 || isDecommission || offline)) {
             assetutils.deleteAsset(assetID, async(deletedId) => {
                 if (deletedId) {
                     var myParams = null
-                    if (isDecommission) {
+                    if (isDecommission || offline) {
                         await new Promise(function(resolve, reject) {
                             getBladeChassisViewParams(qs.docs[0].data().letter,async(chassisSlots,mySlot)=> {
                               const qsAssets = qs.docs[0].data().assets
@@ -125,7 +125,11 @@ function deleteChassis(assetID, callback, isDecommission = false) {
                                         chassisSlots: chassisSlots,
                                         slot: mySlot[qsAssets[i]]
                                       }
-                                      decomutils.decommissionAsset(qsAssets[i],doNothing => resolve(),deleteServer,chassisParams)
+                                      if (offline) {
+                                        deleteServer(qsAssets[i], doNothing => resolve(), true /*do this to allow no logged deletion*/)
+                                      } else {
+                                        decomutils.decommissionAsset(qsAssets[i],doNothing => resolve(),deleteServer,chassisParams)
+                                      }
                                   })
                               }
                               myParams = {

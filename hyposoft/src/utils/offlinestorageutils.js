@@ -209,7 +209,7 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback){
                                         console.log("6")
                                         callback(null);
                                     }
-                                }, true)
+                                }, true /*do this to allow no logged deletion*/)
                             }).catch(function () {
                                 console.log("5")
                                 callback(null);
