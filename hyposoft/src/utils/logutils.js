@@ -71,9 +71,9 @@ function POWER_OFF() {
     return 'powered off'
 }
 
-// function MOVE() {
-//     return 'moved'
-// }
+function MOVE() {
+    return 'moved'
+}
 
 // only optional is objectId and objectType
 function packageLog(timestamp, objectId, objectType, objectName, currentData, previousData, datacenter, action, userId, userName) {
@@ -312,7 +312,11 @@ function buildLog(data) {
               + (data.objectType === RACK()
                 || data.objectType === ASSET()
                 || data.objectType === PDU()
-                || data.objectType === BCMAN() ? (' in datacenter ' + data.datacenter + '.') : '.')
+                || data.objectType === BCMAN()
+                    ? (' in datacenter ' + data.datacenter + '.')
+                    : (data.objectType === OFFLINE() && data.action === MOVE()
+                        ? (' from ' + data.previousData.datacenter + ' to ' + data.datacenter + '.')
+                        : '.'))
     return log
 }
 
