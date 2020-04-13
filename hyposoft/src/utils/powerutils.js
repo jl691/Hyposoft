@@ -2,6 +2,47 @@ import axios from 'axios'
 import * as firebaseutils from './firebaseutils'
 import * as logutils from './logutils'
 
+// Example usage: powerutils.getBladeStatus('test-chassis', 1, () => {})
+function getBladeStatus(chassis, blade, callback) {
+    axios.get('https://hyposoft-53c70.appspot.com/getBCMANStatus?chassis='+chassis+'&blade='+blade, {}).then(response => {
+        if (response.data === 'Failed') {
+            callback(null)
+        } else {
+            callback(response.data)
+        }
+    }).catch(() => {
+        callback(null)
+    })
+}
+
+function changeBladePower(chassis, blade, powerStatus, callback) {
+    axios.get('https://hyposoft-53c70.appspot.com/BCMANPower?chassis='+chassis+'&blade='+blade+'&powerStatus='+powerStatus, {}).then(response => {
+        if (response.data === 'Failed') {
+            callback(null)
+        } else {
+            // TODO: Change the log statement below when logging for BCMAN is implemented
+            // logutils.addLog(null,logutils.PDU(),logutils.POWER_ON(),{pdu: pdu, portNumber: portNumber})
+            callback(response.data) // Data should be 'Success'
+        }
+    }).catch(() => {
+        callback(null)
+    })
+}
+
+function powerPortOn(pdu, portNumber, callback) {
+    axios.get('https://hyposoft-53c70.appspot.com/poweron?pdu='+pdu+'&port='+portNumber, {}).then(response => {
+        console.log(response)
+        if (response) {
+            logutils.addLog(null,logutils.PDU(),logutils.POWER_ON(),{pdu: pdu, portNumber: portNumber})
+            callback(response)
+        } else {
+            callback(null)
+        }
+    }).catch(() => {
+        callback(null)
+    })
+}
+
 // Example usage: powerutils.getPortStatus('hpdu-rtp1-A01L', 4, () => {})
 function getPortStatus(pdu, portNumber, callback) {
     axios.get('https://hyposoft-53c70.appspot.com/getPduStatuses?pdu='+pdu, {}).then(response => {
