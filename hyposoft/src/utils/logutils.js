@@ -148,6 +148,7 @@ function finishAddingLog(object, objectId, objectType, action, callback) {
             if (user) {
                 var log = packageLog(timestamp, objectId, objectType, object.name, object.data, object.previousData, object.datacenter, action, userId, user.name)
                 firebaseutils.logsRef.add(log)
+                console.log('added');
               }
             if (callback) {
               callback()
@@ -310,11 +311,11 @@ function buildLog(data) {
               + data.action + (data.action === MODIFY() && data.previousData ? buildDiff(data) : ' ')
               + data.objectType + ' ' + data.objectName
               + (data.objectType === RACK()
-                || data.objectType === ASSET()
+                || (data.objectType === ASSET() && data.action !== MOVE())
                 || data.objectType === PDU()
                 || data.objectType === BCMAN()
                     ? (' in datacenter ' + data.datacenter + '.')
-                    : (data.objectType === OFFLINE() && data.action === MOVE()
+                    : (data.action === MOVE()
                         ? (' from ' + data.previousData.datacenter + ' to ' + data.datacenter + '.')
                         : '.'))
     return log
@@ -727,4 +728,4 @@ var isEqual = function (value, other, name) {
 	return true;
 };
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, PDU, BCMAN, OFFLINE, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, POWER_ON, POWER_OFF, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }
+export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, PDU, BCMAN, OFFLINE, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, POWER_ON, POWER_OFF, MOVE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }

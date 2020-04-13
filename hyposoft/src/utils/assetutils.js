@@ -156,7 +156,7 @@ function validateAssetVariances(displayColor, cpu, memory, storage, callback) {
     }
 }
 
-function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null, chassis = null) {
+function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null, chassis = null, noLog = false) {
 
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
@@ -312,7 +312,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                             }).then(function () {
 
                                                                                                 console.log("Document successfully updated in racks");
-                                                                                                logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
+                                                                                                if (!noLog) {
+                                                                                                  logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
+                                                                                                }
                                                                                                 callback(null, overrideAssetID);
                                                                                             })
                                                                                         })
@@ -325,7 +327,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                             }).then(function () {
 
                                                                                                 console.log("Document successfully updated in racks");
-                                                                                                logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
+                                                                                                if (!noLog) {
+                                                                                                  logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
+                                                                                                }
                                                                                                 callback(null, overrideAssetID);
                                                                                             })
                                                                                         })
@@ -446,7 +450,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                             }).then(function () {
 
                                                                                                 console.log("Document successfully updated in racks");
-                                                                                                logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                                                if (!noLog) {
+                                                                                                  logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                                                }
                                                                                                 callback(null, newID);
                                                                                             })
                                                                                         })
@@ -459,7 +465,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                             }).then(function () {
 
                                                                                                 console.log("Document successfully updated in racks");
-                                                                                                logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                                                if (!noLog) {
+                                                                                                  logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                                                }
                                                                                                 callback(null, newID);
                                                                                             })
                                                                                         })

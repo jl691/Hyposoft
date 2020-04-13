@@ -1,5 +1,6 @@
 import * as firebaseutils from "./firebaseutils";
 import * as assetutils from "./assetutils";
+import * as logutils from "./logutils";
 import {offlinestorageRef} from "./firebaseutils";
 import {db} from "./firebaseutils";
 
@@ -187,6 +188,7 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback){
                 if(assetDocumentSnapshot.exists){
                     firebaseutils.offlinestorageRef.doc(offlineStorageID).get().then(function (storageDocumentSnapshot) {
                         if(storageDocumentSnapshot.exists){
+                            const savedAssetData = assetDocumentSnapshot.data();
                             let assetData = assetDocumentSnapshot.data();
                             assetData.networkConnections = {};
                             assetData.powerConnections = [];
@@ -202,11 +204,12 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback){
                                 assetutils.deleteAsset(assetID, result => {
                                     if(result){
                                         callback(true, offlineStorageAbbrev);
+                                        logutils.addLog(assetID,logutils.OFFLINE(),logutils.MOVE(),savedAssetData)
                                     } else {
                                         console.log("6")
                                         callback(null);
                                     }
-                                })
+                                }, true)
                             }).catch(function () {
                                 console.log("5")
                                 callback(null);
@@ -242,6 +245,7 @@ function moveAssetFromOfflineStorage(assetID, datacenter, rack, rackU, callback)
                     if(!result){
                         let parentDoc = querySnapshot.docs[0].ref.parent.parent;
                         offlinestorageRef.doc(parentDoc.id).collection("offlineAssets").doc(String(assetID)).delete().then(function () {
+                            logutils.addLog(data.assetId,logutils.ASSET(),logutils.MOVE(),data)
                             callback(true);
                         }).catch(function () {
                             callback(null);
@@ -249,7 +253,7 @@ function moveAssetFromOfflineStorage(assetID, datacenter, rack, rackU, callback)
                     } else {
                         callback(null);
                     }
-                })
+                },/*changePlanID*/ null, /*changeDocID*/ null, /*chassis*/ null, /*noLog*/ true)
         }
     })
 }
