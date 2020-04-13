@@ -118,7 +118,7 @@ class LogScreen extends Component {
                                 this.props.history.push('/models/'+datum.currentData.vendor+'/'+datum.currentData.modelNumber)
                             } else if (datum.objectType === logutils.CHANGEPLAN()) {
                                 this.props.history.push('/changeplans/'+datum.objectId)
-                            } else if (datum.objectType === logutils.ASSET() || datum.objectType === logutils.PDU()) {
+                            } else if (datum.objectType === logutils.ASSET() || datum.objectType === logutils.PDU() || datum.objectType === logutils.BCMAN()) {
                                 if (!deployed) {
                                     this.props.history.push('/decommissioned/'+datum.objectId)
                                 } else {
