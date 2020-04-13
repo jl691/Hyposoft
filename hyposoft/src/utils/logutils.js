@@ -148,7 +148,6 @@ function finishAddingLog(object, objectId, objectType, action, callback) {
             if (user) {
                 var log = packageLog(timestamp, objectId, objectType, object.name, object.data, object.previousData, object.datacenter, action, userId, user.name)
                 firebaseutils.logsRef.add(log)
-                console.log('added');
               }
             if (callback) {
               callback()
@@ -246,7 +245,7 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
         docSnaps.docs.forEach(doc => {
             const user = doc.data().userName.toLowerCase()
             const object = doc.data().objectName.toLowerCase()
-            const includesAsset = doc.data().objectType === ASSET() && (object.includes(searchName) || doc.data().objectId.includes(searchName))
+            const includesAsset = (doc.data().objectType === ASSET() || doc.data().objectType === OFFLINE()) && (object.includes(searchName) || doc.data().objectId.includes(searchName))
             const includesPDUAsset = (doc.data().objectType === PDU() || doc.data().objectType === BCMAN()) && includesAssetInPDUName(object,searchName)
             const includesUser = user.includes(searchName) || (doc.data().objectType === USER() && object.includes(searchName))
             if (!search || includesAsset || includesPDUAsset || includesUser) {
@@ -286,6 +285,9 @@ function doesObjectStillExist(objectType,objectId,callback,objectName=null) {
                     callback(docSnaps.docs[0].exists,false)
                 })
             })
+            break
+        case OFFLINE():
+            firebaseutils.db.collectionGroup("offlineAssets").where("assetId", "==", objectId).get().then(qs => callback(!qs.empty,true))
             break
         case CHANGEPLAN():
             firebaseutils.changeplansRef.doc(objectId).get().then(doc => callback(doc.exists,true))
@@ -377,7 +379,7 @@ function getAssetName(id,data,action,callback,offline=false) {
         callback({name: data.model+' '+data.hostname, data: data, previousData: null, datacenter: data.datacenter})
     } else {
         if (offline) {
-          firebaseutils.db.collectionGroup("offlineAssets").where("assetId", "==", id).get().then(qs => callback({name: qs.docs[0].data().model+' '+qs.docs[0].data().hostname, data: qs.docs[0].data(), previousData: data, datacenter: qs.docs[0].data().datacenter}))
+          firebaseutils.db.collectionGroup("offlineAssets").where("assetId", "==", id).get().then(qs => callback({name: qs.docs[0].data().model+' '+qs.docs[0].data().hostname, data: {...qs.docs[0].data(),datacenterAbbrev: data.datacenterAbbrev}, previousData: data, datacenter: qs.docs[0].data().datacenter}))
           .catch( error => {
             console.log("Error getting documents: ", error)
             callback(null)

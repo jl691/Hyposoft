@@ -204,7 +204,7 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback){
                                 assetutils.deleteAsset(assetID, result => {
                                     if(result){
                                         callback(true, offlineStorageAbbrev);
-                                        logutils.addLog(assetID,logutils.OFFLINE(),logutils.MOVE(),savedAssetData)
+                                        logutils.addLog(assetID,logutils.OFFLINE(),logutils.MOVE(),{...savedAssetData,datacenterAbbrev: offlineStorageAbbrev})
                                     } else {
                                         console.log("6")
                                         callback(null);

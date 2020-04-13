@@ -124,6 +124,8 @@ class LogScreen extends Component {
                                 } else {
                                     this.props.history.push('/assets/'+datum.objectId)
                                 }
+                            } else if (datum.objectType === logutils.OFFLINE()) {
+                                this.props.history.push('/offlinestorage/'+datum.currentData.datacenterAbbrev+'/'+datum.objectId)
                             } else {
                                 ToastsStore.error(datum.objectType+' does not have a detailed view', 3000)
                             }
