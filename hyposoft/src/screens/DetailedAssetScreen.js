@@ -87,19 +87,19 @@ export default class DetailedAssetScreen extends Component {
                     assetsdb => {
                         this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
                             this.setState({
-                                asset: assetsdb,
-                                initialLoaded: true
+                                asset: assetsdb
 
                             }, function () {
 
-                                this.generatePDUStatus();
-                                modelutils.getModelByModelname(assetsdb.model, modelDoc => {
-                                    console.log(modelDoc.data())
-                                    this.setState({
-                                        model: modelDoc.data(),
-                                        initialLoaded: true
-                                    })
-                                })
+                                this.generatePDUStatus(() => {
+                                  modelutils.getModelByModelname(assetsdb.model, modelDoc => {
+                                      console.log(modelDoc.data())
+                                      this.setState({
+                                          model: modelDoc.data(),
+                                          initialLoaded: true
+                                      })
+                                  })
+                                });
                             });
                         })
                     })
@@ -115,14 +115,15 @@ export default class DetailedAssetScreen extends Component {
                             asset: assetsdb,
                             //initialLoaded: true
                         }, function () {
-                            this.generatePDUStatus();
-                            modelutils.getModelByModelname(assetsdb.model, modelDoc => {
-                                console.log(modelDoc.data())
-                                this.setState({
-                                    model: modelDoc.data(),
-                                    initialLoaded: true
-                                })
-                            })
+                            this.generatePDUStatus(() => {
+                              modelutils.getModelByModelname(assetsdb.model, modelDoc => {
+                                  console.log(modelDoc.data())
+                                  this.setState({
+                                      model: modelDoc.data(),
+                                      initialLoaded: true
+                                  })
+                              })
+                            });
                         });
                     })
                 }, this.props.match.params.storageSiteAbbrev)
@@ -235,71 +236,118 @@ export default class DetailedAssetScreen extends Component {
         }
     }
 
-    generatePDUStatus() {
+    generatePDUStatus(callback) {
         if (this.connectedPDU) {
             this.powerPorts = [];
             if (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner) {
                 ToastsStore.info("Click a refresh button by a PDU status to power cycle it.", 5000);
             }
-            Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
-                let formattedNum;
-                if (this.state.asset.rackNum.toString().length === 1) {
-                    formattedNum = "0" + this.state.asset.rackNum;
-                } else {
-                    formattedNum = this.state.asset.rackNum;
-                }
-                powerutils.getPortStatus("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0), this.state.asset.powerConnections[pduConnections].port, (result) => {
-                    let toggle;
-                    if (result === null) {
-                        ToastsStore.info("PDU power status is currently unavailable due to network issues.")
-                        toggle = false;
-                    } else {
-                        toggle = result === "ON" ? true : false;
-                    }
-                    this.powerPorts.push({
-                        name: "hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0),
-                        port: this.state.asset.powerConnections[pduConnections].port
-                    });
-                    this.setState({
-                        ["hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port]: toggle
-                    })
-                    // this.state.powerStatuses.set("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port, toggle);
-                    if (this.powerPorts.length === Object.keys(this.state.asset.powerConnections).length) {
-                        this.setState({
-                            powerMap: true
-                        })
-                    }
-                })
-            })
+            if (this.bladeData) {
+              powerutils.getBladeStatus(this.bladeData.rack,this.bladeData.rackU, result => {
+                  let toggle;
+                  if (result === null) {
+                      ToastsStore.info("BCMAN power status is currently unavailable due to network issues.")
+                      toggle = false;
+                  } else {
+                      toggle = result === "ON" ? true : false;
+                  }
+                  this.powerPorts.push({
+                    name: this.bladeData.rack,
+                    port: this.bladeData.rackU
+                  })
+                  this.setState({
+                      [this.bladeData.rack + ":" + this.bladeData.rackU]: toggle,
+                      powerMap: true
+                  })
+                  callback()
+              })
+            } else {
+              Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
+                  let formattedNum;
+                  if (this.state.asset.rackNum.toString().length === 1) {
+                      formattedNum = "0" + this.state.asset.rackNum;
+                  } else {
+                      formattedNum = this.state.asset.rackNum;
+                  }
+                  powerutils.getPortStatus("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0), this.state.asset.powerConnections[pduConnections].port, (result) => {
+                      let toggle;
+                      if (result === null) {
+                          ToastsStore.info("PDU power status is currently unavailable due to network issues.")
+                          toggle = false;
+                      } else {
+                          toggle = result === "ON" ? true : false;
+                      }
+                      this.powerPorts.push({
+                          name: "hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0),
+                          port: this.state.asset.powerConnections[pduConnections].port
+                      });
+                      this.setState({
+                          ["hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port]: toggle
+                      })
+                      // this.state.powerStatuses.set("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port, toggle);
+                      if (this.powerPorts.length === Object.keys(this.state.asset.powerConnections).length) {
+                          this.setState({
+                              powerMap: true
+                          })
+                          callback()
+                      }
+                  })
+              })
+            }
         }
     }
 
     turnAssetOn() {
-        let count = 0;
-        Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
-            let formattedNum;
-            if (this.state.asset.rackNum.toString().length === 1) {
-                formattedNum = "0" + this.state.asset.rackNum;
-            } else {
-                formattedNum = this.state.asset.rackNum;
-            }
-            powerutils.powerPortOn("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0), this.state.asset.powerConnections[pduConnections].port, (result) => {
-                if (result) {
-                    this.setState({
-                        ["hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port]: true
-                    });
-                    count++;
-                    if (count === Object.keys(this.state.asset.powerConnections).length) {
-                        ToastsStore.success("Successfully turned on the asset!")
-                    }
-                } else {
-                    ToastsStore.info("Could not power on due to network connectivity issues.")
-                }
-            })
-        })
+        if (this.bladeData) {
+          powerutils.changeBladePower(this.bladeData.rack, this.bladeData.rackU, (result) => {
+              if (result) {
+                  this.setState({
+                      [this.bladeData.rack + ":" + this.bladeData.rackU]: true
+                  });
+                  ToastsStore.success("Successfully turned on the asset!")
+              } else {
+                  ToastsStore.info("Could not power on due to network connectivity issues.")
+              }
+          },"ON")
+        } else {
+          let count = 0;
+          Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
+              let formattedNum;
+              if (this.state.asset.rackNum.toString().length === 1) {
+                  formattedNum = "0" + this.state.asset.rackNum;
+              } else {
+                  formattedNum = this.state.asset.rackNum;
+              }
+              powerutils.powerPortOn("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0), this.state.asset.powerConnections[pduConnections].port, (result) => {
+                  if (result) {
+                      this.setState({
+                          ["hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port]: true
+                      });
+                      count++;
+                      if (count === Object.keys(this.state.asset.powerConnections).length) {
+                          ToastsStore.success("Successfully turned on the asset!")
+                      }
+                  } else {
+                      ToastsStore.info("Could not power on due to network connectivity issues.")
+                  }
+              })
+          })
+        }
     }
 
     turnAssetOff() {
+      if (this.bladeData) {
+        powerutils.changeBladePower(this.bladeData.rack, this.bladeData.rackU, (result) => {
+            if (result) {
+                this.setState({
+                    [this.bladeData.rack + ":" + this.bladeData.rackU]: false
+                });
+                ToastsStore.success("Successfully turned off the asset!")
+            } else {
+                ToastsStore.info("Could not power off due to network connectivity issues.")
+            }
+        },"OFF")
+      } else {
         let count = 0;
         Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
             let formattedNum;
@@ -322,9 +370,33 @@ export default class DetailedAssetScreen extends Component {
                 }
             })
         })
+      }
     }
 
     powerCycleAsset() {
+      if (this.bladeData) {
+        powerutils.changeBladePower(this.bladeData.rack, this.bladeData.rackU, result => {
+            if (result) {
+                this.setState({
+                    [this.bladeData.rack + ":" + this.bladeData.rackU]: false
+                });
+                setTimeout(() => {
+                    powerutils.changeBladePower(this.bladeData.rack, this.bladeData.rackU, result => {
+                        if (result) {
+                            this.setState({
+                                [this.bladeData.rack + ":" + this.bladeData.rackU]: true
+                            });
+                            ToastsStore.success("Power cycled " + this.bladeData.rack + ":" + this.bladeData.rackU + " successfully!");
+                        } else {
+                            ToastsStore.error("Could not power cycle due to network connectivity issues.")
+                        }
+                    },"ON")
+                }, 2000)
+            } else {
+                ToastsStore.error("Could not power cycle due to network connectivity issues.")
+            }
+        },"OFF")
+      } else {
         let count = 0;
         Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
             let formattedNum;
@@ -370,6 +442,7 @@ export default class DetailedAssetScreen extends Component {
                 }
             })
         })
+      }
     }
 
     renderPDUStatus() {
@@ -385,7 +458,8 @@ export default class DetailedAssetScreen extends Component {
                                 if (this.state[connection.name + ":" + connection.port]) {
                                     console.log("1")
                                     //on, power off
-                                    powerutils.powerPortOff(connection.name, connection.port, result => {
+                                    let powerFunction = this.bladeData ? powerutils.changeBladePower : powerutils.powerPortOff
+                                    powerFunction(connection.name, connection.port, result => {
                                         console.log(result)
                                         if (result) {
                                             this.setState({
@@ -395,11 +469,12 @@ export default class DetailedAssetScreen extends Component {
                                         } else {
                                             ToastsStore.error("Could not power off due to network connectivity issues.")
                                         }
-                                    })
+                                    },"OFF")
                                 } else {
                                     console.log("2")
                                     //off, power on
-                                    powerutils.powerPortOn(connection.name, connection.port, result => {
+                                    let powerFunction = this.bladeData ? powerutils.changeBladePower : powerutils.powerPortOn
+                                    powerFunction(connection.name, connection.port, result => {
                                         console.log(result)
                                         if (result) {
                                             this.setState({
@@ -409,20 +484,22 @@ export default class DetailedAssetScreen extends Component {
                                         } else {
                                             ToastsStore.error("Could not power on due to network connectivity issues.")
                                         }
-                                    })
+                                    },"ON")
                                 }
                             }} />{(userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner) &&
                                 <PowerCycle
                                     data-tip="Power cycle"
                                     size={"medium"} style={{ marginLeft: "10px", cursor: "pointer" }} onClick={(e) => {
                                         ToastsStore.success("Power cycling " + connection.name + ":" + connection.port + ". Please wait!");
-                                        powerutils.powerPortOff(connection.name, connection.port, result => {
+                                        let powerFunction = this.bladeData ? powerutils.changeBladePower : powerutils.powerPortOff
+                                        powerFunction(connection.name, connection.port, result => {
                                             if (result) {
                                                 this.setState({
                                                     [connection.name + ":" + connection.port]: false
                                                 });
                                                 setTimeout(() => {
-                                                    powerutils.powerPortOn(connection.name, connection.port, result => {
+                                                    let powerFunction = this.bladeData ? powerutils.changeBladePower : powerutils.powerPortOn
+                                                    powerFunction(connection.name, connection.port, result => {
                                                         if (result) {
                                                             this.setState({
                                                                 [connection.name + ":" + connection.port]: true
@@ -431,12 +508,12 @@ export default class DetailedAssetScreen extends Component {
                                                         } else {
                                                             ToastsStore.error("Could not power cycle due to network connectivity issues.")
                                                         }
-                                                    })
+                                                    },"ON")
                                                 }, 2000)
                                             } else {
                                                 ToastsStore.error("Could not power cycle due to network connectivity issues.")
                                             }
-                                        })
+                                        },"OFF")
                                     }} />}<ReactTooltip /></Box></td>
                 </tr>
             ))
@@ -734,7 +811,7 @@ export default class DetailedAssetScreen extends Component {
                                             <Heading level='4' margin='none'>Asset Actions</Heading>
                                             <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
                                                 gap='small'>
-                                                {(this.connectedPDU && !this.props.match.params.storageSiteAbbrev(userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
+                                                {(this.connectedPDU && !this.props.match.params.storageSiteAbbrev && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
                                                     <Box direction='column' flex alignSelf='stretch'
                                                         gap='small'>
                                                         <Button icon={<Power />} label="Power Asset On" onClick={() => {
