@@ -17,6 +17,7 @@ import * as datacenterutils from './datacenterutils'
 import * as assetnetworkportutils from './assetnetworkportutils'
 import * as assetpowerportutils from './assetpowerportutils'
 import * as logutils from './logutils'
+import * as bladeutils from './bladeutils'
 import * as changeplanutils from './changeplanutils'
 import * as changeplanconflictutils from '../utils/changeplanconflictutils'
 import * as offlinestorageutils from './offlinestorageutils'
@@ -39,22 +40,25 @@ function getAsset(callback, field = null, direction = null, selected = null, sto
         } else {
             console.log(docSnaps)
             const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
-            docSnaps.docs.forEach(doc => {
-                assets.push({
-                    asset_id: doc.id,
-                    ...doc.data(),
-                    checked: selected && selected.includes(doc.id),
-                    //add here to get variance data
-                    displayColor: doc.data().variances.displayColor,
-                    cpu: doc.data().variances.cpu,
-                    memory: doc.data().variances.memory,
-                    storage: doc.data().variances.storage
-                });
-                count++;
-                if (count === docSnaps.docs.length) {
-                    callback(startAfter, assets, false);
-                }
+            bladeutils.getBladeIds((bladeIds,idToVendor) => {
+              docSnaps.docs.forEach(doc => {
+                  assets.push({
+                      asset_id: doc.id,
+                      ...doc.data(),
+                      checked: selected && selected.includes(doc.id),
+                      chassisVendor: idToVendor[doc.id] ? idToVendor[doc.id] : null,
+                      //add here to get variance data
+                      displayColor: doc.data().variances.displayColor,
+                      cpu: doc.data().variances.cpu,
+                      memory: doc.data().variances.memory,
+                      storage: doc.data().variances.storage
+                  });
+                  count++;
+                  if (count === docSnaps.docs.length) {
+                      callback(startAfter, assets, false);
+                  }
 
+              })
             })
         }
     }).catch(function (error) {
@@ -78,16 +82,19 @@ function getAssetAt(start, callback, field = null, direction = null, selected = 
     let count = 0;
     query.get().then(docSnaps => {
         const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-        docSnaps.docs.forEach(doc => {
-            assets.push({
-                asset_id: doc.id,
-                ...doc.data(),
-                checked: selectAll || (selected && selected.includes(doc.id))
-            });
-            count++;
-            if (count === docSnaps.docs.length) {
-                callback(newStart, assets);
-            }
+        bladeutils.getBladeIds((bladeIds,idToVendor) => {
+          docSnaps.docs.forEach(doc => {
+              assets.push({
+                  asset_id: doc.id,
+                  ...doc.data(),
+                  checked: selectAll || (selected && selected.includes(doc.id)),
+                  chassisVendor: idToVendor[doc.id] ? idToVendor[doc.id] : null
+              });
+              count++;
+              if (count === docSnaps.docs.length) {
+                  callback(newStart, assets);
+              }
+          })
         })
 
     }).catch(function (error) {
@@ -533,22 +540,25 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback, selected = null, 
     }
     query.get().then(querySnapshot => {
         let count = 0;
-        querySnapshot.forEach(doc => {
-            datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
-                if (datacenterAbbrev) {
-                    vendorArray.push({
-                        asset_id: doc.id,
-                        ...doc.data(),
-                        checked: selected && selected.includes(doc.id)
-                    });
-                    count++;
-                    if (count === querySnapshot.size) {
-                        callback(vendorArray);
-                    }
-                } else {
-                    callback(null);
-                }
-            })
+        bladeutils.getBladeIds((bladeIds,idToVendor) => {
+          querySnapshot.forEach(doc => {
+              datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
+                  if (datacenterAbbrev) {
+                      vendorArray.push({
+                          asset_id: doc.id,
+                          ...doc.data(),
+                          checked: selected && selected.includes(doc.id),
+                          chassisVendor: idToVendor[doc.id] ? idToVendor[doc.id] : null
+                      });
+                      count++;
+                      if (count === querySnapshot.size) {
+                          callback(vendorArray);
+                      }
+                  } else {
+                      callback(null);
+                  }
+              })
+          })
         })
     }).catch(error => {
         console.log("Error getting documents: ", error)
@@ -1001,7 +1011,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                                             console.log("checkpoint16")
                                                                                                                             console.log("Updated model successfully")
                                                                                                                             // log needs to be added before calling back for DetailedAssetScreen
-                                                                                                                            logutils.addLog(String(assetID), logutils.OFFLINE(), logutils.MODIFY(), assetData, () => callback(null, String(assetID)))
+                                                                                                                            logutils.addLog(String(assetID), logutils.OFFLINE(), logutils.MODIFY(), assetData, () => callback(null, String(assetID),modelStuff[0]))
                                                                                                                         }).catch(function (error) {
                                                                                                                             callback(error);
                                                                                                                         })
@@ -1013,7 +1023,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                                 assetRef.doc(String(assetID)).update(assetObject).then(function () {
                                                                                                                     console.log("Updated model successfully")
                                                                                                                     // log needs to be added before calling back for DetailedAssetScreen
-                                                                                                                    logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null, String(assetID)))
+                                                                                                                    logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null, String(assetID),modelStuff[0]))
                                                                                                                 }).catch(function (error) {
                                                                                                                     callback(error);
                                                                                                                 })

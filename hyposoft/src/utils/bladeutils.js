@@ -38,7 +38,7 @@ function addChassis(overrideAssetID, model, hostname, rack, racku, owner, commen
 function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
     networkConnectionsArray, deletedNCThisPort, powerConnections, displayColor, memory, storage, cpu,callback, changePlanID = null, changeDocID = null) {
     assetutils.updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
-        networkConnectionsArray, deletedNCThisPort, powerConnections,displayColor, memory, storage, cpu, (errorMessage,id) => {
+        networkConnectionsArray, deletedNCThisPort, powerConnections,displayColor, memory, storage, cpu, (errorMessage,id,vendor) => {
         if (!errorMessage && id) {
             // add collection to rack
             let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
@@ -78,6 +78,7 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
                                     await new Promise(function(resolve, reject) {
                                       firebaseutils.bladeRef.doc(assets[i]).update({
                                           chassisId: id,
+                                          chassisVendor: vendor,
                                           rack: hostname,
                                           rackId: qs.docs[0].id
                                       }).then(() => resolve())
@@ -155,6 +156,7 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
             const racku = qs.docs[0].data().rackU
             const rackId = qs.docs[0].data().rackID
             const chassisId = qs.docs[0].id
+            const chassisVendor = qs.docs[0].data().vendor
 
             assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, {}, [], [], displayColor, memory, storage, cpu, (errorMessage,id) => {
                 if (!errorMessage && id) {
@@ -169,7 +171,8 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
                                 rackU: slot,
                                 rackId: rackId,
                                 model: model,
-                                chassisId: chassisId
+                                chassisId: chassisId,
+                                chassisVendor: chassisVendor
                             })
                         }
                     })
@@ -191,6 +194,7 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
             const rackU = qs.docs[0].data().rackU
             const rackId = qs.docs[0].data().rackID
             const chassisId = qs.docs[0].id
+            const chassisVendor = qs.docs[0].data().vendor
 
             assetutils.updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, {},
                 [], [], [], displayColor, memory, storage, cpu, (errorMessage,id) => {
@@ -222,7 +226,8 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
                                       rackU: slot,
                                       rackId: rackId,
                                       model: model,
-                                      chassisId: chassisId
+                                      chassisId: chassisId,
+                                      chassisVendor: chassisVendor
                                   }).then(() => resolve())
                                 })
                             }
@@ -385,10 +390,20 @@ function getBladeChassisViewParams(hostname,callback) {
             slots[doc.id] = doc.data().rackU
         })
       }
-      console.log(taken);
-      console.log(slots);
       callback(taken,slots)
   })
 }
 
-export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo, getDetailBladeInfo, getSuggestedChassis, getSuggestedSlots }
+function getBladeIds(callback) {
+    firebaseutils.bladeRef.get().then(docSnaps => {
+        var ids = []
+        var idToVendor = {}
+        docSnaps.forEach(doc => {
+          ids.push(doc.id)
+          idToVendor[doc.id] = doc.data().chassisVendor
+        })
+        callback(ids,idToVendor)
+    })
+}
+
+export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo, getDetailBladeInfo, getSuggestedChassis, getSuggestedSlots, getBladeIds }
