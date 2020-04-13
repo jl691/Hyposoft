@@ -46,7 +46,7 @@ function getAsset(callback, field = null, direction = null, selected = null, sto
                       asset_id: doc.id,
                       ...doc.data(),
                       checked: selected && selected.includes(doc.id),
-                      chassisVendor: idToVendor[doc.id] ? idToVendor[doc.id] : null,
+                      bladeInfo: idToVendor[doc.id] ? idToVendor[doc.id] : null,
                       //add here to get variance data
                       displayColor: doc.data().variances.displayColor,
                       cpu: doc.data().variances.cpu,
@@ -88,7 +88,7 @@ function getAssetAt(start, callback, field = null, direction = null, selected = 
                   asset_id: doc.id,
                   ...doc.data(),
                   checked: selectAll || (selected && selected.includes(doc.id)),
-                  chassisVendor: idToVendor[doc.id] ? idToVendor[doc.id] : null
+                  bladeInfo: idToVendor[doc.id] ? idToVendor[doc.id] : null
               });
               count++;
               if (count === docSnaps.docs.length) {
@@ -548,7 +548,7 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback, selected = null, 
                           asset_id: doc.id,
                           ...doc.data(),
                           checked: selected && selected.includes(doc.id),
-                          chassisVendor: idToVendor[doc.id] ? idToVendor[doc.id] : null
+                          bladeInfo: idToVendor[doc.id] ? idToVendor[doc.id] : null
                       });
                       count++;
                       if (count === querySnapshot.size) {

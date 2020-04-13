@@ -400,7 +400,7 @@ function getBladeIds(callback) {
         var idToVendor = {}
         docSnaps.forEach(doc => {
           ids.push(doc.id)
-          idToVendor[doc.id] = doc.data().chassisVendor
+          idToVendor[doc.id] = {chassisVendor: doc.data().chassisVendor, rack: doc.data().rack, rackU: doc.data().rackU}
         })
         callback(ids,idToVendor)
     })
