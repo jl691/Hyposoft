@@ -231,9 +231,9 @@ export default class EditAssetForm extends Component {
                 ToastsStore.error("Invalid rack.");
             } else if (!this.props.offlineStorage && !parseInt(this.state.rackU)) {
                 //invalid number
-                ToastsStore.error("Rack U must be a number.");
+                ToastsStore.error((this.isNonBlade ? "Rack U" : "Slot") + " must be a number.");
             } else if (!this.props.offlineStorage && !formvalidationutils.checkPositive(this.state.rackU)) {
-                ToastsStore.error("Rack U must be positive.");
+                ToastsStore.error((this.isNonBlade ? "Rack U" : "Slot") + " must be positive.");
             }
             else {
 

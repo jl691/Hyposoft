@@ -414,6 +414,12 @@ class AssetScreen extends Component {
                         updateCommentFromParent={""}
                         updateDatacenterFromParent={""}
                         updateAssetIDFromParent={""}
+
+                       
+                        updateDisplayColorFromParent={""}
+                        updateCpuFromParent={""}
+                        updateMemoryFromParent={""}
+                        updateStorageFromParent={""}
                     />
 
                 </Layer>

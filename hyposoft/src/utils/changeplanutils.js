@@ -163,7 +163,7 @@ function addAssetChange(asset, assetID, changePlanID, callback, docID = null) {
         changes: {},
     };
     Object.keys(asset).forEach(assetProperty => {
-        let oldProperty = (assetProperty === "networkConnections" || assetProperty === "macAddresses") ? {} : (assetProperty === "powerConnections" ? [] : "");
+        let oldProperty = (assetProperty === "networkConnections" || assetProperty === "macAddresses" || assetProperty === "variances") ? {} : (assetProperty === "powerConnections" ? [] : "" );
         assetChangePlanObject.changes = {
             ...assetChangePlanObject.changes,
             [assetProperty]: {
@@ -1331,6 +1331,7 @@ function getAssetFromAddAsset(changePlanID, step, callback) {
 function checkChangeAlreadyExists(changePlanID, assetID, change, callback) {
     console.log(changePlanID, assetID, change)
     changeplansRef.doc(changePlanID.toString()).collection("changes").where("assetID", "==", parseInt(assetID)).where("change", "==", change).get().then(function (querySnapshot) {
+
         if (querySnapshot.empty) {
             callback(false);
         } else {

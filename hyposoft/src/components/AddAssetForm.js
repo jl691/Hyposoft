@@ -4,7 +4,7 @@ import {
     Grommet,
     Form,
     FormField,
-    Heading, 
+    Heading,
     TextInput,
     Box,
     Accordion,
@@ -57,11 +57,11 @@ export default class AddAssetForm extends Component {
             editDeletedNetworkConnections: [],
             showPowerConnections: this.props.updatePowerConnectionsFromParent.length ? true : false,
 
-            assetVariance: false,
-            displayColor: "",
-            cpu: "",
-            memory: "",
-            storage: ""
+            assetVariance: this.props.updateDisplayColorFromParent !== "" || this.props.updateCpuFromParent !== "" || this.props.updateMemoryFromParent !== "" || this.props.updateStorageFromParent !== "" ? true : false,
+            displayColor: this.props.updateDisplayColorFromParent,
+            cpu: this.props.updateCpuFromParent,
+            memory: this.props.updateMemoryFromParent,
+            storage: this.props.updateStorageFromParent
 
         }
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -97,7 +97,6 @@ export default class AddAssetForm extends Component {
 
                     if (numPorts >= 2) {
                         assetpowerportutils.getFirstFreePort(rack, datacenter, returnedPort => {
-                            console.log("In AddAssetForm. returned power port: " + returnedPort)
                             if (returnedPort) {
 
                                 this.setState(oldState => ({
@@ -311,9 +310,9 @@ export default class AddAssetForm extends Component {
                 ToastsStore.error("Invalid rack.");
             } else if (!parseInt(this.state.rackU)) {
                 //invalid number
-                ToastsStore.error("Rack U must be a number.");
+                ToastsStore.error((this.isNonBlade ? "Rack U" : "Slot") + " must be a number.");
             } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
-                ToastsStore.error("Rack U must be positive.");
+                ToastsStore.error((this.isNonBlade ? "Rack U" : "Slot") + " must be positive.");
 
                 //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
             }
