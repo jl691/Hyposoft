@@ -294,6 +294,8 @@ export default class DetailedAssetScreen extends Component {
                   })
               })
             }
+        } else {
+          callback()
         }
     }
 
