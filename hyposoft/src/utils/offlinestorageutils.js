@@ -180,7 +180,7 @@ function getInfoFromName(name, callback){
     })
 }
 
-function moveAssetToOfflineStorage(assetID, offlineStorageName, callback, moveFunction = assetutils.deleteAsset){
+function moveAssetToOfflineStorage(assetID, offlineStorageName, callback, moveFunction){
     console.log(offlineStorageName)
     getInfoFromName(offlineStorageName, (offlineStorageAbbrev, offlineStorageID) => {
         if(offlineStorageID){
@@ -234,24 +234,25 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback, moveFu
     })
 }
 
-function moveAssetFromOfflineStorage(assetID, datacenter, rack, rackU, callback){
+function moveAssetFromOfflineStorage(assetID, datacenter, rack, rackU, callback, moveFunction){
     db.collectionGroup("offlineAssets").where("assetId", "==", String(assetID)).get().then(function (querySnapshot) {
         if(querySnapshot.empty){
-            callback(null);
+            callback("The asset does not exist.");
         } else {
             let data = querySnapshot.docs[0].data();
-            assetutils.addAsset(data.assetId, data.model, data.hostname, rack, rackU, data.owner, data.comment, datacenter, [], [], [],
+            console.log(moveFunction)
+            moveFunction(data.assetId, data.model, data.hostname, rack, rackU, data.owner, data.comment, datacenter, [], [], [],
                 data.variances["displayColor"], data.variances["memory"], data.variances["storage"], data.variances["cpu"], result => {
                     if(!result){
                         let parentDoc = querySnapshot.docs[0].ref.parent.parent;
                         offlinestorageRef.doc(parentDoc.id).collection("offlineAssets").doc(String(assetID)).delete().then(function () {
                             logutils.addLog(data.assetId,logutils.ASSET(),logutils.MOVE(),data)
-                            callback(true);
-                        }).catch(function () {
                             callback(null);
+                        }).catch(function () {
+                            callback("Could not remove the asset from offline storage.");
                         })
                     } else {
-                        callback(null);
+                        callback(result);
                     }
                 },/*changePlanID*/ null, /*changeDocID*/ null, /*chassis*/ null, /*noLog*/ true)
         }

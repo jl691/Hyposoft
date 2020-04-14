@@ -592,6 +592,7 @@ export default class DetailedAssetScreen extends Component {
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <MoveAssetForm location={this.props.match.params.storageSiteAbbrev ? "offline" : "rack"} assetID={this.state.asset.assetID}
+                                   model={this.state.asset.model}
                         currentLocation={this.props.match.params.storageSiteAbbrev ? "offline storage site " + this.props.match.params.storageSiteAbbrev : "datacenter " + this.state.asset.datacenter + " on rack " + this.state.asset.rack + " at height " + this.state.asset.rackU}
                         success={this.handleCancelRefreshPopupChange} cancelCallback={this.handleCancelPopupChange} />
                 </Layer>
