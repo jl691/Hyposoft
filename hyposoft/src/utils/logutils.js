@@ -622,14 +622,14 @@ function flattenArrayOrMap(flat) {
       }
       delete newMap[key]
       for (var nextKey in value) {
-        newMap[key+' '+nextKey] = value[nextKey]
-        flatten(key+' '+nextKey)
+        newMap[key+'|'+nextKey] = value[nextKey]
+        flatten(key+'|'+nextKey)
       }
     }
 
     function getValue(key) {
       var value = flat
-      const keyArray = key.split(' ')
+      const keyArray = key.split('|')
       for (var field in keyArray) {
         value = value[keyArray[field]]
       }
