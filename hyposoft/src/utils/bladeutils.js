@@ -205,7 +205,7 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
             const chassisVendor = qs.docs[0].data().vendor
 
             // generate chassis connection
-            const serverConnection = [{otherAssetID: chassisId, otherPort: 'blade:'+slot.toString(), thisPort: 'blade:'+slot.toString()}]
+            const serverConnection = [{otherAssetID: chassisId, otherPort: 'blade '+slot.toString(), thisPort: 'blade '+slot.toString()}]
 
             assetutils.updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, {},
                 serverConnection, [], [], displayColor, memory, storage, cpu, (errorMessage,id) => {
