@@ -495,7 +495,7 @@ export default class AssetTable extends Component {
                         //if(docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1" && docSnapshot.data().rackRow.charCodeAt(0) >= 65 && docSnapshot.data().rackRow.charCodeAt(0) <= 69 && parseInt(docSnapshot.data().rackNum) >= 1 && parseInt(docSnapshot.data().rackNum) <= 19 && docSnapshot.data().powerConnections && docSnapshot.data().powerConnections.length){
 
 
-                        if ((userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === datum.owner) && ((datum.bladeInfo && datum.bladeInfo.chassisVendor.toUpperCase() === "BMI") || (datum.datacenterAbbrev.toUpperCase() === "RTP1" && datum.rackRow.charCodeAt(0) >= 65 && datum.rackRow.charCodeAt(0) <= 69 && parseInt(datum.rackNum) >= 1 && parseInt(datum.rackNum) <= 19 && datum.powerConnections && datum.powerConnections.length))) {
+                        if ((userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === datum.owner) && ((datum.bladeInfo && datum.bladeInfo.chassisVendor.toUpperCase() === "BMI" && !datum.bladeInfo.rack.includes('No hostname')) || (datum.datacenterAbbrev.toUpperCase() === "RTP1" && datum.rackRow.charCodeAt(0) >= 65 && datum.rackRow.charCodeAt(0) <= 69 && parseInt(datum.rackNum) >= 1 && parseInt(datum.rackNum) <= 19 && datum.powerConnections && datum.powerConnections.length))) {
                             return (<Box direction={"row"} justify={"center"}>
                                 <Power data-tip="Power on"
                                        style={{backgroundColor: this.colors[datum.asset_id + '_on_color']}}

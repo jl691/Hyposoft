@@ -416,11 +416,9 @@ function getBladeIds(callback) {
             var idToVendor = {}
             // blade servers
             docSnaps.forEach(doc => {
-              if (!doc.data().rack.includes('No hostname')) {
-                let slots = helpChassis[doc.data().chassisId] ? helpChassis[doc.data().chassisId].slots : []
-                helpChassis[doc.data().chassisId] = {vendor: doc.data().chassisVendor, slots: slots.concat(doc.data().rackU)}
-                idToVendor[doc.id] = {chassisVendor: doc.data().chassisVendor, rack: doc.data().rack, rackU: [doc.data().rackU], chassisId: doc.data().chassisId}
-              }
+              let slots = helpChassis[doc.data().chassisId] ? helpChassis[doc.data().chassisId].slots : []
+              helpChassis[doc.data().chassisId] = {vendor: doc.data().chassisVendor, slots: slots.concat(doc.data().rackU)}
+              idToVendor[doc.id] = {chassisVendor: doc.data().chassisVendor, rack: doc.data().rack, rackU: [doc.data().rackU], chassisId: doc.data().chassisId}
             })
             // chassis
             snaps.forEach(doc => {
