@@ -224,8 +224,8 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                                </tr>
                                                </tbody>
                                            </table>
-                                           {(!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot)
-                                                ?
+                                           {(
+
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
@@ -244,8 +244,7 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                                         {this.generateNetworkTable()}
                                                     </TableBody>
                                                 </Table>
-                                                :
-                                                <Table></Table>
+                                                
                                            )}
                                            {(!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot)
                                                 ?

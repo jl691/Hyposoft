@@ -686,7 +686,7 @@ export default class DetailedAssetScreen extends Component {
                                                     {this.renderPDUStatus()}
                                                 </tbody>
                                             </table>
-                                            {(!this.bladeData && !this.props.match.params.storageSiteAbbrev) &&
+                                            {(!this.props.match.params.storageSiteAbbrev) &&
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
