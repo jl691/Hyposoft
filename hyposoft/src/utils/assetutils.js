@@ -293,11 +293,11 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                     suffixes_list.push(_owner)
                                                                                 }
 
-                                                                                // index.saveObject({
-                                                                                //     ...assetObject,
-                                                                                //     objectID: overrideAssetID,
-                                                                                //     suffixes: suffixes_list.join(' ')
-                                                                                // })
+                                                                                index.saveObject({
+                                                                                    ...assetObject,
+                                                                                    objectID: overrideAssetID,
+                                                                                    suffixes: suffixes_list.join(' ')
+                                                                                })
                                                                                 assetRef.doc(overrideAssetID).set(assetObject).then(function (docRef) {
                                                                                     assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, overrideAssetID);
 
@@ -427,11 +427,11 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                 suffixes_list.push(_owner)
                                                                             }
 
-                                                                            // index.saveObject({
-                                                                            //     ...assetObject,
-                                                                            //     objectID: newID,
-                                                                            //     suffixes: suffixes_list.join(' ')
-                                                                            // })
+                                                                            index.saveObject({
+                                                                                ...assetObject,
+                                                                                objectID: newID,
+                                                                                suffixes: suffixes_list.join(' ')
+                                                                            })
 
                                                                             assetRef.doc(newID)
                                                                                 .set(assetObject).then(function (docRef) {
@@ -761,7 +761,7 @@ function deleteAsset(assetID, callback, isDecommission = false, offlineStorage =
                                             if (!isDecommission) {
                                                 logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
                                             }
-                                            // index.deleteObject(assetID)
+                                            index.deleteObject(assetID)
                                             callback(assetID);
                                         })
                                     }).catch(function (error) {
@@ -787,7 +787,7 @@ function deleteAsset(assetID, callback, isDecommission = false, offlineStorage =
                                                 if (!isDecommission) {
                                                     logutils.addLog(assetID, logutils.OFFLINE(), logutils.DELETE(), docData)
                                                 }
-                                                // index.deleteObject(assetID)
+                                                index.deleteObject(assetID)
                                                 callback(assetID);
                                             })
                                         } else {
@@ -803,7 +803,7 @@ function deleteAsset(assetID, callback, isDecommission = false, offlineStorage =
                                             if (!isDecommission) {
                                                 logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
                                             }
-                                            // index.deleteObject(assetID)
+                                            index.deleteObject(assetID)
                                             callback(assetID);
                                         })
                                     }).catch(function (error) {
@@ -1004,11 +1004,11 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                             let _owner = assetObject.owner
 
 
-                                                                                                            // index.saveObject({
-                                                                                                            //     ...assetObject,
-                                                                                                            //     objectID: assetID,
-                                                                                                            //     suffixes: suffixes_list.join(' ')
-                                                                                                            // })
+                                                                                                            index.saveObject({
+                                                                                                                ...assetObject,
+                                                                                                                objectID: assetID,
+                                                                                                                suffixes: suffixes_list.join(' ')
+                                                                                                            })
                                                                                                             if (offlineStorageAbbrev) {
                                                                                                                 console.log("checkpoint15")
                                                                                                                 offlinestorageutils.getInfoFromAbbrev(offlineStorageAbbrev, (offlineName, offlineID) => {
