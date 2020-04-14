@@ -158,7 +158,9 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
     const split = chassisHostname.split(' ')
     let findChassis = split.length > 1 ? firebaseutils.assetRef.where('assetId','==',split.slice(-1)[0]) : firebaseutils.assetRef.where('hostname','==',chassisHostname)
     findChassis.where('datacenter','==',datacenter).get().then(qs => {
-        if (!qs.empty) {
+      // use this second call as precautionary check
+      firebaseutils.db.collectionGroup('blades').where('letter','==',chassisHostname).get().then(querySnapshot => {
+        if (!qs.empty && !querySnapshot.empty) {
             const rack = qs.docs[0].data().rack
             const racku = qs.docs[0].data().rackU
             const rackId = qs.docs[0].data().rackID
@@ -193,6 +195,7 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
         } else {
             callback('blade chassis ' + chassisHostname +' does not exist in datacenter ' + datacenter)
         }
+      })
     })
 }
 
@@ -201,7 +204,9 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
     const split = chassisHostname.split(' ')
     let findChassis = split.length > 1 ? firebaseutils.assetRef.where('assetId','==',split.slice(-1)[0]) : firebaseutils.assetRef.where('hostname','==',chassisHostname)
     findChassis.where('datacenter','==',datacenter).get().then(qs => {
-        if (!qs.empty) {
+      // use this second call as precautionary check
+      firebaseutils.db.collectionGroup('blades').where('letter','==',chassisHostname).get().then(querySnapshot => {
+        if (!qs.empty && !querySnapshot.empty) {
             const rack = qs.docs[0].data().rack
             const rackU = qs.docs[0].data().rackU
             const rackId = qs.docs[0].data().rackID
@@ -266,6 +271,7 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
         } else {
             callback('blade chassis ' + chassisHostname +' does not exist in datacenter ' + datacenter)
         }
+      })
     })
 }
 
