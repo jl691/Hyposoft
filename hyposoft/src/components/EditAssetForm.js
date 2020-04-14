@@ -90,7 +90,7 @@ export default class EditAssetForm extends Component {
         var removed = []
         var blades = []
         connections.forEach(connect => {
-            if (!connect.otherPort.includes('blade:') && !connect.thisPort.includes('blade:')) {
+            if (!connect.otherPort.includes('blade ') && !connect.thisPort.includes('blade ')) {
                 removed.push(connect)
             } else {
                 blades.push(connect)

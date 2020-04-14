@@ -189,7 +189,7 @@ function checkThisModelPortsExist(thisModelName, thisPort, callback) {
 
         //does the model contain this port name?
         //WHAT IF THERE ARE NO NETWORK PORTS? [].include() will return false
-        if (!thisPort.includes('blade:') && !querySnapshot.docs[0].data().networkPorts.includes(thisPort)) {
+        if (!thisPort.includes('blade ') && !querySnapshot.docs[0].data().networkPorts.includes(thisPort)) {
             errPort = thisPort
             errModel = thisModelName;
             console.log("Did not find the input thisPort in the model's existing port names")
@@ -226,7 +226,7 @@ function checkOtherAssetPortsExist(otherAssetID, otherPort, callback) {
             console.log("In checkOtherAssetPortsExist")
 
             //Need to keep track in a different collection of which ports have been occupied
-            if (!otherPort.includes('blade:') && !querySnapshot.docs[0].data().networkPorts.includes(otherPort)) {
+            if (!otherPort.includes('blade ') && !querySnapshot.docs[0].data().networkPorts.includes(otherPort)) {
 
                 errPort = otherPort;
                 errInstance = otherAssetID;

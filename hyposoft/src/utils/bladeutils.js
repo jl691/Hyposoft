@@ -164,7 +164,7 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
             const chassisVendor = qs.docs[0].data().vendor
 
             // generate chassis connection
-            const serverConnection = [{otherAssetID: chassisId, otherPort: 'blade:'+slot.toString(), thisPort: 'blade:'+slot.toString()}]
+            const serverConnection = [{otherAssetID: chassisId, otherPort: 'blade '+slot.toString(), thisPort: 'blade '+slot.toString()}]
 
             assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, {}, serverConnection, [], displayColor, memory, storage, cpu, (errorMessage,id) => {
                 if (!errorMessage && id) {
