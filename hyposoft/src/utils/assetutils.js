@@ -506,7 +506,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 })
 
 
-                                            })
+                                            }, null, null, chassis)
 
                                         }
                                     }, null, null, chassis)
@@ -1057,7 +1057,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
 
 
                                                                                 }, offlineStorageAbbrev)
-                                                                            }, oldNetworkConnections, offlineStorageAbbrev)
+                                                                            }, oldNetworkConnections, offlineStorageAbbrev, chassis, assetID)
                                                                         })
                                                                     }, offlineStorageAbbrev, chassis)
                                                                 }

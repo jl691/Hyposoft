@@ -163,7 +163,10 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
             const chassisId = qs.docs[0].id
             const chassisVendor = qs.docs[0].data().vendor
 
-            assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, {}, [], [], displayColor, memory, storage, cpu, (errorMessage,id) => {
+            // generate chassis connection
+            const serverConnection = [{otherAssetID: chassisId, otherPort: 'blade:'+slot.toString(), thisPort: 'blade:'+slot.toString()}]
+
+            assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, {}, serverConnection, [], displayColor, memory, storage, cpu, (errorMessage,id) => {
                 if (!errorMessage && id) {
                     // need to fix this, need to get doc with collection
                     firebaseutils.racksRef.doc(rackId).collection('blades').doc(chassisId).get().then(doc => {
@@ -201,8 +204,11 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
             const chassisId = qs.docs[0].id
             const chassisVendor = qs.docs[0].data().vendor
 
+            // generate chassis connection
+            const serverConnection = [{otherAssetID: chassisId, otherPort: 'blade:'+slot.toString(), thisPort: 'blade:'+slot.toString()}]
+
             assetutils.updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, {},
-                [], [], [], displayColor, memory, storage, cpu, (errorMessage,id) => {
+                serverConnection, [], [], displayColor, memory, storage, cpu, (errorMessage,id) => {
                 if (!errorMessage && id) {
                   firebaseutils.bladeRef.doc(id).get().then(docRef => {
                     firebaseutils.db.collectionGroup('blades').where("id","==",docRef.data().chassisId).get().then(async(qs) => {

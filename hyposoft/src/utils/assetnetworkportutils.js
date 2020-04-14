@@ -1,4 +1,4 @@
-import { assetRef, decommissionRef, modelsRef, firebase } from './firebaseutils'
+import { assetRef, decommissionRef, modelsRef, firebase, db } from './firebaseutils'
 
 //These variable are used in the checkConflicts method
 let otherAssetsMap = {};
@@ -7,8 +7,8 @@ let seenOtherPorts = new Map(); //Map of otherAssetID --> array of all otherPort
 
 //networkPortConnections is an array at this point. Gets transformed when passed into addAsset()  in AddAssetForm
 //this function is called in addAsset in assetutils.js (so when the user presses submit on the form)
-function validateNetworkConnections(thisModelName, networkPortConnections, callback, oldNetworkConnections = null, offlineStorage = null) {
-    if(offlineStorage){
+function validateNetworkConnections(thisModelName, networkPortConnections, callback, oldNetworkConnections = null, offlineStorage = null, chassis = null, myAssetId = '') {
+    if(offlineStorage || chassis){
         return(callback(null));
     }
     else {
@@ -52,10 +52,22 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
             //All of the fields have been filled in
             else if (otherPort.trim() !== "" && thisPort.trim() !== "") {
 
-                modelsRef.where("modelName", "==", thisModelName).get().then(function (querySnapshot) {
+                modelsRef.where("modelName", "==", thisModelName).get().then(async function (querySnapshot) {
                     //Number of ports on the model that you are trying to add an asset of
                     console.log(querySnapshot.docs[0].data().modelName)
-                    let numThisModelPorts = querySnapshot.docs[0].data().networkPortsCount;
+                    let bladeCount = 0
+                    if (querySnapshot.docs[0].data().mount === 'chassis') {
+                       bladeCount = await new Promise(function(resolve, reject) {
+                          db.collectionGroup('blades').where('id','==',myAssetId).get().then(qs => {
+                              if (!qs.empty) {
+                                resolve(qs.docs[0].data().assets.length)
+                              } else {
+                                resolve(0)
+                              }
+                          })
+                       })
+                    }
+                    let numThisModelPorts = querySnapshot.docs[0].data().networkPortsCount + bladeCount;
                     let errModels = [];
                     if (numThisModelPorts === 0) {
                         errModels.push(thisModelName)
@@ -71,9 +83,21 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                         else {
                             let otherModel = otherAssetModelDoc.data().model
 
-                            modelsRef.where("modelName", "==", otherModel).get().then(function (querySnapshot) {
+                            modelsRef.where("modelName", "==", otherModel).get().then(async function (querySnapshot) {
 
-                                let numOtherModelPorts = querySnapshot.docs[0].data().networkPortsCount
+                                let otherBladeCount = 0
+                                if (querySnapshot.docs[0].data().mount === 'chassis') {
+                                  otherBladeCount = await new Promise(function(resolve, reject) {
+                                      db.collectionGroup('blades').where('id','==',otherAssetID).get().then(qs => {
+                                          if (!qs.empty) {
+                                            resolve(qs.docs[0].data().assets.length)
+                                          } else {
+                                            resolve(0)
+                                          }
+                                      })
+                                  })
+                                }
+                                let numOtherModelPorts = querySnapshot.docs[0].data().networkPortsCount + otherBladeCount
                                 if (numOtherModelPorts === 0) {
                                     errModels.push(otherModel)
                                 }
@@ -165,7 +189,7 @@ function checkThisModelPortsExist(thisModelName, thisPort, callback) {
 
         //does the model contain this port name?
         //WHAT IF THERE ARE NO NETWORK PORTS? [].include() will return false
-        if (!querySnapshot.docs[0].data().networkPorts.includes(thisPort)) {
+        if (!thisPort.includes('blade:') && !querySnapshot.docs[0].data().networkPorts.includes(thisPort)) {
             errPort = thisPort
             errModel = thisModelName;
             console.log("Did not find the input thisPort in the model's existing port names")
@@ -202,7 +226,7 @@ function checkOtherAssetPortsExist(otherAssetID, otherPort, callback) {
             console.log("In checkOtherAssetPortsExist")
 
             //Need to keep track in a different collection of which ports have been occupied
-            if (!querySnapshot.docs[0].data().networkPorts.includes(otherPort)) {
+            if (!otherPort.includes('blade:') && !querySnapshot.docs[0].data().networkPorts.includes(otherPort)) {
 
                 errPort = otherPort;
                 errInstance = otherAssetID;
