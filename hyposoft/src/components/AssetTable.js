@@ -478,7 +478,7 @@ export default class AssetTable extends Component {
                     }} style={{cursor: "pointer"}}> Datacenter
                         Abbrev. {this.state.sortField === 'datacenterAbbrev' && (this.state.sortAscending ?
                             <FormDown/> : <FormUp/>)}</Text>,
-                    render: datum => <Text size='small' data-tip={datum.bladeInfo ? ('Located within chassis '+datum.bladeInfo.rack+' slot '+datum.bladeInfo.rackU) : ''}>
+                    render: datum => <Text size='small'>
                         {datum.datacenterAbbrev}
                     </Text>,
 
