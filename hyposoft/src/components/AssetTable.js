@@ -458,7 +458,7 @@ export default class AssetTable extends Component {
                                   style={{cursor: "pointer"}}>Rack {this.state.sortField === 'rack' && (this.state.sortAscending ?
                         <FormDown/> : <FormUp/>)}</Text>,
                     //align:"end",
-                    render: datum => <Text size='small'>{datum.rack}</Text>,
+                    render: datum => <Text size='small' data-tip={datum.bladeInfo ? ('Located within this Rack at chassis '+datum.bladeInfo.rack) : ''}>{datum.rack}</Text>,
 
                 },
                 {
@@ -468,7 +468,7 @@ export default class AssetTable extends Component {
                     }} style={{cursor: "pointer"}}>Rack
                         U {this.state.sortField === 'rackU' && (this.state.sortAscending ? <FormDown/> :
                             <FormUp/>)}</Text>,
-                    render: datum => <Text size='small'>{datum.rackU}</Text>,
+                    render: datum => <Text size='small' data-tip={datum.bladeInfo ? ('Slotted within this Rack U at slot '+datum.bladeInfo.rackU) : ''}>{datum.rackU}</Text>,
 
                 },
                 {
@@ -478,7 +478,7 @@ export default class AssetTable extends Component {
                     }} style={{cursor: "pointer"}}> Datacenter
                         Abbrev. {this.state.sortField === 'datacenterAbbrev' && (this.state.sortAscending ?
                             <FormDown/> : <FormUp/>)}</Text>,
-                    render: datum => <Text size='small'>
+                    render: datum => <Text size='small' data-tip={datum.bladeInfo ? ('Located within chassis '+datum.bladeInfo.rack+' slot '+datum.bladeInfo.rackU) : ''}>
                         {datum.datacenterAbbrev}
                     </Text>,
 
