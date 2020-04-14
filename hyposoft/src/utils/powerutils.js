@@ -21,7 +21,7 @@ function changeBladePower(chassis, blade, callback, powerStatus) {
             callback(null)
         } else {
             // TODO: Change the log statement below when logging for BCMAN is implemented
-            // logutils.addLog(null,logutils.PDU(),logutils.POWER_ON(),{pdu: pdu, portNumber: portNumber})
+            logutils.addLog(null,logutils.BCMAN(),powerStatus === "ON" ? logutils.POWER_ON() : logutils.POWER_OFF(),{pdu: chassis, portNumber: blade})
             callback(response.data) // Data should be 'Success'
         }
     }).catch(() => {

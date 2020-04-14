@@ -2,6 +2,7 @@ import * as firebaseutils from './firebaseutils'
 import * as assetutils from './assetutils'
 import * as decomutils from '../utils/decommissionutils'
 import * as datacenterutils from './datacenterutils'
+import * as offlineutils from './offlinestorageutils'
 
 function addChassis(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu,callback, changePlanID = null, changeDocID = null) {
     assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu,(errorMessage,id) => {
@@ -107,13 +108,13 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
     }, changePlanID, changeDocID)
 }
 
-function deleteChassis(assetID, callback, isDecommission = false) {
+function deleteChassis(assetID, callback, isDecommission = false, offline = null) {
     firebaseutils.db.collectionGroup('blades').where("id","==",assetID).get().then(qs => {
-        if (!qs.empty && (qs.docs[0].data().assets.length === 0 || isDecommission)) {
+        if (!qs.empty && (qs.docs[0].data().assets.length === 0 || isDecommission || offline)) {
             assetutils.deleteAsset(assetID, async(deletedId) => {
                 if (deletedId) {
                     var myParams = null
-                    if (isDecommission) {
+                    if (isDecommission || offline) {
                         await new Promise(function(resolve, reject) {
                             getBladeChassisViewParams(qs.docs[0].data().letter,async(chassisSlots,mySlot)=> {
                               const qsAssets = qs.docs[0].data().assets
@@ -125,7 +126,11 @@ function deleteChassis(assetID, callback, isDecommission = false) {
                                         chassisSlots: chassisSlots,
                                         slot: mySlot[qsAssets[i]]
                                       }
-                                      decomutils.decommissionAsset(qsAssets[i],doNothing => resolve(),deleteServer,chassisParams)
+                                      if (offline) {
+                                        offlineutils.moveAssetToOfflineStorage(qsAssets[i], offline, doNothing => resolve(), deleteServer)
+                                      } else {
+                                        decomutils.decommissionAsset(qsAssets[i],doNothing => resolve(),deleteServer,chassisParams)
+                                      }
                                   })
                               }
                               myParams = {
