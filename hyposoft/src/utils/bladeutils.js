@@ -2,6 +2,7 @@ import * as firebaseutils from './firebaseutils'
 import * as assetutils from './assetutils'
 import * as decomutils from '../utils/decommissionutils'
 import * as datacenterutils from './datacenterutils'
+import * as offlineutils from './offlinestorageutils'
 
 function addChassis(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu,callback, changePlanID = null, changeDocID = null) {
     assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu,(errorMessage,id) => {
@@ -107,7 +108,7 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
     }, changePlanID, changeDocID)
 }
 
-function deleteChassis(assetID, callback, isDecommission = false, offline = false) {
+function deleteChassis(assetID, callback, isDecommission = false, offline = null) {
     firebaseutils.db.collectionGroup('blades').where("id","==",assetID).get().then(qs => {
         if (!qs.empty && (qs.docs[0].data().assets.length === 0 || isDecommission || offline)) {
             assetutils.deleteAsset(assetID, async(deletedId) => {
@@ -126,7 +127,7 @@ function deleteChassis(assetID, callback, isDecommission = false, offline = fals
                                         slot: mySlot[qsAssets[i]]
                                       }
                                       if (offline) {
-                                        deleteServer(qsAssets[i], doNothing => resolve(), true /*do this to allow no logged deletion*/)
+                                        offlineutils.moveAssetToOfflineStorage(qsAssets[i], offline, doNothing => resolve(), deleteServer)
                                       } else {
                                         decomutils.decommissionAsset(qsAssets[i],doNothing => resolve(),deleteServer,chassisParams)
                                       }

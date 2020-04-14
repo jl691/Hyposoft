@@ -180,7 +180,7 @@ function getInfoFromName(name, callback){
     })
 }
 
-function moveAssetToOfflineStorage(assetID, offlineStorageName, callback){
+function moveAssetToOfflineStorage(assetID, offlineStorageName, callback, moveFunction = assetutils.deleteAsset){
     console.log(offlineStorageName)
     getInfoFromName(offlineStorageName, (offlineStorageAbbrev, offlineStorageID) => {
         if(offlineStorageID){
@@ -201,7 +201,7 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback){
                             delete assetData.rackRow;
                             delete assetData.rackU;
                             firebaseutils.offlinestorageRef.doc(offlineStorageID).collection("offlineAssets").doc(String(assetID)).set(assetData).then(function () {
-                                assetutils.deleteAsset(assetID, result => {
+                                moveFunction(assetID, result => {
                                     if(result){
                                         callback(true, offlineStorageAbbrev);
                                         logutils.addLog(assetID,logutils.OFFLINE(),logutils.MOVE(),{...savedAssetData,datacenterAbbrev: offlineStorageAbbrev})
@@ -209,7 +209,7 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback){
                                         console.log("6")
                                         callback(null);
                                     }
-                                }, true /*do this to allow no logged deletion*/)
+                                }, true /*do this to allow no logged deletion*/, offlineStorageName /*this is for updateChassis, shouldn't affect other methods*/)
                             }).catch(function () {
                                 console.log("5")
                                 callback(null);
