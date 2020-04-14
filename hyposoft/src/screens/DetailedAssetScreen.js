@@ -309,17 +309,26 @@ export default class DetailedAssetScreen extends Component {
     }
 
     turnAssetOn() {
-        if (this.bladeData) {
-          powerutils.changeBladePower(this.bladeData.rack, this.bladeData.rackU, (result) => {
-              if (result) {
-                  this.setState({
-                      [this.bladeData.rack + ":" + this.bladeData.rackU]: true
-                  });
-                  ToastsStore.success("Successfully turned on the asset!")
-              } else {
-                  ToastsStore.info("Could not power on due to network connectivity issues.")
-              }
-          },"ON")
+        if (this.bladeData || this.chassisSlots) {
+          let count = 0;
+          const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
+          eachFor.forEach(powerPiece => {
+            const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+            const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+            powerutils.changeBladePower(host, slot, (result) => {
+                if (result) {
+                    this.setState({
+                        [host + ":" + slot]: true
+                    });
+                    count++;
+                    if (count === eachFor.length) {
+                        ToastsStore.success("Successfully turned on the asset!")
+                    }
+                } else {
+                    ToastsStore.info("Could not power on due to network connectivity issues.")
+                }
+            },"ON")
+          })
         } else {
           let count = 0;
           Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
@@ -347,17 +356,26 @@ export default class DetailedAssetScreen extends Component {
     }
 
     turnAssetOff() {
-      if (this.bladeData) {
-        powerutils.changeBladePower(this.bladeData.rack, this.bladeData.rackU, (result) => {
-            if (result) {
-                this.setState({
-                    [this.bladeData.rack + ":" + this.bladeData.rackU]: false
-                });
-                ToastsStore.success("Successfully turned off the asset!")
-            } else {
-                ToastsStore.info("Could not power off due to network connectivity issues.")
-            }
-        },"OFF")
+      if (this.bladeData || this.chassisSlots) {
+        let count = 0;
+        const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
+        eachFor.forEach(powerPiece => {
+          const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+          const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+          powerutils.changeBladePower(host, slot, (result) => {
+              if (result) {
+                  this.setState({
+                      [host + ":" + slot]: false
+                  });
+                  count++;
+                  if (count === eachFor.length) {
+                      ToastsStore.success("Successfully turned off the asset!")
+                  }
+              } else {
+                  ToastsStore.info("Could not power off due to network connectivity issues.")
+              }
+          },"OFF")
+        })
       } else {
         let count = 0;
         Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
@@ -385,28 +403,45 @@ export default class DetailedAssetScreen extends Component {
     }
 
     powerCycleAsset() {
-      if (this.bladeData) {
-        powerutils.changeBladePower(this.bladeData.rack, this.bladeData.rackU, result => {
-            if (result) {
-                this.setState({
-                    [this.bladeData.rack + ":" + this.bladeData.rackU]: false
-                });
-                setTimeout(() => {
-                    powerutils.changeBladePower(this.bladeData.rack, this.bladeData.rackU, result => {
-                        if (result) {
-                            this.setState({
-                                [this.bladeData.rack + ":" + this.bladeData.rackU]: true
-                            });
-                            ToastsStore.success("Power cycled " + this.bladeData.rack + ":" + this.bladeData.rackU + " successfully!");
-                        } else {
-                            ToastsStore.error("Could not power cycle due to network connectivity issues.")
-                        }
-                    },"ON")
-                }, 2000)
-            } else {
-                ToastsStore.error("Could not power cycle due to network connectivity issues.")
-            }
-        },"OFF")
+      if (this.bladeData || this.chassisSlots) {
+        let count = 0;
+        const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
+        eachFor.forEach(powerPiece => {
+          const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+          const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+          powerutils.changeBladePower(host, slot, result => {
+              if (result) {
+                  this.setState({
+                      [host + ":" + slot]: false
+                  });
+                  count++;
+                  if (count === eachFor.length) {
+                    setTimeout(() => {
+                        count = 0;
+                        eachFor.forEach(powerPiece => {
+                          const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+                          const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+                          powerutils.changeBladePower(host, slot, result => {
+                              if (result) {
+                                  this.setState({
+                                      [host + ":" + slot]: true
+                                  });
+                                  count++;
+                                  if (count === eachFor.length) {
+                                      ToastsStore.success("Successfully power cycled the asset!")
+                                  }
+                              } else {
+                                  ToastsStore.error("Could not power cycle due to network connectivity issues.")
+                              }
+                          },"ON")
+                        })
+                    }, 2000)
+                  }
+              } else {
+                  ToastsStore.error("Could not power cycle due to network connectivity issues.")
+              }
+          },"OFF")
+        })
       } else {
         let count = 0;
         Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
