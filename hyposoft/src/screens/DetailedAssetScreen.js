@@ -242,24 +242,33 @@ export default class DetailedAssetScreen extends Component {
             if (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner) {
                 ToastsStore.info("Click a refresh button by a PDU status to power cycle it.", 5000);
             }
-            if (this.bladeData) {
-              powerutils.getBladeStatus(this.bladeData.rack,this.bladeData.rackU, result => {
-                  let toggle;
-                  if (result === null) {
-                      ToastsStore.info("BCMAN power status is currently unavailable due to network issues.")
-                      toggle = false;
-                  } else {
-                      toggle = result === "ON" ? true : false;
-                  }
-                  this.powerPorts.push({
-                    name: this.bladeData.rack,
-                    port: this.bladeData.rackU
+            if (this.bladeData || this.chassisSlots) {
+              const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
+              eachFor.forEach(powerPiece => {
+                  const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+                  const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+                  powerutils.getBladeStatus(host, slot, result => {
+                      let toggle;
+                      if (result === null) {
+                          ToastsStore.info("BCMAN power status is currently unavailable due to network issues.")
+                          toggle = false;
+                      } else {
+                          toggle = result === "ON" ? true : false;
+                      }
+                      this.powerPorts.push({
+                        name: host,
+                        port: slot
+                      })
+                      this.setState({
+                          [host + ":" + slot]: toggle
+                      })
+                      if (this.powerPorts.length === eachFor.length) {
+                          this.setState({
+                              powerMap: true
+                          })
+                          callback()
+                      }
                   })
-                  this.setState({
-                      [this.bladeData.rack + ":" + this.bladeData.rackU]: toggle,
-                      powerMap: true
-                  })
-                  callback()
               })
             } else {
               Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
@@ -460,7 +469,7 @@ export default class DetailedAssetScreen extends Component {
                                 if (this.state[connection.name + ":" + connection.port]) {
                                     console.log("1")
                                     //on, power off
-                                    let powerFunction = this.bladeData ? powerutils.changeBladePower : powerutils.powerPortOff
+                                    let powerFunction = this.chassisSlots ? powerutils.changeBladePower : powerutils.powerPortOff
                                     powerFunction(connection.name, connection.port, result => {
                                         console.log(result)
                                         if (result) {
@@ -475,7 +484,7 @@ export default class DetailedAssetScreen extends Component {
                                 } else {
                                     console.log("2")
                                     //off, power on
-                                    let powerFunction = this.bladeData ? powerutils.changeBladePower : powerutils.powerPortOn
+                                    let powerFunction = this.chassisSlots ? powerutils.changeBladePower : powerutils.powerPortOn
                                     powerFunction(connection.name, connection.port, result => {
                                         console.log(result)
                                         if (result) {
@@ -493,14 +502,14 @@ export default class DetailedAssetScreen extends Component {
                                     data-tip="Power cycle"
                                     size={"medium"} style={{ marginLeft: "10px", cursor: "pointer" }} onClick={(e) => {
                                         ToastsStore.success("Power cycling " + connection.name + ":" + connection.port + ". Please wait!");
-                                        let powerFunction = this.bladeData ? powerutils.changeBladePower : powerutils.powerPortOff
+                                        let powerFunction = this.chassisSlots ? powerutils.changeBladePower : powerutils.powerPortOff
                                         powerFunction(connection.name, connection.port, result => {
                                             if (result) {
                                                 this.setState({
                                                     [connection.name + ":" + connection.port]: false
                                                 });
                                                 setTimeout(() => {
-                                                    let powerFunction = this.bladeData ? powerutils.changeBladePower : powerutils.powerPortOn
+                                                    let powerFunction = this.chassisSlots ? powerutils.changeBladePower : powerutils.powerPortOn
                                                     powerFunction(connection.name, connection.port, result => {
                                                         if (result) {
                                                             this.setState({
