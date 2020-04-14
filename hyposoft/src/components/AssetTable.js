@@ -505,19 +505,25 @@ export default class AssetTable extends Component {
                                            e.stopPropagation()
                                            //turn on all ports
                                            if (datum.bladeInfo) {
-                                             powerutils.changeBladePower(datum.bladeInfo.rack, datum.bladeInfo.rackU, (result) => {
-                                                 if (result) {
-                                                   this.props.handleToast({
-                                                       type: "success",
-                                                       message: "Successfully powered on the asset!"
-                                                   })
-                                                 } else {
-                                                   this.props.handleToast({
-                                                       type: "error",
-                                                       message: "Something went wrong. Please try again later."
-                                                   })
-                                                 }
-                                             },"ON")
+                                             let count = 0;
+                                             datum.bladeInfo.rackU.forEach(slot => {
+                                               powerutils.changeBladePower(datum.bladeInfo.rack, slot, (result) => {
+                                                   if (result) {
+                                                     count++;
+                                                     if (count === datum.bladeInfo.rackU.length) {
+                                                       this.props.handleToast({
+                                                           type: "success",
+                                                           message: "Successfully powered on the asset!"
+                                                       })
+                                                     }
+                                                   } else {
+                                                     this.props.handleToast({
+                                                         type: "error",
+                                                         message: "Something went wrong. Please try again later."
+                                                     })
+                                                   }
+                                               },"ON")
+                                             })
                                            } else {
                                              let count = 0;
                                              Object.keys(datum.powerConnections).forEach((connection) => {
@@ -558,19 +564,25 @@ export default class AssetTable extends Component {
                                            e.stopPropagation()
                                            //turn on all ports
                                            if (datum.bladeInfo) {
-                                             powerutils.changeBladePower(datum.bladeInfo.rack, datum.bladeInfo.rackU, (result) => {
-                                                 if (result) {
-                                                   this.props.handleToast({
-                                                       type: "success",
-                                                       message: "Successfully powered off the asset!"
-                                                   })
-                                                 } else {
-                                                   this.props.handleToast({
-                                                       type: "error",
-                                                       message: "Something went wrong. Please try again later."
-                                                   })
-                                                 }
-                                             },"OFF")
+                                             let count = 0;
+                                             datum.bladeInfo.rackU.forEach(slot => {
+                                               powerutils.changeBladePower(datum.bladeInfo.rack, slot, (result) => {
+                                                   if (result) {
+                                                     count++;
+                                                     if (count === datum.bladeInfo.rackU.length) {
+                                                       this.props.handleToast({
+                                                           type: "success",
+                                                           message: "Successfully powered off the asset!"
+                                                       })
+                                                     }
+                                                   } else {
+                                                     this.props.handleToast({
+                                                         type: "error",
+                                                         message: "Something went wrong. Please try again later."
+                                                     })
+                                                   }
+                                               },"OFF")
+                                             })
                                            } else {
                                              let count = 0;
                                              Object.keys(datum.powerConnections).forEach((connection) => {
@@ -615,30 +627,42 @@ export default class AssetTable extends Component {
                                                     message: "Power cycling the asset. Please wait..."
                                                 })
                                                 if (datum.bladeInfo) {
-                                                  powerutils.changeBladePower(datum.bladeInfo.rack, datum.bladeInfo.rackU, result => {
-                                                      if (result) {
-                                                          setTimeout(() => {
-                                                              powerutils.changeBladePower(datum.bladeInfo.rack, datum.bladeInfo.rackU, result => {
-                                                                  if (result) {
-                                                                    this.props.handleToast({
-                                                                        type: "success",
-                                                                        message: "Successfully powered cycled the asset!"
-                                                                    })
-                                                                  } else {
-                                                                    this.props.handleToast({
-                                                                        type: "error",
-                                                                        message: "Something went wrong. Please try again later."
-                                                                    })
-                                                                  }
-                                                              },"ON")
-                                                          }, 2000)
-                                                      } else {
-                                                        this.props.handleToast({
-                                                            type: "error",
-                                                            message: "Something went wrong. Please try again later."
-                                                        })
-                                                      }
-                                                  },"OFF")
+                                                  let count = 0;
+                                                  datum.bladeInfo.rackU.forEach(slot => {
+                                                    powerutils.changeBladePower(datum.bladeInfo.rack, slot, result => {
+                                                        if (result) {
+                                                          count++;
+                                                          if (count === datum.bladeInfo.rackU.length) {
+                                                            setTimeout(() => {
+                                                                count = 0
+                                                                datum.bladeInfo.rackU.forEach(slot => {
+                                                                  powerutils.changeBladePower(datum.bladeInfo.rack, slot, result => {
+                                                                      if (result) {
+                                                                        count++;
+                                                                        if (count === datum.bladeInfo.rackU.length) {
+                                                                          this.props.handleToast({
+                                                                              type: "success",
+                                                                              message: "Successfully powered cycled the asset!"
+                                                                          })
+                                                                        }
+                                                                      } else {
+                                                                        this.props.handleToast({
+                                                                            type: "error",
+                                                                            message: "Something went wrong. Please try again later."
+                                                                        })
+                                                                      }
+                                                                  },"ON")
+                                                                })
+                                                            }, 2000)
+                                                          }
+                                                        } else {
+                                                          this.props.handleToast({
+                                                              type: "error",
+                                                              message: "Something went wrong. Please try again later."
+                                                          })
+                                                        }
+                                                    },"OFF")
+                                                  })
                                                 } else {
                                                   let count = 0;
                                                   Object.keys(datum.powerConnections).forEach((connection) => {

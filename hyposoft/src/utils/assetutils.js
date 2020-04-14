@@ -40,7 +40,7 @@ function getAsset(callback, field = null, direction = null, selected = null, sto
         } else {
             console.log(docSnaps)
             const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
-            bladeutils.getBladeIds((bladeIds,idToVendor) => {
+            bladeutils.getBladeIds(idToVendor => {
               docSnaps.docs.forEach(doc => {
                   assets.push({
                       asset_id: doc.id,
@@ -82,7 +82,7 @@ function getAssetAt(start, callback, field = null, direction = null, selected = 
     let count = 0;
     query.get().then(docSnaps => {
         const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-        bladeutils.getBladeIds((bladeIds,idToVendor) => {
+        bladeutils.getBladeIds(idToVendor => {
           docSnaps.docs.forEach(doc => {
               assets.push({
                   asset_id: doc.id,
@@ -548,7 +548,7 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback, selected = null, 
     }
     query.get().then(querySnapshot => {
         let count = 0;
-        bladeutils.getBladeIds((bladeIds,idToVendor) => {
+        bladeutils.getBladeIds(idToVendor => {
           querySnapshot.forEach(doc => {
               datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
                   if (datacenterAbbrev) {
