@@ -18,7 +18,7 @@ function addChassis(overrideAssetID, model, hostname, rack, racku, owner, commen
                         // don't really need the number field so will hardcode to something
                         firebaseutils.racksRef.doc(qs.docs[0].id).collection('blades').doc(id).set({
                             id: id,
-                            letter: hostname,
+                            letter: hostname ? hostname : makeNoHostname(id),
                             number: 1,
                             height: 14,
                             assets: [],
@@ -54,7 +54,7 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
                             querySnapshot.docs[0].ref.delete().then(() => {
                               firebaseutils.racksRef.doc(qs.docs[0].id).collection('blades').doc(id).set({
                                   id: id,
-                                  letter: hostname,
+                                  letter: hostname ? hostname : makeNoHostname(id),
                                   number: prevData.number,
                                   height: prevData.height,
                                   assets: prevData.assets,
@@ -80,7 +80,7 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
                                       firebaseutils.bladeRef.doc(assets[i]).update({
                                           chassisId: id,
                                           chassisVendor: vendor,
-                                          rack: hostname,
+                                          rack: hostname ? hostname : makeNoHostname(id),
                                           rackId: qs.docs[0].id
                                       }).then(() => resolve())
                                     })
@@ -155,7 +155,9 @@ function deleteChassis(assetID, callback, isDecommission = false, offline = null
 }
 
 function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null) {
-    firebaseutils.assetRef.where('hostname','==',chassisHostname).where('datacenter','==',datacenter).get().then(qs => {
+    const split = chassisHostname.split(' ')
+    let findChassis = split.length > 1 ? firebaseutils.assetRef.where('assetId','==',split.slice(-1)[0]) : firebaseutils.assetRef.where('hostname','==',chassisHostname)
+    findChassis.where('datacenter','==',datacenter).get().then(qs => {
         if (!qs.empty) {
             const rack = qs.docs[0].data().rack
             const racku = qs.docs[0].data().rackU
@@ -196,7 +198,9 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
 
 function updateServer(assetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses,
     networkConnectionsArray, deletedNCThisPort, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null) {
-    firebaseutils.assetRef.where('hostname','==',chassisHostname).where('datacenter','==',datacenter).get().then(qs => {
+    const split = chassisHostname.split(' ')
+    let findChassis = split.length > 1 ? firebaseutils.assetRef.where('assetId','==',split.slice(-1)[0]) : firebaseutils.assetRef.where('hostname','==',chassisHostname)
+    findChassis.where('datacenter','==',datacenter).get().then(qs => {
         if (!qs.empty) {
             const rack = qs.docs[0].data().rack
             const rackU = qs.docs[0].data().rackU
@@ -327,7 +331,7 @@ function getBladeInfo(id,callback) {
 
 function getDetailBladeInfo(id,hostname,callback) {
     getBladeInfo(id,data => {
-      firebaseutils.bladeRef.where('rack','==',data ? data.rack : hostname).get().then(qs => {
+      firebaseutils.bladeRef.where('rack','==',data ? data.rack : (hostname ? hostname : makeNoHostname(id))).get().then(qs => {
           if (!qs.empty) {
             var taken = []
             qs.forEach(doc => {
@@ -412,13 +416,15 @@ function getBladeIds(callback) {
             var idToVendor = {}
             // blade servers
             docSnaps.forEach(doc => {
-              let slots = helpChassis[doc.data().chassisId] ? helpChassis[doc.data().chassisId].slots : []
-              helpChassis[doc.data().chassisId] = {vendor: doc.data().chassisVendor, slots: slots.concat(doc.data().rackU)}
-              idToVendor[doc.id] = {chassisVendor: doc.data().chassisVendor, rack: doc.data().rack, rackU: [doc.data().rackU], chassisId: doc.data().chassisId}
+              if (!doc.data().rack.includes('No hostname')) {
+                let slots = helpChassis[doc.data().chassisId] ? helpChassis[doc.data().chassisId].slots : []
+                helpChassis[doc.data().chassisId] = {vendor: doc.data().chassisVendor, slots: slots.concat(doc.data().rackU)}
+                idToVendor[doc.id] = {chassisVendor: doc.data().chassisVendor, rack: doc.data().rack, rackU: [doc.data().rackU], chassisId: doc.data().chassisId}
+              }
             })
             // chassis
             snaps.forEach(doc => {
-              if (helpChassis[doc.id]) {
+              if (helpChassis[doc.id] && !doc.data().letter.includes('No hostname')) {
                 idToVendor[doc.id] = {chassisVendor: helpChassis[doc.id].vendor, rack: doc.data().letter, rackU: helpChassis[doc.id].slots, chassisId: doc.id}
               }
             })
@@ -427,4 +433,8 @@ function getBladeIds(callback) {
     })
 }
 
-export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo, getDetailBladeInfo, getSuggestedChassis, getSuggestedSlots, getBladeIds }
+function makeNoHostname(id) {
+    return 'No hostname, asset: '+id
+}
+
+export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo, getDetailBladeInfo, getSuggestedChassis, getSuggestedSlots, getBladeIds, makeNoHostname }

@@ -86,10 +86,11 @@ function checkConnectedToPDU(assetID, callback){
           firebaseutils.modelsRef.doc(docSnapshot.data().modelId).get().then(doc => {
             if (doc.exists && doc.data().mount === "blade") {
                 firebaseutils.bladeRef.doc(assetID).get().then(doc => {
-                    callback(doc.exists && doc.data().chassisVendor.toUpperCase() === "BMI")
+                    const split = doc.data().rack.split(' ')
+                    callback(doc.exists && doc.data().chassisVendor.toUpperCase() === "BMI" && split.length === 1)
                 })
             } else if (doc.exists && doc.data().mount === "chassis") {
-                callback(docSnapshot.data().vendor.toUpperCase() === "BMI")
+                callback(docSnapshot.data().vendor.toUpperCase() === "BMI" && docSnapshot.data().hostname)
             } else {
                 console.log(docSnapshot.data());
                 console.log(docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1");

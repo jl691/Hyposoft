@@ -828,7 +828,7 @@ export default class DetailedAssetScreen extends Component {
                                                         gap='small' align='center'>
                                                         <BladeChassisView
                                                             chassisId={!this.bladeData ? this.state.asset.assetID : this.bladeData.chassisId}
-                                                            chassisHostname={!this.bladeData ? this.state.asset.hostname : this.bladeData.rack}
+                                                            chassisHostname={!this.bladeData ? (this.state.asset.hostname ? this.state.asset.hostname : bladeutils.makeNoHostname(this.state.asset.assetID)) : this.bladeData.rack}
                                                             chassisSlots={this.chassisSlots}
                                                             slot={!this.bladeData ? null : this.bladeData.rackU}
                                                         />
