@@ -12,6 +12,7 @@ class SingleRackElevationNative extends React.Component {
     }
 
     idToRowNum = {}
+    idToAsset = {}
 
     getContrastYIQ(hexcolor) {
         //hexcolor = hexcolor.replace("#", "");
@@ -43,6 +44,7 @@ class SingleRackElevationNative extends React.Component {
 
                 result.forEach(asset => {
                     this.idToRowNum[asset.id] = 42-asset.position
+                    this.idToAsset[asset.id] = asset
                     rows[42-parseInt(asset.position)] = <tr class="reClickableRow" onClick={() => window.location.href = "/assets/" + asset.id}><td class="reRackNumber">{asset.position}</td><td style={{backgroundColor: asset.color, color: this.getContrastYIQ(asset.color), fontSize: 12}}>{asset.model} {'\u00b7'} {asset.hostname}</td><td class="reRackNumber">{asset.position}</td></tr>
 
                     Array.from(Array(asset.height-1).keys()).forEach(i => {
@@ -55,13 +57,24 @@ class SingleRackElevationNative extends React.Component {
                             this.sendPNGToParent(letter, number);
                     }
 
-                    firebaseutils.db.collection('bladeInfo').where('chassisId','==',asset.id).get().then(qs => {
+                    firebaseutils.db.collectionGroup('blades').where('id','==',asset.id).get().then(qs => {
                         if (qs.size > 0) {
+                            // This is a chassis
+                            let bladeCount = qs.docs[0].data().assets.length
+                            console.log('blade count: '+bladeCount)
                             let rows = [...this.state.rows]
-                            rows[this.idToRowNum[qs.docs[0].data().chassisId]] = <tr class="reClickableRow" onClick={() => window.location.href = "/assets/" + asset.id}><td class="reRackNumber">{asset.position}</td><td style={{backgroundColor: asset.color, color: this.getContrastYIQ(asset.color), fontSize: 12}}>{asset.model} {'\u00b7'} {asset.hostname} {'\u00b7 ' + qs.size + ' blades online'}</td><td class="reRackNumber">{asset.position}</td></tr>
+                            let asset = this.idToAsset[qs.docs[0].data().id]
+                            rows[this.idToRowNum[qs.docs[0].data().id]] = <tr class="reClickableRow" onClick={() => window.location.href = "/assets/" + qs.docs[0].data().id}><td class="reRackNumber">{asset.position}</td><td style={{backgroundColor: asset.color, color: this.getContrastYIQ(asset.color), fontSize: 12}}>{asset.model} {'\u00b7'} {asset.hostname} {'\u00b7 ' + bladeCount + ' blades online'}</td><td class="reRackNumber">{asset.position}</td></tr>
                             this.setState(oldState => ({...oldState, rows: rows}))
                         }
                     })
+                    // firebaseutils.db.collection('bladeInfo').where('chassisId','==',asset.id).get().then(qs => {
+                    //     if (qs.size > 0) {
+                    //         let rows = [...this.state.rows]
+                    //         rows[this.idToRowNum[qs.docs[0].data().chassisId]] = <tr class="reClickableRow" onClick={() => window.location.href = "/assets/" + asset.id}><td class="reRackNumber">{asset.position}</td><td style={{backgroundColor: asset.color, color: this.getContrastYIQ(asset.color), fontSize: 12}}>{asset.model} {'\u00b7'} {asset.hostname} {'\u00b7 ' + qs.size + ' blades online'}</td><td class="reRackNumber">{asset.position}</td></tr>
+                    //         this.setState(oldState => ({...oldState, rows: rows}))
+                    //     }
+                    // })
                 });
             } else {
                 console.log("error");
