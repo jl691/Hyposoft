@@ -17,6 +17,7 @@ import * as datacenterutils from './datacenterutils'
 import * as assetnetworkportutils from './assetnetworkportutils'
 import * as assetpowerportutils from './assetpowerportutils'
 import * as logutils from './logutils'
+import * as bladeutils from './bladeutils'
 import * as changeplanutils from './changeplanutils'
 import * as changeplanconflictutils from '../utils/changeplanconflictutils'
 import * as offlinestorageutils from './offlinestorageutils'
@@ -39,22 +40,25 @@ function getAsset(callback, field = null, direction = null, selected = null, sto
         } else {
             console.log(docSnaps)
             const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
-            docSnaps.docs.forEach(doc => {
-                assets.push({
-                    asset_id: doc.id,
-                    ...doc.data(),
-                    checked: selected && selected.includes(doc.id),
-                    //add here to get variance data
-                    displayColor: doc.data().variances.displayColor,
-                    cpu: doc.data().variances.cpu,
-                    memory: doc.data().variances.memory,
-                    storage: doc.data().variances.storage
-                });
-                count++;
-                if (count === docSnaps.docs.length) {
-                    callback(startAfter, assets, false);
-                }
+            bladeutils.getBladeIds(idToVendor => {
+              docSnaps.docs.forEach(doc => {
+                  assets.push({
+                      asset_id: doc.id,
+                      ...doc.data(),
+                      checked: selected && selected.includes(doc.id),
+                      bladeInfo: idToVendor[doc.id] ? idToVendor[doc.id] : null,
+                      //add here to get variance data
+                      displayColor: doc.data().variances.displayColor,
+                      cpu: doc.data().variances.cpu,
+                      memory: doc.data().variances.memory,
+                      storage: doc.data().variances.storage
+                  });
+                  count++;
+                  if (count === docSnaps.docs.length) {
+                      callback(startAfter, assets, false);
+                  }
 
+              })
             })
         }
     }).catch(function (error) {
@@ -78,20 +82,23 @@ function getAssetAt(start, callback, field = null, direction = null, selected = 
     let count = 0;
     query.get().then(docSnaps => {
         const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-        docSnaps.docs.forEach(doc => {
-            assets.push({
-                asset_id: doc.id,
-                ...doc.data(),
-                checked: selectAll || (selected && selected.includes(doc.id)),
-                displayColor: doc.data().variances.displayColor,
-                cpu: doc.data().variances.cpu,
-                memory: doc.data().variances.memory,
-                storage: doc.data().variances.storage
-            });
-            count++;
-            if (count === docSnaps.docs.length) {
-                callback(newStart, assets);
-            }
+        bladeutils.getBladeIds(idToVendor => {
+          docSnaps.docs.forEach(doc => {
+              assets.push({
+                  asset_id: doc.id,
+                  ...doc.data(),
+                  checked: selectAll || (selected && selected.includes(doc.id)),
+                  bladeInfo: idToVendor[doc.id] ? idToVendor[doc.id] : null,
+                  displayColor: doc.data().variances.displayColor,
+                  cpu: doc.data().variances.cpu,
+                  memory: doc.data().variances.memory,
+                  storage: doc.data().variances.storage
+              });
+              count++;
+              if (count === docSnaps.docs.length) {
+                  callback(newStart, assets);
+              }
+          })
         })
 
     }).catch(function (error) {
@@ -153,7 +160,7 @@ function validateAssetVariances(displayColor, cpu, memory, storage, callback) {
     }
 }
 
-function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null, chassis = null) {
+function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null, chassis = null, noLog = false) {
 
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
@@ -290,11 +297,11 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                     suffixes_list.push(_owner)
                                                                                 }
 
-                                                                                // index.saveObject({
-                                                                                //     ...assetObject,
-                                                                                //     objectID: overrideAssetID,
-                                                                                //     suffixes: suffixes_list.join(' ')
-                                                                                // })
+                                                                                index.saveObject({
+                                                                                    ...assetObject,
+                                                                                    objectID: overrideAssetID,
+                                                                                    suffixes: suffixes_list.join(' ')
+                                                                                })
                                                                                 assetRef.doc(overrideAssetID).set(assetObject).then(function (docRef) {
                                                                                     assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, overrideAssetID);
 
@@ -309,7 +316,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                             }).then(function () {
 
                                                                                                 console.log("Document successfully updated in racks");
-                                                                                                logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
+                                                                                                if (!noLog) {
+                                                                                                  logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
+                                                                                                }
                                                                                                 callback(null, overrideAssetID);
                                                                                             })
                                                                                         })
@@ -322,7 +331,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                             }).then(function () {
 
                                                                                                 console.log("Document successfully updated in racks");
-                                                                                                logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
+                                                                                                if (!noLog) {
+                                                                                                  logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
+                                                                                                }
                                                                                                 callback(null, overrideAssetID);
                                                                                             })
                                                                                         })
@@ -420,11 +431,11 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                 suffixes_list.push(_owner)
                                                                             }
 
-                                                                            // index.saveObject({
-                                                                            //     ...assetObject,
-                                                                            //     objectID: newID,
-                                                                            //     suffixes: suffixes_list.join(' ')
-                                                                            // })
+                                                                            index.saveObject({
+                                                                                ...assetObject,
+                                                                                objectID: newID,
+                                                                                suffixes: suffixes_list.join(' ')
+                                                                            })
 
                                                                             assetRef.doc(newID)
                                                                                 .set(assetObject).then(function (docRef) {
@@ -443,7 +454,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                             }).then(function () {
 
                                                                                                 console.log("Document successfully updated in racks");
-                                                                                                logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                                                if (!noLog) {
+                                                                                                  logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                                                }
                                                                                                 callback(null, newID);
                                                                                             })
                                                                                         })
@@ -456,7 +469,9 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                             }).then(function () {
 
                                                                                                 console.log("Document successfully updated in racks");
-                                                                                                logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                                                if (!noLog) {
+                                                                                                  logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                                                }
                                                                                                 callback(null, newID);
                                                                                             })
                                                                                         })
@@ -495,7 +510,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 })
 
 
-                                            })
+                                            }, null, null, chassis)
 
                                         }
                                     }, null, null, chassis)
@@ -537,26 +552,29 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback, selected = null, 
     }
     query.get().then(querySnapshot => {
         let count = 0;
-        querySnapshot.forEach(doc => {
-            datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
-                if (datacenterAbbrev) {
-                    vendorArray.push({
-                        asset_id: doc.id,
-                        ...doc.data(),
-                        checked: selected && selected.includes(doc.id),
-                        displayColor: doc.data().variances.displayColor,
-                        cpu: doc.data().variances.cpu,
-                        memory: doc.data().variances.memory,
-                        storage: doc.data().variances.storage
-                    });
-                    count++;
-                    if (count === querySnapshot.size) {
-                        callback(vendorArray);
-                    }
-                } else {
-                    callback(null);
-                }
-            })
+        bladeutils.getBladeIds(idToVendor => {
+          querySnapshot.forEach(doc => {
+              datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
+                  if (datacenterAbbrev) {
+                      vendorArray.push({
+                          asset_id: doc.id,
+                          ...doc.data(),
+                          checked: selected && selected.includes(doc.id),
+                          bladeInfo: idToVendor[doc.id] ? idToVendor[doc.id] : null,
+                          displayColor: doc.data().variances.displayColor,
+                          cpu: doc.data().variances.cpu,
+                          memory: doc.data().variances.memory,
+                          storage: doc.data().variances.storage
+                      });
+                      count++;
+                      if (count === querySnapshot.size) {
+                          callback(vendorArray);
+                      }
+                  } else {
+                      callback(null);
+                  }
+              })
+          })
         })
     }).catch(error => {
         console.log("Error getting documents: ", error)
@@ -751,7 +769,7 @@ function deleteAsset(assetID, callback, isDecommission = false, offlineStorage =
                                             if (!isDecommission) {
                                                 logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
                                             }
-                                            // index.deleteObject(assetID)
+                                            index.deleteObject(assetID)
                                             callback(assetID);
                                         })
                                     }).catch(function (error) {
@@ -777,7 +795,7 @@ function deleteAsset(assetID, callback, isDecommission = false, offlineStorage =
                                                 if (!isDecommission) {
                                                     logutils.addLog(assetID, logutils.OFFLINE(), logutils.DELETE(), docData)
                                                 }
-                                                // index.deleteObject(assetID)
+                                                index.deleteObject(assetID)
                                                 callback(assetID);
                                             })
                                         } else {
@@ -793,7 +811,7 @@ function deleteAsset(assetID, callback, isDecommission = false, offlineStorage =
                                             if (!isDecommission) {
                                                 logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
                                             }
-                                            // index.deleteObject(assetID)
+                                            index.deleteObject(assetID)
                                             callback(assetID);
                                         })
                                     }).catch(function (error) {
@@ -994,11 +1012,11 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                             let _owner = assetObject.owner
 
 
-                                                                                                            // index.saveObject({
-                                                                                                            //     ...assetObject,
-                                                                                                            //     objectID: assetID,
-                                                                                                            //     suffixes: suffixes_list.join(' ')
-                                                                                                            // })
+                                                                                                            index.saveObject({
+                                                                                                                ...assetObject,
+                                                                                                                objectID: assetID,
+                                                                                                                suffixes: suffixes_list.join(' ')
+                                                                                                            })
                                                                                                             if (offlineStorageAbbrev) {
                                                                                                                 console.log("checkpoint15")
                                                                                                                 offlinestorageutils.getInfoFromAbbrev(offlineStorageAbbrev, (offlineName, offlineID) => {
@@ -1009,7 +1027,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                                             console.log("checkpoint16")
                                                                                                                             console.log("Updated model successfully")
                                                                                                                             // log needs to be added before calling back for DetailedAssetScreen
-                                                                                                                            logutils.addLog(String(assetID), logutils.OFFLINE(), logutils.MODIFY(), assetData, () => callback(null, String(assetID)))
+                                                                                                                            logutils.addLog(String(assetID), logutils.OFFLINE(), logutils.MODIFY(), assetData, () => callback(null, String(assetID),modelStuff[0]))
                                                                                                                         }).catch(function (error) {
                                                                                                                             callback(error);
                                                                                                                         })
@@ -1021,7 +1039,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                                 assetRef.doc(String(assetID)).update(assetObject).then(function () {
                                                                                                                     console.log("Updated model successfully")
                                                                                                                     // log needs to be added before calling back for DetailedAssetScreen
-                                                                                                                    logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null, String(assetID)))
+                                                                                                                    logutils.addLog(String(assetID), logutils.ASSET(), logutils.MODIFY(), assetData, () => callback(null, String(assetID),modelStuff[0]))
                                                                                                                 }).catch(function (error) {
                                                                                                                     callback(error);
                                                                                                                 })
@@ -1047,7 +1065,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
 
 
                                                                                 }, offlineStorageAbbrev)
-                                                                            }, oldNetworkConnections, offlineStorageAbbrev)
+                                                                            }, oldNetworkConnections, offlineStorageAbbrev, chassis, assetID)
                                                                         })
                                                                     }, offlineStorageAbbrev, chassis)
                                                                 }

@@ -2,6 +2,7 @@ import * as firebaseutils from './firebaseutils'
 import * as assetutils from './assetutils'
 import * as decomutils from '../utils/decommissionutils'
 import * as datacenterutils from './datacenterutils'
+import * as offlineutils from './offlinestorageutils'
 
 function addChassis(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu,callback, changePlanID = null, changeDocID = null) {
     assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu,(errorMessage,id) => {
@@ -17,7 +18,7 @@ function addChassis(overrideAssetID, model, hostname, rack, racku, owner, commen
                         // don't really need the number field so will hardcode to something
                         firebaseutils.racksRef.doc(qs.docs[0].id).collection('blades').doc(id).set({
                             id: id,
-                            letter: hostname,
+                            letter: hostname ? hostname : makeNoHostname(id),
                             number: 1,
                             height: 14,
                             assets: [],
@@ -38,7 +39,7 @@ function addChassis(overrideAssetID, model, hostname, rack, racku, owner, commen
 function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
     networkConnectionsArray, deletedNCThisPort, powerConnections, displayColor, memory, storage, cpu,callback, changePlanID = null, changeDocID = null) {
     assetutils.updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
-        networkConnectionsArray, deletedNCThisPort, powerConnections,displayColor, memory, storage, cpu, (errorMessage,id) => {
+        networkConnectionsArray, deletedNCThisPort, powerConnections,displayColor, memory, storage, cpu, (errorMessage,id,vendor) => {
         if (!errorMessage && id) {
             // add collection to rack
             let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
@@ -53,7 +54,7 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
                             querySnapshot.docs[0].ref.delete().then(() => {
                               firebaseutils.racksRef.doc(qs.docs[0].id).collection('blades').doc(id).set({
                                   id: id,
-                                  letter: hostname,
+                                  letter: hostname ? hostname : makeNoHostname(id),
                                   number: prevData.number,
                                   height: prevData.height,
                                   assets: prevData.assets,
@@ -78,7 +79,8 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
                                     await new Promise(function(resolve, reject) {
                                       firebaseutils.bladeRef.doc(assets[i]).update({
                                           chassisId: id,
-                                          rack: hostname,
+                                          chassisVendor: vendor,
+                                          rack: hostname ? hostname : makeNoHostname(id),
                                           rackId: qs.docs[0].id
                                       }).then(() => resolve())
                                     })
@@ -106,13 +108,13 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
     }, changePlanID, changeDocID)
 }
 
-function deleteChassis(assetID, callback, isDecommission = false) {
+function deleteChassis(assetID, callback, isDecommission = false, doNothing = null, offline = null) {
     firebaseutils.db.collectionGroup('blades').where("id","==",assetID).get().then(qs => {
-        if (!qs.empty && (qs.docs[0].data().assets.length === 0 || isDecommission)) {
+        if (!qs.empty && (qs.docs[0].data().assets.length === 0 || isDecommission || offline)) {
             assetutils.deleteAsset(assetID, async(deletedId) => {
                 if (deletedId) {
                     var myParams = null
-                    if (isDecommission) {
+                    if (isDecommission || offline) {
                         await new Promise(function(resolve, reject) {
                             getBladeChassisViewParams(qs.docs[0].data().letter,async(chassisSlots,mySlot)=> {
                               const qsAssets = qs.docs[0].data().assets
@@ -124,7 +126,11 @@ function deleteChassis(assetID, callback, isDecommission = false) {
                                         chassisSlots: chassisSlots,
                                         slot: mySlot[qsAssets[i]]
                                       }
-                                      decomutils.decommissionAsset(qsAssets[i],doNothing => resolve(),deleteServer,chassisParams)
+                                      if (offline) {
+                                        offlineutils.moveAssetToOfflineStorage(qsAssets[i], offline, doNothing => resolve(), deleteServer)
+                                      } else {
+                                        decomutils.decommissionAsset(qsAssets[i],doNothing => resolve(),deleteServer,chassisParams)
+                                      }
                                   })
                               }
                               myParams = {
@@ -149,14 +155,22 @@ function deleteChassis(assetID, callback, isDecommission = false) {
 }
 
 function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null) {
-    firebaseutils.assetRef.where('hostname','==',chassisHostname).where('datacenter','==',datacenter).get().then(qs => {
-        if (!qs.empty) {
+    const split = chassisHostname.split(' ')
+    let findChassis = split.length > 1 ? firebaseutils.assetRef.where('assetId','==',split.slice(-1)[0]) : firebaseutils.assetRef.where('hostname','==',chassisHostname)
+    findChassis.where('datacenter','==',datacenter).get().then(qs => {
+      // use this second call as precautionary check
+      firebaseutils.db.collectionGroup('blades').where('letter','==',chassisHostname).get().then(querySnapshot => {
+        if (!qs.empty && !querySnapshot.empty) {
             const rack = qs.docs[0].data().rack
             const racku = qs.docs[0].data().rackU
             const rackId = qs.docs[0].data().rackID
             const chassisId = qs.docs[0].id
+            const chassisVendor = qs.docs[0].data().vendor
 
-            assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, {}, [], [], displayColor, memory, storage, cpu, (errorMessage,id) => {
+            // generate chassis connection
+            const serverConnection = [{otherAssetID: chassisId, otherPort: 'blade '+slot.toString(), thisPort: 'blade '+slot.toString()}]
+
+            assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, {}, serverConnection, [], displayColor, memory, storage, cpu, (errorMessage,id) => {
                 if (!errorMessage && id) {
                     // need to fix this, need to get doc with collection
                     firebaseutils.racksRef.doc(rackId).collection('blades').doc(chassisId).get().then(doc => {
@@ -169,7 +183,8 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
                                 rackU: slot,
                                 rackId: rackId,
                                 model: model,
-                                chassisId: chassisId
+                                chassisId: chassisId,
+                                chassisVendor: chassisVendor
                             })
                         }
                     })
@@ -180,20 +195,29 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
         } else {
             callback('blade chassis ' + chassisHostname +' does not exist in datacenter ' + datacenter)
         }
+      })
     })
 }
 
 function updateServer(assetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses,
     networkConnectionsArray, deletedNCThisPort, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null) {
-    firebaseutils.assetRef.where('hostname','==',chassisHostname).where('datacenter','==',datacenter).get().then(qs => {
-        if (!qs.empty) {
+    const split = chassisHostname.split(' ')
+    let findChassis = split.length > 1 ? firebaseutils.assetRef.where('assetId','==',split.slice(-1)[0]) : firebaseutils.assetRef.where('hostname','==',chassisHostname)
+    findChassis.where('datacenter','==',datacenter).get().then(qs => {
+      // use this second call as precautionary check
+      firebaseutils.db.collectionGroup('blades').where('letter','==',chassisHostname).get().then(querySnapshot => {
+        if (!qs.empty && !querySnapshot.empty) {
             const rack = qs.docs[0].data().rack
             const rackU = qs.docs[0].data().rackU
             const rackId = qs.docs[0].data().rackID
             const chassisId = qs.docs[0].id
+            const chassisVendor = qs.docs[0].data().vendor
+
+            // generate chassis connection
+            const serverConnection = [{otherAssetID: chassisId, otherPort: 'blade '+slot.toString(), thisPort: 'blade '+slot.toString()}]
 
             assetutils.updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, {},
-                [], [], [], displayColor, memory, storage, cpu, (errorMessage,id) => {
+                serverConnection, [], [], displayColor, memory, storage, cpu, (errorMessage,id) => {
                 if (!errorMessage && id) {
                   firebaseutils.bladeRef.doc(id).get().then(docRef => {
                     firebaseutils.db.collectionGroup('blades').where("id","==",docRef.data().chassisId).get().then(async(qs) => {
@@ -222,7 +246,8 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
                                       rackU: slot,
                                       rackId: rackId,
                                       model: model,
-                                      chassisId: chassisId
+                                      chassisId: chassisId,
+                                      chassisVendor: chassisVendor
                                   }).then(() => resolve())
                                 })
                             }
@@ -246,6 +271,7 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
         } else {
             callback('blade chassis ' + chassisHostname +' does not exist in datacenter ' + datacenter)
         }
+      })
     })
 }
 
@@ -311,7 +337,7 @@ function getBladeInfo(id,callback) {
 
 function getDetailBladeInfo(id,hostname,callback) {
     getBladeInfo(id,data => {
-      firebaseutils.bladeRef.where('rack','==',data ? data.rack : hostname).get().then(qs => {
+      firebaseutils.bladeRef.where('rack','==',data ? data.rack : (hostname ? hostname : makeNoHostname(id))).get().then(qs => {
           if (!qs.empty) {
             var taken = []
             qs.forEach(doc => {
@@ -385,10 +411,34 @@ function getBladeChassisViewParams(hostname,callback) {
             slots[doc.id] = doc.data().rackU
         })
       }
-      console.log(taken);
-      console.log(slots);
       callback(taken,slots)
   })
 }
 
-export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo, getDetailBladeInfo, getSuggestedChassis, getSuggestedSlots }
+function getBladeIds(callback) {
+    firebaseutils.bladeRef.get().then(docSnaps => {
+        firebaseutils.db.collectionGroup('blades').get().then(snaps => {
+            var helpChassis = {}
+            var idToVendor = {}
+            // blade servers
+            docSnaps.forEach(doc => {
+              let slots = helpChassis[doc.data().chassisId] ? helpChassis[doc.data().chassisId].slots : []
+              helpChassis[doc.data().chassisId] = {vendor: doc.data().chassisVendor, slots: slots.concat(doc.data().rackU)}
+              idToVendor[doc.id] = {chassisVendor: doc.data().chassisVendor, rack: doc.data().rack, rackU: [doc.data().rackU], chassisId: doc.data().chassisId}
+            })
+            // chassis
+            snaps.forEach(doc => {
+              if (helpChassis[doc.id] && !doc.data().letter.includes('No hostname')) {
+                idToVendor[doc.id] = {chassisVendor: helpChassis[doc.id].vendor, rack: doc.data().letter, rackU: helpChassis[doc.id].slots, chassisId: doc.id}
+              }
+            })
+            callback(idToVendor)
+        })
+    })
+}
+
+function makeNoHostname(id) {
+    return 'No hostname, asset: '+id
+}
+
+export { addChassis, addServer, updateChassis, updateServer, deleteChassis, deleteServer, getBladeInfo, getDetailBladeInfo, getSuggestedChassis, getSuggestedSlots, getBladeIds, makeNoHostname }

@@ -1,5 +1,6 @@
 import * as firebaseutils from "./firebaseutils";
 import * as assetutils from "./assetutils";
+import * as logutils from "./logutils";
 import {offlinestorageRef} from "./firebaseutils";
 import {db} from "./firebaseutils";
 
@@ -179,7 +180,7 @@ function getInfoFromName(name, callback){
     })
 }
 
-function moveAssetToOfflineStorage(assetID, offlineStorageName, callback){
+function moveAssetToOfflineStorage(assetID, offlineStorageName, callback, moveFunction){
     console.log(offlineStorageName)
     getInfoFromName(offlineStorageName, (offlineStorageAbbrev, offlineStorageID) => {
         if(offlineStorageID){
@@ -187,6 +188,7 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback){
                 if(assetDocumentSnapshot.exists){
                     firebaseutils.offlinestorageRef.doc(offlineStorageID).get().then(function (storageDocumentSnapshot) {
                         if(storageDocumentSnapshot.exists){
+                            const savedAssetData = assetDocumentSnapshot.data();
                             let assetData = assetDocumentSnapshot.data();
                             assetData.networkConnections = {};
                             assetData.powerConnections = [];
@@ -199,14 +201,15 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback){
                             delete assetData.rackRow;
                             delete assetData.rackU;
                             firebaseutils.offlinestorageRef.doc(offlineStorageID).collection("offlineAssets").doc(String(assetID)).set(assetData).then(function () {
-                                assetutils.deleteAsset(assetID, result => {
+                                moveFunction(assetID, result => {
                                     if(result){
                                         callback(true, offlineStorageAbbrev);
+                                        logutils.addLog(assetID,logutils.OFFLINE(),logutils.MOVE(),{...savedAssetData,datacenterAbbrev: offlineStorageAbbrev})
                                     } else {
                                         console.log("6")
                                         callback(null);
                                     }
-                                })
+                                }, true /*do this to allow no logged deletion*/, null /*this is for deleteAsset*/, offlineStorageName /*this is for updateChassis, shouldn't affect other methods*/)
                             }).catch(function () {
                                 console.log("5")
                                 callback(null);
@@ -231,25 +234,27 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback){
     })
 }
 
-function moveAssetFromOfflineStorage(assetID, datacenter, rack, rackU, callback){
+function moveAssetFromOfflineStorage(assetID, datacenter, rack, rackU, callback, moveFunction){
     db.collectionGroup("offlineAssets").where("assetId", "==", String(assetID)).get().then(function (querySnapshot) {
         if(querySnapshot.empty){
-            callback(null);
+            callback("The asset does not exist.");
         } else {
             let data = querySnapshot.docs[0].data();
-            assetutils.addAsset(data.assetId, data.model, data.hostname, rack, rackU, data.owner, data.comment, datacenter, [], [], [],
+            console.log(moveFunction)
+            moveFunction(data.assetId, data.model, data.hostname, rack, rackU, data.owner, data.comment, datacenter, [], [], [],
                 data.variances["displayColor"], data.variances["memory"], data.variances["storage"], data.variances["cpu"], result => {
                     if(!result){
                         let parentDoc = querySnapshot.docs[0].ref.parent.parent;
                         offlinestorageRef.doc(parentDoc.id).collection("offlineAssets").doc(String(assetID)).delete().then(function () {
-                            callback(true);
-                        }).catch(function () {
+                            logutils.addLog(data.assetId,logutils.ASSET(),logutils.MOVE(),data)
                             callback(null);
+                        }).catch(function () {
+                            callback("Could not remove the asset from offline storage.");
                         })
                     } else {
-                        callback(null);
+                        callback(result);
                     }
-                })
+                },/*changePlanID*/ null, /*changeDocID*/ null, /*chassis*/ null, /*noLog*/ true)
         }
     })
 }

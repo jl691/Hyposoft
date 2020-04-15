@@ -256,22 +256,29 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                                         <td><b>{!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot) ? 'Rack' : 'Chassis Rack'}</b></td>
                                                         <td style={{ textAlign: 'right' }}>{this.state.asset.rack}</td>
                                                     </tr>
-                                                    <tr>
-                                                        <td><b>{!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot) ? 'Rack U' : 'Chassis Rack U'}</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.rackU}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td><b>Demoted By</b></td>
-                                                        <td style={{ textAlign: 'right' }}>@{this.state.asset.name}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td><b>Owner</b></td>
-                                                        <td style={{ textAlign: 'right' }}>@{this.state.asset.owner || 'N/A'}</td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                            {(!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot)
-                                                ?
+                                                    :
+                                                    <tr></tr>
+                                               )}
+                                               <tr>
+                                                   <td><b>{!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot) ? 'Rack' : 'Chassis Rack'}</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.rack}</td>
+                                               </tr>
+                                               <tr>
+                                                   <td><b>{!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot) ? 'Rack U' : 'Chassis Rack U'}</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.rackU}</td>
+                                               </tr>
+                                               <tr>
+                                                   <td><b>Demoted By</b></td>
+                                                   <td style={{textAlign: 'right'}}>@{this.state.asset.name}</td>
+                                               </tr>
+                                               <tr>
+                                                   <td><b>Owner</b></td>
+                                                   <td style={{textAlign: 'right'}}>@{this.state.asset.owner || 'N/A'}</td>
+                                               </tr>
+                                               </tbody>
+                                           </table>
+                                           {(
+
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
@@ -290,10 +297,9 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                                         {this.generateNetworkTable()}
                                                     </TableBody>
                                                 </Table>
-                                                :
-                                                <Table></Table>
-                                            )}
-                                            {(!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot)
+                                                
+                                           )}
+                                           {(!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot)
                                                 ?
                                                 <Table>
                                                     <TableHeader>

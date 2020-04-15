@@ -42,6 +42,7 @@ export default class EditAssetForm extends Component {
 
     constructor(props) {
         super(props);
+        const networkConnectInitial = this.removeImplicitBladeConnections(this.props.updateNetworkConnectionsFromParent)
         this.state = {
             asset_id: this.props.updateAssetIDFromParent,
             model: this.props.updateModelFromParent,
@@ -53,8 +54,9 @@ export default class EditAssetForm extends Component {
             datacenter: this.props.updateDatacenterFromParent,
             macAddresses: this.props.updateMacAddressesFromParent, //trace back up to see where it starts to be undefined
             powerConnections: this.props.updatePowerConnectionsFromParent,
-            networkConnections: this.props.updateNetworkConnectionsFromParent,
+            networkConnections: networkConnectInitial.blades,
             editDeletedNetworkConnections: [],
+            editableNetworkConnections: networkConnectInitial.removed,
             showPowerConnections: this.props.updatePowerConnectionsFromParent.length ? true : false,
 
             assetVariance: this.props.updateDisplayColorFromParent !== "" || this.props.updateCpuFromParent !== "" || this.props.updateMemoryFromParent !== "" || this.props.updateStorageFromParent !== "" ? true : false, //need to prefill these fields
@@ -84,6 +86,19 @@ export default class EditAssetForm extends Component {
         panel.style.display = this.props.updatePowerConnectionsFromParent.length ? "block" : "none";
     }
 
+    removeImplicitBladeConnections(connections) {
+        var removed = []
+        var blades = []
+        connections.forEach(connect => {
+            if (!connect.otherPort.includes('blade ') && !connect.thisPort.includes('blade ')) {
+                removed.push(connect)
+            } else {
+                blades.push(connect)
+            }
+        })
+        return {removed: removed, blades: blades}
+    }
+
     //TODO: use this method properly
     handleChange(event) {
         this.setState({
@@ -108,7 +123,7 @@ export default class EditAssetForm extends Component {
 
     addNetworkConnection(event) {
         this.setState(prevState => ({
-            networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort: "" }]
+            editableNetworkConnections: [...prevState.editableNetworkConnections, { otherAssetID: "", otherPort: "", thisPort: "" }]
         }));
     }
 
@@ -125,7 +140,7 @@ export default class EditAssetForm extends Component {
     deleteNetworkConnection(event, idx) {
 
         //this is so we can call symmetricSingleDelete in assetutils updateAsset()
-        let packedVals = this.state.networkConnections[idx]['thisPort'] + ":" + this.state.networkConnections[idx]['otherAssetID'] + ":" + this.state.networkConnections[idx]['otherPort']
+        let packedVals = this.state.editableNetworkConnections[idx]['thisPort'] + ":" + this.state.editableNetworkConnections[idx]['otherAssetID'] + ":" + this.state.editableNetworkConnections[idx]['otherPort']
         this.state.editDeletedNetworkConnections.push(packedVals)
         this.setState(prevState => ({
 
@@ -136,10 +151,10 @@ export default class EditAssetForm extends Component {
 
 
         console.log("removing element " + idx)
-        let networkConnectionsCopy = [...this.state.networkConnections];
+        let networkConnectionsCopy = [...this.state.editableNetworkConnections];
         networkConnectionsCopy.splice(idx, 1);
         this.setState(prevState => ({
-            networkConnections: networkConnectionsCopy
+            editableNetworkConnections: networkConnectionsCopy
         }));
 
     }
@@ -236,6 +251,7 @@ export default class EditAssetForm extends Component {
                 ToastsStore.error((this.isNonBlade ? "Rack U" : "Slot") + " must be positive.");
             }
             else {
+                const finalNetworkConnections = this.state.editableNetworkConnections.concat(this.state.networkConnections)
 
                 if (this.state.showPowerConnections) {
                     let existingConnections = [];
@@ -248,7 +264,7 @@ export default class EditAssetForm extends Component {
                             if (existingConnections.length === Object.keys(this.state.powerConnections).length) {
                                 //TODO: fix this in assetmacutils
 
-                                this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
+                                this.checkNetworkPortUniqueness(finalNetworkConnections, result => {
                                     if (result) {
                                         assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
@@ -268,7 +284,7 @@ export default class EditAssetForm extends Component {
                                                     this.state.comment,
                                                     this.state.datacenter,
                                                     fixedAddr,
-                                                    this.state.networkConnections,
+                                                    finalNetworkConnections,
                                                     this.state.editDeletedNetworkConnections,
                                                     this.state.showPowerConnections ? this.state.powerConnections : [],
                                                     this.state.displayColor,
@@ -299,7 +315,7 @@ export default class EditAssetForm extends Component {
                     })
                 } else {
 
-                    this.checkNetworkPortUniqueness(this.state.networkConnections, result => {
+                    this.checkNetworkPortUniqueness(finalNetworkConnections, result => {
                         if (result) {
                             assetmacutils.handleMacAddressFixAndSet(this.state.macAddresses, (fixedAddr, macError) => {
 
@@ -316,7 +332,7 @@ export default class EditAssetForm extends Component {
                                         this.state.comment,
                                         this.state.datacenter,
                                         fixedAddr,
-                                        this.state.networkConnections,
+                                        finalNetworkConnections,
                                         this.state.editDeletedNetworkConnections,
                                         this.state.showPowerConnections ? this.state.powerConnections : [],
                                         this.state.displayColor,
@@ -356,7 +372,7 @@ export default class EditAssetForm extends Component {
 
     addNetworkConnection(event) {
         this.setState(prevState => ({
-            networkConnections: [...prevState.networkConnections, { otherAssetID: "", otherPort: "", thisPort: "" }]
+            editableNetworkConnections: [...prevState.editableNetworkConnections, { otherAssetID: "", otherPort: "", thisPort: "" }]
         }));
     }
 
@@ -664,7 +680,7 @@ export default class EditAssetForm extends Component {
                                         model={this.state.model}
                                         datacenter={this.state.datacenter}
                                         currentId={this.state.asset_id}
-                                        networkConnections={this.state.networkConnections}
+                                        networkConnections={this.state.editableNetworkConnections}
 
                                         deleteNetworkConnectionCallbackFromParent={this.deleteNetworkConnection}
 

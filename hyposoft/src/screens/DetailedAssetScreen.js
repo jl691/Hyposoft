@@ -14,6 +14,7 @@ import {
     Meter,
 
 } from 'grommet'
+import MediaQuery from 'react-responsive'
 import * as assetutils from '../utils/assetutils'
 import * as modelutils from '../utils/modelutils'
 import * as bladeutils from '../utils/bladeutils'
@@ -90,19 +91,19 @@ export default class DetailedAssetScreen extends Component {
                         this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
                             console.log(assetsdb)
                             this.setState({
-                                asset: assetsdb,
-                                //initialLoaded: true
+                                asset: assetsdb
 
                             }, function () {
-                                console.log(this.state.model)
-                                this.generatePDUStatus();
-                                modelutils.getModelByModelname(assetsdb.model, modelDoc => {
-                                    console.log(modelDoc.data())
-                                    this.setState({
-                                        model: modelDoc.data(),
-                                        initialLoaded: true
-                                    })
-                                })
+
+                                this.generatePDUStatus(() => {
+                                  modelutils.getModelByModelname(assetsdb.model, modelDoc => {
+                                      console.log(modelDoc.data())
+                                      this.setState({
+                                          model: modelDoc.data(),
+                                          initialLoaded: true
+                                      })
+                                  })
+                                });
                             });
                         })
                     })
@@ -118,16 +119,15 @@ export default class DetailedAssetScreen extends Component {
                             //initialLoaded: true
 
                         }, function () {
-                            console.log(this.state.asset)
-                            this.generatePDUStatus();
-                            modelutils.getModelByModelname(assetsdb.model, modelDoc => {
-                                console.log(modelDoc.data())
-                                this.setState({
-                                    model: modelDoc.data(),
-                                    initialLoaded: true
-                                })
-                            })
-
+                            this.generatePDUStatus(() => {
+                              modelutils.getModelByModelname(assetsdb.model, modelDoc => {
+                                  console.log(modelDoc.data())
+                                  this.setState({
+                                      model: modelDoc.data(),
+                                      initialLoaded: true
+                                  })
+                              })
+                            });
                         });
                     })
                 }, this.props.match.params.storageSiteAbbrev)
@@ -254,72 +254,148 @@ export default class DetailedAssetScreen extends Component {
 
     }
 
-    generatePDUStatus() {
+    generatePDUStatus(callback) {
         if (this.connectedPDU) {
             this.powerPorts = [];
             if (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner) {
                 ToastsStore.info("Click a refresh button by a PDU status to power cycle it.", 5000);
             }
-            Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
-                let formattedNum;
-                if (this.state.asset.rackNum.toString().length === 1) {
-                    formattedNum = "0" + this.state.asset.rackNum;
-                } else {
-                    formattedNum = this.state.asset.rackNum;
-                }
-                powerutils.getPortStatus("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0), this.state.asset.powerConnections[pduConnections].port, (result) => {
-                    let toggle;
-                    if (result === null) {
-                        ToastsStore.info("PDU power status is currently unavailable due to network issues.")
-                        toggle = false;
-                    } else {
-                        toggle = result === "ON" ? true : false;
-                    }
-                    this.powerPorts.push({
-                        name: "hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0),
-                        port: this.state.asset.powerConnections[pduConnections].port
-                    });
-                    this.setState({
-                        ["hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port]: toggle
-                    })
-                    // this.state.powerStatuses.set("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port, toggle);
-                    if (this.powerPorts.length === Object.keys(this.state.asset.powerConnections).length) {
-                        this.setState({
-                            powerMap: true
-                        })
-                    }
-                })
-            })
+            if (this.bladeData || this.chassisSlots) {
+              const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
+              eachFor.forEach(powerPiece => {
+                  const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+                  const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+                  powerutils.getBladeStatus(host, slot, result => {
+                      let toggle;
+                      if (result === null) {
+                          ToastsStore.info("BCMAN power status is currently unavailable due to network issues.")
+                          toggle = false;
+                      } else {
+                          toggle = result === "ON" ? true : false;
+                      }
+                      this.powerPorts.push({
+                        name: host,
+                        port: slot
+                      })
+                      this.setState({
+                          [host + ":" + slot]: toggle
+                      })
+                      if (this.powerPorts.length === eachFor.length) {
+                          this.setState({
+                              powerMap: true
+                          })
+                          callback()
+                      }
+                  })
+              })
+            } else {
+              Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
+                  let formattedNum;
+                  if (this.state.asset.rackNum.toString().length === 1) {
+                      formattedNum = "0" + this.state.asset.rackNum;
+                  } else {
+                      formattedNum = this.state.asset.rackNum;
+                  }
+                  powerutils.getPortStatus("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0), this.state.asset.powerConnections[pduConnections].port, (result) => {
+                      let toggle;
+                      if (result === null) {
+                          ToastsStore.info("PDU power status is currently unavailable due to network issues.")
+                          toggle = false;
+                      } else {
+                          toggle = result === "ON" ? true : false;
+                      }
+                      this.powerPorts.push({
+                          name: "hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0),
+                          port: this.state.asset.powerConnections[pduConnections].port
+                      });
+                      this.setState({
+                          ["hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port]: toggle
+                      })
+                      // this.state.powerStatuses.set("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port, toggle);
+                      if (this.powerPorts.length === Object.keys(this.state.asset.powerConnections).length) {
+                          this.setState({
+                              powerMap: true
+                          })
+                          callback()
+                      }
+                  })
+              })
+            }
+        } else {
+          callback()
         }
     }
 
 
     turnAssetOn() {
-        let count = 0;
-        Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
-            let formattedNum;
-            if (this.state.asset.rackNum.toString().length === 1) {
-                formattedNum = "0" + this.state.asset.rackNum;
-            } else {
-                formattedNum = this.state.asset.rackNum;
-            }
-            powerutils.powerPortOn("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0), this.state.asset.powerConnections[pduConnections].port, (result) => {
+        if (this.bladeData || this.chassisSlots) {
+          let count = 0;
+          const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
+          eachFor.forEach(powerPiece => {
+            const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+            const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+            powerutils.changeBladePower(host, slot, (result) => {
                 if (result) {
                     this.setState({
-                        ["hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port]: true
+                        [host + ":" + slot]: true
                     });
                     count++;
-                    if (count === Object.keys(this.state.asset.powerConnections).length) {
+                    if (count === eachFor.length) {
                         ToastsStore.success("Successfully turned on the asset!")
                     }
                 } else {
                     ToastsStore.info("Could not power on due to network connectivity issues.")
                 }
-            })
-        })
+            },"ON")
+          })
+        } else {
+          let count = 0;
+          Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
+              let formattedNum;
+              if (this.state.asset.rackNum.toString().length === 1) {
+                  formattedNum = "0" + this.state.asset.rackNum;
+              } else {
+                  formattedNum = this.state.asset.rackNum;
+              }
+              powerutils.powerPortOn("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0), this.state.asset.powerConnections[pduConnections].port, (result) => {
+                  if (result) {
+                      this.setState({
+                          ["hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port]: true
+                      });
+                      count++;
+                      if (count === Object.keys(this.state.asset.powerConnections).length) {
+                          ToastsStore.success("Successfully turned on the asset!")
+                      }
+                  } else {
+                      ToastsStore.info("Could not power on due to network connectivity issues.")
+                  }
+              })
+          })
+        }
     }
 
     turnAssetOff() {
+      if (this.bladeData || this.chassisSlots) {
+        let count = 0;
+        const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
+        eachFor.forEach(powerPiece => {
+          const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+          const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+          powerutils.changeBladePower(host, slot, (result) => {
+              if (result) {
+                  this.setState({
+                      [host + ":" + slot]: false
+                  });
+                  count++;
+                  if (count === eachFor.length) {
+                      ToastsStore.success("Successfully turned off the asset!")
+                  }
+              } else {
+                  ToastsStore.info("Could not power off due to network connectivity issues.")
+              }
+          },"OFF")
+        })
+      } else {
         let count = 0;
         Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
             let formattedNum;
@@ -342,9 +418,50 @@ export default class DetailedAssetScreen extends Component {
                 }
             })
         })
+      }
     }
 
     powerCycleAsset() {
+      if (this.bladeData || this.chassisSlots) {
+        let count = 0;
+        const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
+        eachFor.forEach(powerPiece => {
+          const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+          const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+          powerutils.changeBladePower(host, slot, result => {
+              if (result) {
+                  this.setState({
+                      [host + ":" + slot]: false
+                  });
+                  count++;
+                  if (count === eachFor.length) {
+                    setTimeout(() => {
+                        count = 0;
+                        eachFor.forEach(powerPiece => {
+                          const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+                          const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+                          powerutils.changeBladePower(host, slot, result => {
+                              if (result) {
+                                  this.setState({
+                                      [host + ":" + slot]: true
+                                  });
+                                  count++;
+                                  if (count === eachFor.length) {
+                                      ToastsStore.success("Successfully power cycled the asset!")
+                                  }
+                              } else {
+                                  ToastsStore.error("Could not power cycle due to network connectivity issues.")
+                              }
+                          },"ON")
+                        })
+                    }, 2000)
+                  }
+              } else {
+                  ToastsStore.error("Could not power cycle due to network connectivity issues.")
+              }
+          },"OFF")
+        })
+      } else {
         let count = 0;
         Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
             let formattedNum;
@@ -390,6 +507,7 @@ export default class DetailedAssetScreen extends Component {
                 }
             })
         })
+      }
     }
 
     renderPDUStatus() {
@@ -405,7 +523,8 @@ export default class DetailedAssetScreen extends Component {
                                 if (this.state[connection.name + ":" + connection.port]) {
                                     console.log("1")
                                     //on, power off
-                                    powerutils.powerPortOff(connection.name, connection.port, result => {
+                                    let powerFunction = this.chassisSlots ? powerutils.changeBladePower : powerutils.powerPortOff
+                                    powerFunction(connection.name, connection.port, result => {
                                         console.log(result)
                                         if (result) {
                                             this.setState({
@@ -415,11 +534,12 @@ export default class DetailedAssetScreen extends Component {
                                         } else {
                                             ToastsStore.error("Could not power off due to network connectivity issues.")
                                         }
-                                    })
+                                    },"OFF")
                                 } else {
                                     console.log("2")
                                     //off, power on
-                                    powerutils.powerPortOn(connection.name, connection.port, result => {
+                                    let powerFunction = this.chassisSlots ? powerutils.changeBladePower : powerutils.powerPortOn
+                                    powerFunction(connection.name, connection.port, result => {
                                         console.log(result)
                                         if (result) {
                                             this.setState({
@@ -429,20 +549,22 @@ export default class DetailedAssetScreen extends Component {
                                         } else {
                                             ToastsStore.error("Could not power on due to network connectivity issues.")
                                         }
-                                    })
+                                    },"ON")
                                 }
                             }} />{(userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner) &&
                                 <PowerCycle
                                     data-tip="Power cycle"
                                     size={"medium"} style={{ marginLeft: "10px", cursor: "pointer" }} onClick={(e) => {
                                         ToastsStore.success("Power cycling " + connection.name + ":" + connection.port + ". Please wait!");
-                                        powerutils.powerPortOff(connection.name, connection.port, result => {
+                                        let powerFunction = this.chassisSlots ? powerutils.changeBladePower : powerutils.powerPortOff
+                                        powerFunction(connection.name, connection.port, result => {
                                             if (result) {
                                                 this.setState({
                                                     [connection.name + ":" + connection.port]: false
                                                 });
                                                 setTimeout(() => {
-                                                    powerutils.powerPortOn(connection.name, connection.port, result => {
+                                                    let powerFunction = this.chassisSlots ? powerutils.changeBladePower : powerutils.powerPortOn
+                                                    powerFunction(connection.name, connection.port, result => {
                                                         if (result) {
                                                             this.setState({
                                                                 [connection.name + ":" + connection.port]: true
@@ -451,12 +573,12 @@ export default class DetailedAssetScreen extends Component {
                                                         } else {
                                                             ToastsStore.error("Could not power cycle due to network connectivity issues.")
                                                         }
-                                                    })
+                                                    },"ON")
                                                 }, 2000)
                                             } else {
                                                 ToastsStore.error("Could not power cycle due to network connectivity issues.")
                                             }
-                                        })
+                                        },"OFF")
                                     }} />}<ReactTooltip /></Box></td>
                 </tr>
             ))
@@ -533,6 +655,7 @@ export default class DetailedAssetScreen extends Component {
                     onClickOutside={() => this.setState({ popupType: undefined })}>
 
                     <MoveAssetForm location={this.props.match.params.storageSiteAbbrev ? "offline" : "rack"} assetID={this.state.asset.assetID}
+                                   model={this.state.asset.model}
                         currentLocation={this.props.match.params.storageSiteAbbrev ? "offline storage site " + this.props.match.params.storageSiteAbbrev : "datacenter " + this.state.asset.datacenter + " on rack " + this.state.asset.rack + " at height " + this.state.asset.rackU}
                         success={this.handleCancelRefreshPopupChange} cancelCallback={this.handleCancelPopupChange} />
                 </Layer>
@@ -550,6 +673,7 @@ export default class DetailedAssetScreen extends Component {
                     <Grommet theme={theme} full className='fade'>
                         <Box fill background='light-2' overflow={"auto"}>
                             {popup}
+                            <MediaQuery minDeviceWidth={1224}>
                             <AppBar>
                                 {/* {this.props.match.params.vendor} {this.props.match.params.modelNumber} */}
                                 <BackButton alignSelf='start' this={this} />
@@ -558,7 +682,9 @@ export default class DetailedAssetScreen extends Component {
                                 }}>{this.props.match.params.assetID}</Heading>
                                 <UserMenu alignSelf='end' this={this} />
                             </AppBar>
+                            </MediaQuery>
                             <Box
+                                overflow='auto'
                                 align='start'
                                 direction='row'
                                 margin={{ left: 'medium', right: 'medium' }}
@@ -647,7 +773,7 @@ export default class DetailedAssetScreen extends Component {
                                                     {this.renderPDUStatus()}
                                                 </tbody>
                                             </table>
-                                            {(!this.bladeData && !this.props.match.params.storageSiteAbbrev) &&
+                                            {(!this.props.match.params.storageSiteAbbrev) &&
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
@@ -723,7 +849,7 @@ export default class DetailedAssetScreen extends Component {
                                                         gap='small' align='center'>
                                                         <BladeChassisView
                                                             chassisId={!this.bladeData ? this.state.asset.assetID : this.bladeData.chassisId}
-                                                            chassisHostname={!this.bladeData ? this.state.asset.hostname : this.bladeData.rack}
+                                                            chassisHostname={!this.bladeData ? (this.state.asset.hostname ? this.state.asset.hostname : bladeutils.makeNoHostname(this.state.asset.assetID)) : this.bladeData.rack}
                                                             chassisSlots={this.chassisSlots}
                                                             slot={!this.bladeData ? null : this.bladeData.rackU}
                                                         />
@@ -735,6 +861,7 @@ export default class DetailedAssetScreen extends Component {
                                         </Box>
                                     )}
                                 </Box>
+                                <MediaQuery minDeviceWidth={1224}>
                                 {(!this.state.initialLoaded
                                     ?
                                     <Box></Box>
@@ -753,7 +880,7 @@ export default class DetailedAssetScreen extends Component {
                                             <Heading level='4' margin='none'>Asset Actions</Heading>
                                             <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
                                                 gap='small'>
-                                                {(this.connectedPDU && !this.props.match.params.storageSiteAbbrev(userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
+                                                {(this.connectedPDU && !this.props.match.params.storageSiteAbbrev && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
                                                     <Box direction='column' flex alignSelf='stretch'
                                                         gap='small'>
                                                         <Button icon={<Power />} label="Power Asset On" onClick={() => {
@@ -788,7 +915,11 @@ export default class DetailedAssetScreen extends Component {
                                         </Box>
                                     </Box>
                                 )}
+                                </MediaQuery>
                             </Box>
+                            <MediaQuery maxDeviceWidth={1224}>
+                                <Button label='Back to scanner' margin={{top: 'small', left: 'medium', right: 'medium', bottom: 'small'}} onClick={() => {userutils.logout(); this.props.history.goBack()}} />
+                            </MediaQuery>
                             <ToastsContainer store={ToastsStore} />
                         </Box>
                     </Grommet>

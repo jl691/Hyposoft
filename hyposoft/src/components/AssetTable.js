@@ -458,7 +458,7 @@ export default class AssetTable extends Component {
                                   style={{cursor: "pointer"}}>Rack {this.state.sortField === 'rack' && (this.state.sortAscending ?
                         <FormDown/> : <FormUp/>)}</Text>,
                     //align:"end",
-                    render: datum => <Text size='small'>{datum.rack}</Text>,
+                    render: datum => <Text size='small' data-tip={datum.bladeInfo ? ('Located within this Rack at chassis '+datum.bladeInfo.rack) : ''}>{datum.rack}</Text>,
 
                 },
                 {
@@ -468,7 +468,7 @@ export default class AssetTable extends Component {
                     }} style={{cursor: "pointer"}}>Rack
                         U {this.state.sortField === 'rackU' && (this.state.sortAscending ? <FormDown/> :
                             <FormUp/>)}</Text>,
-                    render: datum => <Text size='small'>{datum.rackU}</Text>,
+                    render: datum => <Text size='small' data-tip={datum.bladeInfo ? ('Slotted within this Rack U at slot '+datum.bladeInfo.rackU) : ''}>{datum.rackU}</Text>,
 
                 },
                 {
@@ -495,7 +495,7 @@ export default class AssetTable extends Component {
                         //if(docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1" && docSnapshot.data().rackRow.charCodeAt(0) >= 65 && docSnapshot.data().rackRow.charCodeAt(0) <= 69 && parseInt(docSnapshot.data().rackNum) >= 1 && parseInt(docSnapshot.data().rackNum) <= 19 && docSnapshot.data().powerConnections && docSnapshot.data().powerConnections.length){
 
 
-                        if ((userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === datum.owner) && datum.datacenterAbbrev.toUpperCase() === "RTP1" && datum.rackRow.charCodeAt(0) >= 65 && datum.rackRow.charCodeAt(0) <= 69 && parseInt(datum.rackNum) >= 1 && parseInt(datum.rackNum) <= 19 && datum.powerConnections && datum.powerConnections.length) {
+                        if ((userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === datum.owner) && ((datum.bladeInfo && datum.bladeInfo.chassisVendor.toUpperCase() === "BMI" && !datum.bladeInfo.rack.includes('No hostname')) || (datum.datacenterAbbrev.toUpperCase() === "RTP1" && datum.rackRow.charCodeAt(0) >= 65 && datum.rackRow.charCodeAt(0) <= 69 && parseInt(datum.rackNum) >= 1 && parseInt(datum.rackNum) <= 19 && datum.powerConnections && datum.powerConnections.length))) {
                             return (<Box direction={"row"} justify={"center"}>
                                 <Power data-tip="Power on"
                                        style={{backgroundColor: this.colors[datum.asset_id + '_on_color']}}
@@ -504,32 +504,54 @@ export default class AssetTable extends Component {
                                            e.nativeEvent.stopImmediatePropagation()
                                            e.stopPropagation()
                                            //turn on all ports
-                                           let count = 0;
-                                           Object.keys(datum.powerConnections).forEach((connection) => {
-                                               let formattedNum;
-                                               console.log(datum);
-                                               if (datum.rackNum.toString().length === 1) {
-                                                   formattedNum = "0" + datum.rackNum;
-                                               } else {
-                                                   formattedNum = datum.rackNum;
-                                               }
-                                               powerutils.powerPortOn("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                           if (datum.bladeInfo) {
+                                             let count = 0;
+                                             datum.bladeInfo.rackU.forEach(slot => {
+                                               powerutils.changeBladePower(datum.bladeInfo.rack, slot, (result) => {
                                                    if (result) {
-                                                       count++;
-                                                       if (count === Object.keys(datum.powerConnections).length) {
-                                                           this.props.handleToast({
-                                                               type: "success",
-                                                               message: "Successfully powered on the asset!"
-                                                           })
-                                                       }
-                                                   } else {
+                                                     count++;
+                                                     if (count === datum.bladeInfo.rackU.length) {
                                                        this.props.handleToast({
-                                                           type: "error",
-                                                           message: "Something went wrong. Please try again later."
+                                                           type: "success",
+                                                           message: "Successfully powered on the asset!"
                                                        })
+                                                     }
+                                                   } else {
+                                                     this.props.handleToast({
+                                                         type: "error",
+                                                         message: "Something went wrong. Please try again later."
+                                                     })
                                                    }
-                                               })
-                                           })
+                                               },"ON")
+                                             })
+                                           } else {
+                                             let count = 0;
+                                             Object.keys(datum.powerConnections).forEach((connection) => {
+                                                 let formattedNum;
+                                                 console.log(datum);
+                                                 if (datum.rackNum.toString().length === 1) {
+                                                     formattedNum = "0" + datum.rackNum;
+                                                 } else {
+                                                     formattedNum = datum.rackNum;
+                                                 }
+                                                 powerutils.powerPortOn("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                                     if (result) {
+                                                         count++;
+                                                         if (count === Object.keys(datum.powerConnections).length) {
+                                                             this.props.handleToast({
+                                                                 type: "success",
+                                                                 message: "Successfully powered on the asset!"
+                                                             })
+                                                         }
+                                                     } else {
+                                                         this.props.handleToast({
+                                                             type: "error",
+                                                             message: "Something went wrong. Please try again later."
+                                                         })
+                                                     }
+                                                 })
+                                             })
+                                           }
                                        }
                                        }
                                        onMouseOver={e => this.colors[datum.asset_id + '_on_color'] = '#dddddd'}
@@ -541,32 +563,54 @@ export default class AssetTable extends Component {
                                            e.nativeEvent.stopImmediatePropagation()
                                            e.stopPropagation()
                                            //turn on all ports
-                                           let count = 0;
-                                           Object.keys(datum.powerConnections).forEach((connection) => {
-                                               let formattedNum;
-                                               console.log(datum);
-                                               if (datum.rackNum.toString().length === 1) {
-                                                   formattedNum = "0" + datum.rackNum;
-                                               } else {
-                                                   formattedNum = datum.rackNum;
-                                               }
-                                               powerutils.powerPortOff("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                           if (datum.bladeInfo) {
+                                             let count = 0;
+                                             datum.bladeInfo.rackU.forEach(slot => {
+                                               powerutils.changeBladePower(datum.bladeInfo.rack, slot, (result) => {
                                                    if (result) {
-                                                       count++;
-                                                       if (count === Object.keys(datum.powerConnections).length) {
-                                                           this.props.handleToast({
-                                                               type: "success",
-                                                               message: "Successfully powered off the asset!"
-                                                           })
-                                                       }
-                                                   } else {
+                                                     count++;
+                                                     if (count === datum.bladeInfo.rackU.length) {
                                                        this.props.handleToast({
-                                                           type: "error",
-                                                           message: "Something went wrong. Please try again later."
+                                                           type: "success",
+                                                           message: "Successfully powered off the asset!"
                                                        })
+                                                     }
+                                                   } else {
+                                                     this.props.handleToast({
+                                                         type: "error",
+                                                         message: "Something went wrong. Please try again later."
+                                                     })
                                                    }
-                                               })
-                                           })
+                                               },"OFF")
+                                             })
+                                           } else {
+                                             let count = 0;
+                                             Object.keys(datum.powerConnections).forEach((connection) => {
+                                                 let formattedNum;
+                                                 console.log(datum);
+                                                 if (datum.rackNum.toString().length === 1) {
+                                                     formattedNum = "0" + datum.rackNum;
+                                                 } else {
+                                                     formattedNum = datum.rackNum;
+                                                 }
+                                                 powerutils.powerPortOff("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                                     if (result) {
+                                                         count++;
+                                                         if (count === Object.keys(datum.powerConnections).length) {
+                                                             this.props.handleToast({
+                                                                 type: "success",
+                                                                 message: "Successfully powered off the asset!"
+                                                             })
+                                                         }
+                                                     } else {
+                                                         this.props.handleToast({
+                                                             type: "error",
+                                                             message: "Something went wrong. Please try again later."
+                                                         })
+                                                     }
+                                                 })
+                                             })
+                                           }
                                        }
                                        }
                                        onMouseOver={e => this.colors[datum.asset_id + '_off_color'] = '#dddddd'}
@@ -582,57 +626,96 @@ export default class AssetTable extends Component {
                                                     type: "info",
                                                     message: "Power cycling the asset. Please wait..."
                                                 })
-                                                let count = 0;
-                                                Object.keys(datum.powerConnections).forEach((connection) => {
-                                                    let formattedNum;
-                                                    console.log(datum);
-                                                    if (datum.rackNum.toString().length === 1) {
-                                                        formattedNum = "0" + datum.rackNum;
-                                                    } else {
-                                                        formattedNum = datum.rackNum;
-                                                    }
-                                                    powerutils.powerPortOff("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                                if (datum.bladeInfo) {
+                                                  let count = 0;
+                                                  datum.bladeInfo.rackU.forEach(slot => {
+                                                    powerutils.changeBladePower(datum.bladeInfo.rack, slot, result => {
                                                         if (result) {
-                                                            count++;
-                                                            if (count === Object.keys(datum.powerConnections).length) {
-                                                                //wait
-                                                                setTimeout(() => {
-                                                                    let count = 0;
-                                                                    Object.keys(datum.powerConnections).forEach((connection) => {
-                                                                        let formattedNum;
-                                                                        console.log(datum);
-                                                                        if (datum.rackNum.toString().length === 1) {
-                                                                            formattedNum = "0" + datum.rackNum;
-                                                                        } else {
-                                                                            formattedNum = datum.rackNum;
+                                                          count++;
+                                                          if (count === datum.bladeInfo.rackU.length) {
+                                                            setTimeout(() => {
+                                                                count = 0
+                                                                datum.bladeInfo.rackU.forEach(slot => {
+                                                                  powerutils.changeBladePower(datum.bladeInfo.rack, slot, result => {
+                                                                      if (result) {
+                                                                        count++;
+                                                                        if (count === datum.bladeInfo.rackU.length) {
+                                                                          this.props.handleToast({
+                                                                              type: "success",
+                                                                              message: "Successfully powered cycled the asset!"
+                                                                          })
                                                                         }
-                                                                        powerutils.powerPortOn("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
-                                                                            if (result) {
-                                                                                count++;
-                                                                                if (count === Object.keys(datum.powerConnections).length) {
-                                                                                    this.props.handleToast({
-                                                                                        type: "success",
-                                                                                        message: "Successfully powered cycled the asset!"
-                                                                                    })
-                                                                                }
-                                                                            } else {
-                                                                                this.props.handleToast({
-                                                                                    type: "error",
-                                                                                    message: "Something went wrong. Please try again later."
-                                                                                })
-                                                                            }
+                                                                      } else {
+                                                                        this.props.handleToast({
+                                                                            type: "error",
+                                                                            message: "Something went wrong. Please try again later."
                                                                         })
-                                                                    })
-                                                                }, 2000);
-                                                            }
+                                                                      }
+                                                                  },"ON")
+                                                                })
+                                                            }, 2000)
+                                                          }
                                                         } else {
-                                                            this.props.handleToast({
-                                                                type: "error",
-                                                                message: "Something went wrong. Please try again later."
-                                                            })
+                                                          this.props.handleToast({
+                                                              type: "error",
+                                                              message: "Something went wrong. Please try again later."
+                                                          })
                                                         }
-                                                    })
-                                                })
+                                                    },"OFF")
+                                                  })
+                                                } else {
+                                                  let count = 0;
+                                                  Object.keys(datum.powerConnections).forEach((connection) => {
+                                                      let formattedNum;
+                                                      console.log(datum);
+                                                      if (datum.rackNum.toString().length === 1) {
+                                                          formattedNum = "0" + datum.rackNum;
+                                                      } else {
+                                                          formattedNum = datum.rackNum;
+                                                      }
+                                                      powerutils.powerPortOff("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                                          if (result) {
+                                                              count++;
+                                                              if (count === Object.keys(datum.powerConnections).length) {
+                                                                  //wait
+                                                                  setTimeout(() => {
+                                                                      let count = 0;
+                                                                      Object.keys(datum.powerConnections).forEach((connection) => {
+                                                                          let formattedNum;
+                                                                          console.log(datum);
+                                                                          if (datum.rackNum.toString().length === 1) {
+                                                                              formattedNum = "0" + datum.rackNum;
+                                                                          } else {
+                                                                              formattedNum = datum.rackNum;
+                                                                          }
+                                                                          powerutils.powerPortOn("hpdu-rtp1-" + datum.rackRow + formattedNum + datum.powerConnections[connection].pduSide.charAt(0), datum.powerConnections[connection].port, result => {
+                                                                              if (result) {
+                                                                                  count++;
+                                                                                  if (count === Object.keys(datum.powerConnections).length) {
+                                                                                      this.props.handleToast({
+                                                                                          type: "success",
+                                                                                          message: "Successfully powered cycled the asset!"
+                                                                                      })
+                                                                                  }
+                                                                              } else {
+                                                                                  this.props.handleToast({
+                                                                                      type: "error",
+                                                                                      message: "Something went wrong. Please try again later."
+                                                                                  })
+                                                                              }
+                                                                          })
+                                                                      })
+                                                                  }, 2000);
+                                                              }
+                                                          } else {
+                                                              this.props.handleToast({
+                                                                  type: "error",
+                                                                  message: "Something went wrong. Please try again later."
+                                                              })
+                                                          }
+                                                      })
+                                                  })
+                                                }
                                             }
                                             }
                                             onMouseOver={e => this.colors[datum.asset_id + '_cycle_color'] = '#dddddd'}

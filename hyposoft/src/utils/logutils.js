@@ -30,6 +30,10 @@ function PDU() {
     return 'pdu'
 }
 
+function BCMAN() {
+    return 'bcman'
+}
+
 function OFFLINE() {
     return 'offline asset'
 }
@@ -65,6 +69,10 @@ function POWER_ON() {
 
 function POWER_OFF() {
     return 'powered off'
+}
+
+function MOVE() {
+    return 'moved'
 }
 
 // only optional is objectId and objectType
@@ -106,7 +114,8 @@ function addLog(objectId, objectType, action, data = null, callback = null, want
                 getChangePlanName(objectId,data,action,changeplan => finishAddingLog(changeplan, objectId, objectType, action, callback))
                 break
             case PDU():
-                getPDUName(data,action,(pdu,assetId) => finishAddingLog(pdu, assetId, objectType, action, callback))
+            case BCMAN():
+                getPDUName(data,action,(pdu,assetId) => finishAddingLog(pdu, assetId, objectType, action, callback),objectType===BCMAN())
                 break
             case OFFLINE():
                 getAssetName(objectId,data,action,asset => finishAddingLog(asset, objectId, objectType, action, callback),true)
@@ -236,8 +245,8 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
         docSnaps.docs.forEach(doc => {
             const user = doc.data().userName.toLowerCase()
             const object = doc.data().objectName.toLowerCase()
-            const includesAsset = doc.data().objectType === ASSET() && (object.includes(searchName) || doc.data().objectId.includes(searchName))
-            const includesPDUAsset = doc.data().objectType === PDU() && includesAssetInPDUName(object,searchName)
+            const includesAsset = (doc.data().objectType === ASSET() || doc.data().objectType === OFFLINE()) && (object.includes(searchName) || doc.data().objectId.includes(searchName))
+            const includesPDUAsset = (doc.data().objectType === PDU() || doc.data().objectType === BCMAN()) && includesAssetInPDUName(object,searchName)
             const includesUser = user.includes(searchName) || (doc.data().objectType === USER() && object.includes(searchName))
             if (!search || includesAsset || includesPDUAsset || includesUser) {
                 logs = [...logs,{...doc.data(), log: buildLog(doc.data()), date: getDate(doc.data().timestamp), itemNo: itemNo++}]
@@ -262,6 +271,7 @@ function doesObjectStillExist(objectType,objectId,callback,objectName=null) {
     switch (objectType) {
         case ASSET():
         case PDU():
+        case BCMAN():
             firebaseutils.assetRef.doc(objectId).get().then(doc => {
                 if (doc.exists) {
                     callback(true,true)
@@ -275,6 +285,9 @@ function doesObjectStillExist(objectType,objectId,callback,objectName=null) {
                     callback(docSnaps.docs[0].exists,false)
                 })
             })
+            break
+        case OFFLINE():
+            firebaseutils.db.collectionGroup("offlineAssets").where("assetId", "==", objectId).get().then(qs => callback(!qs.empty,true))
             break
         case CHANGEPLAN():
             firebaseutils.changeplansRef.doc(objectId).get().then(doc => callback(doc.exists,true))
@@ -299,7 +312,14 @@ function buildLog(data) {
     var log = data.userName + ' '
               + data.action + (data.action === MODIFY() && data.previousData ? buildDiff(data) : ' ')
               + data.objectType + ' ' + data.objectName
-              + (data.objectType === RACK() || data.objectType === ASSET() || data.objectType === PDU() ? (' in datacenter ' + data.datacenter + '.') : '.')
+              + (data.objectType === RACK()
+                || (data.objectType === ASSET() && data.action !== MOVE())
+                || data.objectType === PDU()
+                || data.objectType === BCMAN()
+                    ? (' in datacenter ' + data.datacenter + '.')
+                    : (data.action === MOVE()
+                        ? (' from ' + data.previousData.datacenter + ' to ' + data.datacenter + '.')
+                        : '.'))
     return log
 }
 
@@ -359,7 +379,7 @@ function getAssetName(id,data,action,callback,offline=false) {
         callback({name: data.model+' '+data.hostname, data: data, previousData: null, datacenter: data.datacenter})
     } else {
         if (offline) {
-          firebaseutils.db.collectionGroup("offlineAssets").where("assetId", "==", id).get().then(qs => callback({name: qs.docs[0].data().model+' '+qs.docs[0].data().hostname, data: qs.docs[0].data(), previousData: data, datacenter: qs.docs[0].data().datacenter}))
+          firebaseutils.db.collectionGroup("offlineAssets").where("assetId", "==", id).get().then(qs => callback({name: qs.docs[0].data().model+' '+qs.docs[0].data().hostname, data: {...qs.docs[0].data(),datacenterAbbrev: data.datacenterAbbrev}, previousData: data, datacenter: qs.docs[0].data().datacenter}))
           .catch( error => {
             console.log("Error getting documents: ", error)
             callback(null)
@@ -433,23 +453,27 @@ function getChangePlanName(id,data,action,callback) {
     }
 }
 
-function getPDUName(data,action,callback) {
-    firebaseutils.assetRef.get().then(docSnaps => {
+function getPDUName(data,action,callback,bcman=false) {
+    let ref = bcman ? firebaseutils.bladeRef : firebaseutils.assetRef
+    ref.get().then(async(docSnaps) => {
         var assetId = null
         var asset;
         for (var i = 0; i < docSnaps.docs.length; i++) {
             asset = docSnaps.docs[i].data()
+            const docID = docSnaps.docs[i].id
             let formattedNum;
-            if (asset.rackNum.toString().length === 1) {
-                formattedNum = "0" + asset.rackNum;
-            } else {
-                formattedNum = asset.rackNum;
+            if (!bcman) {
+              if (asset.rackNum.toString().length === 1) {
+                  formattedNum = "0" + asset.rackNum;
+              } else {
+                  formattedNum = asset.rackNum;
+              }
             }
-            if (asset.powerConnections) {
-                for (var j = 0; j < asset.powerConnections.length; j++) {
-                    const assetPDU = "hpdu-rtp1-" + asset.rackRow + formattedNum + asset.powerConnections[j].pduSide.charAt(0) + ":" + asset.powerConnections[j].port
+            if (bcman || asset.powerConnections) {
+                for (var j = 0; j < (bcman ? 1 : asset.powerConnections.length); j++) {
+                    const assetPDU = bcman ? (asset.rack+':'+asset.rackU) : ("hpdu-rtp1-" + asset.rackRow + formattedNum + asset.powerConnections[j].pduSide.charAt(0) + ":" + asset.powerConnections[j].port)
                     if (assetPDU === data.pdu+':'+data.portNumber) {
-                        assetId = asset.assetId
+                        assetId = bcman ? docID : asset.assetId
                         break
                     }
                 }
@@ -459,7 +483,13 @@ function getPDUName(data,action,callback) {
             }
         }
         if (assetId) {
-            callback({name: data.pdu+':'+data.portNumber+' connected to asset '+asset.model+' '+asset.hostname, data: {...data,asset: asset}, previousData: null, datacenter: asset.datacenter}, assetId)
+            let extra = null
+            if (bcman) {
+              extra = await new Promise(function(resolve, reject) {
+                  firebaseutils.assetRef.doc(assetId).get().then(doc => resolve({dc: doc.data().datacenter, host: doc.data().hostname}))
+              })
+            }
+            callback({name: data.pdu+':'+data.portNumber+' connected to asset '+asset.model+' '+(extra ? extra.host : asset.hostname), data: {...data,asset: asset}, previousData: null, datacenter: extra ? extra.dc : asset.datacenter}, assetId)
             return
         }
         callback(null,null)
@@ -592,14 +622,14 @@ function flattenArrayOrMap(flat) {
       }
       delete newMap[key]
       for (var nextKey in value) {
-        newMap[key+':'+nextKey] = value[nextKey]
-        flatten(key+':'+nextKey)
+        newMap[key+'|'+nextKey] = value[nextKey]
+        flatten(key+'|'+nextKey)
       }
     }
 
     function getValue(key) {
       var value = flat
-      const keyArray = key.split(':')
+      const keyArray = key.split('|')
       for (var field in keyArray) {
         value = value[keyArray[field]]
       }
@@ -700,4 +730,4 @@ var isEqual = function (value, other, name) {
 	return true;
 };
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, PDU, OFFLINE, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, POWER_ON, POWER_OFF, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }
+export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, PDU, BCMAN, OFFLINE, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, POWER_ON, POWER_OFF, MOVE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }
