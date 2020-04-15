@@ -56,7 +56,7 @@ export default class DecommissionAssetPopup extends Component {
 
     determineDecommissionFunction(callback) {
        modelutils.getModelByModelname(this.props.decommissionModel, doc => {
-           if (doc) {
+           if (doc && !this.props.offlineStorage) {
                switch (doc.data().mount) {
                  case 'chassis':
                    this.decommissionFunction = bladeutils.deleteChassis

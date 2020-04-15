@@ -193,7 +193,7 @@ export default class EditAssetForm extends Component {
 
     determineUpdateForm(callback) {
         modelutils.getModelByModelname(this.state.model, doc => {
-            if (doc) {
+            if (doc && !this.props.offlineStorage) {
                 switch (doc.data().mount) {
                     case 'chassis':
                         this.updateFunction = bladeutils.updateChassis
