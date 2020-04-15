@@ -417,23 +417,23 @@ function getBladeChassisViewParams(hostname,callback) {
 
 function getBladeIds(callback) {
     firebaseutils.bladeRef.get().then(docSnaps => {
-        firebaseutils.db.collectionGroup('blades').get().then(snaps => {
-            var helpChassis = {}
+        // firebaseutils.db.collectionGroup('blades').get().then(snaps => {
+            // var helpChassis = {}
             var idToVendor = {}
             // blade servers
             docSnaps.forEach(doc => {
-              let slots = helpChassis[doc.data().chassisId] ? helpChassis[doc.data().chassisId].slots : []
-              helpChassis[doc.data().chassisId] = {vendor: doc.data().chassisVendor, slots: slots.concat(doc.data().rackU)}
+              // let slots = helpChassis[doc.data().chassisId] ? helpChassis[doc.data().chassisId].slots : []
+              // helpChassis[doc.data().chassisId] = {vendor: doc.data().chassisVendor, slots: slots.concat(doc.data().rackU)}
               idToVendor[doc.id] = {chassisVendor: doc.data().chassisVendor, rack: doc.data().rack, rackU: [doc.data().rackU], chassisId: doc.data().chassisId}
             })
-            // chassis
-            snaps.forEach(doc => {
-              if (helpChassis[doc.id] && !doc.data().letter.includes('No hostname')) {
-                idToVendor[doc.id] = {chassisVendor: helpChassis[doc.id].vendor, rack: doc.data().letter, rackU: helpChassis[doc.id].slots, chassisId: doc.id}
-              }
-            })
+            // // chassis
+            // snaps.forEach(doc => {
+            //   if (helpChassis[doc.id] && !doc.data().letter.includes('No hostname')) {
+            //     idToVendor[doc.id] = {chassisVendor: helpChassis[doc.id].vendor, rack: doc.data().letter, rackU: helpChassis[doc.id].slots, chassisId: doc.id}
+            //   }
+            // })
             callback(idToVendor)
-        })
+        // })
     })
 }
 
