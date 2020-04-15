@@ -74,7 +74,7 @@ export default class DetailedAssetScreen extends Component {
         this.powerPorts = null;
         this.connectedPDU = null;
         if (!this.props.match.params.storageSiteAbbrev) {
-console.log("IF")
+
             powerutils.checkConnectedToPDU(this.props.match.params.assetID, result => {
                 if (!(result === null)) {
                     console.log(result)
@@ -109,7 +109,6 @@ console.log("IF")
             });
         }
         else {
-            console.log("ELSE")
             assetutils.getAssetDetails(
                 this.props.match.params.assetID,
                 assetsdb => {
