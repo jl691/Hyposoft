@@ -37,6 +37,7 @@ export default class DetailedAssetScreen extends Component {
     connectedPDU;
     bladeData = null
     chassisSlots = null
+    hasPortConnections = 0
 
     constructor(props) {
         super(props);
@@ -75,14 +76,15 @@ export default class DetailedAssetScreen extends Component {
 
             console.log("ABCD")
             powerutils.checkConnectedToPDU(this.props.match.params.assetID, result => {
-                if (!(result === null)) {
-                    console.log(result)
-                    if (result) {
-                        this.connectedPDU = true;
-                    } else {
-                        this.connectedPDU = false;
-                    }
-                }
+                // if (!(result === null)) {
+                //     console.log(result)
+                //     if (result) {
+                //         this.connectedPDU = true;
+                //     } else {
+                //         this.connectedPDU = false;
+                //     }
+                // }
+                this.connectedPDU = result;
                 assetutils.getAssetDetails(
                     this.props.match.params.assetID,
                     assetsdb => {
@@ -243,8 +245,10 @@ export default class DetailedAssetScreen extends Component {
             if (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner) {
                 ToastsStore.info("Click a refresh button by a PDU status to power cycle it.", 5000);
             }
-            if (this.bladeData || this.chassisSlots) {
+            let fromBlade = 0
+            if (this.connectedPDU === 'bcman' && (this.bladeData || this.chassisSlots)) {
               const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
+              fromBlade = eachFor.length
               eachFor.forEach(powerPiece => {
                   const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
                   const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
@@ -263,15 +267,17 @@ export default class DetailedAssetScreen extends Component {
                       this.setState({
                           [host + ":" + slot]: toggle
                       })
-                      if (this.powerPorts.length === eachFor.length) {
+                      if (this.powerPorts.length === eachFor.length + Object.keys(this.state.asset.powerConnections).length) {
                           this.setState({
                               powerMap: true
                           })
                           callback()
+                          return
                       }
                   })
               })
-            } else {
+            }
+              this.hasPortConnections = Object.keys(this.state.asset.powerConnections).length
               Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
                   let formattedNum;
                   if (this.state.asset.rackNum.toString().length === 1) {
@@ -295,7 +301,7 @@ export default class DetailedAssetScreen extends Component {
                           ["hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port]: toggle
                       })
                       // this.state.powerStatuses.set("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port, toggle);
-                      if (this.powerPorts.length === Object.keys(this.state.asset.powerConnections).length) {
+                      if (this.powerPorts.length === Object.keys(this.state.asset.powerConnections).length + fromBlade) {
                           this.setState({
                               powerMap: true
                           })
@@ -303,14 +309,13 @@ export default class DetailedAssetScreen extends Component {
                       }
                   })
               })
-            }
         } else {
           callback()
         }
     }
 
     turnAssetOn() {
-        if (this.bladeData || this.chassisSlots) {
+        if (this.bladeData) {
           let count = 0;
           const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
           eachFor.forEach(powerPiece => {
@@ -357,7 +362,7 @@ export default class DetailedAssetScreen extends Component {
     }
 
     turnAssetOff() {
-      if (this.bladeData || this.chassisSlots) {
+      if (this.bladeData) {
         let count = 0;
         const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
         eachFor.forEach(powerPiece => {
@@ -404,7 +409,7 @@ export default class DetailedAssetScreen extends Component {
     }
 
     powerCycleAsset() {
-      if (this.bladeData || this.chassisSlots) {
+      if (this.bladeData) {
         let count = 0;
         const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
         eachFor.forEach(powerPiece => {
@@ -505,7 +510,7 @@ export default class DetailedAssetScreen extends Component {
                                 if (this.state[connection.name + ":" + connection.port]) {
                                     console.log("1")
                                     //on, power off
-                                    let powerFunction = this.chassisSlots ? powerutils.changeBladePower : powerutils.powerPortOff
+                                    let powerFunction = ((this.bladeData ? this.bladeData.rack : this.state.asset.hostname) === connection.name) ? powerutils.changeBladePower : powerutils.powerPortOff
                                     powerFunction(connection.name, connection.port, result => {
                                         console.log(result)
                                         if (result) {
@@ -520,7 +525,7 @@ export default class DetailedAssetScreen extends Component {
                                 } else {
                                     console.log("2")
                                     //off, power on
-                                    let powerFunction = this.chassisSlots ? powerutils.changeBladePower : powerutils.powerPortOn
+                                    let powerFunction = ((this.bladeData ? this.bladeData.rack : this.state.asset.hostname) === connection.name) ? powerutils.changeBladePower : powerutils.powerPortOn
                                     powerFunction(connection.name, connection.port, result => {
                                         console.log(result)
                                         if (result) {
@@ -538,14 +543,14 @@ export default class DetailedAssetScreen extends Component {
                                     data-tip="Power cycle"
                                     size={"medium"} style={{ marginLeft: "10px", cursor: "pointer" }} onClick={(e) => {
                                         ToastsStore.success("Power cycling " + connection.name + ":" + connection.port + ". Please wait!");
-                                        let powerFunction = this.chassisSlots ? powerutils.changeBladePower : powerutils.powerPortOff
+                                        let powerFunction = ((this.bladeData ? this.bladeData.rack : this.state.asset.hostname) === connection.name) ? powerutils.changeBladePower : powerutils.powerPortOff
                                         powerFunction(connection.name, connection.port, result => {
                                             if (result) {
                                                 this.setState({
                                                     [connection.name + ":" + connection.port]: false
                                                 });
                                                 setTimeout(() => {
-                                                    let powerFunction = this.chassisSlots ? powerutils.changeBladePower : powerutils.powerPortOn
+                                                    let powerFunction = ((this.bladeData ? this.bladeData.rack : this.state.asset.hostname) === connection.name) ? powerutils.changeBladePower : powerutils.powerPortOn
                                                     powerFunction(connection.name, connection.port, result => {
                                                         if (result) {
                                                             this.setState({
@@ -863,7 +868,7 @@ export default class DetailedAssetScreen extends Component {
                                             <Heading level='4' margin='none'>Asset Actions</Heading>
                                             <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
                                                 gap='small'>
-                                                {(this.connectedPDU && !this.props.match.params.storageSiteAbbrev && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
+                                                {(this.connectedPDU && this.hasPortConnections !== 0 && !this.props.match.params.storageSiteAbbrev && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
                                                     <Box direction='column' flex alignSelf='stretch'
                                                         gap='small'>
                                                         <Button icon={<Power />} label="Power Asset On" onClick={() => {
