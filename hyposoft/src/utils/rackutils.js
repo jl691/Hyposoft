@@ -195,22 +195,25 @@ function deleteSingleRack(id, callback) {
     })
 }
 
-function getRackID(row, number, datacenter, callback) {
-  
-    datacenterutils.getDataFromName(datacenter, datacenterID => {
-      
-        if (datacenterID) {
-            firebaseutils.racksRef.where("letter", "==", row).where("number", "==", parseInt(number)).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
-                if (!querySnapshot.empty) {
-                    callback(querySnapshot.docs[0].id);
-                } else {
-                    callback(null);
-                }
-            })
-        } else {
-            callback(null);
-        }
-    })
+function getRackID(row, number, datacenter, callback, offlineStorage) {
+    if(offlineStorage){
+        callback(true);
+    } else {
+        datacenterutils.getDataFromName(datacenter, datacenterID => {
+
+            if (datacenterID) {
+                firebaseutils.racksRef.where("letter", "==", row).where("number", "==", parseInt(number)).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
+                    if (!querySnapshot.empty) {
+                        callback(querySnapshot.docs[0].id);
+                    } else {
+                        callback(null);
+                    }
+                })
+            } else {
+                callback(null);
+            }
+        })
+    }
 }
 
 function deleteRackRange(rowStart, rowEnd, numberStart, numberEnd, datacenter, callback) {
@@ -368,7 +371,7 @@ function getModelHeightColor(model, callback) {
     })
 }
 
-function checkAssetFits(position, height, rack, callback, id = null) { //rackU, modelHeight, rack
+function checkAssetFits(position, height, rack, callback, id = null, chassis = null) { //rackU, modelHeight, rack
     //create promise array
     //create array of conflicting instances
     let conflicting = [];
@@ -378,12 +381,14 @@ function checkAssetFits(position, height, rack, callback, id = null) { //rackU, 
         tentPositions.push(i);
         //console.log("pushing " + i + " to array")
     }
-    firebaseutils.racksRef.doc(rack).get().then(function (docRefRack) {
+    let ref = chassis ? firebaseutils.racksRef.doc(rack).collection('blades').doc(chassis.id) : firebaseutils.racksRef.doc(rack)
+    ref.get().then(function (docRefRack) {
         let assetCount = 0;
         if (docRefRack.data().assets.length) {
             docRefRack.data().assets.forEach(assetID => {
                // console.log("this rack contains " + assetID);
-                firebaseutils.assetRef.doc(assetID).get().then(function (docRefAsset) {
+                let aRef = chassis ? firebaseutils.bladeRef : firebaseutils.assetRef
+                aRef.doc(assetID).get().then(function (docRefAsset) {
                     console.log("  THE ID IS "+ id)
                     if (assetID !== id) {
 

@@ -25,6 +25,7 @@ describe('change plan add asset: power connections test', () => {
                 port: "3"
             }
         ]
+
         changeplanconflictutils.powerConnectionConflict(ids['changePlan'], ids['changePlanStep'], powerConnections, 'Test Datacenter3', 'A3', 1, '222222',powerConnectionsStatus => {
                 expect(powerConnectionsStatus).toBe(false)
                 done()
@@ -50,7 +51,7 @@ describe('change plan add asset: power connections test', () => {
 
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
                 console.log(docRef.data())
-                expect(docRef.data().database.powerConnections[0]).toBe('powerConnectionConflictErrID')
+                expect(docRef.data().database.powerConnections[0]).toBe('powerConnectionConflictDBErrID')
                 done()
             })
         })
@@ -74,7 +75,7 @@ describe('change plan add asset: power connections test', () => {
         //left: 1, seems to pass, but left: 5 seems to give the tests some trouble
         changeplanconflictutils.powerConnectionConflict(ids['changePlan'], ids['changePlanStep'], powerConnections, 'Test Datacenter3', 'A3', 1, '',powerConnectionsStatus => {
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
-                expect(docRef.data().database.powerConnections[0]).toBe('powerConnectionConflictErrID')
+                expect(docRef.data().database.powerConnections[0]).toBe('powerConnectionConflictDBErrID')
                 done()
             })
 

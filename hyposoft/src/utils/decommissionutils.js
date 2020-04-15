@@ -4,12 +4,18 @@ import * as userutils from './userutils'
 import * as assetnetworkportutils from '../utils/assetnetworkportutils'
 import * as assetutils from "../utils/assetutils"
 
-function decommissionAsset(id,callback) {
-    firebaseutils.assetRef.doc(id).get().then(doc => {
-        if (!doc.exists) {
+function decommissionAsset(id,callback,decommissionFunction=assetutils.deleteAsset,chassisParams=null, offlineStorage = null) {
+    let query = offlineStorage ? firebaseutils.db.collectionGroup("offlineAssets").where("assetId", "==", id) : firebaseutils.assetRef.doc(id);
+
+    query.get().then(snap => {
+        if (offlineStorage && snap.empty) {
+            callback(false)
+            return
+        } else if(!offlineStorage && !snap.exists){
             callback(false)
             return
         }
+        let doc = offlineStorage ? snap.docs[0] : snap;
         const docData = doc.data()
         assetnetworkportutils.getNetworkPortConnections(id, graph => {
           firebaseutils.usersRef.doc(userutils.getLoggedInUser()).get().then(doc => {
@@ -17,10 +23,10 @@ function decommissionAsset(id,callback) {
                 callback(false)
                 return
             }
-            assetutils.deleteAsset(id, result => {
+            decommissionFunction(id, (result,myParams) => {
                 if (result) {
-                  logutils.addLog(id,logutils.ASSET(),logutils.DECOMMISSION(),docData)
-                  firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username,graph: graph}).then(() => callback(true))
+                  logutils.addLog(id,offlineStorage ? logutils.OFFLINE() : logutils.ASSET(),logutils.DECOMMISSION(),docData)
+                  firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username,graph: graph,chassisParams: chassisParams ? chassisParams : (myParams ? myParams : null)}).then(() => callback(true))
                   .catch( error => {
                       console.log("Error getting documents: ", error)
                       callback(false)
@@ -28,7 +34,7 @@ function decommissionAsset(id,callback) {
                 } else {
                   callback(false)
                 }
-              }, true)
+              }, true, offlineStorage ? offlineStorage : null)
             })
             .catch( error => {
               console.log("Error getting documents: ", error)

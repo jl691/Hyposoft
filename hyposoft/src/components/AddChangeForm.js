@@ -116,14 +116,21 @@ class AddChangeForm extends React.Component {
                         updateCommentFromParent={""}
                         updateDatacenterFromParent={""}
                         updateAssetIDFromParent={""}
+
+                        updateDisplayColorFromParent={""}
+                        updateCpuFromParent={""}
+                        updateMemoryFromParent={""}
+                        updateStorageFromParent={""}
                     />
 
                 </Layer>
             )
         } else if (popupType === 'Update'){
             let selectedData = this.assetData.get(this.state.selected);
-            console.log(selectedData.macAddresses);
-            console.log(assetmacutils.unfixMacAddressesForMACForm(selectedData.macAddresses))
+            // console.log(selectedData.variances)
+            // console.log(selectedData)
+            //console.log(selectedData.macAddresses);
+            //console.log(assetmacutils.unfixMacAddressesForMACForm(selectedData.macAddresses))
             popup = (
                 <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
@@ -144,11 +151,17 @@ class AddChangeForm extends React.Component {
                         updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(selectedData.macAddresses)}
                         updatePowerConnectionsFromParent={selectedData.powerConnections}
                         updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(selectedData.networkConnections)}
+
+                        updateDisplayColorFromParent={selectedData.variances.displayColor}
+                        updateCpuFromParent={selectedData.variances.cpu}
+                        updateMemoryFromParent={selectedData.variances.memory}
+                        updateStorageFromParent={selectedData.variances.storage}
                     />
                 </Layer>
             )
         } else if (popupType === 'delete'){
             let selectedData = this.assetData.get(this.state.selected);
+            console.log(selectedData)
             popup = (
                 <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
                        onClickOutside={() => this.setState({popupType: undefined})}>
@@ -161,6 +174,7 @@ class AddChangeForm extends React.Component {
                     <DecommissionAssetPopup
                         changePlanID={this.props.match.params.changePlanID}
                         decommissionIDFromParent={selectedData.assetId}
+                        decommissionModel={selectedData.model}
                         parentCallback={this.handleCancelPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
                     />

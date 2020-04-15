@@ -9,13 +9,14 @@ import {
     TableHeader,
     TableRow,
     TableCell,
-    TableBody
+    TableBody, Text
 } from 'grommet'
 import {View, ShareOption} from "grommet-icons"
 import * as decomutils from '../utils/decommissionutils'
 import * as modelutils from '../utils/modelutils'
 import theme from '../theme'
 import BackButton from '../components/BackButton'
+import BladeChassisView from '../components/BladeChassisView'
 import AppBar from '../components/AppBar'
 import UserMenu from '../components/UserMenu'
 import {ToastsContainer, ToastsStore} from "react-toasts";
@@ -26,7 +27,8 @@ export default class DetailedDecommissionedAssetScreen extends Component {
         super(props);
         this.state = {
             asset: "",
-            modelExists: undefined
+            modelExists: undefined,
+            initialLoaded: false
         }
     }
 
@@ -42,8 +44,10 @@ export default class DetailedDecommissionedAssetScreen extends Component {
         decomutils.getAssetDetails(
             this.props.match.params.assetID,
             asset => {
+              console.log(asset);
               this.setState({
-                asset: asset
+                asset: asset,
+                initialLoaded: true
             })
         })
     }
@@ -133,7 +137,7 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                     <Route path={`/decommissioned/${this.props.match.params.assetID}`}/>
 
                     <Grommet theme={theme} full className='fade'>
-                        <Box fill background='light-2'>
+                        <Box fill background='light-2' overflow={"auto"}>
                             <AppBar>
                                 {/* {this.props.match.params.vendor} {this.props.match.params.modelNumber} */}
                                 <BackButton alignSelf='start' this={this}/>
@@ -156,128 +160,190 @@ export default class DetailedDecommissionedAssetScreen extends Component {
 
                                      background='#FFFFFF'
                                      width={'xxlarge'}
+                                     justify='center'
                                      margin={{top: 'medium', left: 'medium', right: 'medium'}}
                                      pad='small'>
-                                    <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                         direction='column' justify='start'>
-                                        <Heading level='4' margin='none'>Decommissioned Asset Details</Heading>
-                                        <table style={{marginTop: '10px', marginBottom: '10px'}}>
-                                            <tbody>
-                                            <tr>
-                                                <td><b>Date and Time (EST)</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.date}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><b>Hostname</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.hostname}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><b>Model</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.model}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><b>Datacenter</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.datacenter || 'N/A'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><b>Rack</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.rack}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><b>Rack U</b></td>
-                                                <td style={{textAlign: 'right'}}>{this.state.asset.rackU}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><b>Demoted By</b></td>
-                                                <td style={{textAlign: 'right'}}>@{this.state.asset.name}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><b>Owner</b></td>
-                                                <td style={{textAlign: 'right'}}>@{this.state.asset.owner || 'N/A'}</td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Network Port Name</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Connected Asset ID</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Connected Port Name</strong>
-                                                    </TableCell>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {this.generateNetworkTable()}
-                                            </TableBody>
-                                        </Table>
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Power Port</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>PDU Side</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>PDU Port</strong>
-                                                    </TableCell>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {this.generatePowerTable()}
-                                            </TableBody>
-                                        </Table>
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>Network Port</strong>
-                                                    </TableCell>
-                                                    <TableCell scope="col" border="bottom">
-                                                        <strong>MAC Address</strong>
-                                                    </TableCell>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {this.generateMACTable()}
-                                            </TableBody>
-                                        </Table>
-                                        <span style={{maxHeight: 100, overflow: 'auto'}}>
-                                         {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
-                                             return <div key={key}>{i}</div>
-                                         })}
-                                         </span>
-                                      </Box>
+                                     {(!this.state.initialLoaded
+                                       ?
+                                       <Box align="center"><Text>Please wait...</Text></Box>
+                                       :
+                                       <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                            direction='column' justify='start'>
+                                           <Heading level='4' margin='none'>Decommissioned Asset Details</Heading>
+                                           <table style={{marginTop: '10px', marginBottom: '10px'}}>
+                                               <tbody>
+                                               <tr>
+                                                   <td><b>Date and Time (EST)</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.date}</td>
+                                               </tr>
+                                               <tr>
+                                                   <td><b>Hostname</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.hostname}</td>
+                                               </tr>
+                                               <tr>
+                                                   <td><b>Model</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.model}</td>
+                                               </tr>
+                                               <tr>
+                                                   <td><b>Datacenter</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.datacenter || 'N/A'}</td>
+                                               </tr>
+                                               {(this.state.asset.chassisParams && this.state.asset.chassisParams.slot
+                                                    ?
+                                                    <tr>
+                                                        <td><b>Chassis Hostname</b></td>
+                                                        <td style={{textAlign: 'right'}}>{this.state.asset.chassisParams.chassisHostname}</td>
+                                                    </tr>
+                                                    :
+                                                    <tr></tr>
+                                               )}
+                                               {(this.state.asset.chassisParams && this.state.asset.chassisParams.slot
+                                                    ?
+                                                    <tr>
+                                                        <td><b>Slot</b></td>
+                                                        <td style={{textAlign: 'right'}}>{this.state.asset.chassisParams.slot}</td>
+                                                    </tr>
+                                                    :
+                                                    <tr></tr>
+                                               )}
+                                               <tr>
+                                                   <td><b>{!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot) ? 'Rack' : 'Chassis Rack'}</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.rack}</td>
+                                               </tr>
+                                               <tr>
+                                                   <td><b>{!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot) ? 'Rack U' : 'Chassis Rack U'}</b></td>
+                                                   <td style={{textAlign: 'right'}}>{this.state.asset.rackU}</td>
+                                               </tr>
+                                               <tr>
+                                                   <td><b>Demoted By</b></td>
+                                                   <td style={{textAlign: 'right'}}>@{this.state.asset.name}</td>
+                                               </tr>
+                                               <tr>
+                                                   <td><b>Owner</b></td>
+                                                   <td style={{textAlign: 'right'}}>@{this.state.asset.owner || 'N/A'}</td>
+                                               </tr>
+                                               </tbody>
+                                           </table>
+                                           {(
+
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableCell scope="col" border="bottom">
+                                                                <strong>Network Port Name</strong>
+                                                            </TableCell>
+                                                            <TableCell scope="col" border="bottom">
+                                                                <strong>Connected Asset ID</strong>
+                                                            </TableCell>
+                                                            <TableCell scope="col" border="bottom">
+                                                                <strong>Connected Port Name</strong>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {this.generateNetworkTable()}
+                                                    </TableBody>
+                                                </Table>
+                                                
+                                           )}
+                                           {(!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot)
+                                                ?
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableCell scope="col" border="bottom">
+                                                                <strong>Power Port Name</strong>
+                                                            </TableCell>
+                                                            <TableCell scope="col" border="bottom">
+                                                                <strong>Connected PDU Side</strong>
+                                                            </TableCell>
+                                                            <TableCell scope="col" border="bottom">
+                                                                <strong>Connected PDU Port</strong>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {this.generatePowerTable()}
+                                                    </TableBody>
+                                                </Table>
+                                                :
+                                                <Table></Table>
+                                           )}
+                                           {(!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot)
+                                                ?
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableCell scope="col" border="bottom">
+                                                                <strong>Network Port</strong>
+                                                            </TableCell>
+                                                            <TableCell scope="col" border="bottom">
+                                                                <strong>MAC Address</strong>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {this.generateMACTable()}
+                                                    </TableBody>
+                                                </Table>
+                                                :
+                                                <Table></Table>
+                                           )}
+                                           <span style={{maxHeight: 100, overflow: 'auto'}}>
+                                            {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
+                                                return <div key={key}>{i}</div>
+                                            })}
+                                            </span>
+                                            {(this.state.asset.chassisParams
+                                                ?
+                                                <Box flex margin={{top: 'small', bottom: 'small'}}
+                                                     direction='column' justify='start'>
+                                                    <Heading level='4' margin='none'>Blade Chassis View</Heading>
+                                                    <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                                         gap='small' align='center'>
+                                                        <BladeChassisView
+                                                            chassisId={this.state.asset.chassisParams.chassisId}
+                                                            chassisHostname={this.state.asset.chassisParams.chassisHostname}
+                                                            chassisSlots={this.state.asset.chassisParams.chassisSlots}
+                                                            slot={this.state.asset.chassisParams.slot}
+                                                            notClickable={true}
+                                                        />
+                                                    </Box>
+                                                </Box>
+                                                :
+                                                <Box></Box>
+                                             )}
+                                         </Box>
+                                     )}
                                   </Box>
-                                  <Box style={{
-                                      borderRadius: 10,
-                                      borderColor: '#EDEDED'
-                                  }}
-                                       direction='row'
-                                       background='#FFFFFF'
-                                       width={'large'}
-                                       margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                                       pad='small'>
-                                      <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                           direction='column' justify='start'>
-                                          <Heading level='4' margin='none'>Asset Actions</Heading>
-                                          <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
-                                               gap='small'>
-                                              {(this.state.modelExists ? <Button icon={<View/>} label="View Model Details" onClick={() => {
-                                                  this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNumber)
-                                              }}/> : <Box>{this.doesModelExist()}</Box>)}
-                                              <Button icon={<ShareOption/>} label="Network Neighborhood" onClick={() => {
-                                                  this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
-                                              }}/>
-                                          </Box>
-                                      </Box>
-                                  </Box>
+                                  {(!this.state.initialLoaded
+                                    ?
+                                    <Box></Box>
+                                    :
+                                    <Box style={{
+                                        borderRadius: 10,
+                                        borderColor: '#EDEDED'
+                                    }}
+                                         direction='row'
+                                         background='#FFFFFF'
+                                         width={'large'}
+                                         margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                                         pad='small'>
+                                        <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                             direction='column' justify='start'>
+                                            <Heading level='4' margin='none'>Asset Actions</Heading>
+                                            <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
+                                                 gap='small'>
+                                                {(this.state.modelExists ? <Button icon={<View/>} label="View Model Details" onClick={() => {
+                                                    this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNumber)
+                                                }}/> : <Box>{this.doesModelExist()}</Box>)}
+                                                <Button icon={<ShareOption/>} label="Network Neighborhood" onClick={() => {
+                                                    this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
+                                                }}/>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                  )}
                             </Box>
                             <ToastsContainer store={ToastsStore}/>
                         </Box>

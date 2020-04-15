@@ -71,7 +71,7 @@ function addInitialAssets(callback) {
         const dellAsset = makeAsset('999999')
         firebaseutils.assetRef.doc('999999').set(dellAsset).then(() => {
           ids = {...ids,asset: '999999'}
-          callback()
+          clearLogs(() => callback())
         })
       })
     })
@@ -85,13 +85,24 @@ function tearDownAssets(callback) {
         firebaseutils.racksRef.doc(ids['rack']).delete().then(docRef => {
               firebaseutils.decommissionRef.doc(ids['decom']).delete().then(docRef => {
                 firebaseutils.logsRef.doc(ids['log']).delete().then(docRef => {
-                    callback()
+                    clearLogs(() => callback())
                   })
                 })
               })
         })
       })
     })
+}
+
+function clearLogs(callback) {
+  firebaseutils.logsRef.get().then(docSnaps => {
+    docSnaps.forEach(async(doc) => {
+      await new Promise(function(resolve, reject) {
+        doc.ref.delete().then(() => resolve())
+      })
+    })
+    callback()
+  })
 }
 
 function makeAsset(id) {
