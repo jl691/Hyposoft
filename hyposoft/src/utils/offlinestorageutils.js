@@ -209,7 +209,7 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback, moveFu
                                         console.log("6")
                                         callback(null);
                                     }
-                                }, true /*do this to allow no logged deletion*/, offlineStorageName /*this is for updateChassis, shouldn't affect other methods*/)
+                                }, true /*do this to allow no logged deletion*/, null /*this is for deleteAsset*/, offlineStorageName /*this is for updateChassis, shouldn't affect other methods*/)
                             }).catch(function () {
                                 console.log("5")
                                 callback(null);

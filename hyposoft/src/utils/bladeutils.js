@@ -108,7 +108,7 @@ function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, da
     }, changePlanID, changeDocID)
 }
 
-function deleteChassis(assetID, callback, isDecommission = false, offline = null) {
+function deleteChassis(assetID, callback, isDecommission = false, doNothing = null, offline = null) {
     firebaseutils.db.collectionGroup('blades').where("id","==",assetID).get().then(qs => {
         if (!qs.empty && (qs.docs[0].data().assets.length === 0 || isDecommission || offline)) {
             assetutils.deleteAsset(assetID, async(deletedId) => {
