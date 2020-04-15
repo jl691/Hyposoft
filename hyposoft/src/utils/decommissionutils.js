@@ -18,28 +18,31 @@ function decommissionAsset(id,callback,decommissionFunction=assetutils.deleteAss
         let doc = offlineStorage ? snap.docs[0] : snap;
         const docData = doc.data()
         assetnetworkportutils.getNetworkPortConnections(id, graph => {
-          firebaseutils.usersRef.doc(userutils.getLoggedInUser()).get().then(doc => {
-            if (!doc.exists) {
-                callback(false)
-                return
-            }
-            decommissionFunction(id, (result,myParams) => {
-                if (result) {
-                  logutils.addLog(id,offlineStorage ? logutils.OFFLINE() : logutils.ASSET(),logutils.DECOMMISSION(),docData)
-                  firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username,graph: graph,chassisParams: chassisParams ? chassisParams : (myParams ? myParams : null)}).then(() => callback(true))
-                  .catch( error => {
-                      console.log("Error getting documents: ", error)
-                      callback(false)
-                  })
-                } else {
+          firebaseutils.modelsRef.doc(docData.modelId).get().then(doc => {
+            const baseModel = {cpu: doc.data() ? doc.data().cpu : '', displayColor: doc.data() ? doc.data().displayColor : '', memory: doc.data() ? doc.data().memory : '', storage: doc.data() ? doc.data().storage : ''}
+            firebaseutils.usersRef.doc(userutils.getLoggedInUser()).get().then(doc => {
+              if (!doc.exists) {
                   callback(false)
-                }
-              }, true, offlineStorage ? offlineStorage : null)
-            })
-            .catch( error => {
-              console.log("Error getting documents: ", error)
-              callback(false)
-            })
+                  return
+              }
+              decommissionFunction(id, (result,myParams) => {
+                  if (result) {
+                    logutils.addLog(id,offlineStorage ? logutils.OFFLINE() : logutils.ASSET(),logutils.DECOMMISSION(),docData)
+                    firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username,graph: graph,baseModel: baseModel,chassisParams: chassisParams ? chassisParams : (myParams ? myParams : null)}).then(() => callback(true))
+                    .catch( error => {
+                        console.log("Error getting documents: ", error)
+                        callback(false)
+                    })
+                  } else {
+                    callback(false)
+                  }
+                }, true, offlineStorage ? offlineStorage : null)
+              })
+              .catch( error => {
+                console.log("Error getting documents: ", error)
+                callback(false)
+              })
+          })
         })
     })
     .catch( error => {
