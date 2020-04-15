@@ -5,7 +5,7 @@ import { useMediaQuery } from 'react-responsive'
 
 const AppBar = (props) => {
     const isTabletOrMobileDevice = useMediaQuery({
-        query: '(max-width: 1224px)'
+        query: '(max-device-width: 1224px)'
     })
     if (isTabletOrMobileDevice) {
         // Redirect to scanner page

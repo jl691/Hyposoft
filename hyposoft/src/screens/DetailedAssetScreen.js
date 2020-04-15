@@ -655,7 +655,7 @@ export default class DetailedAssetScreen extends Component {
                     <Grommet theme={theme} full className='fade'>
                         <Box fill background='light-2' overflow={"auto"}>
                             {popup}
-                            <MediaQuery minWidth={1224}>
+                            <MediaQuery minDeviceWidth={1224}>
                             <AppBar>
                                 {/* {this.props.match.params.vendor} {this.props.match.params.modelNumber} */}
                                 <BackButton alignSelf='start' this={this} />
@@ -843,7 +843,7 @@ export default class DetailedAssetScreen extends Component {
                                         </Box>
                                     )}
                                 </Box>
-                                <MediaQuery minWidth={1224}>
+                                <MediaQuery minDeviceWidth={1224}>
                                 {(!this.state.initialLoaded
                                     ?
                                     <Box></Box>
@@ -899,7 +899,7 @@ export default class DetailedAssetScreen extends Component {
                                 )}
                                 </MediaQuery>
                             </Box>
-                            <MediaQuery maxWidth={1224}>
+                            <MediaQuery maxDeviceWidth={1224}>
                                 <Button label='Back to scanner' margin={{top: 'small', left: 'medium', right: 'medium'}} onClick={() => {userutils.logout(); this.props.history.goBack()}} />
                             </MediaQuery>
                             <ToastsContainer store={ToastsStore} />
