@@ -666,6 +666,7 @@ export default class DetailedAssetScreen extends Component {
                             </AppBar>
                             </MediaQuery>
                             <Box
+                                overflow='auto'
                                 align='start'
                                 direction='row'
                                 margin={{ left: 'medium', right: 'medium' }}
@@ -900,7 +901,7 @@ export default class DetailedAssetScreen extends Component {
                                 </MediaQuery>
                             </Box>
                             <MediaQuery maxDeviceWidth={1224}>
-                                <Button label='Back to scanner' margin={{top: 'small', left: 'medium', right: 'medium'}} onClick={() => {userutils.logout(); this.props.history.goBack()}} />
+                                <Button label='Back to scanner' margin={{top: 'small', left: 'medium', right: 'medium', bottom: 'small'}} onClick={() => {userutils.logout(); this.props.history.goBack()}} />
                             </MediaQuery>
                             <ToastsContainer store={ToastsStore} />
                         </Box>
