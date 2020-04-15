@@ -10,7 +10,9 @@ import {
     TableHeader,
     TableRow,
     TableCell,
-    TableBody, Layer, Text
+    TableBody, Layer, Text,
+    Meter,
+
 } from 'grommet'
 import MediaQuery from 'react-responsive'
 import * as assetutils from '../utils/assetutils'
@@ -52,6 +54,7 @@ export default class DetailedAssetScreen extends Component {
         this.generatePDUStatus = this.generatePDUStatus.bind(this);
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
         this.handleCancelRefreshPopupChange = this.handleCancelRefreshPopupChange.bind(this);
+        this.generateVariancesTable = this.generateVariancesTable.bind(this)
     }
 
     static contextTypes = {
@@ -74,7 +77,6 @@ export default class DetailedAssetScreen extends Component {
         this.connectedPDU = null;
         if (!this.props.match.params.storageSiteAbbrev) {
 
-            console.log("ABCD")
             powerutils.checkConnectedToPDU(this.props.match.params.assetID, result => {
                 // if (!(result === null)) {
                 //     console.log(result)
@@ -89,6 +91,7 @@ export default class DetailedAssetScreen extends Component {
                     this.props.match.params.assetID,
                     assetsdb => {
                         this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
+                            console.log(assetsdb)
                             this.setState({
                                 asset: assetsdb
 
@@ -109,7 +112,6 @@ export default class DetailedAssetScreen extends Component {
             });
         }
         else {
-            console.log("EDFG")
             assetutils.getAssetDetails(
                 this.props.match.params.assetID,
                 assetsdb => {
@@ -117,6 +119,7 @@ export default class DetailedAssetScreen extends Component {
                         this.setState({
                             asset: assetsdb,
                             //initialLoaded: true
+
                         }, function () {
                             this.generatePDUStatus(() => {
                               modelutils.getModelByModelname(assetsdb.model, modelDoc => {
@@ -212,31 +215,45 @@ export default class DetailedAssetScreen extends Component {
 
 
     generateVariancesTable() {
-        if (this.state.asset.variances.displayColor !== "" || this.state.asset.variances.cpu !== "" || this.state.asset.variances.memory !== "" || this.state.asset.variances.storage !== "") {
-            //console.log(...Object.keys(this.state.asset.variances))
-            console.log(this.state.model.displayColor)
 
-            return Object.keys(this.state.asset.variances).map((field) => (
+        console.log(this.state)
 
-                this.state.asset.variances[field] !== "" &&
+        return Object.keys(this.state.asset.variances).map((field) => (
 
-                <TableRow>
-                    <TableCell scope="row">
-                        {field}
-                    </TableCell>
-                    <TableCell>{this.state.asset.variances[field]}</TableCell>
-                    <TableCell> {this.state.model[field] === "" ? "N/A" : this.state.model[field]}</TableCell>
-                </TableRow>
-            ))
-        } else {
-            return (
-                <TableRow>
-                    <TableCell scope="row">
-                        <strong>No model variances for this asset.</strong>
-                    </TableCell>
-                </TableRow>
-            )
-        }
+            this.state.model[field] === "" ?
+                <tr>
+                    <td><b>Model {[field]} </b></td>
+                    <td style={{ textAlign: 'right' }}>{this.state.asset.variances[field] !== "" ? this.state.asset.variances[field] + " " + "(Modified from base value N/A)" : "N/A"}</td>
+                </tr>
+                :
+
+                <tr>
+                    <td><b>Model {[field]} </b></td>
+                    <td style={{ textAlign: 'right' }}>{this.state.asset.variances[field] !== "" ? this.state.asset.variances[field] + " " + "(Modified from base value " + this.state.model[field] + ")" : this.state.model[field]}</td>
+                </tr>
+        ))
+    }
+
+    generateModelNetworkPortString() {
+        let result = ""
+        let count = 0;
+        console.log(this.state.model)
+        this.state.model.networkPorts.forEach(port => {
+            count++;
+            if (count == 1) {
+                result = result + port
+            }
+            else {
+                result = result + "," + port
+            }
+        })
+
+        return (
+            <tr>
+                <td><b>Model Network Ports </b></td>
+                <td style={{ textAlign: 'right' }}>{result}</td>
+            </tr>)
+
     }
 
     generatePDUStatus(callback) {
@@ -313,6 +330,7 @@ export default class DetailedAssetScreen extends Component {
           callback()
         }
     }
+
 
     turnAssetOn() {
         if (this.bladeData) {
@@ -694,14 +712,34 @@ export default class DetailedAssetScreen extends Component {
                                             direction='column' justify='start'>
                                             <Heading level='4' margin='none'>Asset Details</Heading>
                                             <table style={{ marginTop: '10px', marginBottom: '10px' }}>
+
                                                 <tbody>
+
+
                                                     <tr>
                                                         <td><b>Hostname</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.hostname}</td>
+                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.hostname === "" ? "N/A" : this.state.asset.hostname}</td>
                                                     </tr>
                                                     <tr>
                                                         <td><b>Model</b></td>
                                                         <td style={{ textAlign: 'right' }}>{this.state.asset.model}</td>
+                                                    </tr>
+                                                    {this.generateVariancesTable()}
+                                                    {/* make sure you've accounted for all fields */}
+                                                    <tr>
+                                                        <td><b>Model Vendor</b></td>
+                                                        <td style={{ textAlign: 'right' }}>{this.state.model.vendor}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><b>Model Number</b></td>
+                                                        <td style={{ textAlign: 'right' }}>{this.state.model.modelNumber}</td>
+                                                    </tr>
+
+                                                    {this.generateModelNetworkPortString()}
+
+                                                    <tr>
+                                                        <td><b>Model Power Ports</b></td>
+                                                        <td style={{ textAlign: 'right' }}>{this.state.model.powerPorts}</td>
                                                     </tr>
                                                     {!this.props.match.params.storageSiteAbbrev && <tr>
                                                         <td><b>Datacenter</b></td>
@@ -800,27 +838,6 @@ export default class DetailedAssetScreen extends Component {
                                                 :
                                                 <Table></Table>
                                             )}
-
-                                            {/* TODO: need to change this after Bletsch's response on piazza post  */}
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow>
-                                                        <TableCell scope="col" border="bottom">
-                                                            <strong>Model Field</strong>
-                                                        </TableCell>
-                                                        <TableCell scope="col" border="bottom">
-                                                            <strong>Model Modification</strong>
-                                                        </TableCell>
-                                                        <TableCell scope="col" border="bottom">
-                                                            <strong>Base Model Value</strong>
-                                                        </TableCell>
-
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {this.generateVariancesTable()}
-                                                </TableBody>
-                                            </Table>
 
 
                                             <span style={{ maxHeight: 100, overflow: 'auto' }}>

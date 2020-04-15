@@ -88,7 +88,11 @@ function getAssetAt(start, callback, field = null, direction = null, selected = 
                   asset_id: doc.id,
                   ...doc.data(),
                   checked: selectAll || (selected && selected.includes(doc.id)),
-                  bladeInfo: idToVendor[doc.id] ? idToVendor[doc.id] : null
+                  bladeInfo: idToVendor[doc.id] ? idToVendor[doc.id] : null,
+                  displayColor: doc.data().variances.displayColor,
+                  cpu: doc.data().variances.cpu,
+                  memory: doc.data().variances.memory,
+                  storage: doc.data().variances.storage
               });
               count++;
               if (count === docSnaps.docs.length) {
@@ -556,7 +560,11 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback, selected = null, 
                           asset_id: doc.id,
                           ...doc.data(),
                           checked: selected && selected.includes(doc.id),
-                          bladeInfo: idToVendor[doc.id] ? idToVendor[doc.id] : null
+                          bladeInfo: idToVendor[doc.id] ? idToVendor[doc.id] : null,
+                          displayColor: doc.data().variances.displayColor,
+                          cpu: doc.data().variances.cpu,
+                          memory: doc.data().variances.memory,
+                          storage: doc.data().variances.storage
                       });
                       count++;
                       if (count === querySnapshot.size) {

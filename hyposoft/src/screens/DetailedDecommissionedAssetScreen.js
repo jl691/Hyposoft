@@ -1,5 +1,5 @@
-import React, {Component} from 'react'
-import {BrowserRouter as Router, Route} from 'react-router-dom'
+import React, { Component } from 'react'
+import { BrowserRouter as Router, Route } from 'react-router-dom'
 import {
     Button,
     Grommet,
@@ -11,7 +11,7 @@ import {
     TableCell,
     TableBody, Text
 } from 'grommet'
-import {View, ShareOption} from "grommet-icons"
+import { View, ShareOption } from "grommet-icons"
 import * as decomutils from '../utils/decommissionutils'
 import * as modelutils from '../utils/modelutils'
 import theme from '../theme'
@@ -19,7 +19,7 @@ import BackButton from '../components/BackButton'
 import BladeChassisView from '../components/BladeChassisView'
 import AppBar from '../components/AppBar'
 import UserMenu from '../components/UserMenu'
-import {ToastsContainer, ToastsStore} from "react-toasts";
+import { ToastsContainer, ToastsStore } from "react-toasts";
 
 export default class DetailedDecommissionedAssetScreen extends Component {
 
@@ -28,7 +28,7 @@ export default class DetailedDecommissionedAssetScreen extends Component {
         this.state = {
             asset: "",
             modelExists: undefined,
-            initialLoaded: false
+            initialLoaded: false,
         }
     }
 
@@ -40,16 +40,19 @@ export default class DetailedDecommissionedAssetScreen extends Component {
         this.setState({
             asset: ""
         });
-        console.log(this.props.match.params.assetID);
+       //console.log(this.props.match.params.assetID);
         decomutils.getAssetDetails(
             this.props.match.params.assetID,
             asset => {
-              console.log(asset);
-              this.setState({
-                asset: asset,
-                initialLoaded: true
+
+                //console.log(asset);
+                this.setState({
+                    asset: asset,
+
+                    initialLoaded: true
+                })
+
             })
-        })
     }
 
     generateNetworkTable() {
@@ -118,90 +121,140 @@ export default class DetailedDecommissionedAssetScreen extends Component {
         }
     }
 
-    doesModelExist() {
-      if (this.state.asset.vendor && this.state.asset.modelNumber && this.state.modelExists === undefined) {
-        modelutils.doesModelDocExist(this.state.asset.vendor,this.state.asset.modelNumber, exist => {
-          this.setState({modelExists: exist})
+    generateVariancesTable() {
+
+
+        return Object.keys(this.state.asset.variances).map((field) => (
+
+            this.state.asset.variances[field] === "" ?
+                <tr>
+                    <td><b>Model {[field]} variance</b></td>
+                    <td style={{ textAlign: 'right' }}>{"N/A"}</td>
+                </tr>
+                :
+
+                <tr>
+                    <td><b>Model {[field]} variance</b></td>
+                    <td style={{ textAlign: 'right' }}>{this.state.asset.variances[field]}</td>
+                </tr>
+        ))
+    }
+
+    generateModelNetworkPortString() {
+        let result = ""
+        let count = 0;
+        console.log(this.state.model)
+        this.state.model.networkPorts.forEach(port => {
+            count++;
+            if (count == 1) {
+                result = result + port
+            }
+            else {
+                result = result + "," + port
+            }
         })
-      }
+
+        return (
+            <tr>
+                <td><b>Model Network Ports </b></td>
+                <td style={{ textAlign: 'right' }}>{result}</td>
+            </tr>)
+
+    }
+
+    doesModelExist() {
+        if (this.state.asset.vendor && this.state.asset.modelNumber && this.state.modelExists === undefined) {
+            modelutils.doesModelDocExist(this.state.asset.vendor, this.state.asset.modelNumber, exist => {
+                this.setState({ modelExists: exist })
+            })
+        }
     }
 
     render() {
-        console.log(this.props.match.params.assetID)
+        //console.log(this.props.match.params.assetID)
         return (
 
             <Router>
                 <React.Fragment>
 
                     {/* CHange exact path to be custom, also call this.props.InstanceIDFromparent */}
-                    <Route path={`/decommissioned/${this.props.match.params.assetID}`}/>
+                    <Route path={`/decommissioned/${this.props.match.params.assetID}`} />
 
                     <Grommet theme={theme} full className='fade'>
                         <Box fill background='light-2' overflow={"auto"}>
                             <AppBar>
                                 {/* {this.props.match.params.vendor} {this.props.match.params.modelNumber} */}
-                                <BackButton alignSelf='start' this={this}/>
+                                <BackButton alignSelf='start' this={this} />
                                 <Heading alignSelf='center' level='4' margin={{
                                     top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
                                 }}>{this.props.match.params.assetID}</Heading>
-                                <UserMenu alignSelf='end' this={this}/>
+                                <UserMenu alignSelf='end' this={this} />
                             </AppBar>
                             <Box
 
                                 align='start'
                                 direction='row'
-                                margin={{left: 'medium', right: 'medium'}}
+                                margin={{ left: 'medium', right: 'medium' }}
                                 justify='start'>
                                 <Box style={{
                                     borderRadius: 10,
                                     borderColor: '#EDEDED'
                                 }}
-                                     direction='row'
+                                    direction='row'
 
-                                     background='#FFFFFF'
-                                     width={'xxlarge'}
-                                     justify='center'
-                                     margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                                     pad='small'>
-                                     {(!this.state.initialLoaded
-                                       ?
-                                       <Box align="center"><Text>Please wait...</Text></Box>
-                                       :
-                                       <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                    background='#FFFFFF'
+                                    width={'xxlarge'}
+                                    justify='center'
+                                    margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                                    pad='small'>
+                                    {(!this.state.initialLoaded
+                                        ?
+                                        <Box align="center"><Text>Please wait...</Text></Box>
+                                        :
+                                        <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
                                             direction='column' justify='start'>
-                                           <Heading level='4' margin='none'>Decommissioned Asset Details</Heading>
-                                           <table style={{marginTop: '10px', marginBottom: '10px'}}>
-                                               <tbody>
-                                               <tr>
-                                                   <td><b>Date and Time (EST)</b></td>
-                                                   <td style={{textAlign: 'right'}}>{this.state.asset.date}</td>
-                                               </tr>
-                                               <tr>
-                                                   <td><b>Hostname</b></td>
-                                                   <td style={{textAlign: 'right'}}>{this.state.asset.hostname}</td>
-                                               </tr>
-                                               <tr>
-                                                   <td><b>Model</b></td>
-                                                   <td style={{textAlign: 'right'}}>{this.state.asset.model}</td>
-                                               </tr>
-                                               <tr>
-                                                   <td><b>Datacenter</b></td>
-                                                   <td style={{textAlign: 'right'}}>{this.state.asset.datacenter || 'N/A'}</td>
-                                               </tr>
-                                               {(this.state.asset.chassisParams && this.state.asset.chassisParams.slot
-                                                    ?
+                                            <Heading level='4' margin='none'>Decommissioned Asset Details</Heading>
+                                            <table style={{ marginTop: '10px', marginBottom: '10px' }}>
+                                                <tbody>
                                                     <tr>
-                                                        <td><b>Chassis Hostname</b></td>
-                                                        <td style={{textAlign: 'right'}}>{this.state.asset.chassisParams.chassisHostname}</td>
+                                                        <td><b>Date and Time (EST)</b></td>
+                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.date}</td>
                                                     </tr>
-                                                    :
-                                                    <tr></tr>
-                                               )}
-                                               {(this.state.asset.chassisParams && this.state.asset.chassisParams.slot
-                                                    ?
                                                     <tr>
-                                                        <td><b>Slot</b></td>
-                                                        <td style={{textAlign: 'right'}}>{this.state.asset.chassisParams.slot}</td>
+                                                        <td><b>Hostname</b></td>
+                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.hostname}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><b>Model</b></td>
+                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.model}</td>
+                                                    </tr>
+                                                    {this.generateVariancesTable()}
+
+                                                    <tr>
+                                                        <td><b>Datacenter</b></td>
+                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.datacenter || 'N/A'}</td>
+                                                    </tr>
+                                                    {(this.state.asset.chassisParams && this.state.asset.chassisParams.slot
+                                                        ?
+                                                        <tr>
+                                                            <td><b>Chassis Hostname</b></td>
+                                                            <td style={{ textAlign: 'right' }}>{this.state.asset.chassisParams.chassisHostname}</td>
+                                                        </tr>
+                                                        :
+                                                        <tr></tr>
+                                                    )}
+                                                    {(this.state.asset.chassisParams && this.state.asset.chassisParams.slot
+                                                        ?
+                                                        <tr>
+                                                            <td><b>Slot</b></td>
+                                                            <td style={{ textAlign: 'right' }}>{this.state.asset.chassisParams.slot}</td>
+                                                        </tr>
+                                                        :
+                                                        <tr></tr>
+                                                    )}
+                                                    <tr>
+                                                        <td><b>{!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot) ? 'Rack' : 'Chassis Rack'}</b></td>
+                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.rack}</td>
                                                     </tr>
                                                     :
                                                     <tr></tr>
@@ -268,8 +321,8 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                                 </Table>
                                                 :
                                                 <Table></Table>
-                                           )}
-                                           {(!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot)
+                                            )}
+                                            {(!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot)
                                                 ?
                                                 <Table>
                                                     <TableHeader>
@@ -288,19 +341,19 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                                 </Table>
                                                 :
                                                 <Table></Table>
-                                           )}
-                                           <span style={{maxHeight: 100, overflow: 'auto'}}>
-                                            {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
-                                                return <div key={key}>{i}</div>
-                                            })}
+                                            )}
+                                            <span style={{ maxHeight: 100, overflow: 'auto' }}>
+                                                {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
+                                                    return <div key={key}>{i}</div>
+                                                })}
                                             </span>
                                             {(this.state.asset.chassisParams
                                                 ?
-                                                <Box flex margin={{top: 'small', bottom: 'small'}}
-                                                     direction='column' justify='start'>
+                                                <Box flex margin={{ top: 'small', bottom: 'small' }}
+                                                    direction='column' justify='start'>
                                                     <Heading level='4' margin='none'>Blade Chassis View</Heading>
-                                                    <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
-                                                         gap='small' align='center'>
+                                                    <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
+                                                        gap='small' align='center'>
                                                         <BladeChassisView
                                                             chassisId={this.state.asset.chassisParams.chassisId}
                                                             chassisHostname={this.state.asset.chassisParams.chassisHostname}
@@ -312,11 +365,11 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                                 </Box>
                                                 :
                                                 <Box></Box>
-                                             )}
-                                         </Box>
-                                     )}
-                                  </Box>
-                                  {(!this.state.initialLoaded
+                                            )}
+                                        </Box>
+                                    )}
+                                </Box>
+                                {(!this.state.initialLoaded
                                     ?
                                     <Box></Box>
                                     :
@@ -324,28 +377,28 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                         borderRadius: 10,
                                         borderColor: '#EDEDED'
                                     }}
-                                         direction='row'
-                                         background='#FFFFFF'
-                                         width={'large'}
-                                         margin={{top: 'medium', left: 'medium', right: 'medium'}}
-                                         pad='small'>
-                                        <Box flex margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
-                                             direction='column' justify='start'>
+                                        direction='row'
+                                        background='#FFFFFF'
+                                        width={'large'}
+                                        margin={{ top: 'medium', left: 'medium', right: 'medium' }}
+                                        pad='small'>
+                                        <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
+                                            direction='column' justify='start'>
                                             <Heading level='4' margin='none'>Asset Actions</Heading>
-                                            <Box direction='column' flex alignSelf='stretch' style={{marginTop: '15px'}}
-                                                 gap='small'>
-                                                {(this.state.modelExists ? <Button icon={<View/>} label="View Model Details" onClick={() => {
+                                            <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
+                                                gap='small'>
+                                                {(this.state.modelExists ? <Button icon={<View />} label="View Model Details" onClick={() => {
                                                     this.props.history.push('/models/' + this.state.asset.vendor + '/' + this.state.asset.modelNumber)
-                                                }}/> : <Box>{this.doesModelExist()}</Box>)}
-                                                <Button icon={<ShareOption/>} label="Network Neighborhood" onClick={() => {
+                                                }} /> : <Box>{this.doesModelExist()}</Box>)}
+                                                <Button icon={<ShareOption />} label="Network Neighborhood" onClick={() => {
                                                     this.props.history.push('/networkneighborhood/' + this.props.match.params.assetID)
-                                                }}/>
+                                                }} />
                                             </Box>
                                         </Box>
                                     </Box>
-                                  )}
+                                )}
                             </Box>
-                            <ToastsContainer store={ToastsStore}/>
+                            <ToastsContainer store={ToastsStore} />
                         </Box>
                     </Grommet>
                 </React.Fragment>
