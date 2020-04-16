@@ -241,20 +241,25 @@ function moveAssetFromOfflineStorage(assetID, datacenter, rack, rackU, callback,
         } else {
             let data = querySnapshot.docs[0].data();
             console.log(moveFunction)
-            moveFunction(data.assetId, data.model, data.hostname, rack, parseInt(rackU), data.owner, data.comment, datacenter, {}, [], [],
-                data.variances["displayColor"], data.variances["memory"], data.variances["storage"], data.variances["cpu"], result => {
-                    if(!result){
-                        let parentDoc = querySnapshot.docs[0].ref.parent.parent;
-                        offlinestorageRef.doc(parentDoc.id).collection("offlineAssets").doc(String(assetID)).delete().then(function () {
-                            logutils.addLog(data.assetId,logutils.ASSET(),logutils.MOVE(),data)
-                            callback(null);
-                        }).catch(function () {
-                            callback("Could not remove the asset from offline storage.");
-                        })
-                    } else {
-                        callback(result);
-                    }
-                },/*changePlanID*/ null, /*changeDocID*/ null, /*chassis*/ null, /*noLog*/ true)
+            // remove assetId from doc to pass uniqueId check
+            querySnapshot.docs[0].ref.update({assetId: ''}).then(() => {
+              moveFunction(data.assetId, data.model, data.hostname, rack, parseInt(rackU), data.owner, data.comment, datacenter, {}, [], [],
+                  data.variances["displayColor"], data.variances["memory"], data.variances["storage"], data.variances["cpu"], result => {
+                      if(!result){
+                          let parentDoc = querySnapshot.docs[0].ref.parent.parent;
+                          offlinestorageRef.doc(parentDoc.id).collection("offlineAssets").doc(String(assetID)).delete().then(function () {
+                              logutils.addLog(data.assetId,logutils.ASSET(),logutils.MOVE(),data)
+                              callback(null);
+                          }).catch(function () {
+                              // reset assetId
+                              querySnapshot.docs[0].ref.update({assetId: String(assetID)}).then(() => callback("Could not remove the asset from offline storage."))
+                          })
+                      } else {
+                          // reset assetId
+                          querySnapshot.docs[0].ref.update({assetId: String(assetID)}).then(() => callback(result))
+                      }
+                  },/*changePlanID*/ null, /*changeDocID*/ null, /*chassis*/ null, /*noLog*/ true)
+            })
         }
     })
 }

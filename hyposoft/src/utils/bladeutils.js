@@ -4,7 +4,7 @@ import * as decomutils from '../utils/decommissionutils'
 import * as datacenterutils from './datacenterutils'
 import * as offlineutils from './offlinestorageutils'
 
-function addChassis(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu,callback, changePlanID = null, changeDocID = null) {
+function addChassis(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu,callback, changePlanID = null, changeDocID = null, doNothing = null, noLog = false) {
     assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu,(errorMessage,id) => {
         if (!errorMessage && id) {
             // add collection to rack
@@ -33,7 +33,7 @@ function addChassis(overrideAssetID, model, hostname, rack, racku, owner, commen
         } else {
             callback(errorMessage)
         }
-    }, changePlanID, changeDocID)
+    }, changePlanID, changeDocID, null, noLog)
 }
 
 function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
@@ -154,7 +154,7 @@ function deleteChassis(assetID, callback, isDecommission = false, doNothing = nu
     })
 }
 
-function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null) {
+function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null, doNothing = null, noLog = false) {
     const split = chassisHostname.split(' ')
     let findChassis = split.length > 1 ? firebaseutils.assetRef.where('assetId','==',split.slice(-1)[0]) : firebaseutils.assetRef.where('hostname','==',chassisHostname)
     findChassis.where('datacenter','==',datacenter).get().then(qs => {
@@ -191,7 +191,7 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
                 }
                 callback(errorMessage)
                 return
-            }, changePlanID, changeDocID, {hostname: chassisHostname, slot: slot, id: chassisId})
+            }, changePlanID, changeDocID, {hostname: chassisHostname, slot: slot, id: chassisId}, noLog)
         } else {
             callback('blade chassis ' + chassisHostname +' does not exist in datacenter ' + datacenter)
         }
