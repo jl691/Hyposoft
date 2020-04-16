@@ -241,7 +241,7 @@ function moveAssetFromOfflineStorage(assetID, datacenter, rack, rackU, callback,
         } else {
             let data = querySnapshot.docs[0].data();
             console.log(moveFunction)
-            moveFunction(data.assetId, data.model, data.hostname, rack, rackU, data.owner, data.comment, datacenter, [], [], [],
+            moveFunction(data.assetId, data.model, data.hostname, rack, parseInt(rackU), data.owner, data.comment, datacenter, {}, [], [],
                 data.variances["displayColor"], data.variances["memory"], data.variances["storage"], data.variances["cpu"], result => {
                     if(!result){
                         let parentDoc = querySnapshot.docs[0].ref.parent.parent;
