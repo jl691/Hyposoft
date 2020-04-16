@@ -14,6 +14,7 @@ import EditAssetForm from "./EditAssetForm";
 import * as assetmacutils from "../utils/assetmacutils"
 import * as assetnetworkportutils from "../utils/assetnetworkportutils"
 import DecommissionAssetPopup from "./DecommissionAssetPopup";
+import MoveAssetForm from "./MoveAssetForm";
 
 class AddChangeForm extends React.Component {
 
@@ -50,19 +51,18 @@ class AddChangeForm extends React.Component {
         })
     }
 
-    getAssetsList(edit) {
+    getAssetsList(type) {
         let newMenuItems = [];
-        let action = edit ? "Update" : "delete";
-        let dbAction = edit ? "edit" : "decommission";
+        let action = type === "edit" ? "Update" : (type === "decommission" ? "delete" : "move");
         if (this.state.assetsLoaded) {
             this.menuItems.forEach(menuItem => {
                 newMenuItems.push({
                     label: menuItem,
                     onClick: () => {
-                        changeplanutils.checkChangeAlreadyExists(this.props.match.params.changePlanID, this.assetData.get(menuItem).assetId, dbAction, exists => {
+                        changeplanutils.checkChangeAlreadyExists(this.props.match.params.changePlanID, this.assetData.get(menuItem).assetId, type, exists => {
                             console.log(exists)
                             if(exists){
-                                ToastsStore.error("A(n) " + dbAction + " change with asset #" + this.assetData.get(menuItem).assetId + " already exists in this change plan - please modify that change instead.")
+                                ToastsStore.error("A(n) " + type + " change with asset #" + this.assetData.get(menuItem).assetId + " already exists in this change plan - please modify that change instead.")
                             } else {
                                 this.setState({
                                     selected: menuItem,
@@ -152,6 +152,8 @@ class AddChangeForm extends React.Component {
                         updatePowerConnectionsFromParent={selectedData.powerConnections}
                         updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(selectedData.networkConnections)}
 
+                        offlineStorage={selectedData.offlineAbbrev ? selectedData.offlineAbbrev : null}
+
                         updateDisplayColorFromParent={selectedData.variances.displayColor}
                         updateCpuFromParent={selectedData.variances.cpu}
                         updateMemoryFromParent={selectedData.variances.memory}
@@ -177,6 +179,24 @@ class AddChangeForm extends React.Component {
                         decommissionModel={selectedData.model}
                         parentCallback={this.handleCancelPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
+
+                        offlineStorage={selectedData.offlineAbbrev ? selectedData.offlineAbbrev : null}
+                    />
+                </Layer>
+            )
+        } else if(popupType === 'move'){
+            let selectedData = this.assetData.get(this.state.selected);
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({popupType: undefined})}
+                       onClickOutside={() => this.setState({popupType: undefined})}>
+                    <MoveAssetForm
+                        success={this.handleCancelPopupChange}
+                        cancelCallback={this.handleCancelPopupChange}
+                        changePlanID={this.props.match.params.changePlanID}
+                        assetID={selectedData.assetId}
+                        model={selectedData.model}
+                        location={selectedData.offlineAbbrev ? "offline" : "rack"}
+                        currentLocation={selectedData.offlineAbbrev ? "offline storage site " + selectedData.offlineAbbrev : "datacenter " + selectedData.datacenter + " on rack " + selectedData.rack + " at height " + selectedData.rackU}
                     />
                 </Layer>
             )
@@ -240,7 +260,7 @@ class AddChangeForm extends React.Component {
                                     <Heading level='4' margin='none'>Edit asset</Heading>
                                     <p>Edit an existing asset in the change plan.</p>
                                     <Box direction='column' flex alignSelf='stretch'>
-                                        {this.getAssetsList(true)}
+                                        {this.getAssetsList("edit")}
                                     </Box>
                                 </Box>
                             </Box>
@@ -260,7 +280,27 @@ class AddChangeForm extends React.Component {
                                     <Heading level='4' margin='none'>Decommission asset</Heading>
                                     <p>Decommission an existing asset in the change plan.</p>
                                     <Box direction='column' flex alignSelf='stretch'>
-                                        {this.getAssetsList(false)}
+                                        {this.getAssetsList("decommission")}
+                                    </Box>
+                                </Box>
+                            </Box>
+                            <Box style={{
+                                borderRadius: 10,
+                                borderColor: '#EDEDED'
+                            }}
+                                 direction='row'
+                                 alignSelf='stretch'
+                                 background='#FFFFFF'
+                                 width={'large'}
+                                 margin={{top: 'medium', left: 'medium', right: 'medium'}}
+                                 pad='small'>
+                                <Box flex
+                                     margin={{left: 'medium', top: 'small', bottom: 'small', right: 'medium'}}
+                                     direction='column' justify='start' align={"center"}>
+                                    <Heading level='4' margin='none'>Move asset</Heading>
+                                    <p>Move an existing asset to or from an offline storage site in the change plan.</p>
+                                    <Box direction='column' flex alignSelf='stretch'>
+                                        {this.getAssetsList("move")}
                                     </Box>
                                 </Box>
                             </Box>

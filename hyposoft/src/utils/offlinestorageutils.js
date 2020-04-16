@@ -181,6 +181,7 @@ function getInfoFromName(name, callback){
 }
 
 function moveAssetToOfflineStorage(assetID, offlineStorageName, callback, moveFunction){
+    console.log(moveFunction)
     console.log(offlineStorageName)
     getInfoFromName(offlineStorageName, (offlineStorageAbbrev, offlineStorageID) => {
         if(offlineStorageID){

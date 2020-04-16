@@ -788,6 +788,7 @@ function deleteAsset(assetID, callback, isDecommission = false, offlineStorage =
                             if (result) {
                                 console.log("checkpoint 3")
                                 if (offlineStorage) {
+                                    console.log("here1")
                                     offlinestorageutils.getInfoFromAbbrev(offlineStorage, (offlineName, offlineID) => {
                                         if (offlineName) {
                                             offlinestorageRef.doc(offlineID).collection("offlineAssets").doc(assetID).delete().then(function () {
@@ -803,6 +804,7 @@ function deleteAsset(assetID, callback, isDecommission = false, offlineStorage =
                                         }
                                     })
                                 } else {
+                                    console.log("here2")
                                     assetRef.doc(assetID).delete().then(function () {
                                         racksRef.doc(String(rackID)).update({
                                             assets: firebase.firestore.FieldValue.arrayRemove(assetID)
@@ -1057,7 +1059,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                             callback("Error adding asset to the specified change plan.")
                                                                                                         }
                                                                                                         //assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, assetID);
-                                                                                                    }, changeDocID);
+                                                                                                    }, changeDocID, offlineStorageAbbrev);
                                                                                                 }
                                                                                             }
                                                                                         }, assetID, offlineStorageAbbrev)
@@ -1204,15 +1206,36 @@ function getAllAssetsList(callback) {
         if (querySnapshot.empty) {
             callback(null);
         } else {
-            querySnapshot.forEach(doc => {
-                if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.doesLoggedInUserHaveAssetPerm(doc.data().datacenterAbbrev)) {
-                    assetArray.push(doc.data().assetId + " - " + doc.data().model + " - " + doc.data().hostname);
-                    assetData.set(doc.data().assetId + " - " + doc.data().model + " - " + doc.data().hostname, doc.data());
-                }
-                count++;
-                if (count === querySnapshot.size) {
-                    callback(assetArray, assetData);
-                }
+            db.collectionGroup("offlineAssets").get().then(function (offlineQuerySnapshot) {
+                querySnapshot.forEach(doc => {
+                    if (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.doesLoggedInUserHaveAssetPerm(doc.data().datacenterAbbrev)) {
+                        assetArray.push(doc.data().assetId + " - " + doc.data().model + " - " + doc.data().hostname);
+                        assetData.set(doc.data().assetId + " - " + doc.data().model + " - " + doc.data().hostname, {...doc.data(), location: "rack"});
+                    }
+                    count++;
+                    if (count === querySnapshot.size) {
+                        count = 0;
+                        if(offlineQuerySnapshot.empty){
+                            callback(assetArray, assetData);
+                        } else {
+                            offlineQuerySnapshot.forEach(offlineDoc => {
+                                let parent = offlineDoc.ref.parent.parent;
+                                parent.get().then(function (parentDoc) {
+                                    if(parentDoc.exists){
+                                        assetArray.push(offlineDoc.data().assetId + " - " + offlineDoc.data().model + " - " + offlineDoc.data().hostname);
+                                        assetData.set(offlineDoc.data().assetId + " - " + offlineDoc.data().model + " - " + offlineDoc.data().hostname, {...offlineDoc.data(), location: "offline", offlineAbbrev: parentDoc.data().abbreviation});
+                                        count++;
+                                        if(count === offlineQuerySnapshot.size){
+                                            callback(assetArray, assetData);
+                                        }
+                                    } else {
+                                        callback(null);
+                                    }
+                                });
+                            });
+                        }
+                    }
+                })
             })
         }
     }).catch(function () {
