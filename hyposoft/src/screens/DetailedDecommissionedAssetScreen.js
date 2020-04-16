@@ -252,13 +252,6 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                                         :
                                                         <tr></tr>
                                                     )}
-                                                    <tr>
-                                                        <td><b>{!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot) ? 'Rack' : 'Chassis Rack'}</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.rack}</td>
-                                                    </tr>
-                                                    :
-                                                    <tr></tr>
-                                               )}
                                                <tr>
                                                    <td><b>{!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot) ? 'Rack' : 'Chassis Rack'}</b></td>
                                                    <td style={{textAlign: 'right'}}>{this.state.asset.rack}</td>
@@ -297,7 +290,7 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                                         {this.generateNetworkTable()}
                                                     </TableBody>
                                                 </Table>
-                                                
+
                                            )}
                                            {(!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot)
                                                 ?
