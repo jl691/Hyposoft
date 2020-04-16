@@ -181,6 +181,7 @@ function getInfoFromName(name, callback){
 }
 
 function moveAssetToOfflineStorage(assetID, offlineStorageName, callback, moveFunction){
+    console.log(moveFunction)
     console.log(offlineStorageName)
     getInfoFromName(offlineStorageName, (offlineStorageAbbrev, offlineStorageID) => {
         if(offlineStorageID){
@@ -209,9 +210,9 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback, moveFu
                                         console.log("6")
                                         callback(null);
                                     }
-                                }, true /*do this to allow no logged deletion*/, offlineStorageName /*this is for updateChassis, shouldn't affect other methods*/)
-                            }).catch(function () {
-                                console.log("5")
+                                }, true /*do this to allow no logged deletion*/, null/*offlineStorageName*/ /*this is for updateChassis, shouldn't affect other methods*/)
+                            }).catch(function (error) {
+                                console.log("5", error)
                                 callback(null);
                             })
                         } else {
