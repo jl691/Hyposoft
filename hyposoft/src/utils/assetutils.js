@@ -40,7 +40,7 @@ function getAsset(callback, field = null, direction = null, selected = null, sto
         } else {
             console.log(docSnaps)
             const startAfter = docSnaps.docs[docSnaps.docs.length - 1];
-            bladeutils.getBladeIds((bladeIds,idToVendor) => {
+            bladeutils.getBladeIds(idToVendor => {
               docSnaps.docs.forEach(doc => {
                   assets.push({
                       asset_id: doc.id,
@@ -82,13 +82,17 @@ function getAssetAt(start, callback, field = null, direction = null, selected = 
     let count = 0;
     query.get().then(docSnaps => {
         const newStart = docSnaps.docs[docSnaps.docs.length - 1];
-        bladeutils.getBladeIds((bladeIds,idToVendor) => {
+        bladeutils.getBladeIds(idToVendor => {
           docSnaps.docs.forEach(doc => {
               assets.push({
                   asset_id: doc.id,
                   ...doc.data(),
                   checked: selectAll || (selected && selected.includes(doc.id)),
-                  bladeInfo: idToVendor[doc.id] ? idToVendor[doc.id] : null
+                  bladeInfo: idToVendor[doc.id] ? idToVendor[doc.id] : null,
+                  displayColor: doc.data().variances.displayColor,
+                  cpu: doc.data().variances.cpu,
+                  memory: doc.data().variances.memory,
+                  storage: doc.data().variances.storage
               });
               count++;
               if (count === docSnaps.docs.length) {
@@ -293,11 +297,11 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                     suffixes_list.push(_owner)
                                                                                 }
 
-                                                                                // index.saveObject({
-                                                                                //     ...assetObject,
-                                                                                //     objectID: overrideAssetID,
-                                                                                //     suffixes: suffixes_list.join(' ')
-                                                                                // })
+                                                                                index.saveObject({
+                                                                                    ...assetObject,
+                                                                                    objectID: overrideAssetID,
+                                                                                    suffixes: suffixes_list.join(' ')
+                                                                                })
                                                                                 assetRef.doc(overrideAssetID).set(assetObject).then(function (docRef) {
                                                                                     assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, overrideAssetID);
 
@@ -427,11 +431,11 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                 suffixes_list.push(_owner)
                                                                             }
 
-                                                                            // index.saveObject({
-                                                                            //     ...assetObject,
-                                                                            //     objectID: newID,
-                                                                            //     suffixes: suffixes_list.join(' ')
-                                                                            // })
+                                                                            index.saveObject({
+                                                                                ...assetObject,
+                                                                                objectID: newID,
+                                                                                suffixes: suffixes_list.join(' ')
+                                                                            })
 
                                                                             assetRef.doc(newID)
                                                                                 .set(assetObject).then(function (docRef) {
@@ -506,7 +510,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                 })
 
 
-                                            })
+                                            }, null, null, chassis)
 
                                         }
                                     }, null, null, chassis)
@@ -548,7 +552,7 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback, selected = null, 
     }
     query.get().then(querySnapshot => {
         let count = 0;
-        bladeutils.getBladeIds((bladeIds,idToVendor) => {
+        bladeutils.getBladeIds(idToVendor => {
           querySnapshot.forEach(doc => {
               datacenterutils.getAbbreviationFromID(doc.data().datacenterID, datacenterAbbrev => {
                   if (datacenterAbbrev) {
@@ -556,7 +560,11 @@ function sortAssetsByRackAndRackU(rackAsc, rackUAsc, callback, selected = null, 
                           asset_id: doc.id,
                           ...doc.data(),
                           checked: selected && selected.includes(doc.id),
-                          bladeInfo: idToVendor[doc.id] ? idToVendor[doc.id] : null
+                          bladeInfo: idToVendor[doc.id] ? idToVendor[doc.id] : null,
+                          displayColor: doc.data().variances.displayColor,
+                          cpu: doc.data().variances.cpu,
+                          memory: doc.data().variances.memory,
+                          storage: doc.data().variances.storage
                       });
                       count++;
                       if (count === querySnapshot.size) {
@@ -761,7 +769,7 @@ function deleteAsset(assetID, callback, isDecommission = false, offlineStorage =
                                             if (!isDecommission) {
                                                 logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
                                             }
-                                            // index.deleteObject(assetID)
+                                            index.deleteObject(assetID)
                                             callback(assetID);
                                         })
                                     }).catch(function (error) {
@@ -788,7 +796,7 @@ function deleteAsset(assetID, callback, isDecommission = false, offlineStorage =
                                                 if (!isDecommission) {
                                                     logutils.addLog(assetID, logutils.OFFLINE(), logutils.DELETE(), docData)
                                                 }
-                                                // index.deleteObject(assetID)
+                                                index.deleteObject(assetID)
                                                 callback(assetID);
                                             })
                                         } else {
@@ -805,7 +813,7 @@ function deleteAsset(assetID, callback, isDecommission = false, offlineStorage =
                                             if (!isDecommission) {
                                                 logutils.addLog(assetID, logutils.ASSET(), logutils.DELETE(), docData)
                                             }
-                                            // index.deleteObject(assetID)
+                                            index.deleteObject(assetID)
                                             callback(assetID);
                                         })
                                     }).catch(function (error) {
@@ -1006,11 +1014,11 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                             let _owner = assetObject.owner
 
 
-                                                                                                            // index.saveObject({
-                                                                                                            //     ...assetObject,
-                                                                                                            //     objectID: assetID,
-                                                                                                            //     suffixes: suffixes_list.join(' ')
-                                                                                                            // })
+                                                                                                            index.saveObject({
+                                                                                                                ...assetObject,
+                                                                                                                objectID: assetID,
+                                                                                                                suffixes: suffixes_list.join(' ')
+                                                                                                            })
                                                                                                             if (offlineStorageAbbrev) {
                                                                                                                 console.log("checkpoint15")
                                                                                                                 offlinestorageutils.getInfoFromAbbrev(offlineStorageAbbrev, (offlineName, offlineID) => {
@@ -1059,7 +1067,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
 
 
                                                                                 }, offlineStorageAbbrev)
-                                                                            }, oldNetworkConnections, offlineStorageAbbrev)
+                                                                            }, oldNetworkConnections, offlineStorageAbbrev, chassis, assetID)
                                                                         })
                                                                     }, offlineStorageAbbrev, chassis)
                                                                 }

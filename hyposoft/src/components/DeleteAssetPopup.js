@@ -46,7 +46,7 @@ export default class DeleteAssetPopup extends Component {
 
     determineDeleteFunction(callback) {
        modelutils.getModelByModelname(this.props.deleteModel, doc => {
-           if (doc) {
+           if (doc && !this.props.offlineStorage) {
                switch (doc.data().mount) {
                  case 'chassis':
                    this.deleteFunction = bladeutils.deleteChassis

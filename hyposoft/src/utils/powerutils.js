@@ -86,14 +86,12 @@ function checkConnectedToPDU(assetID, callback){
           firebaseutils.modelsRef.doc(docSnapshot.data().modelId).get().then(doc => {
             if (doc.exists && doc.data().mount === "blade") {
                 firebaseutils.bladeRef.doc(assetID).get().then(doc => {
-                    if (doc.exists) {
-                      firebaseutils.assetRef.doc(doc.data().chassisId).get().then(doc => {
-                          callback(doc.exists && doc.data().vendor.toUpperCase() === "BMI")
-                      })
-                    } else {
-                      callback(null)
-                    }
+                    const split = doc.data().rack.split(' ')
+                    callback(doc.exists && doc.data().chassisVendor.toUpperCase() === "BMI" && split.length === 1 ? 'bcman' : null)
                 })
+            } else if (doc.exists && doc.data().mount === "chassis" && docSnapshot.data().vendor.toUpperCase() === "BMI" && docSnapshot.data().hostname) {
+                // allow chassis to fall through to last else statement
+                callback('bcman')
             } else {
                 console.log(docSnapshot.data());
                 console.log(docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1");
@@ -106,9 +104,9 @@ function checkConnectedToPDU(assetID, callback){
                 console.log(docSnapshot.data().powerConnections.length)
                 if(docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1" && docSnapshot.data().rackRow.charCodeAt(0) >= 65 && docSnapshot.data().rackRow.charCodeAt(0) <= 69 && parseInt(docSnapshot.data().rackNum) >= 1 && parseInt(docSnapshot.data().rackNum) <= 19 && docSnapshot.data().powerConnections && docSnapshot.data().powerConnections.length){
                     console.log("Should be true")
-                    callback(true);
+                    callback('pdu');
                 } else {
-                    callback(false);
+                    callback(null);
                 }
             }
           })

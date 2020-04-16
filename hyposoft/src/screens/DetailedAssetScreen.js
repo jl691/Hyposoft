@@ -10,8 +10,11 @@ import {
     TableHeader,
     TableRow,
     TableCell,
-    TableBody, Layer, Text
+    TableBody, Layer, Text,
+    Meter,
+
 } from 'grommet'
+import MediaQuery from 'react-responsive'
 import * as assetutils from '../utils/assetutils'
 import * as modelutils from '../utils/modelutils'
 import * as bladeutils from '../utils/bladeutils'
@@ -36,6 +39,7 @@ export default class DetailedAssetScreen extends Component {
     connectedPDU;
     bladeData = null
     chassisSlots = null
+    hasPortConnections = 0
 
     constructor(props) {
         super(props);
@@ -50,6 +54,7 @@ export default class DetailedAssetScreen extends Component {
         this.generatePDUStatus = this.generatePDUStatus.bind(this);
         this.handleCancelPopupChange = this.handleCancelPopupChange.bind(this);
         this.handleCancelRefreshPopupChange = this.handleCancelRefreshPopupChange.bind(this);
+        this.generateVariancesTable = this.generateVariancesTable.bind(this)
     }
 
     static contextTypes = {
@@ -72,20 +77,21 @@ export default class DetailedAssetScreen extends Component {
         this.connectedPDU = null;
         if (!this.props.match.params.storageSiteAbbrev) {
 
-            console.log("ABCD")
             powerutils.checkConnectedToPDU(this.props.match.params.assetID, result => {
-                if (!(result === null)) {
-                    console.log(result)
-                    if (result) {
-                        this.connectedPDU = true;
-                    } else {
-                        this.connectedPDU = false;
-                    }
-                }
+                // if (!(result === null)) {
+                //     console.log(result)
+                //     if (result) {
+                //         this.connectedPDU = true;
+                //     } else {
+                //         this.connectedPDU = false;
+                //     }
+                // }
+                this.connectedPDU = result;
                 assetutils.getAssetDetails(
                     this.props.match.params.assetID,
                     assetsdb => {
                         this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
+                            console.log(assetsdb)
                             this.setState({
                                 asset: assetsdb
 
@@ -106,7 +112,6 @@ export default class DetailedAssetScreen extends Component {
             });
         }
         else {
-            console.log("EDFG")
             assetutils.getAssetDetails(
                 this.props.match.params.assetID,
                 assetsdb => {
@@ -114,6 +119,7 @@ export default class DetailedAssetScreen extends Component {
                         this.setState({
                             asset: assetsdb,
                             //initialLoaded: true
+
                         }, function () {
                             this.generatePDUStatus(() => {
                               modelutils.getModelByModelname(assetsdb.model, modelDoc => {
@@ -209,31 +215,45 @@ export default class DetailedAssetScreen extends Component {
 
 
     generateVariancesTable() {
-        if (this.state.asset.variances.displayColor !== "" || this.state.asset.variances.cpu !== "" || this.state.asset.variances.memory !== "" || this.state.asset.variances.storage !== "") {
-            //console.log(...Object.keys(this.state.asset.variances))
-            console.log(this.state.model.displayColor)
 
-            return Object.keys(this.state.asset.variances).map((field) => (
+        console.log(this.state)
 
-                this.state.asset.variances[field] !== "" &&
+        return Object.keys(this.state.asset.variances).map((field) => (
 
-                <TableRow>
-                    <TableCell scope="row">
-                        {field}
-                    </TableCell>
-                    <TableCell>{this.state.asset.variances[field]}</TableCell>
-                    <TableCell> {this.state.model[field] === "" ? "N/A" : this.state.model[field]}</TableCell>
-                </TableRow>
-            ))
-        } else {
-            return (
-                <TableRow>
-                    <TableCell scope="row">
-                        <strong>No model variances for this asset.</strong>
-                    </TableCell>
-                </TableRow>
-            )
-        }
+            this.state.model[field] === "" ?
+                <tr>
+                    <td><b>Model {[field]} </b></td>
+                    <td style={{ textAlign: 'right' }}>{this.state.asset.variances[field] !== "" ? this.state.asset.variances[field] + " " + "(Modified from base value N/A)" : "N/A"}</td>
+                </tr>
+                :
+
+                <tr>
+                    <td><b>Model {[field]} </b></td>
+                    <td style={{ textAlign: 'right' }}>{this.state.asset.variances[field] !== "" ? this.state.asset.variances[field] + " " + "(Modified from base value " + this.state.model[field] + ")" : this.state.model[field]}</td>
+                </tr>
+        ))
+    }
+
+    generateModelNetworkPortString() {
+        let result = ""
+        let count = 0;
+        console.log(this.state.model)
+        this.state.model.networkPorts.forEach(port => {
+            count++;
+            if (count == 1) {
+                result = result + port
+            }
+            else {
+                result = result + "," + port
+            }
+        })
+
+        return (
+            <tr>
+                <td><b>Model Network Ports </b></td>
+                <td style={{ textAlign: 'right' }}>{result}</td>
+            </tr>)
+
     }
 
     generatePDUStatus(callback) {
@@ -242,26 +262,39 @@ export default class DetailedAssetScreen extends Component {
             if (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner) {
                 ToastsStore.info("Click a refresh button by a PDU status to power cycle it.", 5000);
             }
-            if (this.bladeData) {
-              powerutils.getBladeStatus(this.bladeData.rack,this.bladeData.rackU, result => {
-                  let toggle;
-                  if (result === null) {
-                      ToastsStore.info("BCMAN power status is currently unavailable due to network issues.")
-                      toggle = false;
-                  } else {
-                      toggle = result === "ON" ? true : false;
-                  }
-                  this.powerPorts.push({
-                    name: this.bladeData.rack,
-                    port: this.bladeData.rackU
+            let fromBlade = 0
+            if (this.connectedPDU === 'bcman' && (this.bladeData || this.chassisSlots)) {
+              const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
+              fromBlade = eachFor.length
+              eachFor.forEach(powerPiece => {
+                  const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+                  const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+                  powerutils.getBladeStatus(host, slot, result => {
+                      let toggle;
+                      if (result === null) {
+                          ToastsStore.info("BCMAN power status is currently unavailable due to network issues.")
+                          toggle = false;
+                      } else {
+                          toggle = result === "ON" ? true : false;
+                      }
+                      this.powerPorts.push({
+                        name: host,
+                        port: slot
+                      })
+                      this.setState({
+                          [host + ":" + slot]: toggle
+                      })
+                      if (this.powerPorts.length === eachFor.length + Object.keys(this.state.asset.powerConnections).length) {
+                          this.setState({
+                              powerMap: true
+                          })
+                          callback()
+                          return
+                      }
                   })
-                  this.setState({
-                      [this.bladeData.rack + ":" + this.bladeData.rackU]: toggle,
-                      powerMap: true
-                  })
-                  callback()
               })
-            } else {
+            }
+              this.hasPortConnections = Object.keys(this.state.asset.powerConnections).length
               Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
                   let formattedNum;
                   if (this.state.asset.rackNum.toString().length === 1) {
@@ -285,7 +318,7 @@ export default class DetailedAssetScreen extends Component {
                           ["hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port]: toggle
                       })
                       // this.state.powerStatuses.set("hpdu-rtp1-" + this.state.asset.rackRow + formattedNum + this.state.asset.powerConnections[pduConnections].pduSide.charAt(0) + ":" + this.state.asset.powerConnections[pduConnections].port, toggle);
-                      if (this.powerPorts.length === Object.keys(this.state.asset.powerConnections).length) {
+                      if (this.powerPorts.length === Object.keys(this.state.asset.powerConnections).length + fromBlade) {
                           this.setState({
                               powerMap: true
                           })
@@ -293,24 +326,33 @@ export default class DetailedAssetScreen extends Component {
                       }
                   })
               })
-            }
         } else {
           callback()
         }
     }
 
+
     turnAssetOn() {
         if (this.bladeData) {
-          powerutils.changeBladePower(this.bladeData.rack, this.bladeData.rackU, (result) => {
-              if (result) {
-                  this.setState({
-                      [this.bladeData.rack + ":" + this.bladeData.rackU]: true
-                  });
-                  ToastsStore.success("Successfully turned on the asset!")
-              } else {
-                  ToastsStore.info("Could not power on due to network connectivity issues.")
-              }
-          },"ON")
+          let count = 0;
+          const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
+          eachFor.forEach(powerPiece => {
+            const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+            const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+            powerutils.changeBladePower(host, slot, (result) => {
+                if (result) {
+                    this.setState({
+                        [host + ":" + slot]: true
+                    });
+                    count++;
+                    if (count === eachFor.length) {
+                        ToastsStore.success("Successfully turned on the asset!")
+                    }
+                } else {
+                    ToastsStore.info("Could not power on due to network connectivity issues.")
+                }
+            },"ON")
+          })
         } else {
           let count = 0;
           Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
@@ -339,16 +381,25 @@ export default class DetailedAssetScreen extends Component {
 
     turnAssetOff() {
       if (this.bladeData) {
-        powerutils.changeBladePower(this.bladeData.rack, this.bladeData.rackU, (result) => {
-            if (result) {
-                this.setState({
-                    [this.bladeData.rack + ":" + this.bladeData.rackU]: false
-                });
-                ToastsStore.success("Successfully turned off the asset!")
-            } else {
-                ToastsStore.info("Could not power off due to network connectivity issues.")
-            }
-        },"OFF")
+        let count = 0;
+        const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
+        eachFor.forEach(powerPiece => {
+          const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+          const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+          powerutils.changeBladePower(host, slot, (result) => {
+              if (result) {
+                  this.setState({
+                      [host + ":" + slot]: false
+                  });
+                  count++;
+                  if (count === eachFor.length) {
+                      ToastsStore.success("Successfully turned off the asset!")
+                  }
+              } else {
+                  ToastsStore.info("Could not power off due to network connectivity issues.")
+              }
+          },"OFF")
+        })
       } else {
         let count = 0;
         Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
@@ -377,27 +428,44 @@ export default class DetailedAssetScreen extends Component {
 
     powerCycleAsset() {
       if (this.bladeData) {
-        powerutils.changeBladePower(this.bladeData.rack, this.bladeData.rackU, result => {
-            if (result) {
-                this.setState({
-                    [this.bladeData.rack + ":" + this.bladeData.rackU]: false
-                });
-                setTimeout(() => {
-                    powerutils.changeBladePower(this.bladeData.rack, this.bladeData.rackU, result => {
-                        if (result) {
-                            this.setState({
-                                [this.bladeData.rack + ":" + this.bladeData.rackU]: true
-                            });
-                            ToastsStore.success("Power cycled " + this.bladeData.rack + ":" + this.bladeData.rackU + " successfully!");
-                        } else {
-                            ToastsStore.error("Could not power cycle due to network connectivity issues.")
-                        }
-                    },"ON")
-                }, 2000)
-            } else {
-                ToastsStore.error("Could not power cycle due to network connectivity issues.")
-            }
-        },"OFF")
+        let count = 0;
+        const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
+        eachFor.forEach(powerPiece => {
+          const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+          const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+          powerutils.changeBladePower(host, slot, result => {
+              if (result) {
+                  this.setState({
+                      [host + ":" + slot]: false
+                  });
+                  count++;
+                  if (count === eachFor.length) {
+                    setTimeout(() => {
+                        count = 0;
+                        eachFor.forEach(powerPiece => {
+                          const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
+                          const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
+                          powerutils.changeBladePower(host, slot, result => {
+                              if (result) {
+                                  this.setState({
+                                      [host + ":" + slot]: true
+                                  });
+                                  count++;
+                                  if (count === eachFor.length) {
+                                      ToastsStore.success("Successfully power cycled the asset!")
+                                  }
+                              } else {
+                                  ToastsStore.error("Could not power cycle due to network connectivity issues.")
+                              }
+                          },"ON")
+                        })
+                    }, 2000)
+                  }
+              } else {
+                  ToastsStore.error("Could not power cycle due to network connectivity issues.")
+              }
+          },"OFF")
+        })
       } else {
         let count = 0;
         Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
@@ -460,7 +528,7 @@ export default class DetailedAssetScreen extends Component {
                                 if (this.state[connection.name + ":" + connection.port]) {
                                     console.log("1")
                                     //on, power off
-                                    let powerFunction = this.bladeData ? powerutils.changeBladePower : powerutils.powerPortOff
+                                    let powerFunction = ((this.bladeData ? this.bladeData.rack : this.state.asset.hostname) === connection.name) ? powerutils.changeBladePower : powerutils.powerPortOff
                                     powerFunction(connection.name, connection.port, result => {
                                         console.log(result)
                                         if (result) {
@@ -475,7 +543,7 @@ export default class DetailedAssetScreen extends Component {
                                 } else {
                                     console.log("2")
                                     //off, power on
-                                    let powerFunction = this.bladeData ? powerutils.changeBladePower : powerutils.powerPortOn
+                                    let powerFunction = ((this.bladeData ? this.bladeData.rack : this.state.asset.hostname) === connection.name) ? powerutils.changeBladePower : powerutils.powerPortOn
                                     powerFunction(connection.name, connection.port, result => {
                                         console.log(result)
                                         if (result) {
@@ -493,14 +561,14 @@ export default class DetailedAssetScreen extends Component {
                                     data-tip="Power cycle"
                                     size={"medium"} style={{ marginLeft: "10px", cursor: "pointer" }} onClick={(e) => {
                                         ToastsStore.success("Power cycling " + connection.name + ":" + connection.port + ". Please wait!");
-                                        let powerFunction = this.bladeData ? powerutils.changeBladePower : powerutils.powerPortOff
+                                        let powerFunction = ((this.bladeData ? this.bladeData.rack : this.state.asset.hostname) === connection.name) ? powerutils.changeBladePower : powerutils.powerPortOff
                                         powerFunction(connection.name, connection.port, result => {
                                             if (result) {
                                                 this.setState({
                                                     [connection.name + ":" + connection.port]: false
                                                 });
                                                 setTimeout(() => {
-                                                    let powerFunction = this.bladeData ? powerutils.changeBladePower : powerutils.powerPortOn
+                                                    let powerFunction = ((this.bladeData ? this.bladeData.rack : this.state.asset.hostname) === connection.name) ? powerutils.changeBladePower : powerutils.powerPortOn
                                                     powerFunction(connection.name, connection.port, result => {
                                                         if (result) {
                                                             this.setState({
@@ -610,6 +678,7 @@ export default class DetailedAssetScreen extends Component {
                     <Grommet theme={theme} full className='fade'>
                         <Box fill background='light-2' overflow={"auto"}>
                             {popup}
+                            <MediaQuery minDeviceWidth={1224}>
                             <AppBar>
                                 {/* {this.props.match.params.vendor} {this.props.match.params.modelNumber} */}
                                 <BackButton alignSelf='start' this={this} />
@@ -618,7 +687,9 @@ export default class DetailedAssetScreen extends Component {
                                 }}>{this.props.match.params.assetID}</Heading>
                                 <UserMenu alignSelf='end' this={this} />
                             </AppBar>
+                            </MediaQuery>
                             <Box
+                                overflow='auto'
                                 align='start'
                                 direction='row'
                                 margin={{ left: 'medium', right: 'medium' }}
@@ -641,14 +712,34 @@ export default class DetailedAssetScreen extends Component {
                                             direction='column' justify='start'>
                                             <Heading level='4' margin='none'>Asset Details</Heading>
                                             <table style={{ marginTop: '10px', marginBottom: '10px' }}>
+
                                                 <tbody>
+
+
                                                     <tr>
                                                         <td><b>Hostname</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.hostname}</td>
+                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.hostname === "" ? "N/A" : this.state.asset.hostname}</td>
                                                     </tr>
                                                     <tr>
                                                         <td><b>Model</b></td>
                                                         <td style={{ textAlign: 'right' }}>{this.state.asset.model}</td>
+                                                    </tr>
+                                                    {this.generateVariancesTable()}
+                                                    {/* make sure you've accounted for all fields */}
+                                                    <tr>
+                                                        <td><b>Model Vendor</b></td>
+                                                        <td style={{ textAlign: 'right' }}>{this.state.model.vendor}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><b>Model Number</b></td>
+                                                        <td style={{ textAlign: 'right' }}>{this.state.model.modelNumber}</td>
+                                                    </tr>
+
+                                                    {this.generateModelNetworkPortString()}
+
+                                                    <tr>
+                                                        <td><b>Model Power Ports</b></td>
+                                                        <td style={{ textAlign: 'right' }}>{this.state.model.powerPorts}</td>
                                                     </tr>
                                                     {!this.props.match.params.storageSiteAbbrev && <tr>
                                                         <td><b>Datacenter</b></td>
@@ -687,7 +778,7 @@ export default class DetailedAssetScreen extends Component {
                                                     {this.renderPDUStatus()}
                                                 </tbody>
                                             </table>
-                                            {(!this.bladeData && !this.props.match.params.storageSiteAbbrev) &&
+                                            {(!this.props.match.params.storageSiteAbbrev) &&
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
@@ -748,27 +839,6 @@ export default class DetailedAssetScreen extends Component {
                                                 <Table></Table>
                                             )}
 
-                                            {/* TODO: need to change this after Bletsch's response on piazza post  */}
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow>
-                                                        <TableCell scope="col" border="bottom">
-                                                            <strong>Model Field</strong>
-                                                        </TableCell>
-                                                        <TableCell scope="col" border="bottom">
-                                                            <strong>Model Modification</strong>
-                                                        </TableCell>
-                                                        <TableCell scope="col" border="bottom">
-                                                            <strong>Base Model Value</strong>
-                                                        </TableCell>
-
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {this.generateVariancesTable()}
-                                                </TableBody>
-                                            </Table>
-
 
                                             <span style={{ maxHeight: 100, overflow: 'auto' }}>
                                                 {this.state.asset.comment && this.state.asset.comment.split('\n').map((i, key) => {
@@ -784,7 +854,7 @@ export default class DetailedAssetScreen extends Component {
                                                         gap='small' align='center'>
                                                         <BladeChassisView
                                                             chassisId={!this.bladeData ? this.state.asset.assetID : this.bladeData.chassisId}
-                                                            chassisHostname={!this.bladeData ? this.state.asset.hostname : this.bladeData.rack}
+                                                            chassisHostname={!this.bladeData ? (this.state.asset.hostname ? this.state.asset.hostname : bladeutils.makeNoHostname(this.state.asset.assetID)) : this.bladeData.rack}
                                                             chassisSlots={this.chassisSlots}
                                                             slot={!this.bladeData ? null : this.bladeData.rackU}
                                                         />
@@ -796,6 +866,7 @@ export default class DetailedAssetScreen extends Component {
                                         </Box>
                                     )}
                                 </Box>
+                                <MediaQuery minDeviceWidth={1224}>
                                 {(!this.state.initialLoaded
                                     ?
                                     <Box></Box>
@@ -814,7 +885,7 @@ export default class DetailedAssetScreen extends Component {
                                             <Heading level='4' margin='none'>Asset Actions</Heading>
                                             <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
                                                 gap='small'>
-                                                {(this.connectedPDU && !this.props.match.params.storageSiteAbbrev && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
+                                                {(this.connectedPDU && this.hasPortConnections !== 0 && !this.props.match.params.storageSiteAbbrev && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
                                                     <Box direction='column' flex alignSelf='stretch'
                                                         gap='small'>
                                                         <Button icon={<Power />} label="Power Asset On" onClick={() => {
@@ -849,7 +920,11 @@ export default class DetailedAssetScreen extends Component {
                                         </Box>
                                     </Box>
                                 )}
+                                </MediaQuery>
                             </Box>
+                            <MediaQuery maxDeviceWidth={1224}>
+                                <Button label='Back to scanner' margin={{top: 'small', left: 'medium', right: 'medium', bottom: 'small'}} onClick={() => {userutils.logout(); this.props.history.goBack()}} />
+                            </MediaQuery>
                             <ToastsContainer store={ToastsStore} />
                         </Box>
                     </Grommet>

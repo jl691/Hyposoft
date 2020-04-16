@@ -1,6 +1,5 @@
 import React from "react";
-import {Box, Button, Grid, Grommet, Heading} from "grommet";
-import SingleRackElevationNative from "./SingleRackElevationNative";
+import {Box, Button, Grid, Grommet, Heading, Text} from "grommet";
 import SingleRackElevation from "./SingleRackElevation";
 import * as jsPDF from 'jspdf';
 import * as rackutils from "../utils/rackutils";
@@ -18,29 +17,8 @@ class RackElevations extends React.Component {
 
     constructor(props) {
         super(props);
-        let startRow = this.props.location.state.startRow;
-        let endRow = this.props.location.state.endRow;
-        let startNumber = parseInt(this.props.location.state.startNumber);
-        let endNumber = parseInt(this.props.location.state.endNumber);
-
-        let rowStartNumber = startRow.charCodeAt(0);
-        let rowEndNumber = endRow.charCodeAt(0);
-
-
-        let items = []
-
-
-        if (items.length === 0) {
-            for (let i = rowStartNumber; i <= rowEndNumber; i++) {
-                let currLetter = String.fromCharCode(i);
-                for (let j = parseInt(startNumber); j <= parseInt(endNumber); j++) {
-                    items.push(<Box align={"center"}><SingleRackElevationNative small letter={currLetter} number={j} /></Box>);
-                }
-            }
-        }
         this.state = {
-            racks: items,
-            rackTitles: {}
+            racks: []
         };
     }
 
@@ -75,7 +53,6 @@ class RackElevations extends React.Component {
         let rowEndNumber = endRow.charCodeAt(0);
 
         let racks = [];
-        let rackTitles = {};
 
         rackutils.getValidRackCount(startRow, endRow, startNumber, endNumber, this.props.location.state.datacenter, result => {
             totalRacks = result;
@@ -85,13 +62,10 @@ class RackElevations extends React.Component {
                     rackutils.getRackID(currLetter, j, this.props.location.state.datacenter, result => {
                         if (result) {
                             racks.push(result);
-                            rackTitles[result] = currLetter+''+j
                             if (racks.length === totalRacks) {
                                 console.log("found All the racks")
                                 this.setState({
-                                    rackIDs: racks,
-                                    racks: racks.map(rackID => <Box align={"center"}> <SingleRackElevationNative small rackID={rackID} letter={rackTitles[rackID]} number=''/></Box>),
-                                    rackTitles: rackTitles
+                                    racks: racks
                                 })
                             }
                         }
@@ -104,6 +78,7 @@ class RackElevations extends React.Component {
     getPNGFromChild = (imageData, position) => {
         console.log("callback from child!");
         //console.log(imageData);
+        let imagesDrawn = 0
         images.set(position, imageData);
         if (images.size === totalRacks) {
             //sort
@@ -114,9 +89,15 @@ class RackElevations extends React.Component {
                 //window.open(data)
                 doc.addImage(data, "PNG", (0.2 * (count + 1) + 2.5 * count), 1.04, 2.5, 6.43);
                 count++;
+                imagesDrawn++;
                 if (count % 4 === 0) {
                     doc.addPage("letter", "landscape");
                     count = 0;
+                }
+
+                if (imagesDrawn === images.size){
+                    window.open(URL.createObjectURL(doc.output("blob")), '_blank')
+                    window.history.back()
                 }
             })
         }
@@ -141,38 +122,25 @@ class RackElevations extends React.Component {
             );
         }*/
 
+        const items = [];
+        this.state.racks.forEach(rackID => {
+            console.log(rackID)
+            items.push(<Box align={"center"}><SingleRackElevation rackID={rackID} sendPNG={this.getPNGFromChild}/></Box>);
+            console.log(items);
+        })
 
         return (
             <Grommet theme={theme}>
                 <Box fill background={"light-2"}>
-                    <AppBar>
-                        <BackButton alignSelf='start' this={this} />
-                        <Heading alignSelf='center' level='4' margin={{
-                            top: 'none', bottom: 'none', left: 'xlarge', right: 'none'
-                        }}>Racks</Heading>
-                        <UserMenu alignSelf='end' this={this}/>
-                    </AppBar>
+                    <Text margin='medium'>Generating PDF...</Text>
+                    <Box  style={{display: 'none'}}>
                     <Grid columns={{
                         count: 4,
-                        size: "auto",
-                    }} gap="small" alignContent={"center"} margin='small'>
-                        {this.state.racks}
+                        size: "auto"
+                    }} gap="small" alignContent={"center"}>
+                        {items}
                     </Grid>
-                    <span style={{display: 'none'}}>
-                        {this.state.rackIDs && this.state.rackIDs.forEach(rackID => <Box align={"center"}> <SingleRackElevation rackID={rackID} sendPNG={this.getPNGFromChild}/></Box>)}
-                    </span>
-                    <Button label={"PDF"} margin={{left: 'small', right: 'small', bottom: 'small'}} onClick={() => {
-                        this.props.history.push({
-                            pathname: '/rackelevationpdf',
-                            state: {
-                                startRow: this.props.location.state.startRow,
-                                endRow: this.props.location.state.endRow,
-                                startNumber: this.props.location.state.startNumber,
-                                endNumber: this.props.location.state.endNumber,
-                                datacenter: this.props.location.state.datacenter
-                            }
-                        })
-                    }}/>
+                    </Box>
                 </Box>
                 <ToastsContainer store={ToastsStore}/>
             </Grommet>

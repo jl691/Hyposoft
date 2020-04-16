@@ -1,4 +1,4 @@
-import { assetRef, decommissionRef} from './firebaseutils'
+import { assetRef, decommissionRef, offlinestorageRef, db } from './firebaseutils'
 
 function generateAssetID() {
     //Asset IDs are 6 digits long. CONFIRM THIS
@@ -7,7 +7,7 @@ function generateAssetID() {
         var triesLeft = 5;
         var result = '';
         var characters = '0123456789';
-        var firstDigit= '1123456789'
+        var firstDigit = '1123456789'
         var charactersLength = characters.length;
 
         result += firstDigit.charAt(Math.floor(Math.random() * charactersLength));
@@ -20,19 +20,19 @@ function generateAssetID() {
 
         //Checking if the generated ID is unique: call function here
         isUniqueAssetID(result, status => {
-            if(status){
+            if (status) {
                 console.log('Newly generated asset ID: ' + result);
                 resolve(result)
                 //return result;
             }
-            else{
+            else {
                 console.log("This asset ID is not unique. Trying again.")
                 triesLeft--;
-                if(triesLeft >= 0){
+                if (triesLeft >= 0) {
 
                     generateAssetID()
                 }
-                else{
+                else {
                     reject("Error trying to generate unique assetID: timeout")
                 }
 
@@ -44,19 +44,28 @@ function generateAssetID() {
 
 function isUniqueAssetID(id, callback) {
 
-    assetRef.doc(id).get().then(function(doc) {
+    assetRef.doc(id).get().then(function (doc) {
         if (doc.exists) {
             callback(false)
         } else {
             // doc.data() will be undefined in this case
-            decommissionRef.where('assetId','==',id).get().then(qs => {
+            decommissionRef.where('assetId', '==', id).get().then(qs => {
                 if (qs.empty) {
-                  console.log("No such document exists. Is unique");
+                    console.log("No such document exists in decommissions collection. ");
+                    db.collectionGroup('offlineAssets').where("assetId", "==", id).get().then(querySnap => {
+                        if (querySnap.empty) {
+                            console.log("Is unique.")
+                        }
+                        callback(querySnap.empty)
+                    })
+
                 }
-                callback(qs.empty)
+                else {
+                    callback(false)
+                }
             })
         }
-    }).catch(function(error) {
+    }).catch(function (error) {
         console.log("Error getting document:", error);
 
     });
@@ -69,18 +78,18 @@ function overrideAssetID(inputID) {
         //needs to be within range
         //needs to be unique
         //DOUBLE CHECK WITH REGEX.
-        if(parseInt(inputID) <=999999 && parseInt(inputID) >= 100000){
+        if (parseInt(inputID) <= 999999 && parseInt(inputID) >= 100000) {
             isUniqueAssetID(inputID, result => {
-                if(result){
+                if (result) {
                     console.log("The admin input a valid asset ID")
                     resolve(null)
                 }
-                else{
+                else {
                     reject("Not a valid asset ID. Must be unique.")
                 }
             })
         }
-        else{
+        else {
             reject("Not a valid asset ID. The ID must be in range.")
         }
 
