@@ -161,7 +161,7 @@ function validateAssetVariances(displayColor, cpu, memory, storage, callback) {
 }
 
 function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null, chassis = null, noLog = false) {
-
+console.log(rack, racku)
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
@@ -345,6 +345,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                                     console.log(error)
                                                                                 })
                                                                             } else {
+                                                                                assetObject.networkConnections = networkConnectionsArray;
                                                                                 changeplanutils.addAssetChange(assetObject, overrideAssetID, changePlanID, (result) => {
                                                                                     if (result) {
                                                                                         callback(null)
@@ -486,6 +487,7 @@ function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment,
                                                                         } else {
                                                                             delete assetObject["assetId"];
                                                                             //duplicate this!!
+                                                                            assetObject.networkConnections = networkConnectionsArray;
                                                                             changeplanutils.addAssetChange(assetObject, "", changePlanID, (result) => {
                                                                                 if (result) {
                                                                                     callback(null)
@@ -843,7 +845,7 @@ function deleteAsset(assetID, callback, isDecommission = false, offlineStorage =
 
 function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
     networkConnectionsArray, deletedNCThisPort, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null, chassis = null, offlineStorageAbbrev = null) {
-    console.log(offlineStorageAbbrev)
+    console.log(rack, rackU)
     validateAssetForm(assetID, model, hostname, rack, rackU, owner, datacenter, offlineStorageAbbrev).then(
         _ => {
             console.log("checkpoint", datacenter)
@@ -1052,6 +1054,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                     }, offlineStorageAbbrev)
                                                                                                 } else {
                                                                                                     console.log(changeDocID);
+                                                                                                    assetObject.networkConnections = networkConnectionsArray;
                                                                                                     changeplanutils.editAssetChange(assetObject, assetID, changePlanID, (result) => {
                                                                                                         if (result) {
                                                                                                             callback(null)
@@ -1312,7 +1315,7 @@ function shouldAddToSuggestedItems(array, data, userInput) {
 }
 
 function getAssetDetails(assetID, callback, offlineStorageAbbrev = null) {
-
+console.log(assetID)
     if (offlineStorageAbbrev) {
         console.log(assetID)
         db.collectionGroup("offlineAssets").where("assetId", "==", String(assetID)).get().then(function (querySnapshot) {

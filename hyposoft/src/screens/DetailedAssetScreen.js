@@ -98,6 +98,7 @@ export default class DetailedAssetScreen extends Component {
                             }, function () {
 
                                 this.generatePDUStatus(() => {
+                                    console.log("testhere")
                                   modelutils.getModelByModelname(assetsdb.model, modelDoc => {
                                       console.log(modelDoc.data())
                                       this.setState({
