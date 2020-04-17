@@ -7,6 +7,8 @@ import * as decommissionutils from "./decommissionutils"
 import * as changeplanconflictutils from './changeplanconflictutils'
 import * as datacenterutils from './datacenterutils'
 import * as offlinestorageutils from './offlinestorageutils'
+import * as modelutils from './modelutils'
+import * as bladeutils from './bladeutils'
 import {changeplansRef} from "./firebaseutils";
 import {assetRef} from "./firebaseutils";
 import {racksRef} from "./firebaseutils";
@@ -1136,138 +1138,229 @@ function executeChangePlan(changePlanID, callback) {
                         let count = 0;
                         querySnapshot.docs.forEach(change => {
                             console.log(change)
-                            if (change.data().change === "add") {
-                                console.log("add")
-                                if (change.data().changes.assetId && change.data().changes.assetId["new"]) {
-                                    console.log("not generating")
-                                    executeAddAsset(change.data().changes.assetId["new"], change, changePlanID, resultAdd => {
-                                        if (resultAdd) {
-                                            count++;
-                                            if (count === querySnapshot.size) {
-                                                changeplansRef.doc(changePlanID.toString()).update({
-                                                    executed: true,
-                                                    timestamp: Date.now()
-                                                }).then(function () {
-                                                    logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
-                                                    callback(true);
-                                                }).catch(function () {
-                                                    callback(null);
-                                                });
-                                            }
-                                        } else {
-                                            callback(null);
-                                        }
-                                    });
-                                } else {
-                                    //generate
-                                    console.log("generating")
-                                    assetIDutils.generateAssetID().then(newID => {
-                                        executeAddAsset(newID, change, changePlanID, resultAdd => {
-                                            if (resultAdd) {
-                                                count++;
-                                                if (count === querySnapshot.size) {
-                                                    changeplansRef.doc(changePlanID.toString()).update({
-                                                        executed: true,
-                                                        timestamp: Date.now()
-                                                    }).then(function () {
-                                                        logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
-                                                        callback(true);
-                                                    }).catch(function () {
-                                                        callback(null);
+                            assetutils.getAssetDetails(change.data().assetID, assetResult => {
+                                if(assetResult){
+                                    modelutils.getModelByModelname(assetResult.model, modelResult => {
+                                        if(modelResult){
+                                            if (change.data().change === "add") {
+                                                console.log("add")
+                                                if (change.data().changes.assetId && change.data().changes.assetId["new"]) {
+                                                    console.log("not generating")
+                                                    if(modelResult.mount === "normal"){
+                                                        executeAddAsset(change.data().changes.assetId["new"], change, changePlanID, resultAdd => {
+                                                            if (resultAdd) {
+                                                                count++;
+                                                                if (count === querySnapshot.size) {
+                                                                    changeplansRef.doc(changePlanID.toString()).update({
+                                                                        executed: true,
+                                                                        timestamp: Date.now()
+                                                                    }).then(function () {
+                                                                        logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
+                                                                        callback(true);
+                                                                    }).catch(function () {
+                                                                        callback(null);
+                                                                    });
+                                                                }
+                                                            } else {
+                                                                callback(null);
+                                                            }
+                                                        });
+                                                    } else {
+                                                        let bladeFunction = modelResult.mount === "chassis" ? bladeutils.addChassis : bladeutils.addServer;
+                                                        bladefunction(change.data().changes.assetId["new"], change.data().changes.model["new"], change.data().changes.hostname["new"],
+                                                            change.data().changes.rack["new"], change.data().changes.rackU["new"], change.data().changes.owner["new"],
+                                                            change.data().changes.comment["new"], change.data().changes.datacenter["new"], change.data().changes.macAddresses["new"],
+                                                            change.data().changes.networkConnections["new"], change.data().changes.powerConnections["new"],
+                                                            change.data().changes.variances["new"]["displayColor"], change.data().changes.variances["new"]["memory"],
+                                                            change.data().changes.variances["new"]["storage"], change.data().changes.variances["new"]["cpu"], addCallback => {
+                                                                if(addCallback){
+                                                                    callback(null);
+                                                                } else {
+                                                                    count++;
+                                                                    if (count === querySnapshot.size) {
+                                                                        changeplansRef.doc(changePlanID.toString()).update({
+                                                                            executed: true,
+                                                                            timestamp: Date.now()
+                                                                        }).then(function () {
+                                                                            logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
+                                                                            callback(true);
+                                                                        }).catch(function () {
+                                                                            callback(null);
+                                                                        });
+                                                                    }
+                                                                }
+                                                            })
+                                                    }
+                                                } else {
+                                                    //generate
+                                                    console.log("generating")
+                                                    assetIDutils.generateAssetID().then(newID => {
+                                                        if(modelResult.mount === "normal"){
+                                                            executeAddAsset(newID, change, changePlanID, resultAdd => {
+                                                                if (resultAdd) {
+                                                                    count++;
+                                                                    if (count === querySnapshot.size) {
+                                                                        changeplansRef.doc(changePlanID.toString()).update({
+                                                                            executed: true,
+                                                                            timestamp: Date.now()
+                                                                        }).then(function () {
+                                                                            logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
+                                                                            callback(true);
+                                                                        }).catch(function () {
+                                                                            callback(null);
+                                                                        });
+                                                                    }
+                                                                } else {
+                                                                    callback(null);
+                                                                }
+                                                            })
+                                                        } else {
+                                                            let bladeFunction = modelResult.mount === "chassis" ? bladeutils.addChassis : bladeutils.addServer;
+                                                            bladefunction(change.data().changes.assetId["new"], change.data().changes.model["new"], change.data().changes.hostname["new"],
+                                                                change.data().changes.rack["new"], change.data().changes.rackU["new"], change.data().changes.owner["new"],
+                                                                change.data().changes.comment["new"], change.data().changes.datacenter["new"], change.data().changes.macAddresses["new"],
+                                                                change.data().changes.networkConnections["new"], change.data().changes.powerConnections["new"],
+                                                                change.data().changes.variances["new"]["displayColor"], change.data().changes.variances["new"]["memory"],
+                                                                change.data().changes.variances["new"]["storage"], change.data().changes.variances["new"]["cpu"], addCallback => {
+                                                                    if(addCallback){
+                                                                        callback(null);
+                                                                    } else {
+                                                                        changeplansRef.doc(changePlanID).collection("changes").doc(change.id).update({
+                                                                            assetID: newID
+                                                                        }).then(function () {
+                                                                            count++;
+                                                                            if (count === querySnapshot.size) {
+                                                                                changeplansRef.doc(changePlanID.toString()).update({
+                                                                                    executed: true,
+                                                                                    timestamp: Date.now()
+                                                                                }).then(function () {
+                                                                                    logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
+                                                                                    callback(true);
+                                                                                }).catch(function () {
+                                                                                    callback(null);
+                                                                                });
+                                                                            }
+                                                                        }).catch(function () {
+                                                                            callback(null);
+                                                                        })
+                                                                    }
+                                                                })
+                                                        }
                                                     });
                                                 }
+                                            } else if (change.data().change === "edit") {
+                                                if(modelResult.mount === "normal"){
+
+                                                } else if(modelResult.mount === "chassis"){
+
+                                                } else if(modelResult.mount === "chassis"){
+
+                                                }
+                                                console.log("edit")
+                                                executeEditAsset(change, resultEdit => {
+                                                    if (resultEdit) {
+                                                        count++;
+                                                        if (count === querySnapshot.size) {
+                                                            changeplansRef.doc(changePlanID.toString()).update({
+                                                                executed: true,
+                                                                timestamp: Date.now()
+                                                            }).then(function () {
+                                                                logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
+                                                                callback(true);
+                                                            }).catch(function () {
+                                                                callback(null);
+                                                            });
+                                                        }
+                                                    } else {
+                                                        callback(null);
+                                                    }
+                                                })
+                                            } else if (change.data().change === "move") {
+                                                if(modelResult.mount === "normal"){
+
+                                                } else if(modelResult.mount === "chassis"){
+
+                                                } else if(modelResult.mount === "chassis"){
+
+                                                }
+                                                if(change.data().location === "rack"){
+                                                    //move to offline
+                                                    console.log(change.data(), change.data().changes.datacenter["new"])
+                                                    offlinestorageutils.moveAssetToOfflineStorage(change.data().assetID.toString(), change.data().changes.datacenter["new"], moveResult => {
+                                                        if(moveResult){
+                                                            count++;
+                                                            if (count === querySnapshot.size) {
+                                                                changeplansRef.doc(changePlanID.toString()).update({
+                                                                    executed: true,
+                                                                    timestamp: Date.now()
+                                                                }).then(function () {
+                                                                    logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
+                                                                    callback(true);
+                                                                }).catch(function () {
+                                                                    callback(null);
+                                                                });
+                                                            }
+                                                        } else {
+                                                            callback(null);
+                                                        }
+                                                    }, assetutils.deleteAsset);
+                                                } else {
+                                                    //move from offline
+                                                    offlinestorageutils.moveAssetFromOfflineStorage(change.data().assetID.toString(), change.data().changes.datacenter["new"], change.data().changes.rack["new"], change.data().changes.rackU["new"], moveResult => {
+                                                        console.log(moveResult)
+                                                        if(!moveResult){
+                                                            count++;
+                                                            if (count === querySnapshot.size) {
+                                                                changeplansRef.doc(changePlanID.toString()).update({
+                                                                    executed: true,
+                                                                    timestamp: Date.now()
+                                                                }).then(function () {
+                                                                    logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
+                                                                    callback(true);
+                                                                }).catch(function () {
+                                                                    callback(null);
+                                                                });
+                                                            }
+                                                        } else {
+                                                            callback(null);
+                                                        }
+                                                    }, assetutils.addAsset)
+                                                }
                                             } else {
-                                                callback(null);
+                                                //decomission
+                                                if(modelResult.mount === "normal"){
+
+                                                } else if(modelResult.mount === "chassis"){
+
+                                                } else if(modelResult.mount === "chassis"){
+
+                                                }
+                                                console.log("decomm")
+                                                decommissionutils.decommissionAsset(change.data().assetID.toString(), resultDecom => {
+                                                    if (resultDecom) {
+                                                        count++;
+                                                        if (count === querySnapshot.size) {
+                                                            changeplansRef.doc(changePlanID.toString()).update({
+                                                                executed: true,
+                                                                timestamp: Date.now()
+                                                            }).then(function () {
+                                                                logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
+                                                                callback(true);
+                                                            }).catch(function () {
+                                                                callback(null);
+                                                            });
+                                                        }
+                                                    } else {
+                                                        callback(null);
+                                                    }
+                                                }, null, null, change.data().location === "rack" ? null : true)
                                             }
-                                        })
-                                    });
-                                }
-                            } else if (change.data().change === "edit") {
-                                console.log("edit")
-                                executeEditAsset(change, resultEdit => {
-                                    if (resultEdit) {
-                                        count++;
-                                        if (count === querySnapshot.size) {
-                                            changeplansRef.doc(changePlanID.toString()).update({
-                                                executed: true,
-                                                timestamp: Date.now()
-                                            }).then(function () {
-                                                logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
-                                                callback(true);
-                                            }).catch(function () {
-                                                callback(null);
-                                            });
                                         }
-                                    } else {
-                                        callback(null);
-                                    }
-                                })
-                            } else if (change.data().change === "move") {
-                                if(change.data().location === "rack"){
-                                    //move to offline
-                                    console.log(change.data(), change.data().changes.datacenter["new"])
-                                    offlinestorageutils.moveAssetToOfflineStorage(change.data().assetID.toString(), change.data().changes.datacenter["new"], moveResult => {
-                                        if(moveResult){
-                                            count++;
-                                            if (count === querySnapshot.size) {
-                                                changeplansRef.doc(changePlanID.toString()).update({
-                                                    executed: true,
-                                                    timestamp: Date.now()
-                                                }).then(function () {
-                                                    logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
-                                                    callback(true);
-                                                }).catch(function () {
-                                                    callback(null);
-                                                });
-                                            }
-                                        } else {
-                                            callback(null);
-                                        }
-                                    }, assetutils.deleteAsset);
+                                    })
                                 } else {
-                                    //move from offline
-                                    offlinestorageutils.moveAssetFromOfflineStorage(change.data().assetID.toString(), change.data().changes.datacenter["new"], change.data().changes.rack["new"], change.data().changes.rackU["new"], moveResult => {
-                                        console.log(moveResult)
-                                        if(!moveResult){
-                                            count++;
-                                            if (count === querySnapshot.size) {
-                                                changeplansRef.doc(changePlanID.toString()).update({
-                                                    executed: true,
-                                                    timestamp: Date.now()
-                                                }).then(function () {
-                                                    logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
-                                                    callback(true);
-                                                }).catch(function () {
-                                                    callback(null);
-                                                });
-                                            }
-                                        } else {
-                                            callback(null);
-                                        }
-                                    }, assetutils.addAsset)
+                                    callback(null);
                                 }
-                            } else {
-                                //decomission
-                                console.log("decomm")
-                                decommissionutils.decommissionAsset(change.data().assetID.toString(), resultDecom => {
-                                    if (resultDecom) {
-                                        count++;
-                                        if (count === querySnapshot.size) {
-                                            changeplansRef.doc(changePlanID.toString()).update({
-                                                executed: true,
-                                                timestamp: Date.now()
-                                            }).then(function () {
-                                                logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
-                                                callback(true);
-                                            }).catch(function () {
-                                                callback(null);
-                                            });
-                                        }
-                                    } else {
-                                        callback(null);
-                                    }
-                                }, null, null, change.data().location === "rack" ? null : true)
-                            }
+                            }, change.data().location === "offline" ? true : null)
                         })
                     }
                 }).catch(function (error) {
