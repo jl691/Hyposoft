@@ -1,4 +1,4 @@
-import { assetRef, racksRef, modelsRef, usersRef, firebase, datacentersRef, changeplansRef, decommissionRef, offlinestorageRef } from './firebaseutils'
+import { assetRef, racksRef, modelsRef, usersRef, firebase, datacentersRef, changeplansRef, decommissionRef, offlinestorageRef, db} from './firebaseutils'
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
 import * as assetIDutils from './assetidutils'
@@ -465,7 +465,7 @@ function checkLiveDBConflicts(isExecuted, changePlanID, stepNum, callback) {
                                 callback()
                             })
                         }
-                        else {
+                        else if (changeType === "decommission"){
                             //what if you are trying to edit a decomm/deleted model? 
                             //then there is no assetData returned, since the getMerged funciton looks in assetsRef
 
@@ -480,6 +480,12 @@ function checkLiveDBConflicts(isExecuted, changePlanID, stepNum, callback) {
 
                                 })
                             })
+
+                        }
+                        else{ //move
+                            console.log("TODO: need to check for database conflicts if change is move.")
+                            callback()
+
 
                         }
 
@@ -545,9 +551,9 @@ function decommissionAssetChangePlanPackage(changePlanID, stepID, callback) {
         let decommAssetID = stepDoc.data().assetID.toString()
 
         assetRef.doc(decommAssetID).get().then(assetDoc => {
-            offlinestorageRef.doc(decommAssetID).get().then(offlineDoc =>{
-          
-            if (!assetDoc.exists && !offlineDoc.exists) {
+            db.collectionGroup('offlineAssets').where("assetId", "==", decommAssetID).get().then(offlineDoc =>{
+         
+            if (!assetDoc.exists && offlineDoc.empty) {
                 errorIDSet.add("decommissionDBErrID")
                 addConflictToDBDatabase(changePlanID, stepID, "decommission", errorIDSet, status => {
                     // console.log(status)
