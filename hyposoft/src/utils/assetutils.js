@@ -1314,23 +1314,16 @@ function shouldAddToSuggestedItems(array, data, userInput) {
 function getAssetDetails(assetID, callback, offlineStorageAbbrev = null) {
 
     if (offlineStorageAbbrev) {
-        offlinestorageutils.getInfoFromAbbrev(offlineStorageAbbrev, (name, id) => {
-            if (id) {
-                offlinestorageRef.doc(id).collection("offlineAssets").doc(assetID).get().then(function (docSnap) {
-                    if (docSnap.exists) {
-                        callback({
-                            assetID: assetID,
-                            ...docSnap.data(),
-                            modelNum: docSnap.data().modelNumber.trim(),
-                        })
-                    } else {
-                        callback(null);
-                    }
-                }).catch(function () {
-                    callback(null);
-                })
-            } else {
+        console.log(assetID)
+        db.collectionGroup("offlineAssets").where("assetId", "==", String(assetID)).get().then(function (querySnapshot) {
+            if(querySnapshot.empty){
                 callback(null);
+            } else {
+                callback({
+                    assetID: assetID,
+                    ...querySnapshot.docs[0].data(),
+                    modelNum: querySnapshot.docs[0].data().modelNumber.trim(),
+                })
             }
         })
     } else {

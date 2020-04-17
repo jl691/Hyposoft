@@ -446,152 +446,177 @@ function moveAssetChange(assetID, changePlanID, datacenter, rack, rackU, offline
                 documentSnapshot = queryResult;
             }
         }
-        if (stepID) {
-        } else {
-            changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
-                let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
-                let assetChangePlanObject = {
-                    assetID: parseInt(assetID),
-                    location: !offlineStorageName ? "offline" : "rack",
-                    change: "move",
-                    step: changeNumber
-                };
-                if(!offlineStorageName){
-                    //move to rack
-                    //gotta validate: fits, datacenter exists
-                    assetutils.assetFitsOnRack(rack, rackU, documentSnapshot.data().model, datacenter, fitResult => {
-                        if(fitResult){
-                            //doesn't fit
-                            callback(null, fitResult);
-                        } else {
-                            //get datacenter info
-                            datacenterutils.getDataFromName(datacenter, (datacenterID, datacenterAbbrev) => {
-                                if(datacenterID){
-                                    let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
-                                    let rackRow = splitRackArray[0]
-                                    let rackNum = parseInt(splitRackArray[1])
-                                    rackutils.getRackID(rackRow, rackNum, datacenter, rackID => {
-                                        if(rackID){
-                                            assetChangePlanObject = {
-                                                ...assetChangePlanObject,
-                                                changes: {
-                                                    datacenter: {
-                                                        old: "",
-                                                        new: datacenter
-                                                    },
-                                                    datacenterAbbrev: {
-                                                        old: "",
-                                                        new: datacenterAbbrev
-                                                    },
-                                                    datacenterID: {
-                                                        old: "",
-                                                        new: datacenterID
-                                                    },
-                                                    rack: {
-                                                        old: "",
-                                                        new: rack
-                                                    },
-                                                    rackID: {
-                                                        old: "",
-                                                        new: rackID
-                                                    },
-                                                    rackNum: {
-                                                        old: "",
-                                                        new: rackNum
-                                                    },
-                                                    rackRow: {
-                                                        old: "",
-                                                        new: rackRow
-                                                    },
-                                                    rackU: {
-                                                        old: "",
-                                                        new: rackU
-                                                    }
+        changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
+            let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
+            let assetChangePlanObject = {
+                assetID: parseInt(assetID),
+                location: !offlineStorageName ? "offline" : "rack",
+                change: "move",
+                step: stepID ? stepID :  changeNumber
+            };
+            if(!offlineStorageName){
+                //move to rack
+                //gotta validate: fits, datacenter exists
+                assetutils.assetFitsOnRack(rack, rackU, documentSnapshot.data().model, datacenter, fitResult => {
+                    if(fitResult){
+                        //doesn't fit
+                        callback(null, fitResult);
+                    } else {
+                        //get datacenter info
+                        datacenterutils.getDataFromName(datacenter, (datacenterID, datacenterAbbrev) => {
+                            if(datacenterID){
+                                let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
+                                let rackRow = splitRackArray[0]
+                                let rackNum = parseInt(splitRackArray[1])
+                                rackutils.getRackID(rackRow, rackNum, datacenter, rackID => {
+                                    if(rackID){
+                                        assetChangePlanObject = {
+                                            ...assetChangePlanObject,
+                                            changes: {
+                                                datacenter: {
+                                                    old: "",
+                                                    new: datacenter
+                                                },
+                                                datacenterAbbrev: {
+                                                    old: "",
+                                                    new: datacenterAbbrev
+                                                },
+                                                datacenterID: {
+                                                    old: "",
+                                                    new: datacenterID
+                                                },
+                                                rack: {
+                                                    old: "",
+                                                    new: rack
+                                                },
+                                                rackID: {
+                                                    old: "",
+                                                    new: rackID
+                                                },
+                                                rackNum: {
+                                                    old: "",
+                                                    new: rackNum
+                                                },
+                                                rackRow: {
+                                                    old: "",
+                                                    new: rackRow
+                                                },
+                                                rackU: {
+                                                    old: "",
+                                                    new: rackU
                                                 }
-                                            };
+                                            }
+                                        };
+                                        if(stepID){
+                                            changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepID)).get().then(function (changeDocQuery) {
+                                                if(changeDocQuery.empty){
+                                                    callback(null);
+                                                } else {
+                                                    changeplansRef.doc(changePlanID).collection("changes").doc(changeDocQuery.docs[0].id).set(assetChangePlanObject).then(function () {
+                                                        callback(true);
+                                                    }).catch(function () {
+                                                        callback(null);
+                                                    })
+                                                }
+                                            })
+                                        } else {
                                             changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function () {
                                                 callback(true);
                                             }).catch(function () {
                                                 callback(null);
                                             })
-                                        } else {
-                                            callback(null);
                                         }
-                                    })
-                                } else {
-                                    callback(null);
-                                }
-                            });
-                        }
-                    });
-                } else {
-                    //move to offline storage
-                    let changes = {};
-                    if(Object.keys(documentSnapshot.data().networkConnections).length){
-                        changes = {
-                            ...changes,
-                            networkConnections: {
-                                old: documentSnapshot.data().networkConnections,
-                                new: {}
+                                    } else {
+                                        callback(null);
+                                    }
+                                })
+                            } else {
+                                callback(null);
                             }
-                        }
+                        });
                     }
-                    if(documentSnapshot.data().powerConnections && documentSnapshot.data().powerConnections.length){
-                        changes = {
-                            ...changes,
-                            powerConnections: {
-                                old: documentSnapshot.data().powerConnections,
-                                new: []
-                            }
-                        }
-                    }
+                });
+            } else {
+                //move to offline storage
+                let changes = {};
+                if(Object.keys(documentSnapshot.data().networkConnections).length){
                     changes = {
                         ...changes,
-                        datacenter: {
-                            old: documentSnapshot.data().datacenter,
-                            new: offlineStorageName
-                        },
-                        datacenterAbbrev: {
-                            old: documentSnapshot.data().datacenterAbbrev,
-                            new: ""
-                        },
-                        datacenterID: {
-                            old: documentSnapshot.data().datacenterID,
-                            new: ""
-                        },
-                        rack: {
-                            old: documentSnapshot.data().rack,
-                            new: ""
-                        },
-                        rackID: {
-                            old: documentSnapshot.data().rackID,
-                            new: ""
-                        },
-                        rackNum: {
-                            old: documentSnapshot.data().rackNum,
-                            new: ""
-                        },
-                        rackRow: {
-                            old: documentSnapshot.data().rackRow,
-                            new: ""
-                        },
-                        rackU: {
-                            old: documentSnapshot.data().rackU,
-                            new: ""
+                        networkConnections: {
+                            old: documentSnapshot.data().networkConnections,
+                            new: {}
                         }
                     }
-                    assetChangePlanObject = {
-                        ...assetChangePlanObject,
-                        changes: changes
-                    };
+                }
+                if(documentSnapshot.data().powerConnections && documentSnapshot.data().powerConnections.length){
+                    changes = {
+                        ...changes,
+                        powerConnections: {
+                            old: documentSnapshot.data().powerConnections,
+                            new: []
+                        }
+                    }
+                }
+                changes = {
+                    ...changes,
+                    datacenter: {
+                        old: documentSnapshot.data().datacenter,
+                        new: offlineStorageName
+                    },
+                    datacenterAbbrev: {
+                        old: documentSnapshot.data().datacenterAbbrev,
+                        new: ""
+                    },
+                    datacenterID: {
+                        old: documentSnapshot.data().datacenterID,
+                        new: ""
+                    },
+                    rack: {
+                        old: documentSnapshot.data().rack,
+                        new: ""
+                    },
+                    rackID: {
+                        old: documentSnapshot.data().rackID,
+                        new: ""
+                    },
+                    rackNum: {
+                        old: documentSnapshot.data().rackNum,
+                        new: ""
+                    },
+                    rackRow: {
+                        old: documentSnapshot.data().rackRow,
+                        new: ""
+                    },
+                    rackU: {
+                        old: documentSnapshot.data().rackU,
+                        new: ""
+                    }
+                }
+                assetChangePlanObject = {
+                    ...assetChangePlanObject,
+                    changes: changes
+                };
+                if(stepID){
+                    changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepID)).get().then(function (changeDocQuery) {
+                        if(changeDocQuery.empty){
+                            callback(null);
+                        } else {
+                            changeplansRef.doc(changePlanID).collection("changes").doc(changeDocQuery.docs[0].id).set(assetChangePlanObject).then(function () {
+                                callback(true);
+                            }).catch(function () {
+                                callback(null);
+                            })
+                        }
+                    })
+                } else {
                     changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function () {
                         callback(true);
                     }).catch(function () {
                         callback(null);
                     })
                 }
-            })
-        }
+            }
+        })
     }).catch(function (error) {
         console.log(error)
         callback(null);

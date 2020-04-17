@@ -18,10 +18,11 @@ class MoveAssetForm extends React.Component {
         super(props);
         this.state = {
             initialLoaded: false,
-            storageSite: "",
+            storageSite: this.props.editStorageSite ? this.props.editStorageSite : "",
             assetType: "",
-            rack: "",
-            rackU: ""
+            datacenter: this.props.editDatacenter ? this.props.editDatacenter : "",
+            rack: this.props.editRack ? this.props.editRack : "",
+            rackU: this.props.editRackU ? this.props.editRackU : "",
         }
 
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -79,7 +80,7 @@ class MoveAssetForm extends React.Component {
                             ToastsStore.error("Error moving the asset. Please try again later.");
                         }
                     }
-                }, null)
+                }, this.props.stepID ? this.props.stepID : null)
             } else {
                 offlinestorageutils.moveAssetFromOfflineStorage(this.props.assetID, this.state.datacenter, this.state.rack, this.state.rackU, result => {
                     if(!result){
