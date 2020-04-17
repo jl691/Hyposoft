@@ -155,6 +155,7 @@ function deleteChassis(assetID, callback, isDecommission = false, doNothing = nu
 }
 
 function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null, doNothing = null, noLog = false) {
+    console.log(chassisHostname, slot)
     const split = chassisHostname.split(' ')
     let findChassis = split.length > 1 ? firebaseutils.assetRef.where('assetId','==',split.slice(-1)[0]) : firebaseutils.assetRef.where('hostname','==',chassisHostname)
     findChassis.where('datacenter','==',datacenter).get().then(qs => {
