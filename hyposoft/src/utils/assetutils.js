@@ -226,7 +226,7 @@ console.log(rack, racku)
 
                                                                     assetIDutils.overrideAssetID(overrideAssetID).then(
                                                                         _ => {
-                                                                            const assetObject = {
+                                                                            let assetObject = {
                                                                                 assetId: overrideAssetID,
                                                                                 modelId: doc.id,
                                                                                 model: model,
@@ -346,6 +346,13 @@ console.log(rack, racku)
                                                                                 })
                                                                             } else {
                                                                                 assetObject.networkConnections = networkConnectionsArray;
+                                                                                if(chassis){
+                                                                                    assetObject = {
+                                                                                        ...assetObject,
+                                                                                        chassisHostname: chassis.hostname,
+                                                                                        chassisSlot: chassis.slot
+                                                                                    };
+                                                                                }
                                                                                 changeplanutils.addAssetChange(assetObject, overrideAssetID, changePlanID, (result) => {
                                                                                     if (result) {
                                                                                         callback(null)
@@ -363,7 +370,7 @@ console.log(rack, racku)
 
                                                                     assetIDutils.generateAssetID().then(newID => {
                                                                         console.log("generated the new asset id", newID)
-                                                                        const assetObject = {
+                                                                        let assetObject = {
                                                                             assetId: newID,
                                                                             modelId: doc.id,
                                                                             model: model,
@@ -488,6 +495,13 @@ console.log(rack, racku)
                                                                             delete assetObject["assetId"];
                                                                             //duplicate this!!
                                                                             assetObject.networkConnections = networkConnectionsArray;
+                                                                            if(chassis){
+                                                                                assetObject = {
+                                                                                    ...assetObject,
+                                                                                    chassisHostname: chassis.hostname,
+                                                                                    chassisSlot: chassis.slot
+                                                                                };
+                                                                            }
                                                                             changeplanutils.addAssetChange(assetObject, "", changePlanID, (result) => {
                                                                                 if (result) {
                                                                                     callback(null)

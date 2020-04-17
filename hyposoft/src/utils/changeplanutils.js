@@ -1166,9 +1166,10 @@ function executeChangePlan(changePlanID, callback) {
                                         } else {
                                             let bladeFunction = modelResult.data().mount === "chassis" ? bladeutils.addChassis : bladeutils.addServer;
                                             bladeFunction(change.data().changes.assetId["new"], change.data().changes.model["new"], change.data().changes.hostname["new"],
-                                                change.data().changes.rack["new"], change.data().changes.rackU["new"], change.data().changes.owner["new"],
-                                                change.data().changes.comment["new"], change.data().changes.datacenter["new"], change.data().changes.macAddresses["new"],
-                                                change.data().changes.networkConnections["new"], change.data().changes.powerConnections["new"],
+                                                change.data().changes.chassisHostname ? change.data().changes.chassisHostname["new"] : change.data().changes.rack["new"],
+                                                change.data().changes.chassisSlot ? change.data().changes.chassisSlot["new"] : change.data().changes.rackU["new"],
+                                                change.data().changes.owner["new"], change.data().changes.comment["new"], change.data().changes.datacenter["new"],
+                                                change.data().changes.macAddresses["new"], change.data().changes.networkConnections["new"], change.data().changes.powerConnections["new"],
                                                 change.data().changes.variances["new"]["displayColor"], change.data().changes.variances["new"]["memory"],
                                                 change.data().changes.variances["new"]["storage"], change.data().changes.variances["new"]["cpu"], addCallback => {
                                                     if(addCallback){
@@ -1216,9 +1217,10 @@ function executeChangePlan(changePlanID, callback) {
                                                 console.log("1", change.data().changes.networkConnections["new"]);
                                                 let bladeFunction = modelResult.data().mount === "chassis" ? bladeutils.addChassis : bladeutils.addServer;
                                                 bladeFunction(newID, change.data().changes.model["new"], change.data().changes.hostname["new"],
-                                                    change.data().changes.rack["new"], change.data().changes.rackU["new"], change.data().changes.owner["new"],
-                                                    change.data().changes.comment["new"], change.data().changes.datacenter["new"], change.data().changes.macAddresses["new"],
-                                                    change.data().changes.networkConnections["new"], change.data().changes.powerConnections["new"],
+                                                    change.data().changes.chassisHostname ? change.data().changes.chassisHostname["new"] : change.data().changes.rack["new"],
+                                                    change.data().changes.chassisSlot ? change.data().changes.chassisSlot["new"] : change.data().changes.rackU["new"],
+                                                    change.data().changes.owner["new"], change.data().changes.comment["new"], change.data().changes.datacenter["new"],
+                                                    change.data().changes.macAddresses["new"], change.data().changes.networkConnections["new"], change.data().changes.powerConnections["new"],
                                                     change.data().changes.variances["new"]["displayColor"], change.data().changes.variances["new"]["memory"],
                                                     change.data().changes.variances["new"]["storage"], change.data().changes.variances["new"]["cpu"], addCallback => {
                                                         if(addCallback){
@@ -1282,7 +1284,9 @@ function executeChangePlan(changePlanID, callback) {
                                                     getMergedAssetAndChange(changePlanID, change.data().step, mergedAsset => {
                                                         if(mergedAsset){
                                                             let updateFunction = modelResult.data().mount === "chassis" ? bladeutils.updateChassis : bladeutils.updateServer;
-                                                            updateFunction(mergedAsset.assetId, mergedAsset.model, mergedAsset.hostname, mergedAsset.rack, mergedAsset.rackU,
+                                                            updateFunction(mergedAsset.assetId, mergedAsset.model, mergedAsset.hostname,
+                                                                mergedAsset.chassisHostname ? mergedAsset.chassisHostname : mergedAsset.rack,
+                                                                mergedAsset.chassisSlot ? mergedAsset.chassisSlot : mergedAsset.rackU,
                                                                 mergedAsset.owner, mergedAsset.comment, mergedAsset.datacenter, mergedAsset.macAddresses, mergedAsset.networkConnections,
                                                                 "", mergedAsset.powerConnections, mergedAsset.variances["displayColor"], mergedAsset.variances["memory"],
                                                                 mergedAsset.variances["storage"], mergedAsset.variances["cpu"], addCallback => {
