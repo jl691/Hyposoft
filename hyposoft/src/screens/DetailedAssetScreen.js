@@ -98,6 +98,7 @@ export default class DetailedAssetScreen extends Component {
                             }, function () {
 
                                 this.generatePDUStatus(() => {
+                                    console.log("testhere")
                                   modelutils.getModelByModelname(assetsdb.model, modelDoc => {
                                       console.log(modelDoc.data())
                                       this.setState({
@@ -263,7 +264,11 @@ export default class DetailedAssetScreen extends Component {
                 ToastsStore.info("Click a refresh button by a PDU status to power cycle it.", 5000);
             }
             let fromBlade = 0
-            if (this.connectedPDU === 'bcman' && (this.bladeData || this.chassisSlots)) {
+            if (this.connectedPDU === 'bcman') {
+              if (!this.bladeData && !this.chassisSlots) {
+                callback()
+                return
+              }
               const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
               fromBlade = eachFor.length
               eachFor.forEach(powerPiece => {
@@ -295,6 +300,10 @@ export default class DetailedAssetScreen extends Component {
               })
             }
               this.hasPortConnections = Object.keys(this.state.asset.powerConnections).length
+              if (this.hasPortConnections === 0) {
+                callback()
+                return
+              }
               Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
                   let formattedNum;
                   if (this.state.asset.rackNum.toString().length === 1) {
