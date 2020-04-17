@@ -474,7 +474,7 @@ function moveAssetChange(assetID, changePlanID, datacenter, rack, rackU, offline
                                             ...assetChangePlanObject,
                                             changes: {
                                                 datacenter: {
-                                                    old: "",
+                                                    old: documentSnapshot.data().datacenter,
                                                     new: datacenter
                                                 },
                                                 datacenterAbbrev: {
@@ -833,7 +833,7 @@ function generateWorkOrder(changePlanID, callback) {
                         if(doc.data().location === "rack"){
                             moveString += "datacenter " + doc.data().changes.datacenter["old"] + " rack " + doc.data().changes.rack["old"] + " height " + doc.data().changes.rackU["old"] + " to offline storage site " + doc.data().changes.datacenter["new"];
                         } else {
-                            moveString += "offline storage site " + doc.data().changes.datacenter["new"] + " to datacenter " + doc.data().changes.datacenter["new"] + " rack " + doc.data().changes.rack["new"] + " height " + doc.data().changes.rackU["new"];
+                            moveString += "offline storage site " + doc.data().changes.datacenter["old"] + " to datacenter " + doc.data().changes.datacenter["new"] + " rack " + doc.data().changes.rack["new"] + " height " + doc.data().changes.rackU["new"];
                         }
                         let moveText = [moveString];
                         deleteNetworkPowerText(documentSnapshot, deleteText => {
@@ -1227,7 +1227,8 @@ function executeChangePlan(changePlanID, callback) {
                                 } else {
                                     //move from offline
                                     offlinestorageutils.moveAssetFromOfflineStorage(change.data().assetID.toString(), change.data().changes.datacenter["new"], change.data().changes.rack["new"], change.data().changes.rackU["new"], moveResult => {
-                                        if(moveResult){
+                                        console.log(moveResult)
+                                        if(!moveResult){
                                             count++;
                                             if (count === querySnapshot.size) {
                                                 changeplansRef.doc(changePlanID.toString()).update({
