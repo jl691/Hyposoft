@@ -4,36 +4,40 @@ import * as decomutils from '../utils/decommissionutils'
 import * as datacenterutils from './datacenterutils'
 import * as offlineutils from './offlinestorageutils'
 
-function addChassis(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu,callback, changePlanID = null, changeDocID = null, doNothing = null, noLog = false) {
+function addChassis(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu,callback, changePlanID = null, changeDocID = null, doNothing = null, noLog = false, offlineStorageName = null) {
     assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu,(errorMessage,id) => {
         if (!errorMessage && id) {
-            // add collection to rack
-            let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
-            let rackRow = splitRackArray[0]
-            let rackNum = parseInt(splitRackArray[1])
-            datacenterutils.getDataFromName(datacenter, datacenterID => {
-                firebaseutils.racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", datacenterID).get().then(qs => {
-                    if (!qs.empty) {
-                        // added fields copied from rack
-                        // don't really need the number field so will hardcode to something
-                        firebaseutils.racksRef.doc(qs.docs[0].id).collection('blades').doc(id).set({
-                            id: id,
-                            letter: hostname ? hostname : makeNoHostname(id),
-                            number: 1,
-                            height: 14,
-                            assets: [],
-                            powerPorts:[],
-                            datacenter: datacenterID
-                        }).then(() => callback(errorMessage))
-                    } else {
-                        callback(errorMessage)
-                    }
+            if(offlineStorageName){
+                callback(errorMessage)
+            } else {
+                // add collection to rack
+                let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
+                let rackRow = splitRackArray[0]
+                let rackNum = parseInt(splitRackArray[1])
+                datacenterutils.getDataFromName(datacenter, datacenterID => {
+                    firebaseutils.racksRef.where("letter", "==", rackRow).where("number", "==", rackNum).where("datacenter", "==", datacenterID).get().then(qs => {
+                        if (!qs.empty) {
+                            // added fields copied from rack
+                            // don't really need the number field so will hardcode to something
+                            firebaseutils.racksRef.doc(qs.docs[0].id).collection('blades').doc(id).set({
+                                id: id,
+                                letter: hostname ? hostname : makeNoHostname(id),
+                                number: 1,
+                                height: 14,
+                                assets: [],
+                                powerPorts:[],
+                                datacenter: datacenterID
+                            }).then(() => callback(errorMessage))
+                        } else {
+                            callback(errorMessage)
+                        }
+                    })
                 })
-            })
+            }
         } else {
             callback(errorMessage)
         }
-    }, changePlanID, changeDocID, null, noLog)
+    }, changePlanID, changeDocID, null, noLog, offlineStorageName)
 }
 
 function updateChassis(assetID, model, hostname, rack, rackU, owner, comment, datacenter, macAddresses,
@@ -154,45 +158,47 @@ function deleteChassis(assetID, callback, isDecommission = false, doNothing = nu
     })
 }
 
-function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null, doNothing = null, noLog = false) {
+function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null, doNothing = null, noLog = false, offlineStorageName = null) {
     console.log(chassisHostname, slot)
     const split = chassisHostname.split(' ')
     let findChassis = split.length > 1 ? firebaseutils.assetRef.where('assetId','==',split.slice(-1)[0]) : firebaseutils.assetRef.where('hostname','==',chassisHostname)
     findChassis.where('datacenter','==', datacenter).get().then(qs => {
       // use this second call as precautionary check
       firebaseutils.db.collectionGroup('blades').where('letter','==',chassisHostname).get().then(querySnapshot => {
-        if (!qs.empty && !querySnapshot.empty) {
-            const rack = qs.docs[0].data().rack
-            const racku = qs.docs[0].data().rackU
-            const rackId = qs.docs[0].data().rackID
-            const chassisId = qs.docs[0].id
-            const chassisVendor = qs.docs[0].data().vendor
+        if ((!qs.empty && !querySnapshot.empty) || offlineStorageName) {
+            const rack = offlineStorageName ? "" : qs.docs[0].data().rack
+            const racku = offlineStorageName ? "" : qs.docs[0].data().rackU
+            const rackId = offlineStorageName ? "" : qs.docs[0].data().rackID
+            const chassisId = offlineStorageName ? "" : qs.docs[0].id
+            const chassisVendor = offlineStorageName ? "" : qs.docs[0].data().vendor
 
             // generate chassis connection
             const serverConnection = [{otherAssetID: chassisId, otherPort: 'blade '+slot.toString(), thisPort: 'blade '+slot.toString()}]
-
+console.log("yeet")
             assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, {}, serverConnection, [], displayColor, memory, storage, cpu, (errorMessage,id) => {
                 if (!errorMessage && id) {
                     // need to fix this, need to get doc with collection
-                    firebaseutils.racksRef.doc(rackId).collection('blades').doc(chassisId).get().then(doc => {
-                        if (doc.exists) {
-                            doc.ref.update({
-                                assets: doc.data().assets.concat(id)
-                            })
-                            firebaseutils.bladeRef.doc(id).set({
-                                rack: chassisHostname,
-                                rackU: slot,
-                                rackId: rackId,
-                                model: model,
-                                chassisId: chassisId,
-                                chassisVendor: chassisVendor
-                            })
-                        }
-                    })
+                    if(!offlineStorageName){
+                        firebaseutils.racksRef.doc(rackId).collection('blades').doc(chassisId).get().then(doc => {
+                            if (doc.exists) {
+                                doc.ref.update({
+                                    assets: doc.data().assets.concat(id)
+                                })
+                                firebaseutils.bladeRef.doc(id).set({
+                                    rack: chassisHostname,
+                                    rackU: slot,
+                                    rackId: rackId,
+                                    model: model,
+                                    chassisId: chassisId,
+                                    chassisVendor: chassisVendor
+                                })
+                            }
+                        })
+                    }
                 }
                 callback(errorMessage)
                 return
-            }, changePlanID, changeDocID, {hostname: chassisHostname, slot: slot, id: chassisId}, noLog)
+            }, changePlanID, changeDocID, {hostname: chassisHostname, slot: slot, id: chassisId}, noLog, offlineStorageName)
         } else {
             callback('blade chassis ' + chassisHostname +' does not exist in datacenter ' + datacenter)
         }
