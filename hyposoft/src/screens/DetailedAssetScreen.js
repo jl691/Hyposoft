@@ -608,6 +608,7 @@ export default class DetailedAssetScreen extends Component {
                     popupType: ""
                 }, function () {
                     this.props.history.push('/assets/' + this.state.asset.assetID)
+                    window.location.reload();
                 });
 
             } else {
@@ -616,6 +617,7 @@ export default class DetailedAssetScreen extends Component {
                     popupType: ""
                 }, function () {
                     this.props.history.push('/offlinestorage/' + offlineStorageAbbrev + '/' + this.state.asset.assetID)
+                    window.location.reload();
                 });
             }
         } else {
