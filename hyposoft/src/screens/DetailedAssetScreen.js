@@ -642,6 +642,8 @@ export default class DetailedAssetScreen extends Component {
                         parentCallback={this.handleCancelRefreshPopupChange}
                         cancelCallback={this.handleCancelPopupChange}
 
+                        offlineStorage={this.props.match.params.storageSiteAbbrev}
+
                         popupMode={this.state.popupType}
                         updateIDFromParent={this.state.asset.assetID}
                         updateModelFromParent={this.state.asset.model}

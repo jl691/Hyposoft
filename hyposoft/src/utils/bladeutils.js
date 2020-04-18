@@ -158,7 +158,7 @@ function addServer(overrideAssetID, model, hostname, chassisHostname, slot, owne
     console.log(chassisHostname, slot)
     const split = chassisHostname.split(' ')
     let findChassis = split.length > 1 ? firebaseutils.assetRef.where('assetId','==',split.slice(-1)[0]) : firebaseutils.assetRef.where('hostname','==',chassisHostname)
-    findChassis.where('datacenter','==',datacenter).get().then(qs => {
+    findChassis.where('datacenter','==', datacenter).get().then(qs => {
       // use this second call as precautionary check
       firebaseutils.db.collectionGroup('blades').where('letter','==',chassisHostname).get().then(querySnapshot => {
         if (!qs.empty && !querySnapshot.empty) {
