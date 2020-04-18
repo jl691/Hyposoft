@@ -1,4 +1,4 @@
-import { assetRef, racksRef, modelsRef, usersRef, firebase, datacentersRef, changeplansRef, decommissionRef, offlinestorageRef, db } from './firebaseutils'
+import { assetRef, racksRef, modelsRef, usersRef, firebase, datacentersRef, changeplansRef, decommissionRef, offlinestorageRef, db, firebaseutils, bladeRef } from './firebaseutils'
 import * as rackutils from './rackutils'
 import * as modelutils from './modelutils'
 import * as assetIDutils from './assetidutils'
@@ -21,7 +21,7 @@ const rackNonExistent = (changePlanID, stepID, rackName, datacenter, datacenterI
     let rackNum = parseInt(splitRackArray[1])
     let errorIDSet = new Set();
 
-    let isChassis = chassisHostname ? true: false
+    let isChassis = chassisHostname ? true : false
 
     rackutils.getRackID(rackRow, rackNum, datacenter, function (rackID) {
         let ref = isChassis ? racksRef.doc(rackID).collection('blades') : racksRef
@@ -30,9 +30,8 @@ const rackNonExistent = (changePlanID, stepID, rackName, datacenter, datacenterI
             if (!rackID && querySnapshot.empty) {
                 //console.log("The rack exists")
 
-                errorIDSet.add(isChassis ? "chassisErrID": "rackErrID")
-
-                addConflictToDBDatabase(changePlanID, stepID, isChassis? "chassis": "rack", errorIDSet, status => {
+                errorIDSet.add(isChassis ? "chassisErrID" : "rackErrID")
+                addConflictToDBDatabase(changePlanID, stepID, isChassis ? "chassis" : "rack", errorIDSet, status => {
 
                     callback(status)
                 });
@@ -50,6 +49,7 @@ const rackNonExistent = (changePlanID, stepID, rackName, datacenter, datacenterI
 const datacenterNonExistent = (changePlanID, stepID, datacenterName, callback, datacenterAbbrev = null) => {
     let errorIDSet = new Set();
     datacenterutils.getDataFromName(datacenterName, async function (data) {
+        // console.log("THIS IS THE DC ABBREV: " +datacenterAbbrev)
         offlinestorageutils.getInfoFromAbbrev(datacenterAbbrev, offlineData => {
             if (!data && !offlineData) { //didn't find the datacenter in datacenter and offline storage db
                 errorIDSet.add(datacenterAbbrev ? "offlineStorageErrID" : "datacenterErrID")
@@ -61,10 +61,7 @@ const datacenterNonExistent = (changePlanID, stepID, datacenterName, callback, d
                 // console.log("The datacenter does not exist")
                 callback(false)
             }
-
-
         })
-
 
     })
 
@@ -197,7 +194,7 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacen
     let rackNum = parseInt(splitRackArray[1])
 
     let errorIDSet = new Set();
-    let isChassis = chassisHostname ? true: false
+    let isChassis = chassisHostname ? true : false
 
     rackutils.getRackID(rackRow, rackNum, datacenter, async function (rackID) {
         if (rackID) {
@@ -213,7 +210,7 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacen
                         if (doc) {
 
                             //assuming tht somehow, if we are a blade, that it will correctly check the chassis for conflicts, not rack or smth
-                            rackutils.checkAssetFits(isChassis? slotNum: rackU, doc.data().height, rackID, async function (status) {
+                            rackutils.checkAssetFits(isChassis ? slotNum : rackU, doc.data().height, rackID, async function (status) {
                                 if (status && status.length) {
                                     //asset conflicts with other assets
                                     errorIDSet.add(isChassis ? "slotConflictDBErrID" : "rackUConflictDBErrID")
@@ -241,8 +238,8 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacen
         else {
             //what if a chassis or blade?
             //the rack no longer exists
-            errorIDSet.add(isChassis? "chassisErrID": "rackErrID")
-            addConflictToDBDatabase(changePlanID, stepID, isChassis? "chassis": "rack", errorIDSet, status => {
+            errorIDSet.add(isChassis ? "chassisErrID" : "rackErrID")
+            addConflictToDBDatabase(changePlanID, stepID, isChassis ? "chassis" : "rack", errorIDSet, status => {
                 //(status)
                 callback(status)
             })
@@ -427,7 +424,7 @@ function checkLiveDBConflicts(isExecuted, changePlanID, stepNum, callback) {
     if (!isExecuted) {
         changeplanutils.getStepDocID(changePlanID, stepNum, thisStepID => { //querySnapshot is all docs in changes
             //console.log(thisStepID)
-            db.collectionGroup('changes').doc(thisStepID).get().then(docSnap => {
+            changeplansRef.doc(changePlanID).collection("changes").doc(thisStepID).get().then(docSnap => {
                 //let thisStepNum = docSnap.data().step
                 let assetID = docSnap.data().assetID
 
@@ -510,39 +507,33 @@ function checkLiveDBConflicts(isExecuted, changePlanID, stepNum, callback) {
                 else { //move changeType
                     //two things to account for: are you moving to/from, and is it a chassis/normal or blade
 
-
-
                     console.log("TODO: need to check for database conflicts if change is move.")
                     let location = docSnap.data().location
                     let datacenterID = docSnap.data().changes.datacenterID.new
                     let datacenter = docSnap.data().changes.datacenter.new
                     let datacenterAbbrev = docSnap.data().changes.datacenterAbbrev.new
-                    let model = docSnap.data().changes.model.new
 
-                    //only if blade, will these fields be not null
-                    let chassisHostname = docSnap.data().changes.chassisHostname.size ? docSnap.data().changes.chassisHostname.new : null
-                    let slotNum = docSnap.data().changes.chassisSlot.size ? docSnap.data().changes.chassisSlot.new : null
+                    //TODO: assuming that Allen has the model field included in the move doc
+                 
+                        let model = docSnap.data().model
+                        let rack = docSnap.data().changes.rack.new
+                        let rackU = docSnap.data().changes.rackU.new
 
-                    let rack = docSnap.data().changes.rack.new
-                    let rackU = docSnap.data().changes.rackU.new
+                        moveAssetChangePackage(changePlanID, thisStepID, assetID, location, datacenterID, datacenter, datacenterAbbrev, model, rack, rackU, status => {
+                            callback()
 
-                    moveAssetChangePackage(changePlanID, thisStepID, assetID, location, datacenterID, datacenter, datacenterAbbrev, model, chassisHostname, slotNum, rack, rackU, status => {
-                        callback()
-
-                    })
-
+                        })
+                    
 
                 }
-
             })
-
         })
     }
 }
 
 //checking live db conflicts with moving to/from offline storage
-function moveAssetChangePackage(changePlanID, thisStepID, assetID, location, datacenterID, datacenter, datacenterAbbrev, model, chassisHostname, slotNum, rack, rackU, callback) {
-    db.collectionGroup('changes').doc(thisStepID).get().then(changeDoc => {
+function moveAssetChangePackage(changePlanID, thisStepID, assetID, location, datacenterID, datacenter, datacenterAbbrev, model, rack, rackU, callback) {
+    changeplansRef.doc(changePlanID).collection("changes").doc(thisStepID).get().then(changeDoc => {
 
         console.log("Asset you are trying to move is currently on: " + location)
 
@@ -554,24 +545,31 @@ function moveAssetChangePackage(changePlanID, thisStepID, assetID, location, dat
             //This function checks both offline storage and datacenters
             datacenterNonExistent(changePlanID, thisStepID, datacenter, status => {
                 if (mountType == "blade") {
-                    if (location === "offline") {
+                    //TODO: finalize with allen whether or not when moving a blade from offline to active, if chassisHostname and chassisSlot will also be included in the move change doc
 
-                        //added optional param to rackUConflict: want to see if the slot blade is planningto move to conflicts with anything on the chassis
-                        //also add an optional param to rackNonexistent: we want to see if the chassis hostname exists 
-                        rackNonExistent(changePlanID, thisStepID, rack, datacenter, datacenterID, status1 => {
-                            rackUConflict(changePlanID, thisStepID, assetID, model, datacenter, datacenterID, rack, rackU, status => {
-                                callback()
+                    //bladeRef.doc(assetID).get().then(bladeDoc => {
+                        //If we have a blade, we get its details from bladeinfo, then rack ischassisHostname, rackU is the slotNum
+                        //let chassisHostname = bladeDoc.data().rack
+                        //let slotNum = bladeDoc.data().rackU
+                        let chassisHostname = "yoheyclock"
+                        let slotNum = 4
 
-                            }, chassisHostname, slotNum)
-                        }, chassisHostname)
-                    }
-                    //else, your current location is rack, so you are moving to offline. And only need to check that offline exists, which we already do with datacenterNonexistent
+                        if (location === "offline") { //currently in offline and want to move to live db
+                            rackNonExistent(changePlanID, thisStepID, rack, datacenter, datacenterID, status1 => {
+                                rackUConflict(changePlanID, thisStepID, assetID, model, datacenter, datacenterID, rack, rackU, status => {
+                                    callback()
+
+                                }, chassisHostname, slotNum)
+                            }, chassisHostname)
+                        }
+                        //else, your current location is rack, so you are moving to offline. And only need to check that offline exists, which we already do with datacenterNonexistent
+                   // })
                 }
                 else {
                     //normal or chassis mount type
                     if (location === "offline") {
 
-                        rackNonExistent(changePlanID, thisStepID, rack, datacenter,datacenterID, status1 => {
+                        rackNonExistent(changePlanID, thisStepID, rack, datacenter, datacenterID, status1 => {
                             rackUConflict(changePlanID, thisStepID, assetID, model, datacenter, datacenterID, rack, rackU, status => {
                                 callback()
 
