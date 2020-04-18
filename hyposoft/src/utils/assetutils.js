@@ -366,7 +366,7 @@ console.log(rack, racku)
                                                                                             callback("Couldn't find the offline storage site.");
                                                                                         } else {
                                                                                             offlinestorageRef.doc(offlineQuerySnap.docs[0].id).collection("offlineAssets").doc(overrideAssetID).set(assetObject).then(function () {
-                                                                                                logutils.addLog(overrideAssetID, logutils.OFFLINE(), logutils.CREATE(), {...assetObject, datacenterAbbrev: offlineQuerySnap.docs[0].data().abbreviation})
+                                                                                                logutils.addLog(overrideAssetID, logutils.OFFLINE(), logutils.CREATE())
                                                                                             }).catch(function (error) {
                                                                                                 console.log(error);
                                                                                                 callback("Couldn't add to the offline storage site.");
@@ -493,7 +493,7 @@ console.log(rack, racku)
                                                                                         callback("Couldn't find the offline storage site.");
                                                                                     } else {
                                                                                         offlinestorageRef.doc(offlineQuerySnap.docs[0].id).collection("offlineAssets").doc(newID).set(assetObject).then(function () {
-                                                                                            logutils.addLog(overrideAssetID, logutils.OFFLINE(), logutils.CREATE(), {...assetObject, datacenterAbbrev: offlineQuerySnap.docs[0].data().abbreviation})
+                                                                                            logutils.addLog(overrideAssetID, logutils.OFFLINE(), logutils.CREATE())
                                                                                         }).catch(function () {
                                                                                             callback("Couldn't add to the offline storage site.");
                                                                                         })
