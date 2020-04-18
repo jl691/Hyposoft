@@ -432,9 +432,11 @@ function decommissionAssetChange(assetID, changePlanID, callback, stepID = null,
     });
 }
 
-function moveAssetChange(assetID, changePlanID, datacenter, rack, rackU, offlineStorageName, callback, stepID = null) {
+function moveAssetChange(assetID, changePlanID, datacenter, rack, rackU, offlineStorageName, callback, stepID = null, isBladeServer = null) {
+    console.log("3")
     let query = !offlineStorageName ? db.collectionGroup("offlineAssets").where("assetId", "==", assetID) : assetRef.doc(assetID)
     query.get().then(function (queryResult) {
+        console.log("4")
         let documentSnapshot;
         if (!offlineStorageName) {
             if (queryResult.empty) {
@@ -450,93 +452,112 @@ function moveAssetChange(assetID, changePlanID, datacenter, rack, rackU, offline
             }
         }
         changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
+            console.log("5")
             let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
             let assetChangePlanObject = {
                 assetID: parseInt(assetID),
                 location: !offlineStorageName ? "offline" : "rack",
                 change: "move",
-                step: stepID ? stepID :  changeNumber
+                step: stepID ? stepID :  changeNumber,
+                model: documentSnapshot.data().model
             };
             if(!offlineStorageName){
                 //move to rack
                 //gotta validate: fits, datacenter exists
-                assetutils.assetFitsOnRack(rack, rackU, documentSnapshot.data().model, datacenter, fitResult => {
-                    if(fitResult){
-                        //doesn't fit
-                        callback(null, fitResult);
-                    } else {
-                        //get datacenter info
-                        datacenterutils.getDataFromName(datacenter, (datacenterID, datacenterAbbrev) => {
-                            if(datacenterID){
-                                let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
-                                let rackRow = splitRackArray[0]
-                                let rackNum = parseInt(splitRackArray[1])
-                                rackutils.getRackID(rackRow, rackNum, datacenter, rackID => {
-                                    if(rackID){
-                                        assetChangePlanObject = {
-                                            ...assetChangePlanObject,
-                                            changes: {
-                                                datacenter: {
-                                                    old: documentSnapshot.data().datacenter,
-                                                    new: datacenter
-                                                },
-                                                datacenterAbbrev: {
-                                                    old: "",
-                                                    new: datacenterAbbrev
-                                                },
-                                                datacenterID: {
-                                                    old: "",
-                                                    new: datacenterID
-                                                },
-                                                rack: {
-                                                    old: "",
-                                                    new: rack
-                                                },
-                                                rackID: {
-                                                    old: "",
-                                                    new: rackID
-                                                },
-                                                rackNum: {
-                                                    old: "",
-                                                    new: rackNum
-                                                },
-                                                rackRow: {
-                                                    old: "",
-                                                    new: rackRow
-                                                },
-                                                rackU: {
-                                                    old: "",
-                                                    new: rackU
-                                                }
-                                            }
-                                        };
-                                        if(stepID){
-                                            changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepID)).get().then(function (changeDocQuery) {
-                                                if(changeDocQuery.empty){
-                                                    callback(null);
+                getChassisFromHostname(rack, datacenter, (chassisRack, chassisRackU, chassisID) => {
+                    let chassisObject = {
+                        hostname: rack,
+                        slot: rackU,
+                        id: chassisID
+                    };
+                    console.log(isBladeServer, chassisObject, chassisRack, chassisRackU, chassisID, assetChangePlanObject)
+                    if(chassisRack || !isBladeServer){
+                        assetutils.assetFitsOnRack(isBladeServer ? chassisRack : rack, isBladeServer ? chassisRackU : rackU, documentSnapshot.data().model, datacenter, fitResult => {
+                            if(fitResult){
+                                //doesn't fit
+                                console.log("6", fitResult, rack, rackU)
+                                callback(null, fitResult);
+                            } else {
+                                //get datacenter info
+                                console.log("7")
+                                datacenterutils.getDataFromName(datacenter, (datacenterID, datacenterAbbrev) => {
+                                    if(datacenterID){
+                                        console.log("8")
+                                        let splitRackArray = isBladeServer ? chassisRack.split(/(\d+)/).filter(Boolean) : rack.split(/(\d+)/).filter(Boolean)
+                                        let rackRow = splitRackArray[0]
+                                        let rackNum = parseInt(splitRackArray[1])
+                                        rackutils.getRackID(rackRow, rackNum, datacenter, rackID => {
+                                            if(rackID){
+                                                console.log("9")
+                                                assetChangePlanObject = {
+                                                    ...assetChangePlanObject,
+                                                    changes: {
+                                                        datacenter: {
+                                                            old: documentSnapshot.data().datacenter,
+                                                            new: datacenter
+                                                        },
+                                                        datacenterAbbrev: {
+                                                            old: "",
+                                                            new: datacenterAbbrev
+                                                        },
+                                                        datacenterID: {
+                                                            old: "",
+                                                            new: datacenterID
+                                                        },
+                                                        rack: {
+                                                            old: "",
+                                                            new: rack
+                                                        },
+                                                        rackID: {
+                                                            old: "",
+                                                            new: rackID
+                                                        },
+                                                        rackNum: {
+                                                            old: "",
+                                                            new: rackNum
+                                                        },
+                                                        rackRow: {
+                                                            old: "",
+                                                            new: rackRow
+                                                        },
+                                                        rackU: {
+                                                            old: "",
+                                                            new: rackU
+                                                        }
+                                                    }
+                                                };
+                                                if(stepID){
+                                                    changeplansRef.doc(changePlanID).collection("changes").where("step", "==", parseInt(stepID)).get().then(function (changeDocQuery) {
+                                                        if(changeDocQuery.empty){
+                                                            callback(null);
+                                                        } else {
+                                                            changeplansRef.doc(changePlanID).collection("changes").doc(changeDocQuery.docs[0].id).set(assetChangePlanObject).then(function () {
+                                                                callback(true);
+                                                            }).catch(function () {
+                                                                callback(null);
+                                                            })
+                                                        }
+                                                    })
                                                 } else {
-                                                    changeplansRef.doc(changePlanID).collection("changes").doc(changeDocQuery.docs[0].id).set(assetChangePlanObject).then(function () {
+                                                    changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function () {
                                                         callback(true);
                                                     }).catch(function () {
                                                         callback(null);
                                                     })
                                                 }
-                                            })
-                                        } else {
-                                            changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject).then(function () {
-                                                callback(true);
-                                            }).catch(function () {
+                                            } else {
                                                 callback(null);
-                                            })
-                                        }
+                                            }
+                                        })
                                     } else {
                                         callback(null);
                                     }
-                                })
-                            } else {
-                                callback(null);
+                                });
                             }
-                        });
+                        }, null, null, isBladeServer ? chassisObject : null);
+                    } else {
+                        console.log("666")
+                        callback(null);
                     }
                 });
             } else {
@@ -1773,6 +1794,24 @@ function checkChangeAlreadyExists(changePlanID, assetID, change, callback) {
         console.log(error)
         callback(false);
     })
+}
+
+function getChassisFromHostname(hostname, datacenter, callback){
+    if(!hostname){
+        callback(true);
+    } else {
+        let split = hostname.split(' ');
+        let findChassis = split.length > 1 ? firebaseutils.assetRef.where('assetId','==',split.slice(-1)[0]) : firebaseutils.assetRef.where('hostname','==', hostname);
+        findChassis.where('datacenter','==', datacenter).get().then(function (querySnapshot) {
+            if(querySnapshot.empty){
+                callback(null);
+            } else {
+                callback(querySnapshot.docs[0].data().rack, querySnapshot.docs[0].data().rackU, querySnapshot.docs[0].id)
+            }
+        }).catch(function () {
+            callback(null);
+        })
+    }
 }
 
 export {

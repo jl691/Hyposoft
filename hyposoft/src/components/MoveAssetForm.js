@@ -58,6 +58,7 @@ class MoveAssetForm extends React.Component {
     }
 
     handleSubmit(event) {
+        console.log("1")
         if (!/[A-Z]\d+/.test(this.state.rack) && !this.state.assetType === "blade") {
             //not a valid rack
             ToastsStore.error("Invalid rack.");
@@ -70,6 +71,7 @@ class MoveAssetForm extends React.Component {
         }
         else {
             if(this.props.changePlanID){
+                console.log("2")
                 changeplanutils.moveAssetChange(this.props.assetID, this.props.changePlanID, this.state.datacenter, this.state.rack, this.state.rackU, null, (result, errorMessage) => {
                     if(result){
                         this.props.success(true);
@@ -80,7 +82,7 @@ class MoveAssetForm extends React.Component {
                             ToastsStore.error("Error moving the asset. Please try again later.");
                         }
                     }
-                }, this.props.stepID ? this.props.stepID : null)
+                }, this.props.stepID ? this.props.stepID : null, this.state.assetType === "blade" ? true : null)
             } else {
                 offlinestorageutils.moveAssetFromOfflineStorage(this.props.assetID, this.state.datacenter, this.state.rack, this.state.rackU, result => {
                     if(!result){

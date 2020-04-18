@@ -746,7 +746,7 @@ class AssetScreen extends Component {
                                                             />}
                                                     </Box>
                                                 </Box>
-                                                {(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) && (
+                                                {(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAnyAssetPermsAtAll()) && !this.props.match.params.storageSiteAbbrev && (
                                                     <Button primary icon={<Add/>} label="Add Asset" alignSelf='center'
                                                             onClick={() => this.setState({popupType: "Add"})}/>
                                                 )}
