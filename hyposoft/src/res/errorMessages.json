@@ -25,7 +25,9 @@
     "decommissionStepErrID": "Trying to edit or decommission an asset that was decommissioned in a previous step",
 
 
-    "editNonexistentErrID": "Trying to edit an asset that no longer exists."
+    "editNonexistentErrID": "Trying to edit an asset that no longer exists.",
+
+    "chassisErrID": "The chassis this blade belongs to does not exist."
 
 
     

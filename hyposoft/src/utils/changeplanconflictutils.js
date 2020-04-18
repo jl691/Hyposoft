@@ -21,17 +21,19 @@ const rackNonExistent = (changePlanID, stepID, rackName, datacenter, datacenterI
     let rackNum = parseInt(splitRackArray[1])
     let errorIDSet = new Set();
 
-    let isChassis = chassisHostname ? true : false
+    let isBlade = chassisHostname ? true : false
 
+    console.log(rackName)
     rackutils.getRackID(rackRow, rackNum, datacenter, function (rackID) {
-        let ref = isChassis ? racksRef.doc(rackID).collection('blades') : racksRef
-        ref.where("letter", "==", isChassis ? chassisHostname : rackRow).where("number", "==", isChassis ? 1 : rackNum).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
+        console.log("This is the rakcID: "+ rackID)
+        let ref = isBlade ? racksRef.doc(rackID).collection('blades') : racksRef
+        ref.where("letter", "==", isBlade ? chassisHostname : rackRow).where("number", "==", isBlade ? 1 : rackNum).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
 
             if (!rackID && querySnapshot.empty) {
                 //console.log("The rack exists")
 
-                errorIDSet.add(isChassis ? "chassisErrID" : "rackErrID")
-                addConflictToDBDatabase(changePlanID, stepID, isChassis ? "chassis" : "rack", errorIDSet, status => {
+                errorIDSet.add(isBlade ? "chassisErrID" : "rackErrID")
+                addConflictToDBDatabase(changePlanID, stepID, isBlade ? "chassis" : "rack", errorIDSet, status => {
 
                     callback(status)
                 });
@@ -187,7 +189,8 @@ const modelConflict = (changePlanID, stepID, model, callback) => {
 
 }
 
-//can't have datacenterId = null
+
+//TODO: look at assetFitsOnRack and checkAssetFits optional params
 const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacenterID, rackName, rackU, callback, chassisHostname = null, slotNum = null) => {
     let splitRackArray = rackName.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
