@@ -458,7 +458,8 @@ function moveAssetChange(assetID, changePlanID, datacenter, rack, rackU, offline
                 assetID: parseInt(assetID),
                 location: !offlineStorageName ? "offline" : "rack",
                 change: "move",
-                step: stepID ? stepID :  changeNumber
+                step: stepID ? stepID :  changeNumber,
+                model: documentSnapshot.data().model
             };
             if(!offlineStorageName){
                 //move to rack
@@ -469,8 +470,8 @@ function moveAssetChange(assetID, changePlanID, datacenter, rack, rackU, offline
                         slot: rackU,
                         id: chassisID
                     };
-                    console.log(isBladeServer, chassisObject, chassisRack, chassisRackU, chassisID)
-                    if(chassisRack){
+                    console.log(isBladeServer, chassisObject, chassisRack, chassisRackU, chassisID, assetChangePlanObject)
+                    if(chassisRack || !isBladeServer){
                         assetutils.assetFitsOnRack(isBladeServer ? chassisRack : rack, isBladeServer ? chassisRackU : rackU, documentSnapshot.data().model, datacenter, fitResult => {
                             if(fitResult){
                                 //doesn't fit
@@ -553,8 +554,9 @@ function moveAssetChange(assetID, changePlanID, datacenter, rack, rackU, offline
                                     }
                                 });
                             }
-                        }, null, null, chassisObject);
+                        }, null, null, isBladeServer ? chassisObject : null);
                     } else {
+                        console.log("666")
                         callback(null);
                     }
                 });
