@@ -160,13 +160,14 @@ function validateAssetVariances(displayColor, cpu, memory, storage, callback) {
     }
 }
 
-function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null, chassis = null, noLog = false) {
+function addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu, callback, changePlanID = null, changeDocID = null, chassis = null, noLog = false, offlineStorageName = null) {
 console.log(rack, racku)
     let splitRackArray = rack.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
-    validateAssetForm(null, model, hostname, rack, racku, owner, datacenter).then(
+    console.log(offlineStorageName)
+    validateAssetForm(null, model, hostname, rack, racku, owner, datacenter, offlineStorageName).then(
         _ => {
             validateAssetVariances(displayColor, cpu, memory, storage, errorMsg => {
                 if (errorMsg) {
@@ -231,8 +232,7 @@ console.log(rack, racku)
                                                                                 modelId: doc.id,
                                                                                 model: model,
                                                                                 hostname: hostname,
-                                                                                rack: rack,
-                                                                                rackU: racku,
+
                                                                                 owner: owner,
                                                                                 comment: comment,
                                                                                 rackID: rackID,
@@ -241,14 +241,10 @@ console.log(rack, racku)
                                                                                 powerConnections,
 
                                                                                 //This is for rack usage reports
-                                                                                modelNumber: modelNum,
-                                                                                vendor: modelVendor,
+                                                                                modelNumber: offlineStorageName ? doc.data().modelNumber : modelNum,
+                                                                                vendor: offlineStorageName ? doc.data().vendor : modelVendor,
                                                                                 //This is for sorting
-                                                                                rackRow: rackRow,
-                                                                                rackNum: rackNum,
-                                                                                datacenter: datacenter,
-                                                                                datacenterID: datacenterID,
-                                                                                datacenterAbbrev: datacenterAbbrev,
+
 
                                                                                 //this is for asset variances
                                                                                 variances: {
@@ -259,6 +255,20 @@ console.log(rack, racku)
                                                                                 }
 
 
+                                                                            }
+
+                                                                            if(!offlineStorageName){
+                                                                                assetObject = {
+                                                                                    ...assetObject,
+                                                                                    rack: rack,
+                                                                                    rackU: racku,
+                                                                                    rackRow: rackRow,
+                                                                                    rackNum: rackNum,
+                                                                                    rackID: rackID,
+                                                                                    datacenter: datacenter,
+                                                                                    datacenterID: datacenterID,
+                                                                                    datacenterAbbrev: datacenterAbbrev
+                                                                                }
                                                                             }
 
                                                                             if (!changePlanID) {
@@ -277,19 +287,22 @@ console.log(rack, racku)
                                                                                     suffixes_list.push(_hostname)
                                                                                 }
 
-                                                                                let _datacenter = assetObject.datacenter
+                                                                                if(!offlineStorageName){
+                                                                                    let _datacenter = assetObject.datacenter
 
-                                                                                while (_datacenter.length > 1) {
-                                                                                    _datacenter = _datacenter.substr(1)
-                                                                                    suffixes_list.push(_datacenter)
+                                                                                    while (_datacenter.length > 1) {
+                                                                                        _datacenter = _datacenter.substr(1)
+                                                                                        suffixes_list.push(_datacenter)
+                                                                                    }
+
+                                                                                    let _datacenterAbbrev = assetObject.datacenterAbbrev
+
+                                                                                    while (_datacenterAbbrev.length > 1) {
+                                                                                        _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                                                                                        suffixes_list.push(_datacenterAbbrev)
+                                                                                    }
                                                                                 }
 
-                                                                                let _datacenterAbbrev = assetObject.datacenterAbbrev
-
-                                                                                while (_datacenterAbbrev.length > 1) {
-                                                                                    _datacenterAbbrev = _datacenterAbbrev.substr(1)
-                                                                                    suffixes_list.push(_datacenterAbbrev)
-                                                                                }
                                                                                 let _owner = assetObject.owner
 
                                                                                 while (_owner.length > 1) {
@@ -302,48 +315,67 @@ console.log(rack, racku)
                                                                                     objectID: overrideAssetID,
                                                                                     suffixes: suffixes_list.join(' ')
                                                                                 })
-                                                                                assetRef.doc(overrideAssetID).set(assetObject).then(function (docRef) {
-                                                                                    assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, overrideAssetID);
 
-                                                                                    if (powerConnections.length != 0) {
-                                                                                        racksRef.doc(String(rackID)).get().then(doc => {
-                                                                                            racksRef.doc(String(rackID)).update({
-                                                                                                assets: chassis ? doc.data().assets : firebase.firestore.FieldValue.arrayUnion(overrideAssetID),
-                                                                                                powerPorts: chassis ? doc.data().powerPorts : firebase.firestore.FieldValue.arrayUnion(...powerConnections.map(obj => ({
-                                                                                                    ...obj,
-                                                                                                    assetID: overrideAssetID
-                                                                                                })))
-                                                                                            }).then(function () {
+                                                                                if(!offlineStorageName){
+                                                                                    assetRef.doc(overrideAssetID).set(assetObject).then(function (docRef) {
+                                                                                        assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, overrideAssetID);
 
-                                                                                                console.log("Document successfully updated in racks");
-                                                                                                if (!noLog) {
-                                                                                                  logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
-                                                                                                }
-                                                                                                callback(null, overrideAssetID);
+                                                                                        if (powerConnections.length != 0) {
+                                                                                            racksRef.doc(String(rackID)).get().then(doc => {
+                                                                                                racksRef.doc(String(rackID)).update({
+                                                                                                    assets: chassis ? doc.data().assets : firebase.firestore.FieldValue.arrayUnion(overrideAssetID),
+                                                                                                    powerPorts: chassis ? doc.data().powerPorts : firebase.firestore.FieldValue.arrayUnion(...powerConnections.map(obj => ({
+                                                                                                        ...obj,
+                                                                                                        assetID: overrideAssetID
+                                                                                                    })))
+                                                                                                }).then(function () {
+
+                                                                                                    console.log("Document successfully updated in racks");
+                                                                                                    if (!noLog) {
+                                                                                                        logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
+                                                                                                    }
+                                                                                                    callback(null, overrideAssetID);
+                                                                                                })
                                                                                             })
-                                                                                        })
 
 
-                                                                                    } else {
-                                                                                        racksRef.doc(String(rackID)).get().then(doc => {
-                                                                                            racksRef.doc(String(rackID)).update({
-                                                                                                assets: chassis ? doc.data().assets : firebase.firestore.FieldValue.arrayUnion(overrideAssetID)
-                                                                                            }).then(function () {
+                                                                                        } else {
+                                                                                            racksRef.doc(String(rackID)).get().then(doc => {
+                                                                                                racksRef.doc(String(rackID)).update({
+                                                                                                    assets: chassis ? doc.data().assets : firebase.firestore.FieldValue.arrayUnion(overrideAssetID)
+                                                                                                }).then(function () {
 
-                                                                                                console.log("Document successfully updated in racks");
-                                                                                                if (!noLog) {
-                                                                                                  logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
-                                                                                                }
-                                                                                                callback(null, overrideAssetID);
+                                                                                                    console.log("Document successfully updated in racks");
+                                                                                                    if (!noLog) {
+                                                                                                        logutils.addLog(overrideAssetID, logutils.ASSET(), logutils.CREATE())
+                                                                                                    }
+                                                                                                    callback(null, overrideAssetID);
+                                                                                                })
                                                                                             })
-                                                                                        })
 
 
-                                                                                    }
-                                                                                }).catch(function (error) {
-                                                                                    // callback("Error");
-                                                                                    console.log(error)
-                                                                                })
+                                                                                        }
+                                                                                    }).catch(function (error) {
+                                                                                        // callback("Error");
+                                                                                        console.log(error)
+                                                                                    })
+                                                                                } else {
+                                                                                    console.log(assetObject)
+                                                                                    offlinestorageRef.where("name", "==", offlineStorageName).get().then(function (offlineQuerySnap) {
+                                                                                        if(offlineQuerySnap.empty){
+                                                                                            callback("Couldn't find the offline storage site.");
+                                                                                        } else {
+                                                                                            offlinestorageRef.doc(offlineQuerySnap.docs[0].id).collection("offlineAssets").doc(overrideAssetID).set(assetObject).then(function () {
+                                                                                                logutils.addLog(overrideAssetID, logutils.OFFLINE(), logutils.CREATE(), {...assetObject, datacenterAbbrev: offlineQuerySnap.docs[0].data().abbreviation})
+                                                                                            }).catch(function (error) {
+                                                                                                console.log(error);
+                                                                                                callback("Couldn't add to the offline storage site.");
+                                                                                            })
+                                                                                        }
+                                                                                    }).catch(function () {
+                                                                                        callback("Couldn't find the offline storage site.");
+                                                                                    })
+                                                                                }
                                                                             } else {
                                                                                 assetObject.networkConnections = networkConnectionsArray;
                                                                                 if(chassis){
@@ -375,24 +407,16 @@ console.log(rack, racku)
                                                                             modelId: doc.id,
                                                                             model: model,
                                                                             hostname: hostname,
-                                                                            rack: rack,
-                                                                            rackU: racku,
                                                                             owner: owner,
                                                                             comment: comment,
-                                                                            rackID: rackID,
                                                                             macAddresses,
                                                                             networkConnections,
                                                                             powerConnections,
 
                                                                             // This is for rack usage reports
-                                                                            modelNumber: modelNum,
-                                                                            vendor: modelVendor,
+                                                                            modelNumber: offlineStorageName ? doc.data().modelNumber : modelNum,
+                                                                            vendor: offlineStorageName ? doc.data().vendor : modelVendor,
                                                                             //This is for sorting
-                                                                            rackRow: rackRow,
-                                                                            rackNum: rackNum,
-                                                                            datacenter: datacenter,
-                                                                            datacenterID: datacenterID,
-                                                                            datacenterAbbrev: datacenterAbbrev,
 
                                                                             //this is for assetvariances
                                                                             variances: {
@@ -400,6 +424,20 @@ console.log(rack, racku)
                                                                                 memory: memory,
                                                                                 cpu: cpu,
                                                                                 storage: storage
+                                                                            }
+                                                                        }
+
+                                                                        if(!offlineStorageName){
+                                                                            assetObject = {
+                                                                                ...assetObject,
+                                                                                rack: rack,
+                                                                                rackU: racku,
+                                                                                rackRow: rackRow,
+                                                                                rackNum: rackNum,
+                                                                                rackID: rackID,
+                                                                                datacenter: datacenter,
+                                                                                datacenterID: datacenterID,
+                                                                                datacenterAbbrev: datacenterAbbrev
                                                                             }
                                                                         }
 
@@ -419,18 +457,20 @@ console.log(rack, racku)
                                                                                 suffixes_list.push(_hostname)
                                                                             }
 
-                                                                            let _datacenter = assetObject.datacenter
+                                                                            if(!offlineStorageName){
+                                                                                let _datacenter = assetObject.datacenter
 
-                                                                            while (_datacenter.length > 1) {
-                                                                                _datacenter = _datacenter.substr(1)
-                                                                                suffixes_list.push(_datacenter)
-                                                                            }
+                                                                                while (_datacenter.length > 1) {
+                                                                                    _datacenter = _datacenter.substr(1)
+                                                                                    suffixes_list.push(_datacenter)
+                                                                                }
 
-                                                                            let _datacenterAbbrev = assetObject.datacenterAbbrev
+                                                                                let _datacenterAbbrev = assetObject.datacenterAbbrev
 
-                                                                            while (_datacenterAbbrev.length > 1) {
-                                                                                _datacenterAbbrev = _datacenterAbbrev.substr(1)
-                                                                                suffixes_list.push(_datacenterAbbrev)
+                                                                                while (_datacenterAbbrev.length > 1) {
+                                                                                    _datacenterAbbrev = _datacenterAbbrev.substr(1)
+                                                                                    suffixes_list.push(_datacenterAbbrev)
+                                                                                }
                                                                             }
                                                                             let _owner = assetObject.owner
 
@@ -445,8 +485,26 @@ console.log(rack, racku)
                                                                                 suffixes: suffixes_list.join(' ')
                                                                             })
 
-                                                                            assetRef.doc(newID)
-                                                                                .set(assetObject).then(function (docRef) {
+                                                                            console.log(offlineStorageName)
+                                                                            if(offlineStorageName){
+                                                                                console.log(assetObject)
+                                                                                offlinestorageRef.where("name", "==", offlineStorageName).get().then(function (offlineQuerySnap) {
+                                                                                    if(offlineQuerySnap.empty){
+                                                                                        callback("Couldn't find the offline storage site.");
+                                                                                    } else {
+                                                                                        offlinestorageRef.doc(offlineQuerySnap.docs[0].id).collection("offlineAssets").doc(newID).set(assetObject).then(function () {
+                                                                                            logutils.addLog(overrideAssetID, logutils.OFFLINE(), logutils.CREATE(), {...assetObject, datacenterAbbrev: offlineQuerySnap.docs[0].data().abbreviation})
+                                                                                        }).catch(function () {
+                                                                                            callback("Couldn't add to the offline storage site.");
+                                                                                        })
+                                                                                    }
+                                                                                }).catch(function (error) {
+                                                                                    console.log(error);
+                                                                                    callback("Couldn't find the offline storage site.");
+                                                                                })
+                                                                            } else {
+                                                                                assetRef.doc(newID)
+                                                                                    .set(assetObject).then(function (docRef) {
                                                                                     console.log("set the itme")
 
                                                                                     assetnetworkportutils.symmetricNetworkConnectionsAdd(networkConnectionsArray, newID);
@@ -463,7 +521,7 @@ console.log(rack, racku)
 
                                                                                                 console.log("Document successfully updated in racks");
                                                                                                 if (!noLog) {
-                                                                                                  logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                                                    logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
                                                                                                 }
                                                                                                 callback(null, newID);
                                                                                             })
@@ -478,7 +536,7 @@ console.log(rack, racku)
 
                                                                                                 console.log("Document successfully updated in racks");
                                                                                                 if (!noLog) {
-                                                                                                  logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
+                                                                                                    logutils.addLog(newID, logutils.ASSET(), logutils.CREATE())
                                                                                                 }
                                                                                                 callback(null, newID);
                                                                                             })
@@ -491,6 +549,7 @@ console.log(rack, racku)
                                                                                     // callback("Error");
                                                                                     console.log(error)
                                                                                 })
+                                                                            }
                                                                         } else {
                                                                             delete assetObject["assetId"];
                                                                             //duplicate this!!
@@ -519,17 +578,17 @@ console.log(rack, racku)
                                                             }
 
 
-                                                        })
+                                                        }, null, offlineStorageName)
 
 
                                                     }
-                                                })
+                                                }, offlineStorageName)
 
 
-                                            }, null, null, chassis)
+                                            }, null, offlineStorageName, chassis)
 
                                         }
-                                    }, null, null, chassis)
+                                    }, null, offlineStorageName, chassis)
                                 } else {
                                     callback("You do not have permissions for this datacenter");
                                 }
@@ -539,7 +598,7 @@ console.log(rack, racku)
                             }
 
                         })
-                    })
+                    }, offlineStorageName)
 
                 }
 

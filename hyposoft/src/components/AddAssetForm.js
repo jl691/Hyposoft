@@ -9,7 +9,7 @@ import {
     Box,
     Accordion,
     AccordionPanel,
-    CheckBox, Text, TextArea,
+    CheckBox, Text, TextArea, Select,
 
 } from 'grommet'
 import { SketchPicker } from 'react-color'
@@ -30,6 +30,8 @@ import theme from "../theme";
 import AssetPowerPortsForm from './AssetPowerPortsForm'
 import AssetNetworkPortsForm from './AssetNetworkPortsForm';
 import AssetMACForm from './AssetMACForm';
+import * as offlinestorageutils from "../utils/offlinestorageutils";
+import * as changeplanutils from "../utils/changeplanutils";
 
 
 //Instance table has a layer, that holds the button to add instance and the form
@@ -61,7 +63,9 @@ export default class AddAssetForm extends Component {
             displayColor: this.props.updateDisplayColorFromParent,
             cpu: this.props.updateCpuFromParent,
             memory: this.props.updateMemoryFromParent,
-            storage: this.props.updateStorageFromParent
+            storage: this.props.updateStorageFromParent,
+
+            addToOffline: false
 
         }
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -78,6 +82,20 @@ export default class AddAssetForm extends Component {
 
     componentDidMount() {
         // console.log(this.props.updateMacAddressesFromParent);
+        offlinestorageutils.getAllStorageSiteNames(result => {
+            let storageSites = [];
+            if(result.length){
+                storageSites = result;
+                this.setState({
+                    storageSiteNames: storageSites,
+                })
+            } else {
+                storageSites.push("No offline storage sites exist.");
+                this.setState({
+                    storageSiteNames: storageSites,
+                })
+            }
+        })
         let panel = document.getElementById("powerPortConnectionsPanel");
         panel.style.display = this.props.updatePowerConnectionsFromParent.length ? "block" : "none";
     }
@@ -299,19 +317,19 @@ export default class AddAssetForm extends Component {
     handleSubmit(event) {
 
         if (event.target.name === "addInst") {
-            if (!this.state.model || !this.state.rack || !this.state.rackU || !this.state.datacenter) {
+            if (!this.state.model || ((!this.state.rack || !this.state.rackU || !this.state.datacenter) && !this.state.addToOffline)) {
                 //not all required fields filled out
                 ToastsStore.error("Please fill out all required fields.");
             } else if (this.state.hostname && !/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(this.state.hostname)) {
                 //not a valid hostname
                 ToastsStore.error("Invalid hostname. It must start with a letter or number, contain only letters, numbers, or hyphens, and end with a letter or number. It must be 63 characters or less.");
-            } else if (this.isNonBlade && !/[A-Z]\d+/.test(this.state.rack)) {
+            } else if (this.isNonBlade && !this.state.addToOffline && !/[A-Z]\d+/.test(this.state.rack)) {
                 //not a valid rack
                 ToastsStore.error("Invalid rack.");
-            } else if (!parseInt(this.state.rackU)) {
+            } else if (!this.state.addToOffline && !parseInt(this.state.rackU)) {
                 //invalid number
                 ToastsStore.error((this.isNonBlade ? "Rack U" : "Slot") + " must be a number.");
-            } else if (!formvalidationutils.checkPositive(this.state.rackU)) {
+            } else if (!this.state.addToOffline && !formvalidationutils.checkPositive(this.state.rackU)) {
                 ToastsStore.error((this.isNonBlade ? "Rack U" : "Slot") + " must be positive.");
 
                 //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
@@ -359,7 +377,8 @@ export default class AddAssetForm extends Component {
                                                             this.props.parentCallback(true);
                                                             ToastsStore.success('Successfully added asset!');
                                                         }
-                                                    }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null
+                                                    }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null, null, null,
+                                                    this.state.addToOffline ? this.state.storageSite : null
                                                 );
                                             }
                                             else {
@@ -407,7 +426,8 @@ export default class AddAssetForm extends Component {
                                                 this.props.parentCallback(true);
                                                 ToastsStore.success('Successfully added asset!');
                                             }
-                                        }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null
+                                        }, this.props.changePlanID ? this.props.changePlanID : null, this.props.changeDocID ? this.props.changeDocID : null, null, null,
+                                        this.state.addToOffline ? this.state.storageSite : null
                                     );
 
 
@@ -550,7 +570,14 @@ export default class AddAssetForm extends Component {
                                     value={this.state.hostname} />
                             </FormField>
 
-                            <FormField name="datacenter" label="Datacenter">
+                            <CheckBox checked={this.state.addToOffline} label={"Add to offline storage?"}
+                                      toggle={true} onChange={(e) => {
+                                this.setState({
+                                    addToOffline: !this.state.addToOffline
+                                });
+                            }} />
+
+                            {!this.state.addToOffline && <FormField name="datacenter" label="Datacenter">
                                 <TextInput name="datacenter"
                                     placeholder="eg. Research Triangle Park #1"
                                     onChange={e => {
@@ -580,8 +607,8 @@ export default class AddAssetForm extends Component {
                                     title='Datacenter'
                                     required={true}
                                 />
-                            </FormField>
-                            {(this.isNonBlade
+                            </FormField>}
+                            {!this.state.addToOffline && (this.isNonBlade
                               ?
                               <FormField name="rack" label="Rack">
 
@@ -649,7 +676,7 @@ export default class AddAssetForm extends Component {
                                 </FormField>
                             )}
 
-                            {(this.isNonBlade
+                            {!this.state.addToOffline && (this.isNonBlade
                                 ?
                                 <FormField name="rackU" label="RackU">
 
@@ -687,6 +714,17 @@ export default class AddAssetForm extends Component {
                               </FormField>
                             )}
 
+                            {this.state.addToOffline && <FormField name="rackU" label="Offline Storage Site">
+                            <Select
+                                placeholder="Select one..."
+                                options={this.state.storageSiteNames}
+                                value={this.state.storageSite}
+                                onChange={(option) => {
+                                    this.setState({
+                                        storageSite: option.value
+                                    })
+                                }}/></FormField>}
+
                             <FormField name="owner" label="Owner">
 
                                 <TextInput name="owner"
@@ -712,8 +750,8 @@ export default class AddAssetForm extends Component {
                                 />
                             </FormField>
 
-                            {(this.isNonBlade
-                                ?
+                            {(this.isNonBlade && !this.state.addToOffline)
+                                &&
                                 <CheckBox checked={this.state.showPowerConnections} label={"Add power connections?"}
                                     toggle={true} onChange={(e) => {
                                         let panel = document.getElementById("powerPortConnectionsPanel");
@@ -724,12 +762,10 @@ export default class AddAssetForm extends Component {
                                             panel.style.display = display ? "block" : "none";
                                         })
                                     }} />
-                                :
-                                <Box></Box>
-                            )}
+                                }
 
-                            {(this.isNonBlade
-                                ?
+                            {(this.isNonBlade && !this.state.addToOffline) &&
+
                                 <Accordion>
                                     <div id={"powerPortConnectionsPanel"} style={{ display: "none" }}>
 
@@ -782,9 +818,7 @@ export default class AddAssetForm extends Component {
 
                                     </AccordionPanel>
                                 </Accordion>
-                                :
-                                <Box></Box>
-                            )}
+                                }
 
                             <FormField name="asset_id" label="Override Asset ID">
                                 <TextInput name="asset_id" placeholder="If left blank, will auto-generate"
