@@ -239,6 +239,7 @@ console.log(rack, racku)
                                                                                 macAddresses,
                                                                                 networkConnections,
                                                                                 powerConnections,
+                                                                                datacenter: offlineStorageName ? offlineStorageName : datacenter,
 
                                                                                 //This is for rack usage reports
                                                                                 modelNumber: offlineStorageName ? doc.data().modelNumber : modelNum,
@@ -265,7 +266,6 @@ console.log(rack, racku)
                                                                                     rackRow: rackRow,
                                                                                     rackNum: rackNum,
                                                                                     rackID: rackID,
-                                                                                    datacenter: datacenter,
                                                                                     datacenterID: datacenterID,
                                                                                     datacenterAbbrev: datacenterAbbrev
                                                                                 }
@@ -412,6 +412,7 @@ console.log(rack, racku)
                                                                             macAddresses,
                                                                             networkConnections,
                                                                             powerConnections,
+                                                                            datacenter: offlineStorageName ? offlineStorageName : datacenter,
 
                                                                             // This is for rack usage reports
                                                                             modelNumber: offlineStorageName ? doc.data().modelNumber : modelNum,
@@ -435,7 +436,6 @@ console.log(rack, racku)
                                                                                 rackRow: rackRow,
                                                                                 rackNum: rackNum,
                                                                                 rackID: rackID,
-                                                                                datacenter: datacenter,
                                                                                 datacenterID: datacenterID,
                                                                                 datacenterAbbrev: datacenterAbbrev
                                                                             }
