@@ -24,40 +24,55 @@ const rackNonExistent = (changePlanID, stepID, rackName, datacenter, datacenterI
     let isBlade = chassisHostname ? true : false
 
     console.log(rackName)
+    console.log("Chassis hostname: " + chassisHostname)
+    console.log(isBlade)
+    console.log(datacenterID)
 
     rackutils.getRackID(rackRow, rackNum, datacenter, function (rackID) {
         console.log("This is the rakcID: " + rackID)
-        let rackIDHC = "tVxL4eC3i5phipYq6LIp"
-        let ref = isBlade ? racksRef.doc(rackIDHC).collection('blades') : racksRef
-        ref.where("letter", "==", isBlade ? chassisHostname : rackRow).where("number", "==", isBlade ? 1 : rackNum).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
 
-            if (!rackID && querySnapshot.empty) {
-                //console.log("The rack exists")
+        if (!rackID) {
+            errorIDSet.add("rackErrID")
+            addConflictToDBDatabase(changePlanID, stepID, "rack", errorIDSet, status => {
+                callback(status)
+            });
 
-                errorIDSet.add(isBlade ? "chassisErrID" : "rackErrID")
-                addConflictToDBDatabase(changePlanID, stepID, isBlade ? "chassis" : "rack", errorIDSet, status => {
+        }
+        else {
+            let ref = isBlade ? racksRef.doc(rackID).collection('blades') : racksRef
 
-                    callback(status)
-                });
-            }
-            //rack exists
-            else {
-                callback(false)
-            }
+            ref.where("letter", "==", isBlade ? chassisHostname : rackRow).where("number", "==", isBlade ? 1 : rackNum).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
+                console.log(querySnapshot)
 
-        })
+                if (querySnapshot.empty) {
+                    //console.log("The rack exists")
+
+                    errorIDSet.add(isBlade ? "chassisErrID" : "rackErrID")
+                    addConflictToDBDatabase(changePlanID, stepID, isBlade ? "chassis" : "rack", errorIDSet, status => {
+
+                        callback(status)
+                    });
+                }
+                //rack exists
+                else {
+                    callback(false)
+                }
+
+            })
+        }
     })
 
 }
 
-const datacenterNonExistent = (changePlanID, stepID, datacenterName, callback, datacenterAbbrev = null) => {
+const datacenterNonExistent = (changePlanID, stepID, datacenterName, callback, toOffline = null) => {
     let errorIDSet = new Set();
+    console.log("This is the datacenter name: " + datacenterName)
     datacenterutils.getDataFromName(datacenterName, async function (data) {
-        // console.log("THIS IS THE DC ABBREV: " +datacenterAbbrev)
-        offlinestorageutils.getInfoFromAbbrev(datacenterAbbrev, offlineData => {
-            if (!data && !offlineData) { //didn't find the datacenter in datacenter and offline storage db
-                errorIDSet.add(datacenterAbbrev ? "offlineStorageErrID" : "datacenterErrID")
-                addConflictToDBDatabase(changePlanID, stepID, datacenterAbbrev ? "offlineStorage" : "datacenter", errorIDSet, status => {
+        offlinestorageRef.where("name", "==", datacenterName).get().then(offlineDoc => {
+            console.log(data)
+            if (!data && offlineDoc.empty) { //didn't find the datacenter in datacenter and offline storage db
+                errorIDSet.add(toOffline ? "offlineStorageErrID" : "datacenterErrID")
+                addConflictToDBDatabase(changePlanID, stepID, toOffline ? "offlineStorage" : "datacenter", errorIDSet, status => {
                     callback(status)
                 })
             }
@@ -514,18 +529,18 @@ function checkLiveDBConflicts(isExecuted, changePlanID, stepNum, callback) {
 
                     console.log("TODO: need to check for database conflicts if change is move.")
                     let location = docSnap.data().location
-                    let datacenterID = docSnap.data().changes.datacenterID.new
-                    let datacenter = docSnap.data().changes.datacenter.new
-                    let datacenterAbbrev = docSnap.data().changes.datacenterAbbrev.new
+                    let datacenterIDObj = docSnap.data().changes.datacenterID
+                    let datacenterObj = docSnap.data().changes.datacenter
 
                     let model = docSnap.data().model
-                    let rack = docSnap.data().changes.rack.new //for a blade, rack means the chassisHostname
-                    let rackU = docSnap.data().changes.rackU.new //for a blade, rackU means the slotNum
-                    //however, the rackNUm and the rackRow will refer to the rack the actual chassis is on. This is what we want to pass in for a rackNonexistent check for a blade
-                    let rackRow = docSnap.data().changes.rackRow.new
-                    let rackNum = docSnap.data().changes.rackNum.new
+                    let rackObj = docSnap.data().changes.rack //for a blade, rack means the chassisHostname
+                    let rackUObj = docSnap.data().changes.rackU //for a blade, rackU means the slotNum
 
-                    moveAssetChangePackage(changePlanID, thisStepID, assetID, location, datacenterID, datacenter, datacenterAbbrev, model, rack, rackU, rackRow, rackNum, status => {
+                    //however, the rackNUm and the rackRow will refer to the rack the actual chassis is on. This is what we want to pass in for a rackNonexistent check for a blade
+                    let rackRowObj = docSnap.data().changes.rackRow
+                    let rackNumObj = docSnap.data().changes.rackNum
+
+                    moveAssetChangePackage(changePlanID, thisStepID, assetID, location, datacenterIDObj, datacenterObj, model, rackObj, rackUObj, rackRowObj, rackNumObj, status => {
                         callback()
 
                     })
@@ -538,7 +553,7 @@ function checkLiveDBConflicts(isExecuted, changePlanID, stepNum, callback) {
 }
 
 //checking live db conflicts with moving to/from offline storage
-function moveAssetChangePackage(changePlanID, thisStepID, assetID, location, datacenterID, datacenter, datacenterAbbrev, model, rack, rackU, rackRow, rackNum, callback) {
+function moveAssetChangePackage(changePlanID, thisStepID, assetID, location, datacenterIDObj, datacenterObj, model, rackObj, rackUObj, rackRowObj, rackNumObj, callback) {
     changeplansRef.doc(changePlanID).collection("changes").doc(thisStepID).get().then(changeDoc => {
 
         console.log("Asset you are trying to move is currently on: " + location)
@@ -548,41 +563,58 @@ function moveAssetChangePackage(changePlanID, thisStepID, assetID, location, dat
 
             console.log("This is the mount type: " + mountType)
 
-            //This function checks both offline storage and datacenters
-            datacenterNonExistent(changePlanID, thisStepID, datacenter, status => {
+            //depending on whether it is a move to or from offline, the doc is different
+            //if we more from offline to active (location = offline) e look at the new fields
+            //if we move from active to offline (location = rack), we want to look at the old fields
+
+            datacenterNonExistent(changePlanID, thisStepID, datacenterObj.new, status => {
                 if (mountType == "blade") {
 
-                    //If we have a blade, we get its details from bladeinfo, then rack ischassisHostname, rackU is the slotNum
+                    //For blade doc: rack ischassisHostname, rackU is the slotNum
 
-                    let chassisHostname = rack
-                    let slotNum = rackU
-                    let chassisRack = rackRow + rackNum.toString()
+                    let chassisHostname = location === "rack" ? rackObj.old : rackObj.new
+                    let slotNum = location === "rack" ? rackUObj.old : rackUObj.new
+                    let pickRackRow = location === "rack" ? rackRowObj.old : rackRowObj.new
+                    let pickRackNum = location === "rack" ? rackNumObj.old : rackNumObj.new
+                    let chassisRack = pickRackRow + pickRackNum.toString()
 
-                    if (location === "offline") { //currently in offline and want to move to live db
-                        rackNonExistent(changePlanID, thisStepID, chassisRack.toString(), datacenter, datacenterID, status1 => {
-                            rackUConflict(changePlanID, thisStepID, assetID, model, datacenter, datacenterID, chassisRack.toString(), rackU, status => {
-                                callback()
+                    rackNonExistent(changePlanID, thisStepID,
+                        chassisRack.toString(),
+                        location === "rack" ? datacenterObj.old : datacenterObj.new,
+                        location === "rack" ? datacenterIDObj.old : datacenterIDObj.new, status1 => {
+                            rackUConflict(changePlanID, thisStepID, assetID, model,
+                                location === "rack" ? datacenterObj.old : datacenterObj.new,
+                                location === "rack" ? datacenterIDObj.old : datacenterIDObj.new,
+                                chassisRack.toString(),
+                                location === "rack" ? rackUObj.old : rackUObj.new,
+                                status => {
+                                    callback()
 
-                            }, chassisHostname, slotNum)
+                                }, chassisHostname, slotNum)
                         }, chassisHostname)
-                    }
+
                     //else, your current location is rack, so you are moving to offline. And only need to check that offline exists, which we already do with datacenterNonexistent
                     // })
                 }
                 else {
                     //normal or chassis mount type
-                    if (location === "offline") {
+                    rackNonExistent(changePlanID, thisStepID,
+                        location === "rack" ? rackObj.old : rackObj.new,
+                        location === "rack" ? datacenterObj.old : datacenterObj.new,
+                        location === "rack" ? datacenterIDObj.old : datacenterIDObj.new, status1 => {
+                            rackUConflict(changePlanID, thisStepID, assetID, model,
+                                location === "rack" ? datacenterObj.old : datacenterObj.new,
+                                location === "rack" ? datacenterIDObj.old : datacenterIDObj.new,
+                                location === "rack" ? rackObj.old : rackObj.new,
+                                location === "rack" ? rackUObj.old : rackUObj.new,
+                                status => {
+                                    callback()
 
-                        rackNonExistent(changePlanID, thisStepID, rack, datacenter, datacenterID, status1 => {
-                            rackUConflict(changePlanID, thisStepID, assetID, model, datacenter, datacenterID, rack, rackU, status => {
-                                callback()
-
-                            })
+                                })
                         })
-                    }
                     //else, your current location is rack, so you are moving to offline. And only need to check that offline exists, which we already do with datacenterNonexistent
                 }
-            }, datacenterAbbrev) //pass in datacenterAbbrev since it is a move change type and need to check offline
+            }, location == "rack" ? true : false) //we are moving to offline if our current location is rack
         })
     })
 }
@@ -1321,8 +1353,9 @@ function changePlanHasConflicts(changePlanID, callback) {
 
 
                 }).catch(error => {
-                    console.log(error)}
-                    )
+                    console.log(error)
+                }
+                )
             })
         }
         else {
@@ -1360,7 +1393,7 @@ function checkAllLiveDBConflicts(isExecuted, changePlanID, callback) {
             }
         })
     }
-} 
+}
 
 function clearAllStepConflicts(changePlanID, callback) {
     let counter = 0;

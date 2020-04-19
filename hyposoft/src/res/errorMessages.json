@@ -27,7 +27,8 @@
 
     "editNonexistentErrID": "Trying to edit an asset that no longer exists.",
 
-    "chassisErrID": "The chassis this blade belongs to does not exist."
+    "chassisErrID": "The chassis this blade belongs to does not exist.",
+    "offlineStorageErrID": "The offline storage site does not exist."
 
 
     

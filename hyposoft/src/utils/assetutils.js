@@ -413,6 +413,7 @@ console.log(rack, racku)
                                                                             networkConnections,
                                                                             powerConnections,
                                                                             datacenter: offlineStorageName ? offlineStorageName : datacenter,
+                                                                            
 
                                                                             // This is for rack usage reports
                                                                             modelNumber: offlineStorageName ? doc.data().modelNumber : modelNum,
