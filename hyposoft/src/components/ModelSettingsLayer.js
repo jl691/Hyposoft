@@ -300,10 +300,13 @@ class ModelSettingsLayer extends React.Component {
                             <Box direction="column" pad='xsmall' gap="small" flex height={{max: 'medium'}}
                                  overflow={{vertical: 'scroll'}}>
                                  <Select
+                                    disabled={this.state.layerTitle === 'Edit Model'}
                                     options={['Rackmount', 'Chassis', 'Blade']}
                                     value={mountToDisplayString(this.state.mount)}
                                     onChange={({ option }) => {
-                                        this.setState(oldState => ({...oldState, mount: displayStringToMount(option)}))
+                                        if (this.state.layerTitle !== 'Edit Model') {
+                                            this.setState(oldState => ({...oldState, mount: displayStringToMount(option)}))
+                                        } 
                                     }}
                                     />
                                 <Text size={"small"} style={{marginLeft: "20px"}}>Vendor</Text>
