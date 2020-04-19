@@ -1110,7 +1110,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                                             console.log("checkpoint16")
                                                                                                                             console.log("Updated model successfully")
                                                                                                                             // log needs to be added before calling back for DetailedAssetScreen
-                                                                                                                            logutils.addLog(String(assetID), logutils.OFFLINE(), logutils.MODIFY(), assetData, () => callback(null, String(assetID),modelStuff[0]))
+                                                                                                                            logutils.addLog(String(assetID), logutils.OFFLINE(), logutils.MODIFY(), {...assetData,datacenterAbbrev: offlineStorageAbbrev}, () => callback(null, String(assetID),modelStuff[0]))
                                                                                                                         }).catch(function (error) {
                                                                                                                             callback(error);
                                                                                                                         })
