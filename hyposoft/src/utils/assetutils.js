@@ -1304,8 +1304,10 @@ function getAllAssetsList(callback) {
                                 let parent = offlineDoc.ref.parent.parent;
                                 parent.get().then(function (parentDoc) {
                                     if(parentDoc.exists){
-                                        assetArray.push(offlineDoc.data().assetId + " - " + offlineDoc.data().model + " - " + offlineDoc.data().hostname);
-                                        assetData.set(offlineDoc.data().assetId + " - " + offlineDoc.data().model + " - " + offlineDoc.data().hostname, {...offlineDoc.data(), location: "offline", offlineAbbrev: parentDoc.data().abbreviation});
+                                        if(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.doesLoggedInUserHaveAssetPerm(parentDoc.data().abbreviation, true)){
+                                            assetArray.push(offlineDoc.data().assetId + " - " + offlineDoc.data().model + " - " + offlineDoc.data().hostname);
+                                            assetData.set(offlineDoc.data().assetId + " - " + offlineDoc.data().model + " - " + offlineDoc.data().hostname, {...offlineDoc.data(), location: "offline", offlineAbbrev: parentDoc.data().abbreviation});
+                                        }
                                         count++;
                                         if(count === offlineQuerySnapshot.size){
                                             callback(assetArray, assetData);

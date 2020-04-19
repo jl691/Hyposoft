@@ -1,6 +1,7 @@
 import * as firebaseutils from "./firebaseutils";
 import * as assetutils from "./assetutils";
 import * as logutils from "./logutils";
+import * as userutils from "./userutils";
 import {offlinestorageRef} from "./firebaseutils";
 import {db} from "./firebaseutils";
 
@@ -42,7 +43,9 @@ function getAllStorageSiteNames(callback) {
             callback([]);
         } else {
             docSnaps.docs.forEach(document => {
-                storageSites.push(document.data().name);
+                if(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.doesLoggedInUserHaveAssetPerm(document.data().abbreviation, true)){
+                    storageSites.push(document.data().name);
+                }
                 count++;
                 if (count === docSnaps.size) {
                     callback(storageSites);
