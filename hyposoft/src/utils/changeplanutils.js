@@ -658,13 +658,13 @@ function deleteChange(changePlanID, stepNum, callback) {
                 cascadeUpStepNumbers(changePlanID, stepNum, result => {
                     if (result) {
                         changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
-                            changeplanconflictutils.checkAllLiveDBConflicts(executed, changePlanID, status2 => {
+                            //changeplanconflictutils.checkAllLiveDBConflicts(executed, changePlanID, status2 => {
                                 //console.log("Made it back from db checks")
                                 changeplanconflictutils.checkSequentialStepConflicts(executed, changePlanID, status3 => {
                                     console.log("DONE RECHECKING: after deleting step")
                                     callback(true)
                                 })
-                            })
+                           // })
                         })
                     } else {
                         callback(null);
