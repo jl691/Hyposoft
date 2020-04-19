@@ -488,11 +488,14 @@ console.log(rack, racku)
 
                                                                             console.log(offlineStorageName)
                                                                             if(offlineStorageName){
-                                                                                console.log(assetObject)
+                                                                                console.log(assetObject) 
                                                                                 offlinestorageRef.where("name", "==", offlineStorageName).get().then(function (offlineQuerySnap) {
                                                                                     if(offlineQuerySnap.empty){
                                                                                         callback("Couldn't find the offline storage site.");
                                                                                     } else {
+                                                                                        console.log(offlineStorageName)
+                                                                                        console.log(offlineQuerySnap.docs[0].id)
+                                                                                        
                                                                                         offlinestorageRef.doc(offlineQuerySnap.docs[0].id).collection("offlineAssets").doc(newID).set(assetObject).then(function () {
                                                                                             logutils.addLog(overrideAssetID, logutils.OFFLINE(), logutils.CREATE())
                                                                                         }).catch(function () {

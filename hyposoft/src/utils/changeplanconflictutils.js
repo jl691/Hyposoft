@@ -208,7 +208,7 @@ const modelConflict = (changePlanID, stepID, model, callback) => {
 
 
 //TODO: look at assetFitsOnRack and checkAssetFits optional params
-const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacenterID, rackName, rackU, callback, chassisHostname = null, slotNum = null) => {
+const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacenterID, rackName, rackU, callback, chassisHostname = null, slotNum = null, chassisAssetID = null) => {
     let splitRackArray = rackName.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
@@ -220,9 +220,11 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacen
         if (rackID) {
 
             let ref = isChassis ? racksRef.doc(rackID).collection('blades') : racksRef
-            ref.where("letter", "==", isChassis ? rackName : rackRow).where("number", "==", isChassis ? 1 : rackNum).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
+
+            ref.where("letter", "==", isChassis ? chassisHostname : rackRow).where("number", "==", isChassis ? 1 : rackNum).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
 
                 if (!querySnapshot.empty) {
+
                     modelutils.getModelByModelname(model, async function (doc) {
                         //doc.data().height refers to model height
                         //need to get get model height
@@ -230,7 +232,10 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacen
                         if (doc) {
 
                             //assuming tht somehow, if we are a blade, that it will correctly check the chassis for conflicts, not rack or smth
+                            console.log(chassisAssetID)
+
                             rackutils.checkAssetFits(isChassis ? slotNum : rackU, doc.data().height, rackID, async function (status) {
+                                console.log(status.length)
                                 if (status && status.length) {
                                     //asset conflicts with other assets
                                     errorIDSet.add(isChassis ? "slotConflictDBErrID" : "rackUConflictDBErrID")
@@ -243,7 +248,7 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacen
                                     //what if model was deleted? Then
                                     callback(false)
                                 }
-                            }, assetID)
+                            }, assetID, isChassis ? { id: chassisAssetID } : null) //{id: chassisId} instead of true. so assetID of the chassis...what if offline to active htough? use the assetID of the new chassis we are moving to. Aka, look up in assets the where hostname === chassisHostname and return the doc id
 
                         }
                     })
@@ -569,7 +574,6 @@ function moveAssetChangePackage(changePlanID, thisStepID, assetID, location, dat
 
             datacenterNonExistent(changePlanID, thisStepID, datacenterObj.new, status => {
                 if (mountType == "blade") {
-
                     //For blade doc: rack ischassisHostname, rackU is the slotNum
 
                     let chassisHostname = location === "rack" ? rackObj.old : rackObj.new
@@ -577,21 +581,30 @@ function moveAssetChangePackage(changePlanID, thisStepID, assetID, location, dat
                     let pickRackRow = location === "rack" ? rackRowObj.old : rackRowObj.new
                     let pickRackNum = location === "rack" ? rackNumObj.old : rackNumObj.new
                     let chassisRack = pickRackRow + pickRackNum.toString()
+                    let chassisAssetID = null
+                    assetRef.where("hostname", "==", chassisHostname).get().then(chassisAssetDoc => {
 
-                    rackNonExistent(changePlanID, thisStepID,
-                        chassisRack.toString(),
-                        location === "rack" ? datacenterObj.old : datacenterObj.new,
-                        location === "rack" ? datacenterIDObj.old : datacenterIDObj.new, status1 => {
-                            rackUConflict(changePlanID, thisStepID, assetID, model,
-                                location === "rack" ? datacenterObj.old : datacenterObj.new,
-                                location === "rack" ? datacenterIDObj.old : datacenterIDObj.new,
-                                chassisRack.toString(),
-                                location === "rack" ? rackUObj.old : rackUObj.new,
-                                status => {
-                                    callback()
+                        if (!chassisAssetDoc.empty) {
+                            chassisAssetID = chassisAssetDoc.docs[0].id //optional param to pass into rackUConflict if u are blade
+                        }
+                        console.log(chassisAssetID)
+                        rackNonExistent(changePlanID, thisStepID,
+                            chassisRack.toString(),
+                            location === "rack" ? datacenterObj.old : datacenterObj.new,
+                            location === "rack" ? datacenterIDObj.old : datacenterIDObj.new, status1 => {
+                                rackUConflict(changePlanID, thisStepID, assetID, model,
+                                    location === "rack" ? datacenterObj.old : datacenterObj.new,
+                                    location === "rack" ? datacenterIDObj.old : datacenterIDObj.new,
+                                    chassisRack.toString(),
+                                    location === "rack" ? rackUObj.old : rackUObj.new,
+                                    status => {
+                                        callback()
 
-                                }, chassisHostname, slotNum)
-                        }, chassisHostname)
+                                    }, chassisHostname, slotNum, chassisAssetID)
+                            }, chassisHostname)
+                    })
+
+                    //offline to active htough? use the assetID of the new chassis we are moving to. Aka, look up in assets the where hostname === chassisHostname and return the doc id
 
                     //else, your current location is rack, so you are moving to offline. And only need to check that offline exists, which we already do with datacenterNonexistent
                     // })
