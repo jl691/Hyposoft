@@ -26,12 +26,13 @@ function doesLoggedInUserHaveModelPerm() {
     return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('MODEL_PERMISSION')))
 }
 
-function doesLoggedInUserHaveAssetPerm(dcAbbrev) {
+function doesLoggedInUserHaveAssetPerm(dcAbbrev, offline=false) {
     // If dcAbbrev is null, check for global permissions
+    const suffix = offline ? ' (offline)' : ''
     if (!dcAbbrev) {
         return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_GLOBAL')))
     }
-    return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_GLOBAL')) || (JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_'+dcAbbrev)))
+    return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_GLOBAL')) || (JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_'+dcAbbrev+suffix)))
 }
 
 function getAllowedDCsString() {
@@ -209,6 +210,7 @@ function logUserIn(userObject) {
     localStorage.setItem('userDocId', userObject.docId)
     localStorage.setItem('isNetIDAccount', userObject.password.trim() === '' ? 'yes' : 'no')
     localStorage.setItem('permissions', JSON.stringify(userObject.permissions))
+    updateEveryonesAssetPermissions()
 }
 
 function getLoggedInUser() {
@@ -351,7 +353,12 @@ function getAllDataCenterAbbrevs(callback) {
         for (var i = 0; i < querySnapshot.size; i++) {
             results.push(querySnapshot.docs[i].data().abbreviation)
         }
-        callback(results)
+        firebaseutils.offlinestorageRef.get().then(qs => {
+            for (var j = 0; j < qs.size; j++) {
+                results.push(qs.docs[j].data().abbreviation+" (offline)")
+            }
+            callback(results)
+        })
     })
 }
 

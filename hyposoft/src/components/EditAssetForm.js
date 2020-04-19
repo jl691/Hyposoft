@@ -417,7 +417,7 @@ export default class EditAssetForm extends Component {
                         </Box>)}
                         <FormField name="model" label="Model">
                             {/* change placeholders to what the original values were? */}
-                            <TextInput name="model" placeholder="Update Model"
+                            <TextInput name="model" placeholder="Update Model" disabled={true}
                                 onChange={e => {
                                     const value = e.target.value
                                     this.setState(oldState => ({ ...oldState, model: value }))

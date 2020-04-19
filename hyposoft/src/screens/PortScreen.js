@@ -143,7 +143,7 @@ class PortScreen extends Component {
                 && 'display_color' in data[0] && 'network_ports' in data[0] && 'power_ports' in data[0]
                 && 'cpu' in data[0] && 'memory' in data[0] && 'storage' in data[0] && 'comment' in data[0]
                 && 'network_port_name_1' in data[0] && 'network_port_name_2' in data[0] && 'network_port_name_3' in data[0]
-                && 'network_port_name_4' in data[0])) {
+                && 'network_port_name_4' in data[0] && 'mount_type' in data[0])) {
                 ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
                 return
             }
@@ -191,6 +191,9 @@ class PortScreen extends Component {
             }
 
             if (!('asset_number' in data[0] && 'hostname' in data[0] && 'datacenter' in data[0]
+                && 'offline_site' in data[0] && 'chassis_number' in data[0] && 'chassis_slot' in data[0]
+                && 'custom_display_color' in data[0] && 'custom_cpu' in data[0] && 'custom_memory' in data[0]
+                && 'custom_storage' in data[0]
                 && 'rack' in data[0] && 'rack_position' in data[0] && 'vendor' in data[0]
                 && 'model_number' in data[0] && 'owner' in data[0] && 'comment' in data[0]
                 && 'power_port_connection_1' in data[0] && 'power_port_connection_2' in data[0])) {

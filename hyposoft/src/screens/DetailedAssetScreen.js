@@ -608,6 +608,7 @@ export default class DetailedAssetScreen extends Component {
                     popupType: ""
                 }, function () {
                     this.props.history.push('/assets/' + this.state.asset.assetID)
+                    window.location.reload();
                 });
 
             } else {
@@ -616,6 +617,7 @@ export default class DetailedAssetScreen extends Component {
                     popupType: ""
                 }, function () {
                     this.props.history.push('/offlinestorage/' + offlineStorageAbbrev + '/' + this.state.asset.assetID)
+                    window.location.reload();
                 });
             }
         } else {
@@ -736,22 +738,7 @@ export default class DetailedAssetScreen extends Component {
                                                         <td style={{ textAlign: 'right' }}>{this.state.asset.model}</td>
                                                     </tr>
                                                     {this.generateVariancesTable()}
-                                                    {/* make sure you've accounted for all fields */}
-                                                    <tr>
-                                                        <td><b>Model Vendor</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.model.vendor}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td><b>Model Number</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.model.modelNumber}</td>
-                                                    </tr>
-
-                                                    {this.generateModelNetworkPortString()}
-
-                                                    <tr>
-                                                        <td><b>Model Power Ports</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.model.powerPorts}</td>
-                                                    </tr>
+                                     
                                                     {!this.props.match.params.storageSiteAbbrev && <tr>
                                                         <td><b>Datacenter</b></td>
                                                         <td style={{ textAlign: 'right' }}>{this.state.asset.datacenter || 'N/A'}</td>

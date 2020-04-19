@@ -472,10 +472,10 @@ function moveAssetChange(assetID, changePlanID, datacenter, rack, rackU, offline
                     };
                     console.log(isBladeServer, chassisObject, chassisRack, chassisRackU, chassisID, assetChangePlanObject)
                     if(chassisRack || !isBladeServer){
-                        assetutils.assetFitsOnRack(isBladeServer ? chassisRack : rack, isBladeServer ? chassisRackU : rackU, documentSnapshot.data().model, datacenter, fitResult => {
+                        assetutils.assetFitsOnRack(isBladeServer ? chassisRack : rack, isBladeServer ? chassisRackU : parseInt(rackU), documentSnapshot.data().model, datacenter, fitResult => {
                             if(fitResult){
                                 //doesn't fit
-                                console.log("6", fitResult, rack, rackU)
+                                console.log("6", fitResult, rack, rackU) 
                                 callback(null, fitResult);
                             } else {
                                 //get datacenter info
@@ -658,13 +658,13 @@ function deleteChange(changePlanID, stepNum, callback) {
                 cascadeUpStepNumbers(changePlanID, stepNum, result => {
                     if (result) {
                         changeplanconflictutils.clearAllConflicts(changePlanID, status1 => {
-                            changeplanconflictutils.checkAllLiveDBConflicts(executed, changePlanID, status2 => {
+                            //changeplanconflictutils.checkAllLiveDBConflicts(executed, changePlanID, status2 => {
                                 //console.log("Made it back from db checks")
                                 changeplanconflictutils.checkSequentialStepConflicts(executed, changePlanID, status3 => {
                                     console.log("DONE RECHECKING: after deleting step")
                                     callback(true)
                                 })
-                            })
+                           // })
                         })
                     } else {
                         callback(null);
