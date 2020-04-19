@@ -94,6 +94,7 @@ function addStorageSite(name, abbrev, callback) {
                         name: name,
                         abbreviation: abbrev
                     }).then(function (docRef) {
+                        userutils.updateEveryonesAssetPermissions();
                         callback(true);
                     }).catch(function (error) {
                         callback(null);
@@ -116,6 +117,7 @@ function deleteStorageSite(name, callback) {
             firebaseutils.offlinestorageRef.doc(querySnapshot.docs[0].id).collection("offlineAssets").get().then(function (assetDocSnap) {
                 if(assetDocSnap.empty){
                     firebaseutils.offlinestorageRef.doc(querySnapshot.docs[0].id).delete().then(function () {
+                        userutils.updateEveryonesAssetPermissions();
                         callback(true);
                     }).catch(function (error) {
                         callback(null);
