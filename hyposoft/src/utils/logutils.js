@@ -328,7 +328,7 @@ function buildDiff(data) {
     var num = 0
     var field;
     for (field in data.previousData) {
-      if (data.previousData[field] !== data.currentData[field]) {
+      if (data.previousData[field] != data.currentData[field]) {
          let returnedDiff = buildSpecificDiff(data,field)
          if (returnedDiff) {
            diff = diff + (num > 0 ? ',' : '') + ' ' + returnedDiff
@@ -511,6 +511,14 @@ function assetDiff(data,field) {
       case 'variances':
         return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       case 'id':
+      case 'datacenterAbbrev':
+      case 'datacenterID':
+      case 'rackID':
+      case 'rackNum':
+      case 'rackRow':
+      case 'modelId':
+      case 'modelNumber':
+      case 'vendor':
           return ''
       default:
         return defaultDiff(data,field)
