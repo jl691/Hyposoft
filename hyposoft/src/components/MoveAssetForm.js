@@ -1,7 +1,7 @@
 import React from "react";
 import * as offlinestorageutils from "../utils/offlinestorageutils";
 import {Box, Button, Form, FormField, Grommet, Heading, Menu, Select, Text, TextInput} from "grommet";
-import * as datacenterutils from "../utils/datacenterutils";
+import * as changeplanutils from "../utils/changeplanutils";
 import * as assetutils from "../utils/assetutils";
 import theme from "../theme";
 import {ToastsContainer, ToastsStore} from "react-toasts";
@@ -18,10 +18,11 @@ class MoveAssetForm extends React.Component {
         super(props);
         this.state = {
             initialLoaded: false,
-            storageSite: "",
+            storageSite: this.props.editStorageSite ? this.props.editStorageSite : "",
             assetType: "",
-            rack: "",
-            rackU: ""
+            datacenter: this.props.editDatacenter ? this.props.editDatacenter : "",
+            rack: this.props.editRack ? this.props.editRack : "",
+            rackU: this.props.editRackU ? this.props.editRackU : "",
         }
 
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -57,6 +58,7 @@ class MoveAssetForm extends React.Component {
     }
 
     handleSubmit(event) {
+        console.log("1")
         if (!/[A-Z]\d+/.test(this.state.rack) && !this.state.assetType === "blade") {
             //not a valid rack
             ToastsStore.error("Invalid rack.");
@@ -68,13 +70,28 @@ class MoveAssetForm extends React.Component {
             //need regex to ensure it's 0-9, a-f, and colon, dash, underscore, no sep at all the right places
         }
         else {
-            offlinestorageutils.moveAssetFromOfflineStorage(this.props.assetID, this.state.datacenter, this.state.rack, this.state.rackU, result => {
-                if(!result){
-                    this.props.success(true);
-                } else {
-                    ToastsStore.error(result);
-                }
-            }, this.moveFunction)
+            if(this.props.changePlanID){
+                console.log("2")
+                changeplanutils.moveAssetChange(this.props.assetID, this.props.changePlanID, this.state.datacenter, this.state.rack, this.state.rackU, null, (result, errorMessage) => {
+                    if(result){
+                        this.props.success(true);
+                    } else {
+                        if(errorMessage){
+                            ToastsStore.error(errorMessage);
+                        } else {
+                            ToastsStore.error("Error moving the asset. Please try again later.");
+                        }
+                    }
+                }, this.props.stepID ? this.props.stepID : null, this.state.assetType === "blade" ? true : null)
+            } else {
+                offlinestorageutils.moveAssetFromOfflineStorage(this.props.assetID, this.state.datacenter, this.state.rack, this.state.rackU, result => {
+                    if(!result){
+                        this.props.success(true);
+                    } else {
+                        ToastsStore.error(result);
+                    }
+                }, this.moveFunction);
+            }
         }
     }
 
@@ -128,13 +145,23 @@ class MoveAssetForm extends React.Component {
                     options={this.state.storageSiteNames}
                     value={this.state.storageSite}
                     onChange={(option) => {
-                        offlinestorageutils.moveAssetToOfflineStorage(this.props.assetID, option.value, (result, abbrev) => {
-                            if(result){
-                                this.props.success(abbrev);
-                            } else {
-                                ToastsStore.error("Error moving asset - please try again later.")
-                            }
-                        }, this.moveFunction)
+                        if(this.props.changePlanID){
+                            changeplanutils.moveAssetChange(this.props.assetID, this.props.changePlanID, null, null, null, option.value, result => {
+                                if(result){
+                                    this.props.success();
+                                } else {
+                                    ToastsStore.error("Error moving asset - please try again later.")
+                                }
+                            })
+                        } else {
+                            offlinestorageutils.moveAssetToOfflineStorage(this.props.assetID, option.value, (result, abbrev) => {
+                                if(result){
+                                    this.props.success(abbrev);
+                                } else {
+                                    ToastsStore.error("Error moving asset - please try again later.")
+                                }
+                            }, this.moveFunction)
+                        }
                     }}/><Button
                         margin="small"
                         label="Cancel"

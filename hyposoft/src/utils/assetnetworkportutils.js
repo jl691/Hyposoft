@@ -12,6 +12,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
         return(callback(null));
     }
     else {
+        console.log(networkPortConnections)
         seenOtherPorts = new Map();
         seenThisPorts = [];
 
@@ -30,6 +31,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
         }
 
         //What Joyce added
+        console.log(networkPortConnections)
         let uniqueThisPorts = networkPortConnections.map(conn => conn.thisPort)
         let allUniqueThisPorts = new Set(uniqueThisPorts)
         if (allUniqueThisPorts.size < numConnectionsMade) {
