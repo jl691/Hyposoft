@@ -379,9 +379,8 @@ function checkAssetFits(position, height, rack, callback, id = null, chassis = n
     let tentPositions = [];
     for (let i = parseInt(position); i < parseInt(position) + height; i++) {
         tentPositions.push(i);
-        console.log("pushing " + i + " to array")
+        //console.log("pushing " + i + " to array")
     }
-    console.log("In rackutils ")
 
     let ref = chassis ? firebaseutils.racksRef.doc(rack).collection('blades').doc(chassis.id) : firebaseutils.racksRef.doc(rack)
     ref.get().then(function (docRefRack) {
@@ -391,8 +390,8 @@ function checkAssetFits(position, height, rack, callback, id = null, chassis = n
                // console.log("this rack contains " + assetID);
                 let aRef = chassis ? firebaseutils.bladeRef : firebaseutils.assetRef //then gonna go to bladeInfo
                 aRef.doc(assetID).get().then(function (docRefAsset) {
-                    console.log(assetID) //this is the ID of some active blade that also happesn to be in the chassis. see forEach above
-                    console.log("  THE ID IS "+ id) //moving a blade from off to active, so the id is of the blade in offlineAssets. Current blade in the step
+                    //console.log(assetID) //this is the ID of some active blade that also happesn to be in the chassis. see forEach above
+                    //console.log("  THE ID IS "+ id) //moving a blade from off to active, so the id is of the blade in offlineAssets. Current blade in the step
                     if (assetID !== id) {
 
                         modelutils.getModelByModelname(docRefAsset.data().model, result => {
@@ -403,18 +402,14 @@ function checkAssetFits(position, height, rack, callback, id = null, chassis = n
                                     if (height) {
                                         console.log("found the model height! " + height);
                                         let instPositions = [];
-                                        console.log(instPositions);
-                                        console.log(docRefAsset.data())
                                         for (let i = docRefAsset.data().rackU; i < parseInt(docRefAsset.data().rackU) + height; i++) {
                                             instPositions.push(i); //inst has 1
-                                            console.log(i)
+                                            //console.log(i)
                                         }
                                         //check for intersection
                                         console.log("out")
-                                        console.log(...tentPositions)
                                         let intersection = tentPositions.filter(value => instPositions.includes(value)); //tentpositions has 1- 10
 
-                                        console.log([...intersection])
                                         if (intersection.length) {
                                             console.log(intersection)
                                             console.log("conflicting!")

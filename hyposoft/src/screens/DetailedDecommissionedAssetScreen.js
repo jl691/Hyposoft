@@ -122,20 +122,21 @@ export default class DetailedDecommissionedAssetScreen extends Component {
     }
 
     generateVariancesTable() {
-
+       // console.log(this.state.asset.baseModel)
+    
 
         return Object.keys(this.state.asset.variances).map((field) => (
 
             this.state.asset.variances[field] === "" ?
                 <tr>
                     <td><b>Model {[field]} variance</b></td>
-                    <td style={{ textAlign: 'right' }}>{"N/A"}</td>
+                    <td style={{ textAlign: 'right' }}>{"N/A (Base value "+ this.state.asset.baseModel[field]+")"}</td>
                 </tr>
                 :
 
                 <tr>
                     <td><b>Model {[field]} variance</b></td>
-                    <td style={{ textAlign: 'right' }}>{this.state.asset.variances[field]}</td>
+                    <td style={{ textAlign: 'right' }}>{this.state.asset.variances[field]+ "(Modified from base value " + this.state.asset.baseModel[field] + ")" }</td>
                 </tr>
         ))
     }

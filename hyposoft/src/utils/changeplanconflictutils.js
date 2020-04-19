@@ -778,7 +778,7 @@ function checkSequentialStepConflicts(executed, changePlanID, callback) {
                     //console.log(thisStepID)
                     changeplansRef.doc(changePlanID).collection('changes').doc(thisStepID).get().then(docSnap => {
                         let thisStepNum = docSnap.data().step
-                        console.log("ON CURRENT STEP " + thisStepNum)
+                        //console.log("ON CURRENT STEP " + thisStepNum)
                         if (thisStepNum > 1) {
                             checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, status => {
                                 counter++
@@ -813,7 +813,6 @@ function checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, callback)
         //maybe compare this step (which is 2+) to other previous steps, in ascending order? ie 3 to 1, then 3 to 2 vs. 3 to 2, then 3 to 1. Or does it not matter? Can you think of a case where it does matter?
         for (let i = thisStepNum - 1; i > 0; i--) {
 
-            //  console.log("COMPARING TO STEP " + thisStepNum + " TO STEP " + i)
             let otherStepNum = i;
             if (thisChangeType === "add") {
                 addChangeCheck(changePlanID, thisStepData, thisStepID, thisStepNum, otherStepNum, status => {
@@ -821,37 +820,43 @@ function checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, callback)
                     if (counter === 0) {
                         callback()
                     }
-
                 })
             }
-            else if (thisChangeType == "edit") {
+            else if (thisChangeType === "edit") {
                 editChangeCheck(changePlanID, thisStepID, thisStepNum, otherStepNum, status => {
                     counter--
                     if (counter === 0) {
                         callback()
                     }
-
                 })
             }
-            else {
+            else if(thisChangeType === "decommissions"){
                 //decommission
                 decommissionChangeCheck(changePlanID, thisStepID, otherStepNum, thisStepData, status => {
                     counter--
                     if (counter === 0) {
                         callback()
                     }
-
                 })
             }
-
-
-
-
+            else{//have a move change type
+                moveChangeCheck(changePlanID, thisStepID, otherStepNum, thisStepData, status => {
+                    counter--
+                    if (counter === 0) {
+                        callback()
+                    }
+                })
+            }
         }
-
-
-
     })
+}
+
+function moveChangeCheck(changePlanID, thisStepID, otherStepNum, thisStepData, callback){
+    //the current step we are on is a move
+    //is it a move to or from offline?
+    //what do we need to check for conflicts for with previous steps?
+    //if i am an edit step: want to check 
+    callback()
 }
 
 //If the current step is an edit step, and we need to check it against all the previous steps
