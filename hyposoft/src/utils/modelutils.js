@@ -8,7 +8,7 @@ const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
 const index = client.initIndex('models')
 
-function packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment) {
+function packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, mount) {
     displayColor = displayColor.trim()
     if (!displayColor.startsWith('#')) {
         displayColor = '#'+displayColor
@@ -25,7 +25,8 @@ function packageModel(vendor, modelNumber, height, displayColor, networkPorts, p
         memory: memory,
         storage: storage.trim(),
         comment: comment.trim(),
-        modelName: vendor.trim() + ' ' + modelNumber.trim()
+        modelName: vendor.trim() + ' ' + modelNumber.trim(),
+        mount: mount
     }
     return model
 }
@@ -34,17 +35,17 @@ function combineVendorAndModelNumber(vendor, modelNumber) {
     return vendor.concat(' ', modelNumber)
 }
 
-function createModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, callback) {
+function createModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, mount, callback) {
     // Ignore the first param
-    var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment)
+    var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, mount)
     firebaseutils.modelsRef.add(model).then(docRef => {
         logutils.addLog(docRef.id,logutils.MODEL(),logutils.CREATE())
         callback(model, docRef.id)
     })
 }
 
-function modifyModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, callback) {
-    var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment)
+function modifyModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, mount, callback) {
+    var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, mount)
     /*logutils.getObjectData(id,logutils.MODEL(),data => {
       firebaseutils.modelsRef.doc(id).update(model).then(() => {
           logutils.addLog(id,logutils.MODEL(),logutils.MODIFY(),data)
