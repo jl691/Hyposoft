@@ -150,7 +150,10 @@ class OfflineStorageScreen extends React.Component {
                     property: "delete",
                     header: <Text size='small'>Delete</Text>,
                     render: datum =>
-                        <Trash onClick={() => {
+                        <Trash onClick={(e) => {
+                            e.persist();
+                            e.nativeEvent.stopImmediatePropagation();
+                            e.stopPropagation();
                             if (!datum.assetCount) {
                                 this.setState({
                                     deleteName: datum.name,
@@ -161,15 +164,18 @@ class OfflineStorageScreen extends React.Component {
                                 ToastsStore.error("Can't delete storage sites with existing assets.");
                             }
                         }}
-                               style={{cursor: 'pointer', backgroundColor: this.colors[datum.count + '_edit_color']}}
-                               onMouseOver={e => this.colors[datum.count + '_edit_color'] = '#dddddd'}
-                               onMouseLeave={e => this.colors[datum.count + '_edit_color'] = ''}/>
+                               style={{cursor: 'pointer', backgroundColor: this.colors[datum.count + '_delete_color']}}
+                               onMouseOver={e => this.colors[datum.count + '_delete_color'] = '#dddddd'}
+                               onMouseLeave={e => this.colors[datum.count + '_delete_color'] = ''}/>
                 },
                 {
                     property: "edit",
                     header: <Text size='small'>Edit</Text>,
                     render: datum =>
-                        <Edit onClick={() => {
+                        <Edit onClick={(e) => {
+                            e.persist();
+                            e.nativeEvent.stopImmediatePropagation();
+                            e.stopPropagation();
                             this.setState({
                                 editName: datum.name,
                                 editAbbrev: datum.abbreviation,

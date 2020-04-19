@@ -110,15 +110,17 @@ function deleteStorageSite(name, callback) {
         if (querySnapshot.empty) {
             callback(null);
         } else {
-            if (Object.keys(querySnapshot.docs[0].data().assets).length) {
-                callback(null);
-            } else {
-                firebaseutils.offlinestorageRef.doc(querySnapshot.docs[0].id).delete().then(function () {
-                    callback(true);
-                }).catch(function (error) {
+            firebaseutils.offlinestorageRef.doc(querySnapshot.docs[0].id).collection("offlineAssets").get().then(function (assetDocSnap) {
+                if(assetDocSnap.empty){
+                    firebaseutils.offlinestorageRef.doc(querySnapshot.docs[0].id).delete().then(function () {
+                        callback(true);
+                    }).catch(function (error) {
+                        callback(null);
+                    })
+                } else {
                     callback(null);
-                })
-            }
+                }
+            });
         }
     })
 }

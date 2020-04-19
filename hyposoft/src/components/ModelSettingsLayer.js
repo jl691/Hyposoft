@@ -10,6 +10,7 @@ import {
     Button,
     Heading,
     Layer,
+    Select,
     Text,
     TextInput,
     TextArea,
@@ -21,6 +22,32 @@ import {Redirect} from "react-router-dom";
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
 const index = client.initIndex('models')
+
+const mountToDisplayString = mount => {
+    switch (mount) {
+        case 'normal':
+            return 'Rackmount'
+        case 'chassis':
+            return 'Chassis'
+        case 'blade':
+            return 'Blade'
+        default:
+            return 'Rackmount'
+    }
+}
+
+const displayStringToMount = displayString => {
+    switch (displayString) {
+        case 'Rackmount':
+            return 'normal'
+        case 'Chassis':
+            return 'chassis'
+        case 'Blade':
+            return 'blade'
+        default:
+            return 'normal'
+    }
+}
 
 class ModelSettingsLayer extends React.Component {
     state = {
@@ -35,7 +62,8 @@ class ModelSettingsLayer extends React.Component {
         cpu: '',
         memory: '',
         storage: '',
-        comment: ''
+        comment: '',
+        mount: 'normal'
     }
 
     componentDidMount() {
@@ -65,14 +93,15 @@ class ModelSettingsLayer extends React.Component {
                 powerPorts: (this.props.model.powerPorts ? '' + this.props.model.powerPorts : ''),
                 memory: (this.props.model.memory ? '' + this.props.model.memory : ''),
                 networkPortsCount: (this.props.model.networkPortsCount === 0 ? '' : '' + this.props.model.networkPortsCount),
-                layerTitle: 'Edit Model'
+                layerTitle: 'Edit Model',
+                mount: this.props.model.mount
             })
         }
     }
 
     saveModel() {
-        if (!userutils.isLoggedInUserAdmin()) {
-            ToastsStore.info('Only admins can do this', 3000, 'burntToast')
+        if (!userutils.doesLoggedInUserHaveModelPerm()) {
+            ToastsStore.info('Only users with model management permission can do this', 3000, 'burntToast')
             return
         }
 
@@ -92,12 +121,12 @@ class ModelSettingsLayer extends React.Component {
             return
         }
 
-        if (this.state.height.trim() === '') {
+        if (this.state.mount !== 'blade' && this.state.height.trim() === '') {
             ToastsStore.info('Height required', 3000, 'burntToast')
             return
         }
 
-        if (isNaN(this.state.height.trim()) || !Number.isInteger(parseFloat(this.state.height.trim())) || parseInt(this.state.height.trim()) <= 0 || parseInt(this.state.height.trim()) > 42) {
+        if (this.state.mount !== 'blade' && (isNaN(this.state.height.trim()) || !Number.isInteger(parseFloat(this.state.height.trim())) || parseInt(this.state.height.trim()) <= 0 || parseInt(this.state.height.trim()) > 42)) {
             ToastsStore.info('Height should be a positive integer not greater than 42U', 3000, 'burntToast')
             this.setState(oldState => ({...oldState, height: ''}))
             return
@@ -113,25 +142,25 @@ class ModelSettingsLayer extends React.Component {
             networkPorts = []
         }
 
-        if (networkPorts.length > Array.from(new Set(networkPorts)).length) {
+        if (this.state.mount !== 'blade' && networkPorts.length > Array.from(new Set(networkPorts)).length) {
             ToastsStore.info('Network ports should have unique names', 3000, 'burntToast')
             return
         }
 
         for (var np = 0; np < networkPorts.length; np++) {
-            if (/\s/g.test(networkPorts[np].trim())) {
+            if (this.state.mount !== 'blade' && /\s/g.test(networkPorts[np].trim())) {
                 ToastsStore.info('Network ports cannot have whitespaces in their names', 3000, 'burntToast')
                 return
             }
         }
 
-        if (networkPorts.length > 100) {
+        if (this.state.mount !== 'blade' && networkPorts.length > 100) {
             ToastsStore.info('Models should not have more than 100 network ports', 3000, 'burntToast')
             return
         }
 
         var powerPorts = null
-        if (this.state.powerPorts.trim() !== '' &&
+        if (this.state.mount !== 'blade' && this.state.powerPorts.trim() !== '' &&
             (isNaN(this.state.powerPorts.trim()) || !Number.isInteger(parseFloat(this.state.powerPorts.trim())) || parseInt(this.state.powerPorts.trim()) < 0 || parseInt(this.state.powerPorts.trim()) > 10)) {
             ToastsStore.info('Power ports should be a non-negative integer not greater than 10', 3000, 'burntToast')
             this.setState(oldState => ({...oldState, powerPorts: ''}))
@@ -171,7 +200,7 @@ class ModelSettingsLayer extends React.Component {
                     this.state.displayColor, networkPorts,
                     powerPorts, this.state.cpu,
                     memory, this.state.storage,
-                    this.state.comment, (model, id) => {
+                    this.state.comment, this.state.mount, (model, id) => {
                         ToastsStore.info('Model saved', 3000, 'burntToast')
                         if(this.props.type === 'edit' && (this.props.model.vendor !== this.state.vendor || this.props.model.modelNumber !== this.state.modelNumber)){
                             window.location.href = "/models/" + this.state.vendor + "/" + this.state.modelNumber;
@@ -270,6 +299,13 @@ class ModelSettingsLayer extends React.Component {
                         <Box direction='row' justify='center' gap='medium'>
                             <Box direction="column" pad='xsmall' gap="small" flex height={{max: 'medium'}}
                                  overflow={{vertical: 'scroll'}}>
+                                 <Select
+                                    options={['Rackmount', 'Chassis', 'Blade']}
+                                    value={mountToDisplayString(this.state.mount)}
+                                    onChange={({ option }) => {
+                                        this.setState(oldState => ({...oldState, mount: displayStringToMount(option)}))
+                                    }}
+                                    />
                                 <Text size={"small"} style={{marginLeft: "20px"}}>Vendor</Text>
                                 <TextInput style={{
                                     borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
@@ -308,64 +344,68 @@ class ModelSettingsLayer extends React.Component {
                                            value={this.state.modelNumber}
                                            title='Model number'
                                 />
-                                <Text size={"small"} style={{marginLeft: "20px"}}>Height</Text>
-                                <TextInput style={{
-                                    borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                    width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                }}
-                                           placeholder="eg. 2, 4"
-                                           onChange={e => {
-                                               const value = e.target.value
-                                               this.setState(oldState => ({...oldState, height: value}))
-                                           }}
-                                           value={this.state.height}
-                                           title='Height'
-                                           disabled={this.state.modelHasAssets}
-                                />
-                                <Text size={"small"} style={{marginLeft: "20px"}}>Network Ports (Optional)</Text>
-                                <TextInput style={{
-                                    borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                    width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                }}
-                                           placeholder="eg. 2, 4"
-                                           onChange={e => {
-                                               const value = e.target.value
-                                               this.setState(oldState => ({...oldState, networkPortsCount: value}))
-                                           }}
-                                           onBlur={e => this.adjustNetworkPortsList()}
-                                           value={this.state.networkPortsCount}
-                                           title='Network ports'
-                                           disabled={this.state.modelHasAssets}
-                                />
-                                <Text size={"small"} style={{marginLeft: "20px"}}>Network Port Names (Optional)</Text>
-                                <TextInput style={{
-                                    borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                    width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                }}
-                                           disabled={this.state.networkPortsDisabled || this.state.modelHasAssets}
-                                           placeholder="eg. port1, port2"
-                                           onChange={e => {
-                                               const value = e.target.value
-                                               this.setState(oldState => ({...oldState, networkPorts: value}))
-                                           }}
-                                           onBlur={e => this.adjustNetworkPortsCount()}
-                                           value={this.state.networkPorts}
-                                           title='Network ports'
-                                />
-                                <Text size={"small"} style={{marginLeft: "20px"}}>Power Ports (Optional)</Text>
-                                <TextInput style={{
-                                    borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
-                                    width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
-                                }}
-                                           placeholder="eg. 2, 4"
-                                           onChange={e => {
-                                               const value = e.target.value
-                                               this.setState(oldState => ({...oldState, powerPorts: value}))
-                                           }}
-                                           value={this.state.powerPorts}
-                                           disabled={this.state.modelHasAssets}
-                                           title='Power ports'
-                                />
+                                {this.state.mount !== 'blade' && (
+                                    [
+                                    <Text size={"small"} style={{marginLeft: "20px"}}>Height</Text>,
+                                    <TextInput style={{
+                                        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
+                                        width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
+                                    }}
+                                               placeholder="eg. 2, 4"
+                                               onChange={e => {
+                                                   const value = e.target.value
+                                                   this.setState(oldState => ({...oldState, height: value}))
+                                               }}
+                                               value={this.state.height}
+                                               title='Height'
+                                               disabled={this.state.modelHasAssets}
+                                    />,
+                                    <Text size={"small"} style={{marginLeft: "20px"}}>Network Ports (Optional)</Text>,
+                                    <TextInput style={{
+                                        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
+                                        width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
+                                    }}
+                                               placeholder="eg. 2, 4"
+                                               onChange={e => {
+                                                   const value = e.target.value
+                                                   this.setState(oldState => ({...oldState, networkPortsCount: value}))
+                                               }}
+                                               onBlur={e => this.adjustNetworkPortsList()}
+                                               value={this.state.networkPortsCount}
+                                               title='Network ports'
+                                               disabled={this.state.modelHasAssets}
+                                    />,
+                                    <Text size={"small"} style={{marginLeft: "20px"}}>Network Port Names (Optional)</Text>,
+                                    <TextInput style={{
+                                        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
+                                        width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
+                                    }}
+                                               disabled={this.state.networkPortsDisabled || this.state.modelHasAssets}
+                                               placeholder="eg. port1, port2"
+                                               onChange={e => {
+                                                   const value = e.target.value
+                                                   this.setState(oldState => ({...oldState, networkPorts: value}))
+                                               }}
+                                               onBlur={e => this.adjustNetworkPortsCount()}
+                                               value={this.state.networkPorts}
+                                               title='Network ports'
+                                    />,
+                                    <Text size={"small"} style={{marginLeft: "20px"}}>Power Ports (Optional)</Text>,
+                                    <TextInput style={{
+                                        borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
+                                        width: '100%', paddingLeft: 20, paddingRight: 20, fontWeight: 'normal',
+                                    }}
+                                               placeholder="eg. 2, 4"
+                                               onChange={e => {
+                                                   const value = e.target.value
+                                                   this.setState(oldState => ({...oldState, powerPorts: value}))
+                                               }}
+                                               value={this.state.powerPorts}
+                                               disabled={this.state.modelHasAssets}
+                                               title='Power ports'
+                                    />
+                                ]
+                                )}
                                 <Text size={"small"} style={{marginLeft: "20px"}}>CPU (Optional)</Text>
                                 <TextInput style={{
                                     borderRadius: 1000, backgroundColor: '#FFFFFF', borderColor: '#DDDDDD',
