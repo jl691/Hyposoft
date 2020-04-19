@@ -298,7 +298,7 @@ function exportFilteredModels(models) {
 function getModelsForExport(callback) {
     firebaseutils.modelsRef.orderBy('vendor').get().then(qs => {
         var rows = [
-            ["vendor", "model_number", "height", "display_color", "network_ports",
+            ["mount_type", "vendor", "model_number", "height", "display_color", "network_ports",
             "power_ports", "cpu", "memory", "storage", "comment", "network_port_name_1",
             "network_port_name_2", "network_port_name_3", "network_port_name_4"]
         ]
@@ -309,20 +309,22 @@ function getModelsForExport(callback) {
             var network_port_name_3 = ''
             var network_port_name_4 = ''
 
-            if (qs.docs[i].data().networkPortsCount >=1 ){
-                network_port_name_1 = qs.docs[i].data().networkPorts[0]
-            }
+            if (qs.docs[i].data().mount !== 'blade') {
+                if (qs.docs[i].data().networkPortsCount >=1 ){
+                    network_port_name_1 = qs.docs[i].data().networkPorts[0]
+                }
 
-            if (qs.docs[i].data().networkPortsCount >=2 ){
-                network_port_name_2 = qs.docs[i].data().networkPorts[1]
-            }
+                if (qs.docs[i].data().networkPortsCount >=2 ){
+                    network_port_name_2 = qs.docs[i].data().networkPorts[1]
+                }
 
-            if (qs.docs[i].data().networkPortsCount >=3 ){
-                network_port_name_3 = qs.docs[i].data().networkPorts[2]
-            }
+                if (qs.docs[i].data().networkPortsCount >=3 ){
+                    network_port_name_3 = qs.docs[i].data().networkPorts[2]
+                }
 
-            if (qs.docs[i].data().networkPortsCount >=4 ){
-                network_port_name_4 = qs.docs[i].data().networkPorts[3]
+                if (qs.docs[i].data().networkPortsCount >=4 ){
+                    network_port_name_4 = qs.docs[i].data().networkPorts[3]
+                }
             }
 
             var displayColor = qs.docs[i].data().displayColor.trim()
@@ -330,7 +332,10 @@ function getModelsForExport(callback) {
                 displayColor = '#'+displayColor
             }
 
+            var mountType = qs.docs[i].data().mount === 'normal' ? 'asset' : qs.docs[i].data().mount
+
             rows = [...rows, [
+                mountType,
                 escapeStringForCSV(qs.docs[i].data().vendor),
                 escapeStringForCSV(qs.docs[i].data().modelNumber),
                 ''+qs.docs[i].data().height,
@@ -444,6 +449,14 @@ function validateImportedModels (data, callback) {
     for (var i = 0; i < data.length; i++) {
         var datum = data[i]
         var modelAndVendorFound = true
+        if (datum.mount_type === 'asset') {
+            datum.mount_type = 'normal'
+        } else if (datum.mount_type === 'chassis' || datum.mount_type === 'blade') {
+            // ye noice
+        } else {
+            errors = [...errors, [i+1, "Mount type must be 'asset', 'chassis', or 'blade'."]]
+        }
+
         if (!datum.vendor || String(datum.vendor).trim() === '') {
             errors = [...errors, [i+1, 'Vendor not found']]
             modelAndVendorFound = false
@@ -588,25 +601,27 @@ function bulkAddModels (models, callback) {
     for (var i = 0; i < models.length; i++) {
         const model = models[i]
         var network_ports = []
-        for (var j = 1; j <= parseInt(model.network_ports); j++) {
-            network_ports.push(''+j)
-        }
-        if (parseInt(model.network_ports) >= 1) {
-            network_ports[0] = ((''+model.network_port_name_1).trim() ? (''+model.network_port_name_1).trim() : '1')
-        }
-        if (parseInt(model.network_ports) >= 2) {
-            network_ports[1] = ((''+model.network_port_name_2).trim() ? (''+model.network_port_name_2).trim() : '2')
-        }
-        if (parseInt(model.network_ports) >= 3) {
-            network_ports[2] = ((''+model.network_port_name_3).trim() ? (''+model.network_port_name_3).trim() : '3')
-        }
-        if (parseInt(model.network_ports) >= 4) {
-            network_ports[3] = ((''+model.network_port_name_4).trim() ? (''+model.network_port_name_4).trim() : '4')
+        if (model.mount_type !== 'blade') {
+            for (var j = 1; j <= parseInt(model.network_ports); j++) {
+                network_ports.push(''+j)
+            }
+            if (parseInt(model.network_ports) >= 1) {
+                network_ports[0] = ((''+model.network_port_name_1).trim() ? (''+model.network_port_name_1).trim() : '1')
+            }
+            if (parseInt(model.network_ports) >= 2) {
+                network_ports[1] = ((''+model.network_port_name_2).trim() ? (''+model.network_port_name_2).trim() : '2')
+            }
+            if (parseInt(model.network_ports) >= 3) {
+                network_ports[2] = ((''+model.network_port_name_3).trim() ? (''+model.network_port_name_3).trim() : '3')
+            }
+            if (parseInt(model.network_ports) >= 4) {
+                network_ports[3] = ((''+model.network_port_name_4).trim() ? (''+model.network_port_name_4).trim() : '4')
+            }
         }
 
-        createModel(null, ''+model.vendor, ''+model.model_number, parseInt(model.height), ''+model.display_color,
+        createModel(null, ''+model.vendor, ''+model.model_number, model.height&&parseInt(model.height), ''+model.display_color,
          network_ports, model.power_ports&&parseInt(model.power_ports), ''+model.cpu, ''+model.memory, ''+model.storage,
-         ''+model.comment, (modelDoc, modelDocid) => {
+         ''+model.comment, ''+model.mount_type, (modelDoc, modelDocid) => {
              let suffixes_list = []
              let cpu = modelDoc.cpu
 
@@ -644,20 +659,22 @@ function bulkModifyModels (models, callback) {
     for (var i = 0; i < models.length; i++) {
         const model = models[i]
         var network_ports = []
-        for (var j = 1; j <= parseInt(model.network_ports); j++) {
-            network_ports.push(''+j)
-        }
-        if (parseInt(model.network_ports) >= 1) {
-            network_ports[0] = ((''+model.network_port_name_1).trim() ? (''+model.network_port_name_1).trim() : '1')
-        }
-        if (parseInt(model.network_ports) >= 2) {
-            network_ports[1] = ((''+model.network_port_name_2).trim() ? (''+model.network_port_name_2).trim() : '2')
-        }
-        if (parseInt(model.network_ports) >= 3) {
-            network_ports[2] = ((''+model.network_port_name_3).trim() ? (''+model.network_port_name_3).trim() : '3')
-        }
-        if (parseInt(model.network_ports) >= 4) {
-            network_ports[3] = ((''+model.network_port_name_4).trim() ? (''+model.network_port_name_4).trim() : '4')
+        if (model.mount_type !== 'blade') {
+            for (var j = 1; j <= parseInt(model.network_ports); j++) {
+                network_ports.push(''+j)
+            }
+            if (parseInt(model.network_ports) >= 1) {
+                network_ports[0] = ((''+model.network_port_name_1).trim() ? (''+model.network_port_name_1).trim() : '1')
+            }
+            if (parseInt(model.network_ports) >= 2) {
+                network_ports[1] = ((''+model.network_port_name_2).trim() ? (''+model.network_port_name_2).trim() : '2')
+            }
+            if (parseInt(model.network_ports) >= 3) {
+                network_ports[2] = ((''+model.network_port_name_3).trim() ? (''+model.network_port_name_3).trim() : '3')
+            }
+            if (parseInt(model.network_ports) >= 4) {
+                network_ports[3] = ((''+model.network_port_name_4).trim() ? (''+model.network_port_name_4).trim() : '4')
+            }
         }
 
         modifyModel(model.id, ''+model.vendor, ''+model.model_number, parseInt(model.height), ''+model.display_color,
