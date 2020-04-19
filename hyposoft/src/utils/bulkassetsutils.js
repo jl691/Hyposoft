@@ -8,12 +8,13 @@ const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
 const index = client.initIndex('assets')
 
 function validateImportedAssets (data, callback) {
-    var tasksPending = 5 // Assets, users, datacenters+racks, models, decommissioned assets
+    var tasksPending = 8 // Assets, users, datacenters+racks, models, decommissioned assets, offline assets, offline sites, blades (to see what slots are free)
     var errors = []
     var toBeAdded = []
     var toBeIgnored = []
     var toBeModified = []
     var decommissionedAssetIds = []
+    var offlineAssets = {} // asset id => offline asset
 
     var assetsLoaded = {} // asset id => asset
     var hostnamesToId = {} // hostname => asset id
@@ -32,6 +33,8 @@ function validateImportedAssets (data, callback) {
     var rackIdsToNames = {}
     var usedRackUsInRack = {} // rackId => {U => assetID, }
     var existingDCs = {} // abbrev => datacentre object
+    var existingOSs = {} // abbrev => offline site object
+    var usedSlotsInChassis = {} // chassis number => {slotNumber: blade id}
 
     var assetNumbersSeenInImport = []
 
@@ -52,6 +55,13 @@ function validateImportedAssets (data, callback) {
             var datum = data[i]
             datum.rowNumber = i+1
             datum.datacenter = datum.datacenter && datum.datacenter.trim()
+            datum.offline_site = datum.offline_site && datum.offline_site.trim()
+            datum.chassis_slot = datum.chassis_slot && datum.chassis_slot.trim()
+            datum.chassis_number = datum.chassis_number && datum.chassis_number.trim()
+            datum.custom_cpu = datum.custom_cpu && datum.custom_cpu.trim()
+            datum.custom_storage = datum.custom_storage && datum.custom_storage.trim()
+            datum.custom_display_color = datum.custom_display_color && datum.custom_display_color.trim()
+            datum.custom_memory = datum.custom_memory && datum.custom_memory.trim()
             datum.vendor = datum.vendor && datum.vendor.trim()
             datum.model_number = datum.model_number && datum.model_number.trim()
             datum.owner = datum.owner && datum.owner.trim()
@@ -79,6 +89,35 @@ function validateImportedAssets (data, callback) {
                 assetNumbersSeenInImport.push(datum.asset_number)
             }
 
+            var isBlade = existingModels[datum.vendor][datum.model_number].mount === 'blade'
+            var isOffline = !(datum.asset_number in assetsLoaded) && (datum.asset_number in offlineAssets)
+            var isDCBlank = !datum.datacenter || datum.datacenter.trim() === ''
+            var isOSBlank = !datum.offline_site || datum.offline_site.trim() === ''
+
+            if (!isBlade && isDCBlank && isOSBlank && !(datum.asset_number in assetsLoaded) && !(datum.asset_number in offlineAssets)) {
+                errors = [...errors, [i + 1, 'Either datacenter or offline site must be specified for new non-blade assets']]
+            }
+
+            if (isBlade && !isDCBlank) {
+                errors = [...errors, [i + 1, 'Datacenter must be blank for blade assets']]
+            }
+
+            if ((datum.asset_number in assetsLoaded) || (datum.asset_number in offlineAssets)) {
+                // Not a new asset
+                if (isOffline && !isDCBlank) {
+                    errors = [...errors, [i + 1, 'Datacenter must be blank for offline assets']]
+                } else if (!isOffline && !isOSBlank) {
+                    errors = [...errors, [i + 1, 'Offline site must be blank for live assets in datacenters']]
+                }
+            } else {
+                // new asset
+                if (!isDCBlank && !isOSBlank) {
+                    errors = [...errors, [i + 1, 'Cannot specify both an offline site and a data center']]
+                } else if (!isOSBlank){
+                    isOffline = true
+                }
+            }
+
             if (datum.hostname.trim() !== '' && !/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$/.test(datum.hostname)) {
                 errors = [...errors, [i + 1, 'Invalid hostname (does not follow RFC-1034 specs)']]
             }
@@ -88,24 +127,58 @@ function validateImportedAssets (data, callback) {
                 console.log('HOSTNAME CONFLICT: '+datum.asset_number+' '+hostnamesToId[datum.hostname])
             }
 
-            if (!datum.rack_position || String(datum.rack_position).trim() === '') {
-                errors = [...errors, [i + 1, 'Rack position not found']]
-                canTestForFit = false
-            } else if (isNaN(String(datum.rack_position).trim()) || !Number.isInteger(parseFloat(String(datum.rack_position).trim())) || parseInt(String(datum.rack_position).trim()) <= 0 || parseInt(String(datum.rack_position).trim()) > 42) {
-                errors = [...errors, [i + 1, 'Rack position is not a positive integer less than 43']]
-                canTestForFit = false
+            if (!isBlade && !isOffline) {
+                if (!datum.rack_position || String(datum.rack_position).trim() === '') {
+                    errors = [...errors, [i + 1, 'Rack position not found']]
+                    canTestForFit = false
+                } else if (isNaN(String(datum.rack_position).trim()) || !Number.isInteger(parseFloat(String(datum.rack_position).trim())) || parseInt(String(datum.rack_position).trim()) <= 0 || parseInt(String(datum.rack_position).trim()) > 42) {
+                    errors = [...errors, [i + 1, 'Rack position is not a positive integer less than 43']]
+                    canTestForFit = false
+                }
+            } else {
+                if (datum.rack || datum.rack_position) {
+                    errors = [...errors, [i + 1, 'Rack position and rack must be blank for offline assets and blade assets']]
+                }
             }
 
-            if (!userutils.doesLoggedInUserHaveAssetPerm((datum.datacenter+'').trim())) {
-                errors = [...errors, [i + 1, "You don't have asset management permissions for this datacenter"]]
+            if (!isBlade) {
+                if (datum.chassis_slot || datum.chassis_number) {
+                    errors = [...errors, [i + 1, 'Chassis slot and number must be blank for non-blade assets']]
+                }
             }
 
-            if (!(datum.datacenter in existingRacks)) {
+            if (!isOffline && !userutils.doesLoggedInUserHaveAssetPerm((datum.datacenter+'').trim())) {
+                errors = [...errors, [i + 1, "You don't have asset management permissions for this site"]]
+            } else if (isOffline && !userutils.doesLoggedInUserHaveAssetPerm((datum.offline_site+'').trim())) {
+                errors = [...errors, [i + 1, "You don't have asset management permissions for this site"]]
+            }
+
+            if (datum.datacenter && !(datum.datacenter in existingRacks)) {
                 canTestForFit = false
                 errors = [...errors, [i + 1, 'Datacenter does not exist']]
-            } else if (!(existingRackNames[datum.datacenter].includes(datum.rack))) {
+            } else if (datum.datacenter && datum.rack && !(existingRackNames[datum.datacenter].includes(datum.rack))) {
                 canTestForFit = false
                 errors = [...errors, [i + 1, 'Rack does not exist in specified datacenter']]
+            }
+
+            if (datum.offline_site && !(datum.offline_site in existingOSs)) {
+                errors = [...errors, [i + 1, 'Offline site does not exist']]
+            }
+
+            if (isBlade && !isOffline) {
+                if (isNaN(String(datum.chassis_slot).trim()) || !Number.isInteger(parseFloat(String(datum.chassis_slot).trim())) || parseInt(String(datum.chassis_slot).trim()) <= 0 || parseInt(String(datum.chassis_slot).trim()) > 14) {
+                    errors = [...errors, [i + 1, 'Chassis slot must be an integer between 1 and 14 (inclusive of both)']]
+                }
+
+                if (datum.chassis_number && !(datum.chassis_number in assetsLoaded)) {
+                    errors = [...errors, [i + 1, 'No chassis exists with specified chassis number']]
+                } else if (datum.chassis_number && datum.chassis_slot){
+                    // Check if slot is free
+                    if (datum.chassis_number in usedSlotsInChassis && datum.chassis_slot in usedSlotsInChassis[datum.chassis_number]
+                    && usedSlotsInChassis[datum.chassis_number][datum.chassis_slot] !== datum.asset_number) {
+                        errors = [...errors, [i + 1, 'Desired chassis slot is not available']]
+                    }
+                }
             }
 
             if (!(datum.asset_number in assetsLoaded)) {
@@ -238,7 +311,40 @@ function validateImportedAssets (data, callback) {
         for (var i = 0; i < qs.size; i++) {
             const assetID = qs.docs[i].data().assetId
             decommissionedAssetIds.push(assetID)
-            unusedIds.pop(assetID)
+            unusedIds.splice(unusedIds.indexOf(assetID), 1)
+        }
+        postTaskCompletion()
+    })
+
+    firebaseutils.offlinestorageRef.get().then(qs => {
+        for (var i = 0; i < qs.size; i++) {
+            existingOSs[qs.docs[i].data().abbreviation] = {...qs.docs[i].data(), id: qs.docs[i].id}
+        }
+        postTaskCompletion()
+    })
+
+    firebaseutils.bladeRef.get().then(qs => {
+        for (var i = 0; i < qs.size; i++) {
+            const blade = {...qs.docs[i].data(), id: qs.docs[i].id}
+            if (blade.chassisId in usedSlotsInChassis) {
+                usedSlotsInChassis[blade.chassisId][''+blade.rackU] = blade.id
+            } else {
+                usedSlotsInChassis[blade.chassisId] = {[''+blade.rackU]: blade.id}
+            }
+        }
+        postTaskCompletion()
+    })
+
+    firebaseutils.db.collectionGroup('offlineAssets').get().then(qs => {
+        for (var i = 0; i < qs.size; i++) {
+            offlineAssets[qs.docs[i].data().assetId] = qs.docs[i].data()
+            unusedIds.splice(unusedIds.indexOf(qs.docs[i].data().assetId), 1)
+            const asset = {...qs.docs[i].data(), id: qs.docs[i].id}
+            const assetID = qs.docs[i].data().assetId
+            assetsLoaded[assetID] = asset
+            if (asset.hostname) {
+                hostnamesToId[asset.hostname] = assetID
+            }
         }
         postTaskCompletion()
     })
@@ -251,7 +357,7 @@ function validateImportedAssets (data, callback) {
             if (asset.hostname) {
                 hostnamesToId[asset.hostname] = assetID
             }
-            unusedIds.pop(assetID)
+            unusedIds.splice(assetID, 1)
 
             if (asset.powerConnections) {
                 asset.powerConnections.forEach((pc, i) => {
