@@ -69,6 +69,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                           })
                        })
                     }
+                    numConnectionsMade = numConnectionsMade - bladeCount
                     let numThisModelPorts = querySnapshot.docs[0].data().networkPortsCount + bladeCount;
                     let errModels = [];
                     if (numThisModelPorts === 0) {
@@ -105,6 +106,7 @@ function validateNetworkConnections(thisModelName, networkPortConnections, callb
                                 }
                                 console.log(numThisModelPorts)
                                 console.log(numOtherModelPorts)
+                                console.log(numConnectionsMade);
                                 //Math.min with a null, null is treated as 0
                                 mostPossibleConnections = Math.min(numThisModelPorts, numOtherModelPorts)
                                 //https://javascript.info/comparison
