@@ -313,7 +313,7 @@ function buildLog(data) {
               + data.action + (data.action === MODIFY() && data.previousData ? buildDiff(data) : ' ')
               + data.objectType + ' ' + data.objectName
               + (data.objectType === RACK()
-                || (data.objectType === ASSET() || data.objectType === OFFLINE() && data.action !== MOVE())
+                || ((data.objectType === ASSET() || data.objectType === OFFLINE()) && data.action !== MOVE())
                 || data.objectType === PDU()
                 || data.objectType === BCMAN()
                     ? ((data.objectType === OFFLINE() ? ' in offline storage site ' : ' in datacenter ') + data.datacenter + '.')
