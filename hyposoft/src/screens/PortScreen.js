@@ -143,7 +143,7 @@ class PortScreen extends Component {
                 && 'display_color' in data[0] && 'network_ports' in data[0] && 'power_ports' in data[0]
                 && 'cpu' in data[0] && 'memory' in data[0] && 'storage' in data[0] && 'comment' in data[0]
                 && 'network_port_name_1' in data[0] && 'network_port_name_2' in data[0] && 'network_port_name_3' in data[0]
-                && 'network_port_name_4' in data[0])) {
+                && 'network_port_name_4' in data[0] && 'mount_type' in data[0])) {
                 ToastsStore.info("Headers missing or incorrect", 3000, 'burntToast')
                 return
             }

@@ -472,10 +472,10 @@ function moveAssetChange(assetID, changePlanID, datacenter, rack, rackU, offline
                     };
                     console.log(isBladeServer, chassisObject, chassisRack, chassisRackU, chassisID, assetChangePlanObject)
                     if(chassisRack || !isBladeServer){
-                        assetutils.assetFitsOnRack(isBladeServer ? chassisRack : rack, isBladeServer ? chassisRackU : rackU, documentSnapshot.data().model, datacenter, fitResult => {
+                        assetutils.assetFitsOnRack(isBladeServer ? chassisRack : rack, isBladeServer ? chassisRackU : parseInt(rackU), documentSnapshot.data().model, datacenter, fitResult => {
                             if(fitResult){
                                 //doesn't fit
-                                console.log("6", fitResult, rack, rackU)
+                                console.log("6", fitResult, rack, rackU) 
                                 callback(null, fitResult);
                             } else {
                                 //get datacenter info

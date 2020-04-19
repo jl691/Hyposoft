@@ -8,7 +8,7 @@ const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
 const index = client.initIndex('models')
 
-function packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment) {
+function packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, mount) {
     displayColor = displayColor.trim()
     if (!displayColor.startsWith('#')) {
         displayColor = '#'+displayColor
@@ -25,7 +25,8 @@ function packageModel(vendor, modelNumber, height, displayColor, networkPorts, p
         memory: memory,
         storage: storage.trim(),
         comment: comment.trim(),
-        modelName: vendor.trim() + ' ' + modelNumber.trim()
+        modelName: vendor.trim() + ' ' + modelNumber.trim(),
+        mount: mount
     }
     return model
 }
@@ -34,17 +35,17 @@ function combineVendorAndModelNumber(vendor, modelNumber) {
     return vendor.concat(' ', modelNumber)
 }
 
-function createModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, callback) {
+function createModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, mount, callback) {
     // Ignore the first param
-    var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment)
+    var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, mount)
     firebaseutils.modelsRef.add(model).then(docRef => {
         logutils.addLog(docRef.id,logutils.MODEL(),logutils.CREATE())
         callback(model, docRef.id)
     })
 }
 
-function modifyModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, callback) {
-    var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment)
+function modifyModel(id, vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, mount, callback) {
+    var model = packageModel(vendor, modelNumber, height, displayColor, networkPorts, powerPorts, cpu, memory, storage, comment, mount)
     /*logutils.getObjectData(id,logutils.MODEL(),data => {
       firebaseutils.modelsRef.doc(id).update(model).then(() => {
           logutils.addLog(id,logutils.MODEL(),logutils.MODIFY(),data)
@@ -238,7 +239,7 @@ function escapeStringForCSV(string) {
 
 function exportFilteredModels(models) {
     var rows = [
-        ["vendor", "model_number", "height", "display_color", "network_ports",
+        ["mount_type", "vendor", "model_number", "height", "display_color", "network_ports",
         "power_ports", "cpu", "memory", "storage", "comment", "network_port_name_1",
         "network_port_name_2", "network_port_name_3", "network_port_name_4"]
     ]
@@ -249,20 +250,22 @@ function exportFilteredModels(models) {
         var network_port_name_3 = ''
         var network_port_name_4 = ''
 
-        if (models[i].networkPortsCount >=1 ){
-            network_port_name_1 = models[i].networkPorts[0]
-        }
+        if (models[i].mount !== 'blade') {
+            if (models[i].networkPortsCount >=1 ){
+                network_port_name_1 = models[i].networkPorts[0]
+            }
 
-        if (models[i].networkPortsCount >=2 ){
-            network_port_name_2 = models[i].networkPorts[1]
-        }
+            if (models[i].networkPortsCount >=2 ){
+                network_port_name_2 = models[i].networkPorts[1]
+            }
 
-        if (models[i].networkPortsCount >=3 ){
-            network_port_name_3 = models[i].networkPorts[2]
-        }
+            if (models[i].networkPortsCount >=3 ){
+                network_port_name_3 = models[i].networkPorts[2]
+            }
 
-        if (models[i].networkPortsCount >=4 ){
-            network_port_name_4 = models[i].networkPorts[3]
+            if (models[i].networkPortsCount >=4 ){
+                network_port_name_4 = models[i].networkPorts[3]
+            }
         }
 
         var displayColor = models[i].displayColor.trim()
@@ -270,7 +273,10 @@ function exportFilteredModels(models) {
             displayColor = '#'+displayColor
         }
 
+        var mountType = models[i].mount === 'normal' ? 'asset' : models[i].mount
+
         rows = [...rows, [
+            mountType,
             escapeStringForCSV(models[i].vendor),
             escapeStringForCSV(models[i].modelNumber),
             ''+models[i].height,
@@ -297,7 +303,7 @@ function exportFilteredModels(models) {
 function getModelsForExport(callback) {
     firebaseutils.modelsRef.orderBy('vendor').get().then(qs => {
         var rows = [
-            ["vendor", "model_number", "height", "display_color", "network_ports",
+            ["mount_type", "vendor", "model_number", "height", "display_color", "network_ports",
             "power_ports", "cpu", "memory", "storage", "comment", "network_port_name_1",
             "network_port_name_2", "network_port_name_3", "network_port_name_4"]
         ]
@@ -308,20 +314,22 @@ function getModelsForExport(callback) {
             var network_port_name_3 = ''
             var network_port_name_4 = ''
 
-            if (qs.docs[i].data().networkPortsCount >=1 ){
-                network_port_name_1 = qs.docs[i].data().networkPorts[0]
-            }
+            if (qs.docs[i].data().mount !== 'blade') {
+                if (qs.docs[i].data().networkPortsCount >=1 ){
+                    network_port_name_1 = qs.docs[i].data().networkPorts[0]
+                }
 
-            if (qs.docs[i].data().networkPortsCount >=2 ){
-                network_port_name_2 = qs.docs[i].data().networkPorts[1]
-            }
+                if (qs.docs[i].data().networkPortsCount >=2 ){
+                    network_port_name_2 = qs.docs[i].data().networkPorts[1]
+                }
 
-            if (qs.docs[i].data().networkPortsCount >=3 ){
-                network_port_name_3 = qs.docs[i].data().networkPorts[2]
-            }
+                if (qs.docs[i].data().networkPortsCount >=3 ){
+                    network_port_name_3 = qs.docs[i].data().networkPorts[2]
+                }
 
-            if (qs.docs[i].data().networkPortsCount >=4 ){
-                network_port_name_4 = qs.docs[i].data().networkPorts[3]
+                if (qs.docs[i].data().networkPortsCount >=4 ){
+                    network_port_name_4 = qs.docs[i].data().networkPorts[3]
+                }
             }
 
             var displayColor = qs.docs[i].data().displayColor.trim()
@@ -329,7 +337,10 @@ function getModelsForExport(callback) {
                 displayColor = '#'+displayColor
             }
 
+            var mountType = qs.docs[i].data().mount === 'normal' ? 'asset' : qs.docs[i].data().mount
+
             rows = [...rows, [
+                mountType,
                 escapeStringForCSV(qs.docs[i].data().vendor),
                 escapeStringForCSV(qs.docs[i].data().modelNumber),
                 ''+qs.docs[i].data().height,
@@ -443,6 +454,14 @@ function validateImportedModels (data, callback) {
     for (var i = 0; i < data.length; i++) {
         var datum = data[i]
         var modelAndVendorFound = true
+        if (datum.mount_type === 'asset') {
+            datum.mount_type = 'normal'
+        } else if (datum.mount_type === 'chassis' || datum.mount_type === 'blade') {
+            // ye noice
+        } else {
+            errors = [...errors, [i+1, "Mount type must be 'asset', 'chassis', or 'blade'."]]
+        }
+
         if (!datum.vendor || String(datum.vendor).trim() === '') {
             errors = [...errors, [i+1, 'Vendor not found']]
             modelAndVendorFound = false
@@ -468,21 +487,27 @@ function validateImportedModels (data, callback) {
         // if (!datum.height || String(datum.height).trim() === '') {
         //     errors = [...errors, [i+1, 'Height not found']]
         // } else
-        if (datum.height && (isNaN(String(datum.height).trim()) || !Number.isInteger(parseFloat(String(datum.height).trim())) || parseInt(String(datum.height).trim()) <= 0|| parseInt(String(datum.height).trim()) > 42)) {
+        if (datum.mount_type !== 'blade' && datum.height && (isNaN(String(datum.height).trim()) || !Number.isInteger(parseFloat(String(datum.height).trim())) || parseInt(String(datum.height).trim()) <= 0|| parseInt(String(datum.height).trim()) > 42)) {
             errors = [...errors, [i+1, 'Height should be a positive integer not greater than 42U']]
+        } else if (datum.mount_type === 'blade' && datum.height && (datum.height.trim() !== '' || datum.height.trim() !== '0')) {
+            errors = [...errors, [i+1, 'Height should be 0 or blank for blades']]
         }
         if (!datum.display_color || String(datum.display_color).trim() === '') {
             datum.display_color = '#000000'
         } else if (datum.display_color && !/^#[0-9A-F]{6}$/i.test(String(datum.display_color))) {
             errors = [...errors, [i+1, 'Invalid display color']]
         }
-        if (datum.network_ports && String(datum.network_ports).trim() !== '' &&
+        if (datum.mount_type !== 'blade' && datum.network_ports && String(datum.network_ports).trim() !== '' &&
          (isNaN(String(datum.network_ports).trim()) || !Number.isInteger(parseFloat(String(datum.network_ports).trim())) || parseInt(String(datum.network_ports).trim()) < 0|| parseInt(String(datum.network_ports).trim()) > 100)) {
              errors = [...errors, [i+1, 'Network ports should be a non-negative integer not greater than 100']]
+        } else if (datum.mount_type === 'blade' && datum.network_ports && (datum.network_ports.trim() !== '' || datum.network_ports.trim() !== '0')) {
+            errors = [...errors, [i+1, 'Network ports should be 0 or blank for blades']]
         }
-        if (datum.power_ports && String(datum.power_ports).trim() !== '' &&
+        if (datum.mount_type !== 'blade' && datum.power_ports && String(datum.power_ports).trim() !== '' &&
          (isNaN(String(datum.power_ports).trim()) || !Number.isInteger(parseFloat(String(datum.power_ports).trim())) || parseInt(String(datum.power_ports).trim()) < 0 || parseInt(String(datum.power_ports).trim()) > 10)) {
              errors = [...errors, [i+1, 'Power ports should be a non-negative integer not greater than 10']]
+        } else if (datum.mount_type === 'blade' && datum.power_ports && (datum.power_ports.trim() !== '' || datum.power_ports.trim() !== '0')) {
+            errors = [...errors, [i+1, 'Power ports should be 0 or blank for blades']]
         }
         if (datum.memory && String(datum.memory).trim() !== '' &&
          (isNaN(String(datum.memory).trim()) || !Number.isInteger(parseFloat(String(datum.memory).trim())) || parseInt(String(datum.memory).trim()) < 0 || parseInt(String(datum.memory).trim()) > 1000)) {
@@ -497,53 +522,55 @@ function validateImportedModels (data, callback) {
             errors = [...errors, [i+1, 'CPU should be less than 50 characters long']]
         }
 
-        var uniqueNP = true
-        if (datum.network_port_name_1) {
-            if (datum.network_port_name_1.trim() === datum.network_port_name_2.trim() ||
-            datum.network_port_name_1.trim() === datum.network_port_name_3.trim() ||
-            datum.network_port_name_1.trim() === datum.network_port_name_4.trim()) {
-                uniqueNP = false
+        if (datum.mount_type !== 'blade') {
+            var uniqueNP = true
+            if (datum.network_port_name_1) {
+                if (datum.network_port_name_1.trim() === datum.network_port_name_2.trim() ||
+                datum.network_port_name_1.trim() === datum.network_port_name_3.trim() ||
+                datum.network_port_name_1.trim() === datum.network_port_name_4.trim()) {
+                    uniqueNP = false
+                }
+
+                if (/\s/g.test(datum.network_port_name_1)) {
+                    errors = [...errors, [i+1, 'Network port name 1 has whitespaces']]
+                }
+            }
+            if (datum.network_port_name_2) {
+                if (datum.network_port_name_2.trim() === datum.network_port_name_1.trim() ||
+                datum.network_port_name_2.trim() === datum.network_port_name_3.trim() ||
+                datum.network_port_name_2.trim() === datum.network_port_name_4.trim()) {
+                    uniqueNP = false
+                }
+
+                if (/\s/g.test(datum.network_port_name_2)) {
+                    errors = [...errors, [i+1, 'Network port name 2 has whitespaces']]
+                }
+            }
+            if (datum.network_port_name_3) {
+                if (datum.network_port_name_3.trim() === datum.network_port_name_2.trim() ||
+                datum.network_port_name_3.trim() === datum.network_port_name_1.trim() ||
+                datum.network_port_name_3.trim() === datum.network_port_name_4.trim()) {
+                    uniqueNP = false
+                }
+
+                if (/\s/g.test(datum.network_port_name_3)) {
+                    errors = [...errors, [i+1, 'Network port name 3 has whitespaces']]
+                }
+            }
+            if (datum.network_port_name_4) {
+                if (datum.network_port_name_4.trim() === datum.network_port_name_2.trim() ||
+                datum.network_port_name_4.trim() === datum.network_port_name_3.trim() ||
+                datum.network_port_name_4.trim() === datum.network_port_name_1.trim()) {
+                    uniqueNP = false
+                }
+                if (/\s/g.test(datum.network_port_name_4)) {
+                    errors = [...errors, [i+1, 'Network port name 4 has whitespaces']]
+                }
             }
 
-            if (/\s/g.test(datum.network_port_name_1)) {
-                errors = [...errors, [i+1, 'Network port name 1 has whitespaces']]
+            if (!uniqueNP) {
+                errors = [...errors, [i+1, 'Network port names must be unique']]
             }
-        }
-        if (datum.network_port_name_2) {
-            if (datum.network_port_name_2.trim() === datum.network_port_name_1.trim() ||
-            datum.network_port_name_2.trim() === datum.network_port_name_3.trim() ||
-            datum.network_port_name_2.trim() === datum.network_port_name_4.trim()) {
-                uniqueNP = false
-            }
-
-            if (/\s/g.test(datum.network_port_name_2)) {
-                errors = [...errors, [i+1, 'Network port name 2 has whitespaces']]
-            }
-        }
-        if (datum.network_port_name_3) {
-            if (datum.network_port_name_3.trim() === datum.network_port_name_2.trim() ||
-            datum.network_port_name_3.trim() === datum.network_port_name_1.trim() ||
-            datum.network_port_name_3.trim() === datum.network_port_name_4.trim()) {
-                uniqueNP = false
-            }
-
-            if (/\s/g.test(datum.network_port_name_3)) {
-                errors = [...errors, [i+1, 'Network port name 3 has whitespaces']]
-            }
-        }
-        if (datum.network_port_name_4) {
-            if (datum.network_port_name_4.trim() === datum.network_port_name_2.trim() ||
-            datum.network_port_name_4.trim() === datum.network_port_name_3.trim() ||
-            datum.network_port_name_4.trim() === datum.network_port_name_1.trim()) {
-                uniqueNP = false
-            }
-            if (/\s/g.test(datum.network_port_name_4)) {
-                errors = [...errors, [i+1, 'Network port name 4 has whitespaces']]
-            }
-        }
-
-        if (!uniqueNP) {
-            errors = [...errors, [i+1, 'Network port names must be unique']]
         }
 
         // If all is good, just get the model and whether it has any assets
@@ -579,25 +606,27 @@ function bulkAddModels (models, callback) {
     for (var i = 0; i < models.length; i++) {
         const model = models[i]
         var network_ports = []
-        for (var j = 1; j <= parseInt(model.network_ports); j++) {
-            network_ports.push(''+j)
-        }
-        if (parseInt(model.network_ports) >= 1) {
-            network_ports[0] = ((''+model.network_port_name_1).trim() ? (''+model.network_port_name_1).trim() : '1')
-        }
-        if (parseInt(model.network_ports) >= 2) {
-            network_ports[1] = ((''+model.network_port_name_2).trim() ? (''+model.network_port_name_2).trim() : '2')
-        }
-        if (parseInt(model.network_ports) >= 3) {
-            network_ports[2] = ((''+model.network_port_name_3).trim() ? (''+model.network_port_name_3).trim() : '3')
-        }
-        if (parseInt(model.network_ports) >= 4) {
-            network_ports[3] = ((''+model.network_port_name_4).trim() ? (''+model.network_port_name_4).trim() : '4')
+        if (model.mount_type !== 'blade') {
+            for (var j = 1; j <= parseInt(model.network_ports); j++) {
+                network_ports.push(''+j)
+            }
+            if (parseInt(model.network_ports) >= 1) {
+                network_ports[0] = ((''+model.network_port_name_1).trim() ? (''+model.network_port_name_1).trim() : '1')
+            }
+            if (parseInt(model.network_ports) >= 2) {
+                network_ports[1] = ((''+model.network_port_name_2).trim() ? (''+model.network_port_name_2).trim() : '2')
+            }
+            if (parseInt(model.network_ports) >= 3) {
+                network_ports[2] = ((''+model.network_port_name_3).trim() ? (''+model.network_port_name_3).trim() : '3')
+            }
+            if (parseInt(model.network_ports) >= 4) {
+                network_ports[3] = ((''+model.network_port_name_4).trim() ? (''+model.network_port_name_4).trim() : '4')
+            }
         }
 
-        createModel(null, ''+model.vendor, ''+model.model_number, parseInt(model.height), ''+model.display_color,
+        createModel(null, ''+model.vendor, ''+model.model_number, model.height&&parseInt(model.height), ''+model.display_color,
          network_ports, model.power_ports&&parseInt(model.power_ports), ''+model.cpu, ''+model.memory, ''+model.storage,
-         ''+model.comment, (modelDoc, modelDocid) => {
+         ''+model.comment, ''+model.mount_type, (modelDoc, modelDocid) => {
              let suffixes_list = []
              let cpu = modelDoc.cpu
 
@@ -635,20 +664,22 @@ function bulkModifyModels (models, callback) {
     for (var i = 0; i < models.length; i++) {
         const model = models[i]
         var network_ports = []
-        for (var j = 1; j <= parseInt(model.network_ports); j++) {
-            network_ports.push(''+j)
-        }
-        if (parseInt(model.network_ports) >= 1) {
-            network_ports[0] = ((''+model.network_port_name_1).trim() ? (''+model.network_port_name_1).trim() : '1')
-        }
-        if (parseInt(model.network_ports) >= 2) {
-            network_ports[1] = ((''+model.network_port_name_2).trim() ? (''+model.network_port_name_2).trim() : '2')
-        }
-        if (parseInt(model.network_ports) >= 3) {
-            network_ports[2] = ((''+model.network_port_name_3).trim() ? (''+model.network_port_name_3).trim() : '3')
-        }
-        if (parseInt(model.network_ports) >= 4) {
-            network_ports[3] = ((''+model.network_port_name_4).trim() ? (''+model.network_port_name_4).trim() : '4')
+        if (model.mount_type !== 'blade') {
+            for (var j = 1; j <= parseInt(model.network_ports); j++) {
+                network_ports.push(''+j)
+            }
+            if (parseInt(model.network_ports) >= 1) {
+                network_ports[0] = ((''+model.network_port_name_1).trim() ? (''+model.network_port_name_1).trim() : '1')
+            }
+            if (parseInt(model.network_ports) >= 2) {
+                network_ports[1] = ((''+model.network_port_name_2).trim() ? (''+model.network_port_name_2).trim() : '2')
+            }
+            if (parseInt(model.network_ports) >= 3) {
+                network_ports[2] = ((''+model.network_port_name_3).trim() ? (''+model.network_port_name_3).trim() : '3')
+            }
+            if (parseInt(model.network_ports) >= 4) {
+                network_ports[3] = ((''+model.network_port_name_4).trim() ? (''+model.network_port_name_4).trim() : '4')
+            }
         }
 
         modifyModel(model.id, ''+model.vendor, ''+model.model_number, parseInt(model.height), ''+model.display_color,
