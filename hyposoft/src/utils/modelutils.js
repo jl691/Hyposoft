@@ -469,21 +469,27 @@ function validateImportedModels (data, callback) {
         // if (!datum.height || String(datum.height).trim() === '') {
         //     errors = [...errors, [i+1, 'Height not found']]
         // } else
-        if (datum.height && (isNaN(String(datum.height).trim()) || !Number.isInteger(parseFloat(String(datum.height).trim())) || parseInt(String(datum.height).trim()) <= 0|| parseInt(String(datum.height).trim()) > 42)) {
+        if (datum.mount_type !== 'blade' && datum.height && (isNaN(String(datum.height).trim()) || !Number.isInteger(parseFloat(String(datum.height).trim())) || parseInt(String(datum.height).trim()) <= 0|| parseInt(String(datum.height).trim()) > 42)) {
             errors = [...errors, [i+1, 'Height should be a positive integer not greater than 42U']]
+        } else if (datum.mount_type === 'blade' && datum.height && (datum.height.trim() !== '' || datum.height.trim() !== '0')) {
+            errors = [...errors, [i+1, 'Height should be 0 or blank for blades']]
         }
         if (!datum.display_color || String(datum.display_color).trim() === '') {
             datum.display_color = '#000000'
         } else if (datum.display_color && !/^#[0-9A-F]{6}$/i.test(String(datum.display_color))) {
             errors = [...errors, [i+1, 'Invalid display color']]
         }
-        if (datum.network_ports && String(datum.network_ports).trim() !== '' &&
+        if (datum.mount_type !== 'blade' && datum.network_ports && String(datum.network_ports).trim() !== '' &&
          (isNaN(String(datum.network_ports).trim()) || !Number.isInteger(parseFloat(String(datum.network_ports).trim())) || parseInt(String(datum.network_ports).trim()) < 0|| parseInt(String(datum.network_ports).trim()) > 100)) {
              errors = [...errors, [i+1, 'Network ports should be a non-negative integer not greater than 100']]
+        } else if (datum.mount_type === 'blade' && datum.network_ports && (datum.network_ports.trim() !== '' || datum.network_ports.trim() !== '0')) {
+            errors = [...errors, [i+1, 'Network ports should be 0 or blank for blades']]
         }
-        if (datum.power_ports && String(datum.power_ports).trim() !== '' &&
+        if (datum.mount_type !== 'blade' && datum.power_ports && String(datum.power_ports).trim() !== '' &&
          (isNaN(String(datum.power_ports).trim()) || !Number.isInteger(parseFloat(String(datum.power_ports).trim())) || parseInt(String(datum.power_ports).trim()) < 0 || parseInt(String(datum.power_ports).trim()) > 10)) {
              errors = [...errors, [i+1, 'Power ports should be a non-negative integer not greater than 10']]
+        } else if (datum.mount_type === 'blade' && datum.power_ports && (datum.power_ports.trim() !== '' || datum.power_ports.trim() !== '0')) {
+            errors = [...errors, [i+1, 'Power ports should be 0 or blank for blades']]
         }
         if (datum.memory && String(datum.memory).trim() !== '' &&
          (isNaN(String(datum.memory).trim()) || !Number.isInteger(parseFloat(String(datum.memory).trim())) || parseInt(String(datum.memory).trim()) < 0 || parseInt(String(datum.memory).trim()) > 1000)) {
@@ -498,53 +504,55 @@ function validateImportedModels (data, callback) {
             errors = [...errors, [i+1, 'CPU should be less than 50 characters long']]
         }
 
-        var uniqueNP = true
-        if (datum.network_port_name_1) {
-            if (datum.network_port_name_1.trim() === datum.network_port_name_2.trim() ||
-            datum.network_port_name_1.trim() === datum.network_port_name_3.trim() ||
-            datum.network_port_name_1.trim() === datum.network_port_name_4.trim()) {
-                uniqueNP = false
+        if (datum.mount_type !== 'blade') {
+            var uniqueNP = true
+            if (datum.network_port_name_1) {
+                if (datum.network_port_name_1.trim() === datum.network_port_name_2.trim() ||
+                datum.network_port_name_1.trim() === datum.network_port_name_3.trim() ||
+                datum.network_port_name_1.trim() === datum.network_port_name_4.trim()) {
+                    uniqueNP = false
+                }
+
+                if (/\s/g.test(datum.network_port_name_1)) {
+                    errors = [...errors, [i+1, 'Network port name 1 has whitespaces']]
+                }
+            }
+            if (datum.network_port_name_2) {
+                if (datum.network_port_name_2.trim() === datum.network_port_name_1.trim() ||
+                datum.network_port_name_2.trim() === datum.network_port_name_3.trim() ||
+                datum.network_port_name_2.trim() === datum.network_port_name_4.trim()) {
+                    uniqueNP = false
+                }
+
+                if (/\s/g.test(datum.network_port_name_2)) {
+                    errors = [...errors, [i+1, 'Network port name 2 has whitespaces']]
+                }
+            }
+            if (datum.network_port_name_3) {
+                if (datum.network_port_name_3.trim() === datum.network_port_name_2.trim() ||
+                datum.network_port_name_3.trim() === datum.network_port_name_1.trim() ||
+                datum.network_port_name_3.trim() === datum.network_port_name_4.trim()) {
+                    uniqueNP = false
+                }
+
+                if (/\s/g.test(datum.network_port_name_3)) {
+                    errors = [...errors, [i+1, 'Network port name 3 has whitespaces']]
+                }
+            }
+            if (datum.network_port_name_4) {
+                if (datum.network_port_name_4.trim() === datum.network_port_name_2.trim() ||
+                datum.network_port_name_4.trim() === datum.network_port_name_3.trim() ||
+                datum.network_port_name_4.trim() === datum.network_port_name_1.trim()) {
+                    uniqueNP = false
+                }
+                if (/\s/g.test(datum.network_port_name_4)) {
+                    errors = [...errors, [i+1, 'Network port name 4 has whitespaces']]
+                }
             }
 
-            if (/\s/g.test(datum.network_port_name_1)) {
-                errors = [...errors, [i+1, 'Network port name 1 has whitespaces']]
+            if (!uniqueNP) {
+                errors = [...errors, [i+1, 'Network port names must be unique']]
             }
-        }
-        if (datum.network_port_name_2) {
-            if (datum.network_port_name_2.trim() === datum.network_port_name_1.trim() ||
-            datum.network_port_name_2.trim() === datum.network_port_name_3.trim() ||
-            datum.network_port_name_2.trim() === datum.network_port_name_4.trim()) {
-                uniqueNP = false
-            }
-
-            if (/\s/g.test(datum.network_port_name_2)) {
-                errors = [...errors, [i+1, 'Network port name 2 has whitespaces']]
-            }
-        }
-        if (datum.network_port_name_3) {
-            if (datum.network_port_name_3.trim() === datum.network_port_name_2.trim() ||
-            datum.network_port_name_3.trim() === datum.network_port_name_1.trim() ||
-            datum.network_port_name_3.trim() === datum.network_port_name_4.trim()) {
-                uniqueNP = false
-            }
-
-            if (/\s/g.test(datum.network_port_name_3)) {
-                errors = [...errors, [i+1, 'Network port name 3 has whitespaces']]
-            }
-        }
-        if (datum.network_port_name_4) {
-            if (datum.network_port_name_4.trim() === datum.network_port_name_2.trim() ||
-            datum.network_port_name_4.trim() === datum.network_port_name_3.trim() ||
-            datum.network_port_name_4.trim() === datum.network_port_name_1.trim()) {
-                uniqueNP = false
-            }
-            if (/\s/g.test(datum.network_port_name_4)) {
-                errors = [...errors, [i+1, 'Network port name 4 has whitespaces']]
-            }
-        }
-
-        if (!uniqueNP) {
-            errors = [...errors, [i+1, 'Network port names must be unique']]
         }
 
         // If all is good, just get the model and whether it has any assets

@@ -121,12 +121,12 @@ class ModelSettingsLayer extends React.Component {
             return
         }
 
-        if (this.state.mount === 'normal' && this.state.height.trim() === '') {
+        if (this.state.mount !== 'blade' && this.state.height.trim() === '') {
             ToastsStore.info('Height required', 3000, 'burntToast')
             return
         }
 
-        if (this.state.mount === 'normal' && (isNaN(this.state.height.trim()) || !Number.isInteger(parseFloat(this.state.height.trim())) || parseInt(this.state.height.trim()) <= 0 || parseInt(this.state.height.trim()) > 42)) {
+        if (this.state.mount !== 'blade' && (isNaN(this.state.height.trim()) || !Number.isInteger(parseFloat(this.state.height.trim())) || parseInt(this.state.height.trim()) <= 0 || parseInt(this.state.height.trim()) > 42)) {
             ToastsStore.info('Height should be a positive integer not greater than 42U', 3000, 'burntToast')
             this.setState(oldState => ({...oldState, height: ''}))
             return
@@ -142,25 +142,25 @@ class ModelSettingsLayer extends React.Component {
             networkPorts = []
         }
 
-        if (this.state.mount === 'normal' && networkPorts.length > Array.from(new Set(networkPorts)).length) {
+        if (this.state.mount !== 'blade' && networkPorts.length > Array.from(new Set(networkPorts)).length) {
             ToastsStore.info('Network ports should have unique names', 3000, 'burntToast')
             return
         }
 
         for (var np = 0; np < networkPorts.length; np++) {
-            if (this.state.mount === 'normal' && /\s/g.test(networkPorts[np].trim())) {
+            if (this.state.mount !== 'blade' && /\s/g.test(networkPorts[np].trim())) {
                 ToastsStore.info('Network ports cannot have whitespaces in their names', 3000, 'burntToast')
                 return
             }
         }
 
-        if (this.state.mount === 'normal' && networkPorts.length > 100) {
+        if (this.state.mount !== 'blade' && networkPorts.length > 100) {
             ToastsStore.info('Models should not have more than 100 network ports', 3000, 'burntToast')
             return
         }
 
         var powerPorts = null
-        if (this.state.mount === 'normal' && this.state.powerPorts.trim() !== '' &&
+        if (this.state.mount !== 'blade' && this.state.powerPorts.trim() !== '' &&
             (isNaN(this.state.powerPorts.trim()) || !Number.isInteger(parseFloat(this.state.powerPorts.trim())) || parseInt(this.state.powerPorts.trim()) < 0 || parseInt(this.state.powerPorts.trim()) > 10)) {
             ToastsStore.info('Power ports should be a non-negative integer not greater than 10', 3000, 'burntToast')
             this.setState(oldState => ({...oldState, powerPorts: ''}))
@@ -344,7 +344,7 @@ class ModelSettingsLayer extends React.Component {
                                            value={this.state.modelNumber}
                                            title='Model number'
                                 />
-                                {this.state.mount === 'normal' && (
+                                {this.state.mount !== 'blade' && (
                                     [
                                     <Text size={"small"} style={{marginLeft: "20px"}}>Height</Text>,
                                     <TextInput style={{
