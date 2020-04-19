@@ -313,10 +313,10 @@ function buildLog(data) {
               + data.action + (data.action === MODIFY() && data.previousData ? buildDiff(data) : ' ')
               + data.objectType + ' ' + data.objectName
               + (data.objectType === RACK()
-                || (data.objectType === ASSET() && data.action !== MOVE())
+                || ((data.objectType === ASSET() || data.objectType === OFFLINE()) && data.action !== MOVE())
                 || data.objectType === PDU()
                 || data.objectType === BCMAN()
-                    ? (' in datacenter ' + data.datacenter + '.')
+                    ? ((data.objectType === OFFLINE() ? ' in offline storage site ' : ' in datacenter ') + data.datacenter + '.')
                     : (data.action === MOVE()
                         ? (' from ' + data.previousData.datacenter + ' to ' + data.datacenter + '.')
                         : '.'))
@@ -328,7 +328,7 @@ function buildDiff(data) {
     var num = 0
     var field;
     for (field in data.previousData) {
-      if (data.previousData[field] !== data.currentData[field]) {
+      if (data.previousData[field] != data.currentData[field]) {
          let returnedDiff = buildSpecificDiff(data,field)
          if (returnedDiff) {
            diff = diff + (num > 0 ? ',' : '') + ' ' + returnedDiff
@@ -511,6 +511,14 @@ function assetDiff(data,field) {
       case 'variances':
         return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
       case 'id':
+      case 'datacenterAbbrev':
+      case 'datacenterID':
+      case 'rackID':
+      case 'rackNum':
+      case 'rackRow':
+      case 'modelId':
+      case 'modelNumber':
+      case 'vendor':
           return ''
       default:
         return defaultDiff(data,field)

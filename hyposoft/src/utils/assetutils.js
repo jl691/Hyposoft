@@ -235,7 +235,6 @@ console.log(rack, racku)
 
                                                                                 owner: owner,
                                                                                 comment: comment,
-                                                                                rackID: rackID,
                                                                                 macAddresses,
                                                                                 networkConnections,
                                                                                 powerConnections,
@@ -366,13 +365,15 @@ console.log(rack, racku)
                                                                                             callback("Couldn't find the offline storage site.");
                                                                                         } else {
                                                                                             offlinestorageRef.doc(offlineQuerySnap.docs[0].id).collection("offlineAssets").doc(overrideAssetID).set(assetObject).then(function () {
-                                                                                                logutils.addLog(overrideAssetID, logutils.OFFLINE(), logutils.CREATE())
+                                                                                                logutils.addLog(overrideAssetID, logutils.OFFLINE(), logutils.CREATE(),{datacenterAbbrev: offlineQuerySnap.docs[0].data().abbreviation})
+                                                                                                callback(null,overrideAssetID)
                                                                                             }).catch(function (error) {
                                                                                                 console.log(error);
                                                                                                 callback("Couldn't add to the offline storage site.");
                                                                                             })
                                                                                         }
-                                                                                    }).catch(function () {
+                                                                                    }).catch(function (error) {
+                                                                                        console.log(error);
                                                                                         callback("Couldn't find the offline storage site.");
                                                                                     })
                                                                                 }
@@ -413,7 +414,7 @@ console.log(rack, racku)
                                                                             networkConnections,
                                                                             powerConnections,
                                                                             datacenter: offlineStorageName ? offlineStorageName : datacenter,
-                                                                            
+
 
                                                                             // This is for rack usage reports
                                                                             modelNumber: offlineStorageName ? doc.data().modelNumber : modelNum,
@@ -488,16 +489,17 @@ console.log(rack, racku)
 
                                                                             console.log(offlineStorageName)
                                                                             if(offlineStorageName){
-                                                                                console.log(assetObject) 
+                                                                                console.log(assetObject)
                                                                                 offlinestorageRef.where("name", "==", offlineStorageName).get().then(function (offlineQuerySnap) {
                                                                                     if(offlineQuerySnap.empty){
                                                                                         callback("Couldn't find the offline storage site.");
                                                                                     } else {
                                                                                         console.log(offlineStorageName)
                                                                                         console.log(offlineQuerySnap.docs[0].id)
-                                                                                        
+
                                                                                         offlinestorageRef.doc(offlineQuerySnap.docs[0].id).collection("offlineAssets").doc(newID).set(assetObject).then(function () {
-                                                                                            logutils.addLog(overrideAssetID, logutils.OFFLINE(), logutils.CREATE())
+                                                                                            logutils.addLog(newID, logutils.OFFLINE(), logutils.CREATE(),{datacenterAbbrev: offlineQuerySnap.docs[0].data().abbreviation})
+                                                                                            callback(null,newID)
                                                                                         }).catch(function () {
                                                                                             callback("Couldn't add to the offline storage site.");
                                                                                         })
@@ -1108,7 +1110,7 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                                             console.log("checkpoint16")
                                                                                                                             console.log("Updated model successfully")
                                                                                                                             // log needs to be added before calling back for DetailedAssetScreen
-                                                                                                                            logutils.addLog(String(assetID), logutils.OFFLINE(), logutils.MODIFY(), assetData, () => callback(null, String(assetID),modelStuff[0]))
+                                                                                                                            logutils.addLog(String(assetID), logutils.OFFLINE(), logutils.MODIFY(), {...assetData,datacenterAbbrev: offlineStorageAbbrev}, () => callback(null, String(assetID),modelStuff[0]))
                                                                                                                         }).catch(function (error) {
                                                                                                                             callback(error);
                                                                                                                         })
