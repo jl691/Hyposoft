@@ -239,7 +239,7 @@ function escapeStringForCSV(string) {
 
 function exportFilteredModels(models) {
     var rows = [
-        ["vendor", "model_number", "height", "display_color", "network_ports",
+        ["mount_type", "vendor", "model_number", "height", "display_color", "network_ports",
         "power_ports", "cpu", "memory", "storage", "comment", "network_port_name_1",
         "network_port_name_2", "network_port_name_3", "network_port_name_4"]
     ]
@@ -250,20 +250,22 @@ function exportFilteredModels(models) {
         var network_port_name_3 = ''
         var network_port_name_4 = ''
 
-        if (models[i].networkPortsCount >=1 ){
-            network_port_name_1 = models[i].networkPorts[0]
-        }
+        if (models[i].mount !== 'blade') {
+            if (models[i].networkPortsCount >=1 ){
+                network_port_name_1 = models[i].networkPorts[0]
+            }
 
-        if (models[i].networkPortsCount >=2 ){
-            network_port_name_2 = models[i].networkPorts[1]
-        }
+            if (models[i].networkPortsCount >=2 ){
+                network_port_name_2 = models[i].networkPorts[1]
+            }
 
-        if (models[i].networkPortsCount >=3 ){
-            network_port_name_3 = models[i].networkPorts[2]
-        }
+            if (models[i].networkPortsCount >=3 ){
+                network_port_name_3 = models[i].networkPorts[2]
+            }
 
-        if (models[i].networkPortsCount >=4 ){
-            network_port_name_4 = models[i].networkPorts[3]
+            if (models[i].networkPortsCount >=4 ){
+                network_port_name_4 = models[i].networkPorts[3]
+            }
         }
 
         var displayColor = models[i].displayColor.trim()
@@ -271,7 +273,10 @@ function exportFilteredModels(models) {
             displayColor = '#'+displayColor
         }
 
+        var mountType = models[i].mount === 'normal' ? 'asset' : models[i].mount
+
         rows = [...rows, [
+            mountType,
             escapeStringForCSV(models[i].vendor),
             escapeStringForCSV(models[i].modelNumber),
             ''+models[i].height,
