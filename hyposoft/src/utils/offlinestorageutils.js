@@ -211,8 +211,7 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback, moveFu
                             firebaseutils.offlinestorageRef.doc(offlineStorageID).collection("offlineAssets").doc(String(assetID)).set(assetData).then(function () {
                                 moveFunction(assetID, result => {
                                     if(result){
-                                        callback(true, offlineStorageAbbrev);
-                                        logutils.addLog(assetID,logutils.OFFLINE(),logutils.MOVE(),{...savedAssetData,datacenterAbbrev: offlineStorageAbbrev})
+                                        logutils.addLog(assetID,logutils.OFFLINE(),logutils.MOVE(),{...savedAssetData,datacenterAbbrev: offlineStorageAbbrev},()=>callback(true, offlineStorageAbbrev))
                                     } else {
                                         console.log("6")
                                         callback(null);
@@ -256,8 +255,7 @@ function moveAssetFromOfflineStorage(assetID, datacenter, rack, rackU, callback,
                       if(!result){
                           let parentDoc = querySnapshot.docs[0].ref.parent.parent;
                           offlinestorageRef.doc(parentDoc.id).collection("offlineAssets").doc(String(assetID)).delete().then(function () {
-                              logutils.addLog(data.assetId,logutils.ASSET(),logutils.MOVE(),data)
-                              callback(null);
+                              logutils.addLog(data.assetId,logutils.ASSET(),logutils.MOVE(),data,()=>callback(null))
                           }).catch(function () {
                               // reset assetId
                               querySnapshot.docs[0].ref.update({assetId: String(assetID)}).then(() => callback("Could not remove the asset from offline storage."))
