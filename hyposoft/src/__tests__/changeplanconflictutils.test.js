@@ -28,7 +28,7 @@ describe('change plan add asset tests: basic test', () => {
         })
 
     })
-    test.only('changeplan add asset conflicts: datacenter', done => {
+    test('changeplan add asset conflicts: datacenter', done => {
         changeplanconflictutils.datacenterNonExistent(ids['changePlan'], ids['changePlanStep'], 'Test Datacenter', datacenterStatus => {
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
                 expect(docRef.data().database.datacenter[0]).toBe('datacenterErrID')

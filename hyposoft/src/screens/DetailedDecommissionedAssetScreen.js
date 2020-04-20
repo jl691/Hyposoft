@@ -130,7 +130,7 @@ export default class DetailedDecommissionedAssetScreen extends Component {
             this.state.asset.variances[field] === "" ?
                 <tr>
                     <td><b>Model {[field]} variance</b></td>
-                    <td style={{ textAlign: 'right' }}>{"N/A (Base value "+ this.state.asset.baseModel[field]+")"}</td>
+                    <td style={{ textAlign: 'right' }}>{"No variance. (Base value "+ this.state.asset.baseModel[field]+")"}</td>
                 </tr>
                 :
 
