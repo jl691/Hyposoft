@@ -1,6 +1,8 @@
 const functions = require('firebase-functions');
+const https = require('https');
 const firestore = require('@google-cloud/firestore');
 const client = new firestore.v1.FirestoreAdminClient();
+
 
 const bucket_daily = 'gs://daily_backups_hyposoft_prod';
 const bucket_weekly = 'gs://weekly_backups_hyposoft_prod';
@@ -25,6 +27,12 @@ exports.scheduledDailyFirestoreExport = functions.pubsub
   .then(responses => {
     const response = responses[0];
     console.log(`Operation Name: ${response['name']}`);
+    // Now send directed email
+    https.get('https://hyposoft-53c70.appspot.com/dailyBackupEmail', (res) => {
+
+    }).on('error', (e) => {
+      console.error(e);
+    });
     return response;
   })
   .catch(err => {
@@ -52,6 +60,12 @@ exports.scheduledWeeklyFirestoreExport = functions.pubsub
   .then(responses => {
     const response = responses[0];
     console.log(`Operation Name: ${response['name']}`);
+    // Now send directed email
+    https.get('https://hyposoft-53c70.appspot.com/weeklyBackupEmail', (res) => {
+
+    }).on('error', (e) => {
+      console.error(e);
+    });
     return response;
   })
   .catch(err => {
@@ -79,6 +93,12 @@ exports.scheduledMonthlyFirestoreExport = functions.pubsub
   .then(responses => {
     const response = responses[0];
     console.log(`Operation Name: ${response['name']}`);
+    // Now send directed email
+    https.get('https://hyposoft-53c70.appspot.com/monthlyBackupEmail', (res) => {
+
+    }).on('error', (e) => {
+      console.error(e);
+    });
     return response;
   })
   .catch(err => {

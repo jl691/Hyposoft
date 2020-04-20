@@ -7,6 +7,7 @@ import {
     firebase,
     datacentersRef,
     changeplansRef,
+    bladeRef,
     offlinestorageRef
 } from './firebaseutils'
 import * as rackutils from './rackutils'
@@ -1332,13 +1333,19 @@ function getSuggestedAssetIds(datacenter, userInput, callback, self = '') {
     var modelArray = []
     // https://stackoverflow.com/questions/46573804/firestore-query-documents-startswith-a-string/46574143
     assetRef.where('datacenter', '==', datacenter ? datacenter : '').get().then(querySnapshot => {
+      bladeRef.get().then(docSnaps => {
+        var bladeIds = []
+        docSnaps.forEach(doc => {
+          bladeIds.push(doc.id)
+        })
         querySnapshot.forEach(doc => {
             const data = doc.data().assetId;
-            if (data !== self && shouldAddToSuggestedItems(modelArray, data, userInput)) {
+            if (!bladeIds.includes(data) && data !== self && shouldAddToSuggestedItems(modelArray, data, userInput)) {
                 modelArray.push(data + ' - ' + doc.data().model + ' ' + doc.data().hostname)
             }
         })
         callback(modelArray)
+      })
     })
         .catch(error => {
             callback([])
