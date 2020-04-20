@@ -165,7 +165,7 @@ describe('bladeutilsTest', () => {
       firebaseutils.logsRef.orderBy('timestamp','desc').get().then(docSnaps => {
           ids = {...ids,log: docSnaps.docs[0].id}
           firebaseutils.logsRef.doc(ids['log']).get().then(docRef => {
-            expect(docRef.data().action).toBe('modified')
+            expect(docRef.data().action).toContain('modified')
             expect(docRef.data().objectId).toBe(ids['server'])
             done()
           })

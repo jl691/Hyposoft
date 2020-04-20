@@ -536,7 +536,7 @@ function assetDiff(data,field) {
       case 'macAddresses':
         return !findArrayAndMapDiff(data.previousData[field],data.currentData[field],true) ? '' : (field + arrayAndMapDiffString)
       case 'variances':
-        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+        return !findArrayAndMapDiff(data.previousData[field],data.currentData[field],true) ? '' : (field + arrayAndMapDiffString)
       case 'id':
       case 'datacenterAbbrev':
       case 'datacenterID':
@@ -626,7 +626,7 @@ function findArrayAndMapDiff(a,b,map=false) {
                 permDiff.push(field + (act == ' by removing ' ? ' as ' : ' to be ') + c[field])
             } else {
               if (act === ' by changing ' && other[field] && other[field] !== c[field]) {
-                permDiff.push(field + ' from ' + other[field] + ' to ' + c[field])
+                permDiff.push(field + ' from ' + other[field] + ' to ' + (c[field] ? c[field] : 'none'))
               }
             }
           } else {
