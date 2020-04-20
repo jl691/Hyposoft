@@ -130,13 +130,13 @@ export default class DetailedDecommissionedAssetScreen extends Component {
             this.state.asset.variances[field] === "" ?
                 <tr>
                     <td><b>Model {[field]} variance</b></td>
-                    <td style={{ textAlign: 'right' }}>{"No variance. (Base value "+ this.state.asset.baseModel[field]+")"}</td>
+                    <td>{"No variance. (Base value "+ this.state.asset.baseModel[field]+")"}</td>
                 </tr>
                 :
 
                 <tr>
                     <td><b>Model {[field]} variance</b></td>
-                    <td style={{ textAlign: 'right' }}>{this.state.asset.variances[field]+ "(Modified from base value " + this.state.asset.baseModel[field] + ")" }</td>
+                    <td>{this.state.asset.variances[field]+ "(Modified from base value " + this.state.asset.baseModel[field] + ")" }</td>
                 </tr>
         ))
     }
@@ -158,7 +158,7 @@ export default class DetailedDecommissionedAssetScreen extends Component {
         return (
             <tr>
                 <td><b>Model Network Ports </b></td>
-                <td style={{ textAlign: 'right' }}>{result}</td>
+                <td>{result}</td>
             </tr>)
 
     }
@@ -218,28 +218,28 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                             <table style={{ marginTop: '10px', marginBottom: '10px' }}>
                                                 <tbody>
                                                     <tr>
-                                                        <td><b>Date and Time (EST)</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.date}</td>
+                                                        <td width={"150px"}><b>Date and Time (EST)</b></td>
+                                                        <td>{this.state.asset.date}</td>
                                                     </tr>
                                                     <tr>
                                                         <td><b>Hostname</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.hostname}</td>
+                                                        <td>{this.state.asset.hostname}</td>
                                                     </tr>
                                                     <tr>
                                                         <td><b>Model</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.model}</td>
+                                                        <td>{this.state.asset.model}</td>
                                                     </tr>
                                                     {this.generateVariancesTable()}
 
                                                     <tr>
                                                         <td><b>Datacenter</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.datacenter || 'N/A'}</td>
+                                                        <td>{this.state.asset.datacenter || 'N/A'}</td>
                                                     </tr>
                                                     {(this.state.asset.chassisParams && this.state.asset.chassisParams.slot
                                                         ?
                                                         <tr>
                                                             <td><b>Chassis Hostname</b></td>
-                                                            <td style={{ textAlign: 'right' }}>{this.state.asset.chassisParams.chassisHostname}</td>
+                                                            <td>{this.state.asset.chassisParams.chassisHostname}</td>
                                                         </tr>
                                                         :
                                                         <tr></tr>
@@ -248,26 +248,26 @@ export default class DetailedDecommissionedAssetScreen extends Component {
                                                         ?
                                                         <tr>
                                                             <td><b>Slot</b></td>
-                                                            <td style={{ textAlign: 'right' }}>{this.state.asset.chassisParams.slot}</td>
+                                                            <td>{this.state.asset.chassisParams.slot}</td>
                                                         </tr>
                                                         :
                                                         <tr></tr>
                                                     )}
                                                <tr>
                                                    <td><b>{!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot) ? 'Rack' : 'Chassis Rack'}</b></td>
-                                                   <td style={{textAlign: 'right'}}>{this.state.asset.rack}</td>
+                                                   <td>{this.state.asset.rack}</td>
                                                </tr>
                                                <tr>
                                                    <td><b>{!(this.state.asset.chassisParams && this.state.asset.chassisParams.slot) ? 'Rack U' : 'Chassis Rack U'}</b></td>
-                                                   <td style={{textAlign: 'right'}}>{this.state.asset.rackU}</td>
+                                                   <td>{this.state.asset.rackU}</td>
                                                </tr>
                                                <tr>
                                                    <td><b>Demoted By</b></td>
-                                                   <td style={{textAlign: 'right'}}>@{this.state.asset.name}</td>
+                                                   <td>@{this.state.asset.name}</td>
                                                </tr>
                                                <tr>
                                                    <td><b>Owner</b></td>
-                                                   <td style={{textAlign: 'right'}}>@{this.state.asset.owner || 'N/A'}</td>
+                                                   <td>@{this.state.asset.owner || 'N/A'}</td>
                                                </tr>
                                                </tbody>
                                            </table>

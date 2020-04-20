@@ -224,13 +224,13 @@ export default class DetailedAssetScreen extends Component {
             this.state.model[field] === "" ?
                 <tr>
                     <td><b>Model {[field]} </b></td>
-                    <td style={{ textAlign: 'right' }}>{this.state.asset.variances[field] !== "" ? this.state.asset.variances[field] + " " + "(Modified from base value N/A)" : "N/A"}</td>
+                    <td>{this.state.asset.variances[field] !== "" ? this.state.asset.variances[field] + " " + "(Modified from base value N/A)" : "N/A"}</td>
                 </tr>
                 :
 
                 <tr>
                     <td><b>Model {[field]} </b></td>
-                    <td style={{ textAlign: 'right' }}>{this.state.asset.variances[field] !== "" ? this.state.asset.variances[field] + " " + "(Modified from base value " + this.state.model[field] + ")" : this.state.model[field]}</td>
+                    <td>{this.state.asset.variances[field] !== "" ? this.state.asset.variances[field] + " " + "(Modified from base value " + this.state.model[field] + ")" : this.state.model[field]}</td>
                 </tr>
         ))
     }
@@ -252,7 +252,7 @@ export default class DetailedAssetScreen extends Component {
         return (
             <tr>
                 <td><b>Model Network Ports </b></td>
-                <td style={{ textAlign: 'right' }}>{result}</td>
+                <td>{result}</td>
             </tr>)
 
     }
@@ -731,24 +731,24 @@ export default class DetailedAssetScreen extends Component {
 
 
                                                     <tr>
-                                                        <td><b>Hostname</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.hostname === "" ? "N/A" : this.state.asset.hostname}</td>
+                                                        <td width={"150px"}><b>Hostname</b></td>
+                                                        <td>{this.state.asset.hostname === "" ? "N/A" : this.state.asset.hostname}</td>
                                                     </tr>
                                                     <tr>
                                                         <td><b>Model</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.model}</td>
+                                                        <td>{this.state.asset.model}</td>
                                                     </tr>
                                                     {this.generateVariancesTable()}
 
                                                     {!this.props.match.params.storageSiteAbbrev && <tr>
                                                         <td><b>Datacenter</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.datacenter || 'N/A'}</td>
+                                                        <td>{this.state.asset.datacenter || 'N/A'}</td>
                                                     </tr>}
                                                     {(this.bladeData
                                                         ?
                                                         <tr>
                                                             <td><b>Chassis Hostname</b></td>
-                                                            <td style={{ textAlign: 'right' }}>{this.bladeData.rack}</td>
+                                                            <td>{this.bladeData.rack}</td>
                                                         </tr>
                                                         :
                                                         <tr></tr>
@@ -757,22 +757,22 @@ export default class DetailedAssetScreen extends Component {
                                                         ?
                                                         <tr>
                                                             <td><b>Slot</b></td>
-                                                            <td style={{ textAlign: 'right' }}>{this.bladeData.rackU}</td>
+                                                            <td>{this.bladeData.rackU}</td>
                                                         </tr>
                                                         :
                                                         <tr></tr>
                                                     )}
                                                     {!this.props.match.params.storageSiteAbbrev && <tr>
                                                         <td><b>{!this.bladeData ? 'Rack' : 'Chassis Rack'}</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.rack}</td>
+                                                        <td>{this.state.asset.rack}</td>
                                                     </tr>}
                                                     {!this.props.match.params.storageSiteAbbrev && <tr>
                                                         <td><b>{!this.bladeData ? 'Rack U' : 'Chassis Rack U'}</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.rackU}</td>
+                                                        <td>{this.state.asset.rackU}</td>
                                                     </tr>}
                                                     <tr>
                                                         <td><b>Owner</b></td>
-                                                        <td style={{ textAlign: 'right' }}>@{this.state.asset.owner || 'N/A'}</td>
+                                                        <td>@{this.state.asset.owner || 'N/A'}</td>
                                                     </tr>
                                                     {this.renderPDUStatus()}
                                                 </tbody>
