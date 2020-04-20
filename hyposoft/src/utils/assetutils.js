@@ -310,11 +310,13 @@ console.log(rack, racku)
                                                                                     suffixes_list.push(_owner)
                                                                                 }
 
-                                                                                index.saveObject({
-                                                                                    ...assetObject,
-                                                                                    objectID: overrideAssetID,
-                                                                                    suffixes: suffixes_list.join(' ')
-                                                                                })
+                                                                                if(!offlineStorageName){
+                                                                                    index.saveObject({
+                                                                                        ...assetObject,
+                                                                                        objectID: overrideAssetID,
+                                                                                        suffixes: suffixes_list.join(' ')
+                                                                                    })
+                                                                                }
 
                                                                                 if(!offlineStorageName){
                                                                                     assetRef.doc(overrideAssetID).set(assetObject).then(function (docRef) {
@@ -366,6 +368,12 @@ console.log(rack, racku)
                                                                                             callback("Couldn't find the offline storage site.");
                                                                                         } else {
                                                                                             offlinestorageRef.doc(offlineQuerySnap.docs[0].id).collection("offlineAssets").doc(overrideAssetID).set(assetObject).then(function () {
+                                                                                                let offlineIndex = client.initIndex(offlineQuerySnap.docs[0].data().abbreviation + "_index");
+                                                                                                offlineIndex.saveObject({
+                                                                                                    ...assetObject,
+                                                                                                    objectID: overrideAssetID,
+                                                                                                    suffixes: suffixes_list.join(' ')
+                                                                                                })
                                                                                                 logutils.addLog(overrideAssetID, logutils.OFFLINE(), logutils.CREATE(),{datacenterAbbrev: offlineQuerySnap.docs[0].data().abbreviation})
                                                                                                 callback(null,overrideAssetID)
                                                                                             }).catch(function (error) {
@@ -482,11 +490,13 @@ console.log(rack, racku)
                                                                                 suffixes_list.push(_owner)
                                                                             }
 
-                                                                            index.saveObject({
-                                                                                ...assetObject,
-                                                                                objectID: newID,
-                                                                                suffixes: suffixes_list.join(' ')
-                                                                            })
+                                                                            if(!offlineStorageName){
+                                                                                index.saveObject({
+                                                                                    ...assetObject,
+                                                                                    objectID: newID,
+                                                                                    suffixes: suffixes_list.join(' ')
+                                                                                })
+                                                                            }
 
                                                                             console.log(offlineStorageName)
                                                                             if(offlineStorageName){
@@ -499,6 +509,12 @@ console.log(rack, racku)
                                                                                         console.log(offlineQuerySnap.docs[0].id)
 
                                                                                         offlinestorageRef.doc(offlineQuerySnap.docs[0].id).collection("offlineAssets").doc(newID).set(assetObject).then(function () {
+                                                                                            let offlineIndex = client.initIndex(offlineQuerySnap.docs[0].data().abbreviation + "_index");
+                                                                                            offlineIndex.saveObject({
+                                                                                                ...assetObject,
+                                                                                                objectID: overrideAssetID,
+                                                                                                suffixes: suffixes_list.join(' ')
+                                                                                            })
                                                                                             logutils.addLog(newID, logutils.OFFLINE(), logutils.CREATE(),{datacenterAbbrev: offlineQuerySnap.docs[0].data().abbreviation})
                                                                                             callback(null,newID)
                                                                                         }).catch(function () {

@@ -38,7 +38,6 @@ import MoveAssetForm from "../components/MoveAssetForm";
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '89a91cdfab76a8541fe5d2da46765377')
-const index = client.initIndex('assets')
 
 class AssetScreen extends Component {
 
@@ -301,6 +300,7 @@ class AssetScreen extends Component {
     }
 
     handleSearch() {
+        let index = this.props.match.params.storageSiteAbbrev ? client.initIndex(this.props.match.params.storageSiteAbbrev + '_index') : client.initIndex('assets')
         if (this.state.searchQuery.trim() !== "") {
             index.search(this.state.searchQuery)
                 .then(({hits}) => {
