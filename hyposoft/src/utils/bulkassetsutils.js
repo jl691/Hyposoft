@@ -1004,38 +1004,132 @@ function escapeStringForCSV(string) {
 }
 
 function exportFilteredAssets (assets) {
-    var rows = [
-        ["asset_number", "hostname", "datacenter", "rack", "rack_position",
-        "vendor", "model_number", "owner", "comment", "power_port_connection_1", "power_port_connection_2"]
-    ]
+    var assetsInDb = {}
+    var offlineAssetsInDb = {}
+    var models = {}
+    var blades = {}
+    var osNameToAbbrev = {}
 
-    for (var i = 0; i < assets.length; i++) {
-        const ppC1 = (assets[i].powerConnections && assets[i].powerConnections.length >= 1 && assets[i].powerConnections[0].pduSide && assets[i].powerConnections[0].port ? (
-            (assets[i].powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+assets[i].powerConnections[0].port
-        ) : '')
-        const ppC2 = (assets[i].powerConnections && assets[i].powerConnections.length >= 2 && assets[i].powerConnections[1].pduSide && assets[i].powerConnections[1].port ? (
-            (assets[i].powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+assets[i].powerConnections[1].port
-        ) : '')
+    firebaseutils.offlinestorageRef.get().then(qs => {
+        for (var i = 0; i < qs.size; i++) {
+            osNameToAbbrev[qs.docs[i].data().name] = qs.docs[i].data().abbreviation
+        }
 
-        rows = [...rows, [
-            escapeStringForCSV(assets[i].asset_id),
-            escapeStringForCSV(assets[i].hostname),
-            escapeStringForCSV(assets[i].datacenterAbbrev),
-            escapeStringForCSV(assets[i].rack),
-            ''+assets[i].rackU,
-            escapeStringForCSV(assets[i].vendor),
-            escapeStringForCSV(assets[i].modelNumber),
-            escapeStringForCSV(assets[i].owner),
-            escapeStringForCSV(assets[i].comment),
-            ppC1,
-            ppC2
-        ]]
-    }
+        firebaseutils.bladeRef.get().then(qs => {
+            for (i = 0; i < qs.size; i++) {
+                blades[qs.docs[i].id] = qs.docs[i].data()
+            }
 
-    var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
-        type: "data:text/csv;charset=utf-8;",
+            firebaseutils.modelsRef.get().then(qs => {
+                for (i = 0; i < qs.size; i++) {
+                    models[qs.docs[i].id] = qs.docs[i].data()
+                }
+
+                firebaseutils.assetRef.orderBy('assetId').get().then(qs => {
+                    var rows = [
+                        ["asset_number", "hostname", "datacenter", "offline_site", "rack", "rack_position",
+                        "chassis_number", "chassis_slot",
+                        "vendor", "model_number", "owner", "comment", "power_port_connection_1", "power_port_connection_2",
+                        "custom_display_color", "custom_cpu", "custom_memory", "custom_storage"]
+                    ]
+
+                    for (var i = 0; i < qs.size; i++) {
+                        assetsInDb[qs.docs[i].data().assetId] = qs.docs[i].data()
+                    }
+
+                    firebaseutils.db.collectionGroup('offlineAssets').orderBy('assetId').get().then(qs2 => {
+                        for (i = 0; i < qs2.size; i++) {
+                            offlineAssetsInDb[qs2.docs[i].data().assetId] = qs2.docs[i].data()
+                        }
+
+                        for (i = 0; i < assets.length; i++) {
+                            // add live assets to csv
+                            var asset = assets[i]
+                            if (asset.assetId in assetsInDb) {
+                                // online asset
+                                const ppC1 = (asset.powerConnections && asset.powerConnections.length >= 1 && asset.powerConnections[0].pduSide && asset.powerConnections[0].port ? (
+                                    (asset.powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+asset.powerConnections[0].port
+                                ) : '')
+                                const ppC2 = (asset.powerConnections && asset.powerConnections.length >= 2 && asset.powerConnections[1].pduSide && asset.powerConnections[1].port ? (
+                                    (asset.powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+asset.powerConnections[1].port
+                                ) : '')
+
+                                var rack = ''
+                                var rackU = ''
+                                var chassisId = ''
+                                var chassisSlot = ''
+
+                                if (models[asset.modelId].mount === 'blade') {
+                                    rack = ''
+                                    rackU = ''
+                                    chassisId = blades[asset.assetId].chassisId
+                                    chassisSlot = blades[asset.assetId].rackU
+                                } else {
+                                    rack = escapeStringForCSV(asset.rack)
+                                    rackU = ''+asset.rackU
+                                    chassisId = ''
+                                    chassisSlot = ''
+                                }
+
+                                rows = [...rows, [
+                                    escapeStringForCSV(asset.assetId),
+                                    escapeStringForCSV(asset.hostname),
+                                    escapeStringForCSV(asset.datacenterAbbrev),
+                                    '',
+                                    rack,
+                                    rackU,
+                                    chassisId,
+                                    chassisSlot,
+                                    escapeStringForCSV(asset.vendor),
+                                    escapeStringForCSV(asset.modelNumber),
+                                    escapeStringForCSV(asset.owner),
+                                    escapeStringForCSV(asset.comment),
+                                    ppC1,
+                                    ppC2,
+                                    escapeStringForCSV(asset.variances.displayColor),
+                                    escapeStringForCSV(asset.variances.cpu),
+                                    escapeStringForCSV(asset.variances.memory+''),
+                                    escapeStringForCSV(asset.variances.storage)
+                                ]]
+                            } else if (asset.assetId in offlineAssetsInDb) {
+                                // offline asset
+                                const ppC1 = ''
+                                const ppC2 = ''
+
+                                rows = [...rows, [
+                                    escapeStringForCSV(asset.assetId),
+                                    escapeStringForCSV(asset.hostname),
+                                    '',
+                                    osNameToAbbrev[asset.datacenter],
+                                    '',
+                                    '',
+                                    '',
+                                    '',
+                                    escapeStringForCSV(asset.vendor),
+                                    escapeStringForCSV(asset.modelNumber),
+                                    escapeStringForCSV(asset.owner),
+                                    escapeStringForCSV(asset.comment),
+                                    ppC1,
+                                    ppC2,
+                                    escapeStringForCSV(asset.variances.displayColor),
+                                    escapeStringForCSV(asset.variances.cpu),
+                                    escapeStringForCSV(asset.variances.memory+''),
+                                    escapeStringForCSV(asset.variances.storage)
+                                ]]
+                            } else {
+                                console.log("pleas dont be hrere")
+                                console.log(asset)
+                            }
+                        }
+                        var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
+                            type: "data:text/csv;charset=utf-8;",
+                        })
+                        saveAs(blob, "hyposoft_assets_filtered.csv")
+                    })
+                })
+            })
+        })
     })
-    saveAs(blob, "hyposoft_assets_filtered.csv")
 }
 
 function getAssetsForExport (callback) {
@@ -1093,7 +1187,7 @@ function getAssetsForExport (callback) {
                             var chassisId = ''
                             var chassisSlot = ''
 
-                            if (models[asset.assetId].mount === 'blade') {
+                            if (models[asset.modelId].mount === 'blade') {
                                 rack = ''
                                 rackU = ''
                                 chassisId = blades[asset.assetId].chassisId
