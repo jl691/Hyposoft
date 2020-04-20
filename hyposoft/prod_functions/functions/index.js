@@ -42,7 +42,7 @@ exports.scheduledDailyFirestoreExport = functions.pubsub
     // Now send directed email
     cors(req, res, () => {
 
-       const dest = 'anshu.dwihbashi@duke.edu';
+       const dest = 'ad353duke.edu';
 
        const mailOptions = {
            from: 'HypoSoft Backup Team <ece458jajascript@gmail.com>', // Something like: Jane Doe <janedoe@gmail.com>
@@ -88,7 +88,7 @@ exports.scheduledWeeklyFirestoreExport = functions.pubsub
     console.log(`Operation Name: ${response['name']}`);
     // Now send directed email
     cors(req, res, () => {
-       const dest = 'anshu.dwihbashi@duke.edu';
+       const dest = 'ad353duke.edu';
 
        const mailOptions = {
            from: 'HypoSoft Backup Team <ece458jajascript@gmail.com>', // Something like: Jane Doe <janedoe@gmail.com>
@@ -135,7 +135,7 @@ exports.scheduledMonthlyFirestoreExport = functions.pubsub
     // Now send directed email
     cors(req, res, () => {
 
-       const dest = 'anshu.dwihbashi@duke.edu';
+       const dest = 'ad353duke.edu';
 
        const mailOptions = {
            from: 'HypoSoft Backup Team <ece458jajascript@gmail.com>', // Something like: Jane Doe <janedoe@gmail.com>
