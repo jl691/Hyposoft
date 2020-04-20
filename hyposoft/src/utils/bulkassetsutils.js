@@ -227,6 +227,7 @@ function validateImportedAssets (data, callback) {
                         } else {
                             datum.chassis_hostname = assetsLoaded[datum.chassis_number].hostname || bladeutils.makeNoHostname(datum.chassis_number)
                         }
+                        datum.datacenter = assetsLoaded[datum.chassis_number].datacenter
                     }
                 }
             }
