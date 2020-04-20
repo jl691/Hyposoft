@@ -2,6 +2,7 @@ import * as firebaseutils from './firebaseutils'
 import * as userutils from './userutils'
 import { saveAs } from 'file-saver'
 import * as logutils from './logutils'
+import * as bladeutils from './bladeutils'
 
 const algoliasearch = require('algoliasearch')
 const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
@@ -50,6 +51,9 @@ function validateImportedAssets (data, callback) {
                 usedRackUsInRack[asset.rackID][t] = asset.id
             }
         }
+
+        var newChassis = {} // The chassis that were created in this file
+        var chassisHostnameUpdates = {} // id => hostname
 
         for (var i = 0; i < data.length; i++) {
             var datum = data[i]
@@ -170,13 +174,30 @@ function validateImportedAssets (data, callback) {
                     errors = [...errors, [i + 1, 'Chassis slot must be an integer between 1 and 14 (inclusive of both)']]
                 }
 
-                if (datum.chassis_number && !(datum.chassis_number in assetsLoaded)) {
+                if (datum.chassis_number && !(datum.chassis_number in assetsLoaded) && !(datum.chassis_number in newChassis)) {
                     errors = [...errors, [i + 1, 'No chassis exists with specified chassis number']]
                 } else if (datum.chassis_number && datum.chassis_slot){
                     // Check if slot is free
                     if (datum.chassis_number in usedSlotsInChassis && datum.chassis_slot in usedSlotsInChassis[datum.chassis_number]
                     && usedSlotsInChassis[datum.chassis_number][datum.chassis_slot] !== datum.asset_number) {
                         errors = [...errors, [i + 1, 'Desired chassis slot is not available']]
+                    } else if (datum.chassis_number in newChassis && datum.chassis_slot in newChassis[datum.chassis_number]
+                    && newChassis[datum.chassis_number][datum.chassis_slot] !== datum.asset_number) {
+                        errors = [...errors, [i + 1, 'Desired chassis slot is not available']]
+                    } else {
+                        // We can add this blade!
+                        if (!(datum.chassis_number in assetsLoaded) && (datum.chassis_number in newChassis)) {
+                            if (datum.chassis_slot in newChassis[datum.chassis_number]) {
+                                newChassis[datum.chassis_number][datum.chassis_slot] = datum.asset_number
+                            } else {
+                                newChassis[datum.chassis_number] = {[datum.chassis_slot]: datum.asset_number}
+                            }
+                        }
+                        if (datum.chassis_number in chassisHostnameUpdates) {
+                            datum.chassis_hostname = chassisHostnameUpdates[datum.chassis_number]
+                        } else {
+                            datum.chassis_hostname = assetsLoaded[datum.chassis_number].hostname || bladeutils.makeNoHostname(datum.chassis_number)
+                        }
                     }
                 }
             }
@@ -234,9 +255,16 @@ function validateImportedAssets (data, callback) {
                 }
             }
 
+            if (datum.mount_type === 'chassis' && !(datum.asset_number in assetsLoaded)) {
+                // This is a new chassis
+                if (!(datum.asset_number in newChassis)) {
+                    newChassis[datum.asset_number] = {}
+                }
+            }
+
             if (canTestForFit) {
                 if (!datum.custom_display_color || String(datum.custom_display_color).trim() === '') {
-                    datum.custom_display_color = existingModels[datum.vendor][datum.model_number].displayColor
+                    datum.custom_display_color = ""
                 } else if (datum.custom_display_color && !/^#[0-9A-F]{6}$/i.test(String(datum.custom_display_color))) {
                     errors = [...errors, [i+1, 'Invalid display color']]
                 }
@@ -244,20 +272,20 @@ function validateImportedAssets (data, callback) {
                 if (datum.custom_cpu.trim() && datum.custom_cpu.trim().length > 50) {
                     errors = [...errors, [i+1, 'CPU should be less than 50 characters long']]
                 } else if (datum.custom_cpu.trim() === '') {
-                    datum.custom_cpu = existingModels[datum.vendor][datum.model_number].cpu
+                    datum.custom_cpu = ""
                 }
 
                 if (datum.custom_storage.trim() && datum.custom_storage.trim().length > 50) {
                     errors = [...errors, [i+1, 'Storage should be less than 50 characters long']]
                 } else if (datum.custom_storage.trim() === '') {
-                    datum.custom_storage = existingModels[datum.vendor][datum.model_number].storage
+                    datum.custom_storage = ""
                 }
 
                 if (datum.custom_memory && String(datum.custom_memory).trim() !== '' &&
                  (isNaN(String(datum.custom_memory).trim()) || !Number.isInteger(parseFloat(String(datum.custom_memory).trim())) || parseInt(String(datum.custom_memory).trim()) < 0 || parseInt(String(datum.custom_memory).trim()) > 1000)) {
                      errors = [...errors, [i+1, 'Memory should be a non-negative integer not greater than 1000']]
                 } else if (datum.custom_memory.trim() === '') {
-                    datum.custom_memory = existingModels[datum.vendor][datum.model_number].memory
+                    datum.custom_memory = ""
                 }
             }
 
@@ -309,6 +337,12 @@ function validateImportedAssets (data, callback) {
                 }
             }
 
+            datum.isBlade = isBlade
+            datum.isOffline = isOffline
+            if (isOffline) {
+                datum.offline_site_name = existingOSs[datum.offline_site].name
+            }
+
             if (!(datum.asset_number in assetsLoaded)) {
                 // New asset
                 toBeAdded.push(datum)
@@ -325,17 +359,66 @@ function validateImportedAssets (data, callback) {
                     datum.power_port_connection_2 = ''
                 }
 
-                if (assetFromDb.hostname.toLowerCase().trim() == datum.hostname.toLowerCase().trim() &&
-                    assetFromDb.datacenterAbbrev.toLowerCase().trim() == datum.datacenter.toLowerCase().trim() &&
-                    assetFromDb.rack.toUpperCase().trim() == datum.rack &&
-                    ''+assetFromDb.rackU == datum.rack_position.trim() &&
-                    assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim() &&
-                    assetFromDb.comment.trim() == datum.comment.trim() &&
-                    ppC1 == datum.power_port_connection_1.trim().toUpperCase() &&
-                    ppC2 == datum.power_port_connection_2.trim().toUpperCase()) {
-                    toBeIgnored.push(datum)
+                if (isOffline) {
+                    // Offline asset regardless of type
+                    if (assetFromDb.hostname.toLowerCase().trim() == datum.hostname.toLowerCase().trim() &&
+                        assetFromDb.datacenter.toLowerCase().trim() == existingOSs[datum.offline_site.toLowerCase().trim()].abbreviation.toLowerCase().trim() &&
+                        assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim() &&
+                        assetFromDb.comment.trim() == datum.comment.trim() &&
+                        assetFromDb.variances.cpu == datum.custom_cpu &&
+                        assetFromDb.variances.memory == datum.custom_memory &&
+                        assetFromDb.variances.storage == datum.custom_storage &&
+                        assetFromDb.variances.displayColor == datum.custom_display_color) {
+                        toBeIgnored.push(datum)
+                    } else {
+                        toBeModified.push(datum)
+                    }
+                } else if (isBlade) {
+                    // Online asset but blade-type
+                    if (assetFromDb.hostname.toLowerCase().trim() == datum.hostname.toLowerCase().trim() &&
+                        assetFromDb.datacenterAbbrev.toLowerCase().trim() == datum.datacenter.toLowerCase().trim() &&
+                        usedSlotsInChassis[datum.chassis_number][datum.chassis_slot] == datum.asset_number &&
+                        assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim() &&
+                        assetFromDb.comment.trim() == datum.comment.trim() &&
+                        assetFromDb.variances.cpu == datum.custom_cpu &&
+                        assetFromDb.variances.memory == datum.custom_memory &&
+                        assetFromDb.variances.storage == datum.custom_storage &&
+                        assetFromDb.variances.displayColor == datum.custom_display_color) {
+                        toBeIgnored.push(datum)
+                    } else {
+                        toBeModified.push(datum)
+                    }
                 } else {
-                    toBeModified.push(datum)
+                    // All other regular assets
+                    if (assetFromDb.hostname.toLowerCase().trim() == datum.hostname.toLowerCase().trim() &&
+                        assetFromDb.datacenterAbbrev.toLowerCase().trim() == datum.datacenter.toLowerCase().trim() &&
+                        assetFromDb.rack.toUpperCase().trim() == datum.rack &&
+                        ''+assetFromDb.rackU == datum.rack_position.trim() &&
+                        assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim() &&
+                        assetFromDb.comment.trim() == datum.comment.trim() &&
+                        ppC1 == datum.power_port_connection_1.trim().toUpperCase() &&
+                        ppC2 == datum.power_port_connection_2.trim().toUpperCase() &&
+                        assetFromDb.variances.cpu == datum.custom_cpu &&
+                        assetFromDb.variances.memory == datum.custom_memory &&
+                        assetFromDb.variances.storage == datum.custom_storage &&
+                        assetFromDb.variances.displayColor == datum.custom_display_color) {
+                        toBeIgnored.push(datum)
+                    } else {
+                        toBeModified.push(datum)
+                        if (datum.mount_type === 'chassis' && assetFromDb.hostname.toLowerCase().trim() != datum.hostname.toLowerCase().trim()) {
+                            chassisHostnameUpdates[datum.asset_number] = datum.hostname.toLowerCase().trim()
+                        }
+                        if (datum.mount_type === 'chassis') {
+                            datum.OGmacAddresses = assetFromDb.macAddresses
+                            datum.OGnetworkConnectionsArray = []
+                            Object.keys(assetFromDb.networkConnections).forEach(key => {
+                                datum.OGnetworkConnectionsArray.push({
+                                    thisPort: key,
+                                    ...assetFromDb.networkConnections[key]
+                                })
+                            })
+                        }
+                    }
                 }
             }
         }
@@ -364,9 +447,9 @@ function validateImportedAssets (data, callback) {
         for (var i = 0; i < qs.size; i++) {
             const blade = {...qs.docs[i].data(), id: qs.docs[i].id}
             if (blade.chassisId in usedSlotsInChassis) {
-                usedSlotsInChassis[blade.chassisId][''+blade.rackU] = blade.id
+                usedSlotsInChassis[''+blade.chassisId][''+blade.rackU] = blade.id
             } else {
-                usedSlotsInChassis[blade.chassisId] = {[''+blade.rackU]: blade.id}
+                usedSlotsInChassis[''+blade.chassisId] = {[''+blade.rackU]: blade.id}
             }
         }
         postTaskCompletion()
@@ -464,35 +547,52 @@ function validateImportedAssets (data, callback) {
     })
 }
 
-function bulkAddAssets (assets, callback) {
-    assets.forEach((asset, i) => {
-        const assetObject = {
-            assetId: asset.asset_number,
-            modelId: asset.modelID,
-            model: asset.vendor+' '+asset.model_number,
-            hostname: asset.hostname,
-            rack: asset.rack,
-            rackU: parseInt(asset.rack_position),
-            owner: asset.owner,
-            comment: asset.comment,
-            rackID: asset.rackID,
-            networkConnections: {},
-            powerConnections: asset.power_connections,
-            modelNumber: asset.model_number,
-            vendor: asset.vendor,
-            rackRow: asset.rack.charAt(0).toUpperCase(),
-            rackNum: parseInt(asset.rack.substring(1)),
-            datacenter: asset.dcFN,
-            datacenterID: asset.dcID,
-            datacenterAbbrev:  asset.datacenter,
-            macAddresses: {}
+function bulkAddRegularAsset(asset, callback) {
+    const assetObject = {
+        assetId: asset.asset_number,
+        modelId: asset.modelID,
+        model: asset.vendor+' '+asset.model_number,
+        hostname: asset.hostname,
+        rack: asset.rack,
+        rackU: parseInt(asset.rack_position),
+        owner: asset.owner,
+        comment: asset.comment,
+        rackID: asset.rackID,
+        networkConnections: {},
+        powerConnections: asset.power_connections,
+        modelNumber: asset.model_number,
+        vendor: asset.vendor,
+        rackRow: asset.rack.charAt(0).toUpperCase(),
+        rackNum: parseInt(asset.rack.substring(1)),
+        datacenter: asset.dcFN,
+        datacenterID: asset.dcID,
+        datacenterAbbrev:  asset.datacenter,
+        macAddresses: {},
+        variances: {
+            cpu: asset.custom_cpu,
+            displayColor: asset.custom_display_color,
+            storage: asset.custom_storage,
+            memory: asset.custom_memory+''
         }
+    }
 
+
+    if (asset.mount_type === 'chassis') {
+        bladeutils.addChassis(
+            assetObject.assetId, assetObject.model,
+            assetObject.hostname, assetObject.rack, assetObject.rackU,
+            assetObject.owner, assetObject.comment,
+            assetObject.datacenter, {}, [], assetObject.powerConnections, assetObject.variances.displayColor,
+            assetObject.variances.memory, assetObject.variances.storage, assetObject.variances.cpu,
+            () => callback()
+        )
+    } else {
         firebaseutils.racksRef.doc(asset.rackID).update({
             assets: firebaseutils.firebase.firestore.FieldValue.arrayUnion(asset.asset_number+'')
         })
 
         firebaseutils.assetRef.doc(asset.asset_number).set(assetObject)
+
         logutils.addLog(asset.asset_number, logutils.ASSET(), logutils.CREATE())
 
         let suffixes_list = []
@@ -531,61 +631,193 @@ function bulkAddAssets (assets, callback) {
         }
 
         index.saveObject({ ...assetObject, objectID: asset.asset_number, suffixes: suffixes_list.join(' ') })
+    }
+}
+
+function bulkAddBladeAsset(asset) {
+    bladeutils.addServer(asset.asset_number,
+        asset.vendor+' '+asset.model_number, asset.hostname,
+        asset.chassis_hostname, asset.chassis_slot,
+        asset.owner, asset.comment,
+        asset.datacenter, {},
+        [], [],
+        asset.custom_display_color, asset.custom_memory, asset.custom_storage, asset.custom_cpu,
+        () => {})
+}
+
+function addAssetToOS(asset, assetObject) {
+    firebaseutils.offlinestorageRef.where('abbreviation', '==', asset.offline_site).get().then(qs => {
+        const siteId = qs.docs[0].id
+
+        firebaseutils.offlinestorageRef.doc(siteId).collection('offlineAssets').doc(asset.asset_number).set(assetObject)
+        logutils.addLog(asset.asset_number, logutils.OFFLINE(), logutils.CREATE(), {datacenterAbbrev: qs.docs[0].data().abbreviation})
+
+        let suffixes_list = []
+        let _model = assetObject.model
+
+        while (_model.length > 1) {
+            _model = _model.substr(1)
+            suffixes_list.push(_model)
+        }
+
+        let _hostname = assetObject.hostname
+
+        while (_hostname.length > 1) {
+            _hostname = _hostname.substr(1)
+            suffixes_list.push(_hostname)
+        }
+
+        let _datacenter = assetObject.datacenter
+
+        while (_datacenter.length > 1) {
+            _datacenter = _datacenter.substr(1)
+            suffixes_list.push(_datacenter)
+        }
+
+        let _owner = assetObject.owner
+
+        while (_owner.length > 1) {
+            _owner = _owner.substr(1)
+            suffixes_list.push(_owner)
+        }
+
+        client.initIndex(asset.offline_site+'_index').saveObject({ ...assetObject, objectID: asset.asset_number, suffixes: suffixes_list.join(' ') })
     })
+}
+
+function bulkAddOfflineAsset(asset) {
+    const assetObject = {
+        assetId: asset.asset_number,
+        modelId: asset.modelID,
+        model: asset.vendor+' '+asset.model_number,
+        hostname: asset.hostname,
+        owner: asset.owner,
+        comment: asset.comment,
+        networkConnections: {},
+        powerConnections: [],
+        modelNumber: asset.model_number,
+        vendor: asset.vendor,
+        datacenter: asset.offline_site_name,
+        macAddresses: {},
+        variances: {
+            cpu: asset.custom_cpu,
+            displayColor: asset.custom_display_color,
+            storage: asset.custom_storage,
+            memory: asset.custom_memory+''
+        }
+    }
+
+    addAssetToOS(asset, assetObject)
+}
+
+function bulkAddAssets (assets, callback) {
+    var bladesToAdd = []
+    var chassisCount = 0
+    for (var i = 0; i < assets.length; i++) {
+        if (assets[i].mount_type === 'chassis') {
+            chassisCount++
+        } else if (assets[i].isBlade) {
+            bladesToAdd.push(assets[i])
+        }
+    }
+
+    for (i = 0; i < assets.length; i++) {
+        var asset = assets[i]
+        if(asset.isOffline) {
+            // Offline asset regardless of type
+            bulkAddOfflineAsset(asset)
+        } else if (asset.isBlade) {
+            // Online blade asset
+            // Handled in callback in the following else-block
+        } else {
+            // Regular online asset
+            bulkAddRegularAsset(asset, () => {
+                chassisCount--
+                if (chassisCount === 0) {
+                    // Now we can add all the blades safely
+                    bladesToAdd.forEach((blade, i) => {
+                        bulkAddBladeAsset(blade)
+                    })
+                }
+            })
+        }
+    }
     callback()
 }
 
-function bulkModifyAssets (assets, callback) {
-    const updatesss = {}
-    assets.forEach((asset, i) => {
-        const updates = {}
-        if (asset.hostname) {
-            updates.hostname = asset.hostname
-        }
+var updatesss = {}
+function bulkModifyRegularAsset(asset, callback) {
+    const updates = {}
+    if (asset.hostname) {
+        updates.hostname = asset.hostname
+    }
 
-        if (asset.rack) {
-            updates.rack = asset.rack
-        }
+    if (asset.rack) {
+        updates.rack = asset.rack
+    }
 
-        if (asset.rack_position) {
-            updates.rackU = parseInt(asset.rack_position)
-        }
+    if (asset.rack_position) {
+        updates.rackU = parseInt(asset.rack_position)
+    }
 
-        if (asset.owner) {
-            updates.owner = asset.owner
-        }
+    if (asset.owner) {
+        updates.owner = asset.owner
+    }
 
-        if (asset.comment) {
-            updates.comment = asset.comment
-        }
+    if (asset.comment) {
+        updates.comment = asset.comment
+    }
 
-        if (asset.power_connections) {
-            updates.powerConnections = asset.power_connections
-        }
+    if (asset.power_connections) {
+        updates.powerConnections = asset.power_connections
+    }
 
-        if (asset.rackID) {
-            updates.rackID = asset.rackID
-        }
+    if (asset.rackID) {
+        updates.rackID = asset.rackID
+    }
 
-        if (asset.rack) {
-            updates.rackRow = asset.rack.charAt(0).toUpperCase()
-            updates.rackNum = parseInt(asset.rack.substring(1))
-        }
+    if (asset.rack) {
+        updates.rackRow = asset.rack.charAt(0).toUpperCase()
+        updates.rackNum = parseInt(asset.rack.substring(1))
+    }
 
-        if (asset.dcFN) {
-            updates.datacenter = asset.dcFN
-        }
+    if (asset.dcFN) {
+        updates.datacenter = asset.dcFN
+    }
 
-        if (asset.dcID) {
-            updates.datacenterID = asset.dcID
-        }
+    if (asset.dcID) {
+        updates.datacenterID = asset.dcID
+    }
 
-        if (asset.datacenter) {
-            updates.datacenterAbbrev = asset.datacenter
-        }
+    if (asset.datacenter) {
+        updates.datacenterAbbrev = asset.datacenter
+    }
 
-        updatesss[asset.asset_number] = updates
+    if (asset.custom_cpu) {
+        updates["variances.cpu"] = asset.custom_cpu
+    }
+    if (asset.custom_display_color) {
+        updates["variances.displayColor"] = asset.custom_display_color
+    }
+    if (asset.custom_storage) {
+        updates["variances.storage"] = asset.custom_storage
+    }
+    if (asset.custom_memory) {
+        updates["variances.memory"] = asset.custom_memory
+    }
 
+    updatesss[asset.asset_number] = updates
+    if (asset.mount_type === 'chassis') {
+        bladeutils.updateChassis(
+            asset.asset_number, asset.vendor+' '+asset.model_number,
+            asset.hostname, asset.rack, parseInt(asset.rack_position),
+            asset.owner, asset.comment,
+            asset.dcFN, asset.OGmacAddresses, asset.OGnetworkConnectionsArray, [], asset.powerConnections,
+            asset.custom_display_color, asset.custom_memory, asset.custom_storage, asset.custom_cpu,
+            () => callback()
+        )
+    } else {
+        // Regular asset modification
         firebaseutils.assetRef.doc(asset.asset_number).get().then(ds => {
             firebaseutils.racksRef.doc(ds.data().rackID).update({
                 assets: firebaseutils.firebase.firestore.FieldValue.arrayRemove(ds.data().assetId+'')
@@ -641,7 +873,103 @@ function bulkModifyAssets (assets, callback) {
               })
             })
         })
+    }
+}
+
+function bulkModifyOfflineAsset(asset) {
+    firebaseutils.db.collectionGroup('offlineAssets').where('assetId', '==', asset.asset_number).get().then(qs => {
+        var updates = {...qs.docs[0].data()}
+        var oldAssetData = {...qs.docs[0].data()}
+
+        if (asset.hostname) {
+            updates.hostname = asset.hostname
+        }
+
+        if (asset.owner) {
+            updates.owner = asset.owner
+        }
+
+        if (asset.comment) {
+            updates.comment = asset.comment
+        }
+
+        if (asset.offline_site_name != updates.datacenter){
+            updates.datacenter = asset.offline_site_name
+        }
+
+        if (asset.custom_cpu) {
+            updates.variances.cpu = asset.custom_cpu
+        }
+        if (asset.custom_display_color) {
+            updates.variances.displayColor = asset.custom_display_color
+        }
+        if (asset.custom_storage) {
+            updates.variances.storage = asset.custom_storage
+        }
+        if (asset.custom_memory) {
+            updates.variances.memory = asset.custom_memory
+        }
+
+        if (asset.offline_site_name != oldAssetData.datacenter){
+            // ADD IT TO A DIFFERENT OS
+            addAssetToOS(asset, updates)
+            // AND REMOVE IT FROM CURRENT OS
+            qs.docs[0].ref.delete()
+            logutils.addLog(String(asset.asset_number), logutils.OFFLINE(), logutils.DELETE(), oldAssetData)
+            client.initIndex(oldAssetData.datacenter+'_index').deleteObject(asset.asset_number)
+        } else {
+            // UPDATE
+            qs.docs[0].ref.update(updates)
+            logutils.addLog(String(asset.asset_number), logutils.OFFLINE(), logutils.MODIFY(), {...oldAssetData, datacenterAbbrev: asset.offline_site}, () => {})
+        }
     })
+}
+
+function bulkModifyBladeAsset (asset) {
+    bladeutils.updateServer(asset.asset_number,
+        asset.vendor+' '+asset.model_number, asset.hostname,
+        asset.chassis_hostname, asset.chassis_slot,
+        asset.owner, asset.comment,
+        asset.datacenter, {},
+        [], [], [],
+        asset.custom_display_color, asset.custom_memory, asset.custom_storage, asset.custom_cpu,
+        () => {})
+}
+
+function bulkModifyAssets (assets, callback) {
+    updatesss = {}
+    var bladesToMod = []
+    var chassisCount = 0
+
+    for (var i = 0; i < assets.length; i++) {
+        if (assets[i].mount_type === 'chassis') {
+            chassisCount++
+        } else if (assets[i].isBlade) {
+            bladesToMod.push(assets[i])
+        }
+    }
+
+    for (i = 0; i < assets.length; i++) {
+        var asset = assets[i]
+        if(asset.isOffline) {
+            // Offline asset regardless of type
+            bulkModifyOfflineAsset(asset)
+        } else if (asset.isBlade) {
+            // Online blade asset
+            // Handled in callback in the following else-block
+        } else {
+            // Regular online asset
+            bulkModifyRegularAsset(asset, () => {
+                chassisCount--
+                if (chassisCount === 0) {
+                    // Now we can add all the blades safely
+                    bladesToMod.forEach((blade, i) => {
+                        bulkModifyBladeAsset(blade)
+                    })
+                }
+            })
+        }
+    }
     callback()
 }
 
