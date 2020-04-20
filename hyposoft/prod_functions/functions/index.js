@@ -99,7 +99,6 @@ exports.scheduledMonthlyFirestoreExport = functions.pubsub
     }).on('error', (e) => {
       console.error(e);
     });
-   });
     return response;
   })
   .catch(err => {
