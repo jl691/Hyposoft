@@ -845,7 +845,7 @@ export default class DetailedAssetScreen extends Component {
                                             </span>
                                             {(this.chassisSlots
                                                 ?
-                                                <MediaQuery maxDeviceWidth={1224}>
+                                                <MediaQuery minDeviceWidth={1224}>
                                                     <Box flex margin={{ top: 'small', bottom: 'small' }}
                                                         direction='column' justify='start'>
                                                         <Heading level='4' margin='none'>Blade Chassis View</Heading>
