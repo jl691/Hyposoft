@@ -289,7 +289,7 @@ function validateImportedAssets (data, callback) {
                 }
             }
 
-            if (!isBlade && canTestForFit) {
+            if (!isBlade && canTestForFit && !isOffline) {
                 // Can do rack fit test only if model exists, datacenter is valid, rack is valid and rack position is valid
 
                 // Rewrote custom asset fit tests for speed and reducing redundant db queries

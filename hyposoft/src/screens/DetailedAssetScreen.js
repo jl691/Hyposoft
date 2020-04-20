@@ -48,7 +48,8 @@ export default class DetailedAssetScreen extends Component {
             powerMap: false,
             popupType: "",
             initialLoaded: false,
-            model: ""
+            model: "",
+            loadingText: "Please wait..."
         }
 
         this.generatePDUStatus = this.generatePDUStatus.bind(this);
@@ -90,15 +91,46 @@ export default class DetailedAssetScreen extends Component {
                 assetutils.getAssetDetails(
                     this.props.match.params.assetID,
                     assetsdb => {
-                        this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
-                            console.log(assetsdb)
+                        if (assetsdb) {
+                            this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
+                                console.log(assetsdb)
+                                this.setState({
+                                    asset: assetsdb
+
+                                }, function () {
+
+                                    this.generatePDUStatus(() => {
+                                        console.log("testhere")
+                                      modelutils.getModelByModelname(assetsdb.model, modelDoc => {
+                                          console.log(modelDoc.data())
+                                          this.setState({
+                                              model: modelDoc.data(),
+                                              initialLoaded: true
+                                          })
+                                      })
+                                    });
+                                });
+                            })
+                        } else {
                             this.setState({
-                                asset: assetsdb
+                                loadingText: "Asset not found"
+                            })
+                        }
+                    })
+            });
+        }
+        else {
+            assetutils.getAssetDetails(
+                this.props.match.params.assetID,
+                assetsdb => {
+                    if (assetsdb) {
+                        this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
+                            this.setState({
+                                asset: assetsdb,
+                                //initialLoaded: true
 
                             }, function () {
-
                                 this.generatePDUStatus(() => {
-                                    console.log("testhere")
                                   modelutils.getModelByModelname(assetsdb.model, modelDoc => {
                                       console.log(modelDoc.data())
                                       this.setState({
@@ -109,30 +141,11 @@ export default class DetailedAssetScreen extends Component {
                                 });
                             });
                         })
-                    })
-            });
-        }
-        else {
-            assetutils.getAssetDetails(
-                this.props.match.params.assetID,
-                assetsdb => {
-                    this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
+                    } else {
                         this.setState({
-                            asset: assetsdb,
-                            //initialLoaded: true
-
-                        }, function () {
-                            this.generatePDUStatus(() => {
-                              modelutils.getModelByModelname(assetsdb.model, modelDoc => {
-                                  console.log(modelDoc.data())
-                                  this.setState({
-                                      model: modelDoc.data(),
-                                      initialLoaded: true
-                                  })
-                              })
-                            });
-                        });
-                    })
+                            loadingText:  "Asset not found"
+                        })
+                    }
                 }, this.props.match.params.storageSiteAbbrev)
         };
     }
@@ -720,7 +733,7 @@ export default class DetailedAssetScreen extends Component {
                                     pad='small'>
                                     {(!this.state.initialLoaded
                                         ?
-                                        <Box align="center"><Text>Please wait...</Text></Box>
+                                        <Box align="center"><Text>{this.state.loadingText}</Text></Box>
                                         :
                                         <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
                                             direction='column' justify='start'>
