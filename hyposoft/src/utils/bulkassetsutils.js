@@ -287,6 +287,8 @@ function validateImportedAssets (data, callback) {
                 } else if (datum.custom_memory.trim() === '') {
                     datum.custom_memory = ""
                 }
+
+                datum.modelID = existingModels[datum.vendor][datum.model_number].id
             }
 
             if (!isBlade && canTestForFit && !isOffline) {
@@ -306,7 +308,6 @@ function validateImportedAssets (data, callback) {
                 }
 
                 datum.rackID = rackNamesToIdsForOurDC[datum.rack]
-                datum.modelID = existingModels[datum.vendor][datum.model_number].id
                 datum.dcID = existingDCs[datum.datacenter].id
                 datum.dcFN = existingDCs[datum.datacenter].name
                 datum.power_connections = []
