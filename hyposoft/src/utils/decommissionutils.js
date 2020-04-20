@@ -28,7 +28,11 @@ function decommissionAsset(id,callback,decommissionFunction=assetutils.deleteAss
               decommissionFunction(id, (result,myParams) => {
                   if (result) {
                     logutils.addLog(id,offlineStorage ? logutils.OFFLINE() : logutils.ASSET(),logutils.DECOMMISSION(),docData)
-                    firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username,graph: graph,baseModel: baseModel,chassisParams: chassisParams ? chassisParams : (myParams ? myParams : null)}).then(() => callback(true))
+                    var offlineData = {}
+                    if (offlineStorage) {
+                      offlineData = {datacenterAbbrev: '',datacenterID: '',rack: '',rackID: '',rackNum: '',rackRow: '',rackU: ''}
+                    }
+                    firebaseutils.decommissionRef.add({...docData,...offlineData,timestamp: Date.now(),name: doc.data().username,graph: graph,baseModel: baseModel,chassisParams: chassisParams ? chassisParams : (myParams ? myParams : null)}).then(() => callback(true))
                     .catch( error => {
                         console.log("Error getting documents: ", error)
                         callback(false)
