@@ -503,7 +503,7 @@ class AssetScreen extends Component {
                        onClickOutside={() => this.setState({popupType: undefined})}>
 
                     <MoveAssetForm location={this.state.moveLocation} assetID={this.state.moveID} currentLocation={this.state.moveCurrentLocation}
-                                   model={this.state.moveModel}
+                                   model={this.state.moveModel} offlineAbbrev={this.props.match.params.storageSiteAbbrev}
                     success={this.handleCancelRefreshPopupChange} cancelCallback={this.handleCancelPopupChange}/>
                 </Layer>
             )

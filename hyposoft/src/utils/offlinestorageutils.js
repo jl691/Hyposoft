@@ -35,7 +35,7 @@ function getStorageSites(itemCount, callback, start = null) {
     });
 }
 
-function getAllStorageSiteNames(callback) {
+function getAllStorageSiteNames(callback, exclude = null) {
     let storageSites = [];
     let count = 0;
     firebaseutils.offlinestorageRef.orderBy("name").orderBy("abbreviation").get().then(docSnaps => {
@@ -44,7 +44,12 @@ function getAllStorageSiteNames(callback) {
         } else {
             docSnaps.docs.forEach(document => {
                 if(userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(null) || userutils.doesLoggedInUserHaveAssetPerm(document.data().abbreviation, true)){
-                    storageSites.push(document.data().name);
+                    console.log(exclude, document.data().abbreviation)
+                    if(exclude && exclude !== document.data().abbreviation){
+                        storageSites.push(document.data().name);
+                    } else if(!exclude) {
+                        storageSites.push(document.data().name);
+                    }
                 }
                 count++;
                 if (count === docSnaps.size) {
@@ -270,6 +275,39 @@ function moveAssetFromOfflineStorage(assetID, datacenter, rack, rackU, callback,
     })
 }
 
+function moveAssetFromOfflineToOffline(assetID, newOfflineName, callback){
+    getInfoFromName(newOfflineName, (newOfflineAbbrev, newOfflineID) => {
+        if(newOfflineAbbrev){
+            db.collectionGroup("offlineAssets").where("assetId", "==", assetID).get().then(function (assetQuerySnap) {
+                if(assetQuerySnap.empty){
+                    callback(null);
+                } else {
+                    let parentID = assetQuerySnap.docs[0].ref.parent.parent.id;
+                    let assetDoc = assetQuerySnap.docs[0].data();
+                    assetDoc.datacenter = newOfflineName;
+                    offlinestorageRef.doc(parentID).collection("offlineAssets").doc(assetID).delete().then(function () {
+                        offlinestorageRef.doc(newOfflineID).collection("offlineAssets").doc(assetID).set(assetDoc).then(function () {
+                            logutils.addLog(assetID, logutils.OFFLINE(), logutils.MOVE(),{...assetQuerySnap.docs[0].data(), datacenterAbbrev:newOfflineAbbrev},() => callback(true, newOfflineAbbrev))
+                        }).catch(function (error) {
+                            console.log(error)
+                            callback(null);
+                        })
+                    }).catch(function (error) {
+                        console.log(error)
+                        callback(null);
+                    })
+                }
+            }).catch(function (error) {
+                console.log(error)
+                callback(null);
+            })
+        } else {
+            console.log("error")
+            callback(null);
+        }
+    })
+}
+
 export {
     getStorageSites,
     getAllStorageSiteNames,
@@ -280,5 +318,6 @@ export {
     updateStorageSite,
     getInfoFromAbbrev,
     moveAssetToOfflineStorage,
-    moveAssetFromOfflineStorage
+    moveAssetFromOfflineStorage,
+    moveAssetFromOfflineToOffline
 }

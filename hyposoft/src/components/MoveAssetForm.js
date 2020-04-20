@@ -31,7 +31,6 @@ class MoveAssetForm extends React.Component {
 
     componentDidMount() {
         this.determineFunction(() => {
-            if(this.props.location === "rack"){
                 offlinestorageutils.getAllStorageSiteNames(result => {
                     console.log(result)
                     let storageSites = [];
@@ -48,12 +47,8 @@ class MoveAssetForm extends React.Component {
                             initialLoaded: true
                         })
                     }
-                })
-            } else {
-                this.setState({
-                    initialLoaded: true
-                })
-            }
+                }, this.props.offlineAbbrev)
+
         });
     }
 
@@ -72,7 +67,7 @@ class MoveAssetForm extends React.Component {
         else {
             if(this.props.changePlanID){
                 console.log("2")
-                changeplanutils.moveAssetChange(this.props.assetID, this.props.changePlanID, this.state.datacenter, this.state.rack, this.state.rackU, null, (result, errorMessage) => {
+                changeplanutils.moveAssetChange(this.props.assetID, this.props.changePlanID, this.state.datacenter, this.state.rack, this.state.rackU, null, "offline", "rack", (result, errorMessage) => {
                     if(result){
                         this.props.success(true);
                     } else {
@@ -146,7 +141,7 @@ class MoveAssetForm extends React.Component {
                     value={this.state.storageSite}
                     onChange={(option) => {
                         if(this.props.changePlanID){
-                            changeplanutils.moveAssetChange(this.props.assetID, this.props.changePlanID, null, null, null, option.value, result => {
+                            changeplanutils.moveAssetChange(this.props.assetID, this.props.changePlanID, null, null, null, option.value, "rack", "offline", result => {
                                 if(result){
                                     this.props.success();
                                 } else {
@@ -172,7 +167,7 @@ class MoveAssetForm extends React.Component {
             if(!this.state.initialLoaded){
                 return (<Text>Please wait...</Text>)
             } else if(this.state.assetType === "blade"){
-                return (
+                return (<Box>
                 <Form onSubmit={this.handleSubmit} name="move">
 
                     <FormField name="datacenter" label="Datacenter">
@@ -278,9 +273,34 @@ class MoveAssetForm extends React.Component {
                             onClick={() => this.props.cancelCallback()}
                         />
                     </Box>
-                </Form>)
+                </Form>
+                <Text>OR offline storage site</Text>
+                    <Box><Select
+                        placeholder="Select one..."
+                        options={this.state.storageSiteNames}
+                        value={this.state.storageSite}
+                        onChange={(option) => {
+                            if(this.props.changePlanID){
+                                changeplanutils.moveAssetChange(this.props.assetID, this.props.changePlanID, null, null, null, option.value, "offline", "offline", result => {
+                                    if(result){
+                                        this.props.success();
+                                    } else {
+                                        ToastsStore.error("Error moving asset - please try again later.")
+                                    }
+                                })
+                            } else {
+                                offlinestorageutils.moveAssetFromOfflineToOffline(this.props.assetID, option.value, moveResult => {
+                                    if(moveResult){
+                                        this.props.success();
+                                    } else {
+                                        ToastsStore.error("Error moving asset - please try again later.")
+                                    }
+                                });
+                            }
+                        }}/></Box>
+                </Box>)
             } else {
-                return (
+                return (<Box>
                     <Form onSubmit={this.handleSubmit} name="move">
 
                         <FormField name="datacenter" label="Datacenter">
@@ -361,6 +381,31 @@ class MoveAssetForm extends React.Component {
                             />
                         </Box>
                     </Form>
+                        <Text alignSelf={"center"}>OR offline storage site</Text>
+                        <Box><Select
+                            placeholder="Select one..."
+                            options={this.state.storageSiteNames}
+                            value={this.state.storageSite}
+                            onChange={(option) => {
+                                if(this.props.changePlanID){
+                                    changeplanutils.moveAssetChange(this.props.assetID, this.props.changePlanID, null, null, null, option.value, "offline", "offline", result => {
+                                        if(result){
+                                            this.props.success();
+                                        } else {
+                                            ToastsStore.error("Error moving asset - please try again later.")
+                                        }
+                                    })
+                                } else {
+                                    offlinestorageutils.moveAssetFromOfflineToOffline(this.props.assetID, option.value, moveResult => {
+                                        if(moveResult){
+                                            this.props.success();
+                                        } else {
+                                            ToastsStore.error("Error moving asset - please try again later.")
+                                        }
+                                    });
+                                }
+                            }}/></Box>
+                    </Box>
                 )
             }
         }

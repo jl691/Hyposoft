@@ -674,6 +674,7 @@ export default class DetailedAssetScreen extends Component {
 
                     <MoveAssetForm location={this.props.match.params.storageSiteAbbrev ? "offline" : "rack"} assetID={this.state.asset.assetID}
                                    model={this.state.asset.model}
+                                   offlineAbbrev={this.props.match.params.storageSiteAbbrev}
                         currentLocation={this.props.match.params.storageSiteAbbrev ? "offline storage site " + this.props.match.params.storageSiteAbbrev : "datacenter " + this.state.asset.datacenter + " on rack " + this.state.asset.rack + " at height " + this.state.asset.rackU}
                         success={this.handleCancelRefreshPopupChange} cancelCallback={this.handleCancelPopupChange} />
                 </Layer>
