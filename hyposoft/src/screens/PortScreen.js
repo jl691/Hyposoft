@@ -191,6 +191,9 @@ class PortScreen extends Component {
             }
 
             if (!('asset_number' in data[0] && 'hostname' in data[0] && 'datacenter' in data[0]
+                && 'offline_site' in data[0] && 'chassis_number' in data[0] && 'chassis_slot' in data[0]
+                && 'custom_display_color' in data[0] && 'custom_cpu' in data[0] && 'custom_memory' in data[0]
+                && 'custom_storage' in data[0]
                 && 'rack' in data[0] && 'rack_position' in data[0] && 'vendor' in data[0]
                 && 'model_number' in data[0] && 'owner' in data[0] && 'comment' in data[0]
                 && 'power_port_connection_1' in data[0] && 'power_port_connection_2' in data[0])) {

@@ -2,6 +2,7 @@ import * as firebaseutils from "./firebaseutils";
 import * as modelutils from "./modelutils";
 import * as datacenterutils from "./datacenterutils";
 import * as logutils from "./logutils";
+import {db} from "./firebaseutils";
 
 function getRackAt(itemCount, callback, datacenter = null, start = null) {
     let racks = [];
@@ -331,17 +332,49 @@ function getAssetData(assetID, callback) {
         hostname = docRefAsset.data().hostname;
         position = docRefAsset.data().rackU;
         model = docRefAsset.data().model;
-        getModelHeightColor(model, (height, color) => {
+        getModelHeightColor(model, (height, color, mount) => {
             if (height) {
-                console.log("got the height for " + assetID)
-                callback({
-                    id: assetID,
-                    model: model,
-                    hostname: hostname,
-                    height: height,
-                    color: color,
-                    position: position
-                });
+                if(mount === "chassis"){
+                    db.collectionGroup("blades").where("id", "==", assetID).get().then(function (chassisQuerySnap) {
+                        if(chassisQuerySnap.empty){
+                            callback({
+                                id: assetID,
+                                model: model,
+                                hostname: hostname,
+                                height: height,
+                                color: color,
+                                position: position,
+                                mount: mount,
+                                count: 0
+                            });
+                        } else {
+                            callback({
+                                id: assetID,
+                                model: model,
+                                hostname: hostname,
+                                height: height,
+                                color: color,
+                                position: position,
+                                mount: mount,
+                                count: chassisQuerySnap.docs[0].data().assets.length
+                            });
+                        }
+                    }).catch(function () {
+                        callback(null);
+                    })
+                } else {
+                    console.log("got the height for " + assetID)
+                    callback({
+                        id: assetID,
+                        model: model,
+                        hostname: hostname,
+                        height: height,
+                        color: color,
+                        position: position,
+                        mount: mount,
+                        count: 0
+                    });
+                }
             } else {
                 callback(null);
             }
@@ -359,7 +392,7 @@ function getModelHeightColor(model, callback) {
            // console.log("get A RESULT OF " + result)
            // console.log(result.data());
             firebaseutils.modelsRef.doc(result.id).get().then(function (docRefModel) {
-                callback(docRefModel.data().height, docRefModel.data().displayColor);
+                callback(docRefModel.data().height, docRefModel.data().displayColor, docRefModel.data().mount);
             }).catch(function (error) {
                 console.log(error)
                 callback(null);

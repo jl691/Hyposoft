@@ -381,13 +381,16 @@ function validateImportedModels (data, callback) {
         for (var i = 0; i < data.length; i++) {
             var datum = data[i]
             datum.rowNumber = i+1
+            if (fetchedModels[i].found && datum.mount_type !== fetchedModels[i].mount) {
+                errors = [...errors, [i+1, "Can't change mount type of a model after creation"]]
+            }
             if (datum.height) {
                 if (fetchedModels[i].found && fetchedModels[i].hasAssets && parseInt(datum.height) !== fetchedModels[i].height) {
                     errors = [...errors, [i+1, "Can't change height for a model with deployed instances"]]
                 }
             } else {
-                if (!fetchedModels[i].found) {
-                    errors = [...errors, [i+1, "Height required for creating a new model"]]
+                if (!fetchedModels[i].found && datum.mount_type !== 'blade') {
+                    errors = [...errors, [i+1, "Height required for creating a new non-blade-type model"]]
                 }
             }
 

@@ -142,7 +142,7 @@ export default class AssetTable extends Component {
                 sortable: false,
                 align: 'center',
 
-                render: datum => (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(datum.datacenterAbbrev) || userutils.doesLoggedInUserHaveAssetPerm(null)) ?
+                render: datum => (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(datum.datacenterAbbrev) || userutils.doesLoggedInUserHaveAssetPerm(this.props.storageSiteAbbrev, true) || userutils.doesLoggedInUserHaveAssetPerm(null)) ?
                     (
                     <FormTrash
                         style={{cursor: 'pointer', backgroundColor: this.colors[datum.asset_id + '_delete_color']}}
@@ -162,7 +162,7 @@ export default class AssetTable extends Component {
                 sortable: false,
                 align: 'center',
 
-                render: datum => (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(datum.datacenterAbbrev) || userutils.doesLoggedInUserHaveAssetPerm(null)) ?
+                render: datum => (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(datum.datacenterAbbrev) || userutils.doesLoggedInUserHaveAssetPerm(this.props.storageSiteAbbrev, true) || userutils.doesLoggedInUserHaveAssetPerm(null)) ?
                     (
                     <FormClose
                         style={{
@@ -183,7 +183,7 @@ export default class AssetTable extends Component {
                 header: <Text size={'small'}>Move</Text>,
                 sortable: false,
                 align: 'center',
-                render: datum => true ?
+                render: datum => (userutils.isLoggedInUserAdmin() || userutils.doesLoggedInUserHaveAssetPerm(datum.datacenterAbbrev) || userutils.doesLoggedInUserHaveAssetPerm(this.props.storageSiteAbbrev, true) || userutils.doesLoggedInUserHaveAssetPerm(null)) ?
                     (
                         <Transaction
                             data-tip="Move asset"

@@ -170,7 +170,7 @@ class ModelSettingsLayer extends React.Component {
         }
 
 
-        var memory = null
+        var memory = 0
         if (this.state.memory.trim() !== '' &&
             (isNaN(this.state.memory.trim()) || !Number.isInteger(parseFloat(this.state.memory.trim())) || parseInt(this.state.memory.trim()) < 0 || parseInt(this.state.memory.trim()) > 1000)) {
             ToastsStore.info('Memory should be a non-negative integer less than 1000', 3000, 'burntToast')
@@ -195,8 +195,9 @@ class ModelSettingsLayer extends React.Component {
                 ToastsStore.info(this.state.modelNumber.trim() + ' by ' + this.state.vendor.trim() + ' exists', 3000, 'burntToast')
                 return
             } else {
+                var height = this.state.mount === 'blade' ? 1 : parseInt(this.state.height)
                 this.dbFunction(this.state.id, this.state.vendor,
-                    this.state.modelNumber, parseInt(this.state.height),
+                    this.state.modelNumber, height,
                     this.state.displayColor, networkPorts,
                     powerPorts, this.state.cpu,
                     memory, this.state.storage,
@@ -300,10 +301,13 @@ class ModelSettingsLayer extends React.Component {
                             <Box direction="column" pad='xsmall' gap="small" flex height={{max: 'medium'}}
                                  overflow={{vertical: 'scroll'}}>
                                  <Select
+                                    disabled={this.state.layerTitle === 'Edit Model'}
                                     options={['Rackmount', 'Chassis', 'Blade']}
                                     value={mountToDisplayString(this.state.mount)}
                                     onChange={({ option }) => {
-                                        this.setState(oldState => ({...oldState, mount: displayStringToMount(option)}))
+                                        if (this.state.layerTitle !== 'Edit Model') {
+                                            this.setState(oldState => ({...oldState, mount: displayStringToMount(option)}))
+                                        }
                                     }}
                                     />
                                 <Text size={"small"} style={{marginLeft: "20px"}}>Vendor</Text>
