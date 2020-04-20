@@ -22,6 +22,10 @@ function DATACENTER() {
     return 'datacenter'
 }
 
+function OFFLINE_SITE() {
+    return 'offline site'
+}
+
 function CHANGEPLAN() {
     return 'change plan'
 }
@@ -114,6 +118,9 @@ function addLog(objectId, objectType, action, data = null, callback = null, want
             case DATACENTER():
                 getDatacenterName(objectId,data,action,datacenter => finishAddingLog(datacenter, objectId, objectType, action, callback))
                 break
+            case OFFLINE_SITE():
+                getOfflineSiteName(objectId,data,action,offlineSite => finishAddingLog(offlineSite, objectId, objectType, action, callback))
+                break
             case CHANGEPLAN():
                 getChangePlanName(objectId,data,action,changeplan => finishAddingLog(changeplan, objectId, objectType, action, callback))
                 break
@@ -200,6 +207,13 @@ function getObjectData(objectId, objectType, callback, wantPromise = false) {
                 break
             case DATACENTER():
                 firebaseutils.datacentersRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case OFFLINE_SITE():
+                firebaseutils.offlinestorageRef.doc(objectId).get().then(doc => callback(doc.data()))
                 .catch( error => {
                     console.log("Error getting documents: ", error)
                     callback(null)
@@ -363,6 +377,8 @@ function buildSpecificDiff(data,field) {
           return userDiff(data,field)
       case DATACENTER():
           return datacenterDiff(data,field)
+      case OFFLINE_SITE():
+          return defaultDiff(data,field)
       default:
           return ''
     }
@@ -473,6 +489,18 @@ function getDatacenterName(id,data,action,callback) {
           callback(null)
         })
     }
+}
+
+function getOfflineSiteName(id,data,action,callback) {
+  if (data && action === DELETE()) {
+      callback({name: data.name, data: data, previousData: null, datacenter: null})
+  } else {
+      firebaseutils.offlinestorageRef.doc(id).get().then(doc => callback({name: doc.data().name, data: doc.data(), previousData: data, datacenter: null}))
+      .catch( error => {
+        console.log("Error getting documents: ", error)
+        callback(null)
+      })
+  }
 }
 
 function getChangePlanName(id,data,action,callback) {
@@ -775,4 +803,4 @@ var isEqual = function (value, other, name) {
 	return true;
 };
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, PDU, BCMAN, OFFLINE, CREATE, MODIFY, BLADE_MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, POWER_ON, POWER_OFF, MOVE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }
+export { ASSET, MODEL, RACK, USER, DATACENTER, OFFLINE_SITE, CHANGEPLAN, PDU, BCMAN, OFFLINE, CREATE, MODIFY, BLADE_MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, POWER_ON, POWER_OFF, MOVE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }

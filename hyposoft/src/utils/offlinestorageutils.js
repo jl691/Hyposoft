@@ -100,6 +100,7 @@ function addStorageSite(name, abbrev, callback) {
                         abbreviation: abbrev
                     }).then(function (docRef) {
                         userutils.updateEveryonesAssetPermissions();
+                        logutils.addLog(docRef.id,logutils.OFFLINE_SITE(),logutils.CREATE())
                         callback(true);
                     }).catch(function (error) {
                         callback(null);
@@ -123,6 +124,7 @@ function deleteStorageSite(name, callback) {
                 if(assetDocSnap.empty){
                     firebaseutils.offlinestorageRef.doc(querySnapshot.docs[0].id).delete().then(function () {
                         userutils.updateEveryonesAssetPermissions();
+                        logutils.addLog(querySnapshot.docs[0].id,logutils.OFFLINE_SITE(),logutils.DELETE(),querySnapshot.docs[0].data())
                         callback(true);
                     }).catch(function (error) {
                         callback(null);
@@ -151,6 +153,7 @@ function updateStorageSite(oldName, oldAbbrev, newName, newAbbrev, callback) {
                                 name: newName,
                                 abbreviation: newAbbrev
                             }, {merge: true}).then(function () {
+                                logutils.addLog(querySnapshot.docs[0].id,logutils.OFFLINE_SITE(),logutils.MODIFY(),querySnapshot.docs[0].data())
                                 callback(true);
                             }).catch(function (error) {
                                 callback(null);
