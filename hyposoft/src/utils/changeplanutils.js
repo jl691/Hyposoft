@@ -271,84 +271,95 @@ function editAssetChange(newAsset, assetID, changePlanID, callback, docID = null
             changes: {}
         };
         let oldAsset = documentSnapshot.data();
-        Object.keys(newAsset).forEach(assetProperty => {
-            if ((typeof oldAsset[assetProperty] === "object" && !isEqual(oldAsset[assetProperty], newAsset[assetProperty])) || (typeof oldAsset[assetProperty] !== "object" && oldAsset[assetProperty] !== newAsset[assetProperty])) {
-                assetChangePlanObject.changes = {
-                    ...assetChangePlanObject.changes,
-                    [assetProperty]: {
-                        old: oldAsset[assetProperty],
-                        new: newAsset[assetProperty]
-                    }
+        firebaseutils.bladeRef.doc(String(assetID)).get().then(function (bladeDocSnap) {
+            if(bladeDocSnap.exists){
+                oldAsset = {
+                    ...oldAsset,
+                    chassisHostname: bladeDocSnap.data().rack,
+                    chassisSlot: bladeDocSnap.data().rackU
                 }
             }
-        });
-        if (docID) {
-            changeplansRef.doc(changePlanID).collection("changes").doc(docID).get().then(function (docSnapInner) {
-                if (docSnapInner.exists) {
-                    assetChangePlanObject.step = docSnapInner.data().step;
-                    changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject)
+            Object.keys(newAsset).forEach(assetProperty => {
+                console.log(assetProperty, oldAsset[assetProperty])
+                if ((typeof oldAsset[assetProperty] === "object" && !isEqual(oldAsset[assetProperty], newAsset[assetProperty])) || (typeof oldAsset[assetProperty] !== "object" && oldAsset[assetProperty] !== newAsset[assetProperty])) {
+                    assetChangePlanObject.changes = {
+                        ...assetChangePlanObject.changes,
+                        [assetProperty]: {
+                            old: oldAsset[assetProperty],
+                            new: newAsset[assetProperty]
+                        }
+                    }
+                }
+            });
+            if (docID) {
+                changeplansRef.doc(changePlanID).collection("changes").doc(docID).get().then(function (docSnapInner) {
+                    if (docSnapInner.exists) {
+                        assetChangePlanObject.step = docSnapInner.data().step;
+                        changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject)
+                            // .then(function (doc) {
+                            //     callback(true);
+                            // })
+                            .then(function () {
+                                changeplanconflictutils.clearAllStepConflicts(changePlanID, status1 => {
+                                    //checking against liveDB not necessary, and only take more time
+                                    // changeplanconflictutils.checkAllLiveDBConflicts(docSnapInner.data().executed, changePlanID, status2 => {
+                                    //     console.log("Made it back from db checks")
+                                    changeplanconflictutils.checkSequentialStepConflicts(docSnapInner.data().executed, changePlanID, status3 => {
+                                        console.log("DONE RECHECKING")
+                                        callback(true);
+
+                                    })
+                                    //})
+                                })
+                            }).catch(function (error) {
+                            console.log(error);
+                            callback(null);
+                        })
+                    } else {
+                        callback(null);
+                    }
+                }).catch(function (error) {
+                    console.log(error);
+                    callback(null);
+                })
+            } else {
+                changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
+                    let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
+                    assetChangePlanObject.step = changeNumber;
+                    changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject)
                         // .then(function (doc) {
+                        //     //network ports need to be done at time of execution
+                        //     //so does power port and logging
                         //     callback(true);
+
                         // })
                         .then(function () {
-                            changeplanconflictutils.clearAllStepConflicts(changePlanID, status1 => {
-                                //checking against liveDB not necessary, and only take more time
-                                // changeplanconflictutils.checkAllLiveDBConflicts(docSnapInner.data().executed, changePlanID, status2 => {
-                                //     console.log("Made it back from db checks")
-                                changeplanconflictutils.checkSequentialStepConflicts(docSnapInner.data().executed, changePlanID, status3 => {
-                                    console.log("DONE RECHECKING")
-                                    callback(true);
 
+                            getChangePlanData(changePlanID, cpData => {
+                                changeplanconflictutils.clearAllStepConflicts(changePlanID, status1 => {
+                                    //checking against liveDB not necessary, and only take more time
+                                    //changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
+                                    //     console.log("Made it back from db checks")
+                                    changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
+                                        console.log("DONE RECHECKING")
+                                        callback(true);
+
+                                    })
+                                    //})
                                 })
-                                //})
                             })
                         }).catch(function (error) {
                         console.log(error);
                         callback(null);
-                    })
-                } else {
-                    callback(null);
-                }
-            }).catch(function (error) {
-                console.log(error);
-                callback(null);
-            })
-        } else {
-            changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
-                let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
-                assetChangePlanObject.step = changeNumber;
-                changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject)
-                    // .then(function (doc) {
-                    //     //network ports need to be done at time of execution
-                    //     //so does power port and logging
-                    //     callback(true);
-
-                    // })
-                    .then(function () {
-
-                        getChangePlanData(changePlanID, cpData => {
-                            changeplanconflictutils.clearAllStepConflicts(changePlanID, status1 => {
-                                //checking against liveDB not necessary, and only take more time
-                                //changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
-                                //     console.log("Made it back from db checks")
-                                changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
-                                    console.log("DONE RECHECKING")
-                                    callback(true);
-
-                                })
-                                //})
-                            })
-                        })
-                    }).catch(function (error) {
+                    });
+                }).catch(function (error) {
                     console.log(error);
                     callback(null);
                 });
-            }).catch(function (error) {
-                console.log(error);
-                callback(null);
-            });
-        }
-
+            }
+        }).catch(function () {
+            callback(null);
+        });
     });
 }
 
@@ -1720,7 +1731,7 @@ function executeEditAsset(doc, callback) {
     })
 }
 
-function getMergedAssetAndChange(changePlanID, step, callback) {
+function getMergedAssetAndChange(changePlanID, step, callback, replaceRackAndRackU) {
     changeplansRef.doc(changePlanID.toString()).collection("changes").where("step", "==", parseInt(step)).get().then(function (querySnapshot) {
         if (!querySnapshot.empty) {
             let changeData = querySnapshot.docs[0].data().changes;

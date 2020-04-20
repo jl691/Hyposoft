@@ -483,6 +483,9 @@ class DetailedChangePlanScreen extends React.Component {
                         updatePowerConnectionsFromParent={this.state.currentChange.powerConnections}
                         updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.currentChange.networkConnections)}
 
+                        chassisHostname={this.state.currentChange.chassisHostname ? this.state.currentChange.chassisHostname : null}
+                        chassisSlot={this.state.currentChange.chassisSlot ? this.state.currentChange.chassisSlot : null}
+
                         updateDisplayColorFromParent={this.state.currentChange.variances.displayColor}
                         updateCpuFromParent={this.state.currentChange.variances.cpu}
                         updateMemoryFromParent={this.state.currentChange.variances.memory}
