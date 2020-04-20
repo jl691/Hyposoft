@@ -22,6 +22,10 @@ function DATACENTER() {
     return 'datacenter'
 }
 
+function OFFLINE_SITE() {
+    return 'offline site'
+}
+
 function CHANGEPLAN() {
     return 'change plan'
 }
@@ -45,6 +49,10 @@ function CREATE() {
 
 function MODIFY() {
     return 'modified'
+}
+
+function BLADE_MODIFY() {
+    return 'modified blade by changing'
 }
 
 function DELETE() {
@@ -110,6 +118,9 @@ function addLog(objectId, objectType, action, data = null, callback = null, want
             case DATACENTER():
                 getDatacenterName(objectId,data,action,datacenter => finishAddingLog(datacenter, objectId, objectType, action, callback))
                 break
+            case OFFLINE_SITE():
+                getOfflineSiteName(objectId,data,action,offlineSite => finishAddingLog(offlineSite, objectId, objectType, action, callback))
+                break
             case CHANGEPLAN():
                 getChangePlanName(objectId,data,action,changeplan => finishAddingLog(changeplan, objectId, objectType, action, callback))
                 break
@@ -142,17 +153,24 @@ function addLog(objectId, objectType, action, data = null, callback = null, want
 
 function finishAddingLog(object, objectId, objectType, action, callback) {
     if (object) {
-        const timestamp = Date.now()
-        const userId = userutils.getLoggedInUser()
-        getUserName(userId, null, action, user => {
-            if (user) {
-                var log = packageLog(timestamp, objectId, objectType, object.name, object.data, object.previousData, object.datacenter, action, userId, user.name)
-                firebaseutils.logsRef.add(log)
-              }
+        if (action === BLADE_MODIFY() && objectType === ASSET() && buildDiff({currentData: {chassisHostname: object.data.chassisHostname,slot: object.data.slot},previousData: {chassisHostname: object.previousData.chassisHostname,slot: object.previousData.slot},objectType: objectType}) === ' ') {
+            // no modification at all
             if (callback) {
               callback()
             }
-        })
+        } else {
+          const timestamp = Date.now()
+          const userId = userutils.getLoggedInUser()
+          getUserName(userId, null, action, user => {
+              if (user) {
+                  var log = packageLog(timestamp, objectId, objectType, object.name, object.data, object.previousData, object.datacenter, action, userId, user.name)
+                  firebaseutils.logsRef.add(log)
+                }
+              if (callback) {
+                callback()
+              }
+          })
+        }
     }
 }
 
@@ -189,6 +207,13 @@ function getObjectData(objectId, objectType, callback, wantPromise = false) {
                 break
             case DATACENTER():
                 firebaseutils.datacentersRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case OFFLINE_SITE():
+                firebaseutils.offlinestorageRef.doc(objectId).get().then(doc => callback(doc.data()))
                 .catch( error => {
                     console.log("Error getting documents: ", error)
                     callback(null)
@@ -310,7 +335,7 @@ function doesObjectStillExist(objectType,objectId,callback,objectName=null) {
 
 function buildLog(data) {
     var log = data.userName + ' '
-              + data.action + (data.action === MODIFY() && data.previousData ? buildDiff(data) : ' ')
+              + data.action + ((data.action === MODIFY() || data.action === BLADE_MODIFY()) && data.previousData ? buildDiff(data) : ' ')
               + data.objectType + ' ' + data.objectName
               + (data.objectType === RACK()
                 || ((data.objectType === ASSET() || data.objectType === OFFLINE()) && data.action !== MOVE())
@@ -352,6 +377,8 @@ function buildSpecificDiff(data,field) {
           return userDiff(data,field)
       case DATACENTER():
           return datacenterDiff(data,field)
+      case OFFLINE_SITE():
+          return defaultDiff(data,field)
       default:
           return ''
     }
@@ -385,11 +412,34 @@ function getAssetName(id,data,action,callback,offline=false) {
             callback(null)
           })
         } else {
-          firebaseutils.assetRef.doc(id).get().then(doc => callback({name: doc.data().model+' '+doc.data().hostname, data: doc.data(), previousData: data, datacenter: doc.data().datacenter}))
-          .catch( error => {
-            console.log("Error getting documents: ", error)
-            callback(null)
-          })
+          if (action === BLADE_MODIFY()) {
+            firebaseutils.assetRef.doc(id).get().then(doc => {
+              firebaseutils.bladeRef.doc(id).get().then(docRef => {
+                // pass in bladeRef data as current data
+                var prevData = data
+                var currentData = docRef.data()
+                prevData['chassisHostname'] = prevData.rack
+                currentData['chassisHostname'] = currentData.rack
+                prevData['slot'] = prevData.rackU
+                currentData['slot'] = currentData.rackU
+                delete prevData.rack
+                delete prevData.rackU
+                delete currentData.rack
+                delete currentData.rackU
+                callback({name: doc.data().model+' '+doc.data().hostname, data: currentData, previousData: prevData, datacenter: doc.data().datacenter})
+              })
+            })
+            .catch( error => {
+              console.log("Error getting documents: ", error)
+              callback(null)
+            })
+          } else {
+            firebaseutils.assetRef.doc(id).get().then(doc => callback({name: doc.data().model+' '+doc.data().hostname, data: doc.data(), previousData: data, datacenter: doc.data().datacenter}))
+            .catch( error => {
+              console.log("Error getting documents: ", error)
+              callback(null)
+            })
+          }
         }
     }
 }
@@ -439,6 +489,18 @@ function getDatacenterName(id,data,action,callback) {
           callback(null)
         })
     }
+}
+
+function getOfflineSiteName(id,data,action,callback) {
+  if (data && action === DELETE()) {
+      callback({name: data.name, data: data, previousData: null, datacenter: null})
+  } else {
+      firebaseutils.offlinestorageRef.doc(id).get().then(doc => callback({name: doc.data().name, data: doc.data(), previousData: data, datacenter: null}))
+      .catch( error => {
+        console.log("Error getting documents: ", error)
+        callback(null)
+      })
+  }
 }
 
 function getChangePlanName(id,data,action,callback) {
@@ -509,7 +571,7 @@ function assetDiff(data,field) {
       case 'macAddresses':
         return !findArrayAndMapDiff(data.previousData[field],data.currentData[field],true) ? '' : (field + arrayAndMapDiffString)
       case 'variances':
-        return complexObjectDiff(data.previousData[field],data.currentData[field]) ? '' : (field + complexDiffString)
+        return !findArrayAndMapDiff(data.previousData[field],data.currentData[field],true) ? '' : (field + arrayAndMapDiffString)
       case 'id':
       case 'datacenterAbbrev':
       case 'datacenterID':
@@ -519,6 +581,9 @@ function assetDiff(data,field) {
       case 'modelId':
       case 'modelNumber':
       case 'vendor':
+      case 'chassisId':
+      case 'chassisVendor':
+      case 'rackId':
           return ''
       default:
         return defaultDiff(data,field)
@@ -596,7 +661,7 @@ function findArrayAndMapDiff(a,b,map=false) {
                 permDiff.push(field + (act == ' by removing ' ? ' as ' : ' to be ') + c[field])
             } else {
               if (act === ' by changing ' && other[field] && other[field] !== c[field]) {
-                permDiff.push(field + ' from ' + other[field] + ' to ' + c[field])
+                permDiff.push(field + ' from ' + other[field] + ' to ' + (c[field] ? c[field] : 'none'))
               }
             }
           } else {
@@ -738,4 +803,4 @@ var isEqual = function (value, other, name) {
 	return true;
 };
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, PDU, BCMAN, OFFLINE, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, POWER_ON, POWER_OFF, MOVE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }
+export { ASSET, MODEL, RACK, USER, DATACENTER, OFFLINE_SITE, CHANGEPLAN, PDU, BCMAN, OFFLINE, CREATE, MODIFY, BLADE_MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, POWER_ON, POWER_OFF, MOVE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }

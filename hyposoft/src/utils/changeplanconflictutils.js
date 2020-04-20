@@ -206,22 +206,21 @@ const modelConflict = (changePlanID, stepID, model, callback) => {
 
 }
 
-
-//TODO: look at assetFitsOnRack and checkAssetFits optional params
 const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacenterID, rackName, rackU, callback, chassisHostname = null, slotNum = null, chassisAssetID = null) => {
     let splitRackArray = rackName.split(/(\d+)/).filter(Boolean)
     let rackRow = splitRackArray[0]
     let rackNum = parseInt(splitRackArray[1])
 
     let errorIDSet = new Set();
-    let isChassis = chassisHostname ? true : false
+    let isBlade = chassisHostname ? true : false
+    let isChassis = chassisAssetID ? true : false
 
     rackutils.getRackID(rackRow, rackNum, datacenter, async function (rackID) {
         if (rackID) {
 
-            let ref = isChassis ? racksRef.doc(rackID).collection('blades') : racksRef
+            let ref = isBlade ? racksRef.doc(rackID).collection('blades') : racksRef
 
-            ref.where("letter", "==", isChassis ? chassisHostname : rackRow).where("number", "==", isChassis ? 1 : rackNum).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
+            ref.where("letter", "==", isBlade ? chassisHostname : rackRow).where("number", "==", isBlade ? 1 : rackNum).where("datacenter", "==", datacenterID).get().then(function (querySnapshot) {
 
                 if (!querySnapshot.empty) {
 
@@ -233,13 +232,12 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacen
 
                             //assuming tht somehow, if we are a blade, that it will correctly check the chassis for conflicts, not rack or smth
                             console.log(chassisAssetID)
-
-                            rackutils.checkAssetFits(isChassis ? slotNum : rackU, doc.data().height, rackID, async function (status) {
+                            rackutils.checkAssetFits(isBlade ? slotNum : rackU, doc.data().height, rackID, async function (status) {
                                 console.log(status.length)
                                 if (status && status.length) {
                                     //asset conflicts with other assets
-                                    errorIDSet.add(isChassis ? "slotConflictDBErrID" : "rackUConflictDBErrID")
-                                    addConflictToDBDatabase(changePlanID, stepID, isChassis ? "slot" : "rackU", errorIDSet, status => {
+                                    errorIDSet.add(isBlade ? "slotConflictDBErrID" : "rackUConflictDBErrID")
+                                    addConflictToDBDatabase(changePlanID, stepID, isBlade ? "slot" : "rackU", errorIDSet, status => {
                                         //console.log(status)
                                         callback(status)
                                     })
@@ -248,7 +246,7 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacen
                                     //what if model was deleted? Then
                                     callback(false)
                                 }
-                            }, assetID, isChassis ? { id: chassisAssetID } : null) //{id: chassisId} instead of true. so assetID of the chassis...what if offline to active htough? use the assetID of the new chassis we are moving to. Aka, look up in assets the where hostname === chassisHostname and return the doc id
+                            }, assetID, isChassis  || isBlade ? { id: chassisAssetID } : null) //{id: chassisId} instead of true. so assetID of the chassis...what if offline to active htough? use the assetID of the new chassis we are moving to. Aka, look up in assets the where hostname === chassisHostname and return the doc id
 
                         }
                     })
@@ -263,8 +261,8 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacen
         else {
             //what if a chassis or blade?
             //the rack no longer exists
-            errorIDSet.add(isChassis ? "chassisErrID" : "rackErrID")
-            addConflictToDBDatabase(changePlanID, stepID, isChassis ? "chassis" : "rack", errorIDSet, status => {
+            errorIDSet.add(isBlade ? "chassisErrID" : "rackErrID")
+            addConflictToDBDatabase(changePlanID, stepID, isBlade ? "chassis" : "rack", errorIDSet, status => {
                 //(status)
                 callback(status)
             })
@@ -463,7 +461,7 @@ function checkLiveDBConflicts(isExecuted, changePlanID, stepNum, callback) {
                     let rackU = docSnap.data().changes.rackU.new
                     let owner = docSnap.data().changes.owner.new
 
-                    console.log("Does this doc have a ch: " + docSnap.data().changes.chassisHostname)
+                    //console.log("Does this doc have a ch: " + docSnap.data().changes.chassisHostname)
                     if (docSnap.data().changes.chassisHostname) {//blade
                         //in an add blade change doc, can expect to have chassisHostname, chassisSlot fields. Remember that the rack and rackU refer to the chassis of the blade
 
@@ -508,9 +506,29 @@ function checkLiveDBConflicts(isExecuted, changePlanID, stepNum, callback) {
                             let networkConnections = assetData.networkConnections
                             let datacenterID = assetData.datacenterID
 
-                            editAssetChangePlanPackage(changePlanID, thisStepID, model, hostname, datacenter, datacenterID, rack, rackU, owner, assetID, powerConnections, networkConnections, status => {
-                                console.log("Edit live db check calling back.")
-                                callback()
+                            bladeRef.doc(assetID).get().then(thisBladeDoc => { //this bladeRef is okay: just used to check if the current change is on a blade
+                                if (thisBladeDoc.exists) {
+
+                                    changeplansRef.doc(changePlanID).collection('changes').doc(thisStepID).get().then(thisChangeDoc => {
+
+                                        let chassisHostname = thisChangeDoc.data().changes.chassisHostname ? thisChangeDoc.data().changes.chassisHostname.new
+                                            : thisBladeDoc.data().rack
+
+                                        let chassisSlot = thisChangeDoc.data().changes.chassisSlot ? thisChangeDoc.data().changes.chassisSlot.new
+                                            : thisBladeDoc.data().rackU
+                                        editBladeChangePlanPackage(changePlanID, thisStepID, model, hostname, chassisHostname, chassisSlot, datacenter, datacenterID, owner, assetID, rack, rackU, status => {
+                                            console.log("Edit live db check calling back but for blades.")
+                                            callback()
+                                        })
+                                    })
+                                }
+
+                                else {
+                                    editAssetChangePlanPackage(changePlanID, thisStepID, model, hostname, datacenter, datacenterID, rack, rackU, owner, assetID, powerConnections, networkConnections, status => {
+                                        console.log("Edit live db check calling back.")
+                                        callback()
+                                    })
+                                }
                             })
                         }
                         // else if (changeType === "decommission") {
@@ -538,8 +556,6 @@ function checkLiveDBConflicts(isExecuted, changePlanID, stepNum, callback) {
                 }
                 else { //move changeType
                     //two things to account for: are you moving to/from, and is it a chassis/normal or blade
-
-                    console.log("TODO: need to check for database conflicts if change is move.")
                     let location = docSnap.data().location
                     let datacenterIDObj = docSnap.data().changes.datacenterID
                     let datacenterObj = docSnap.data().changes.datacenter
@@ -588,7 +604,7 @@ function moveAssetChangePackage(changePlanID, thisStepID, assetID, location, dat
                     assetRef.where("hostname", "==", chassisHostname).get().then(chassisAssetDoc => {
 
                         if (!chassisAssetDoc.empty) { //TODO: understand the real problem. This is a hacky fix for deleting a change plan step/viewing certain steps with datacenter/rack/chassis db conflicts. For the deleteChange() problem: removed the checkAllDbConflicts call since it was uneccesary anyway
-                            chassisAssetID = chassisAssetDoc.docs[0].id //optional param to pass into rackUConflict if u are blade
+                            chassisAssetID = chassisAssetDoc.docs[0].id //optional param to pass into rackUConfl if u are blade
                         }
                         console.log(chassisAssetID)
                         rackNonExistent(changePlanID, thisStepID,
@@ -603,7 +619,7 @@ function moveAssetChangePackage(changePlanID, thisStepID, assetID, location, dat
                                     status => {
                                         callback()
 
-                                    }, chassisHostname, slotNum, chassisAssetID)
+                                    }, chassisHostname, slotNum)
                             }, chassisHostname)
                     })
                     //else, your current location is rack, so you are moving to offline. And only need to check that offline exists, which we already do with datacenterNonexistent at the top
@@ -623,13 +639,52 @@ function moveAssetChangePackage(changePlanID, thisStepID, assetID, location, dat
                                 status => {
                                     callback()
 
-                                })
+                                }, assetID, null, mountType === "chassis" ? assetID : null) //pass the ID in so if chassis, checkAssetFits will ignore blades on the chassis
                         })
                     //else, your current location is rack, so you are moving to offline.
                 }
             }, location == "rack" ? true : false) //we are moving to offline if our current location is rack
         })
     })
+}
+
+//live db conflict check
+function editBladeChangePlanPackage(changePlanID, stepID, model, hostname, chassisHostname, chassisSlot, datacenter, datacenterID, owner, assetID, rack, rackU, callback) {
+    //current step is an edit
+    assetID = assetID.toString()
+    let chassisAssetID = null
+
+    assetRef.where("hostname", "==", chassisHostname).get().then(chassisAssetDoc => {
+
+        if (!chassisAssetDoc.empty) { //TODO: understand the real problem. This is a hacky fix for deleting a change plan step/viewing certain steps with datacenter/rack/chassis db conflicts. For the deleteChange() problem: removed the checkAllDbConflicts call since it was uneccesary anyway
+            chassisAssetID = chassisAssetDoc.docs[0].id //optional param to pass into rackUConfl if u are blade
+        }
+        datacenterNonExistent(changePlanID, stepID, datacenter, status2 => {
+            hostnameConflict(changePlanID, stepID, assetID, hostname, status3 => {
+                ownerConflict(changePlanID, stepID, owner, status4 => {
+                    
+                    assetIDConflict(changePlanID, stepID, assetID, status5 => {
+                        modelConflict(changePlanID, stepID, model, status6 => {
+                            rackNonExistent(changePlanID, stepID, rack, datacenter, datacenterID, status7 => {
+                                console.log(rack, rackU)
+                                console.log(chassisHostname, chassisSlot)
+                                rackUConflict(changePlanID, stepID, assetID, model, datacenter, datacenterID, rack, rackU, status8 => {
+                                    callback()
+
+                                }, chassisHostname, chassisSlot, chassisAssetID)
+                            }, chassisHostname)
+
+                        })
+
+                    }, true)
+
+                })
+            })
+        })
+    })
+
+
+
 }
 
 //rip duplicated code
@@ -641,7 +696,7 @@ function addBladeChangePlanPackage(changePlanID, stepID, model, hostname, chassi
     assetRef.where("hostname", "==", chassisHostname).get().then(chassisAssetDoc => {
 
         if (!chassisAssetDoc.empty) { //TODO: understand the real problem. This is a hacky fix for deleting a change plan step/viewing certain steps with datacenter/rack/chassis db conflicts. For the deleteChange() problem: removed the checkAllDbConflicts call since it was uneccesary anyway
-            chassisAssetID = chassisAssetDoc.docs[0].id //optional param to pass into rackUConflict if u are blade
+            chassisAssetID = chassisAssetDoc.docs[0].id //optional param to pass into rackUConfl if u are blade
         }
         datacenterNonExistent(changePlanID, stepID, datacenter, status2 => {
             hostnameConflict(changePlanID, stepID, assetID, hostname, status3 => {
@@ -678,29 +733,35 @@ function editAssetChangePlanPackage(changePlanID, stepID, model, hostname, datac
         let oldNetworkConnections = doc.data().networkConnections;
         assetID = assetID.toString()
 
-        rackNonExistent(changePlanID, stepID, rack, datacenter, datacenterID, status1 => {
-            datacenterNonExistent(changePlanID, stepID, datacenter, status2 => {
-                hostnameConflict(changePlanID, stepID, assetID, hostname, status3 => {
-                    ownerConflict(changePlanID, stepID, owner, status4 => {
-                        assetIDConflict(changePlanID, stepID, assetID, status5 => {
-                            modelConflict(changePlanID, stepID, model, status6 => {
-                                rackUConflict(changePlanID, stepID, assetID, model, datacenter, datacenterID, rack, rackU, status7 => {//converting networkConnections into an array
-                                    let networkConnectionsArray = assetnetworkportutils.networkConnectionsToArray(networkConnections)
+        modelutils.getModelByModelname(model, modelData => {
 
-                                    networkConnectionConflict(changePlanID, stepID, networkConnectionsArray, oldNetworkConnections, status8 => {
+            let mountType = modelData.data().mount
 
-                                        powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, assetID, status9 => {
-                                            // editCheckAssetDecommissioned(changePlanID, stepID, assetID, status10 => {
-                                            //   editCheckAssetDeleted(changePlanID, stepID, assetID, status11 => {
 
-                                            callback()
-                                            //  })
-                                            // })
+            rackNonExistent(changePlanID, stepID, rack, datacenter, datacenterID, status1 => {
+                datacenterNonExistent(changePlanID, stepID, datacenter, status2 => {
+                    hostnameConflict(changePlanID, stepID, assetID, hostname, status3 => {
+                        ownerConflict(changePlanID, stepID, owner, status4 => {
+                            assetIDConflict(changePlanID, stepID, assetID, status5 => {
+                                modelConflict(changePlanID, stepID, model, status6 => {
+                                    rackUConflict(changePlanID, stepID, assetID, model, datacenter, datacenterID, rack, rackU, status7 => {//converting networkConnections into an array
+                                        let networkConnectionsArray = assetnetworkportutils.networkConnectionsToArray(networkConnections)
+
+                                        networkConnectionConflict(changePlanID, stepID, networkConnectionsArray, oldNetworkConnections, status8 => {
+
+                                            powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, assetID, status9 => {
+                                                // editCheckAssetDecommissioned(changePlanID, stepID, assetID, status10 => {
+                                                //   editCheckAssetDeleted(changePlanID, stepID, assetID, status11 => {
+
+                                                callback()
+                                                //  })
+                                                // })
+                                            })
                                         })
-                                    })
+                                    }, null, null, mountType === "chassis" ? assetID : null)
                                 })
-                            })
-                        }, true)
+                            }, true)
+                        })
                     })
                 })
             })
@@ -739,28 +800,31 @@ function addAssetChangePlanPackage(changePlanID, stepID, model, hostname, datace
     let oldNetworkConnections = null;
     assetID = assetID.toString()
 
-    //the asset we have is a normal mount type
-    rackNonExistent(changePlanID, stepID, rack, datacenter, datacenterID, status1 => {
-        datacenterNonExistent(changePlanID, stepID, datacenter, status2 => {
-            hostnameConflict(changePlanID, stepID, assetID, hostname, status3 => {
-                ownerConflict(changePlanID, stepID, owner, status4 => {
-                    assetIDConflict(changePlanID, stepID, assetID, status5 => {
-                        modelConflict(changePlanID, stepID, model, status6 => {
-                            //assetID is null here, because it's used to check for self conflicting in rackUConflict
-                            rackUConflict(changePlanID, stepID, null, model, datacenter, datacenterID, rack, rackU, status7 => {
-                                console.log(networkConnections)
-                                let networkConnectionsArray = assetnetworkportutils.networkConnectionsToArray(networkConnections)
-                                networkConnectionConflict(changePlanID, stepID, networkConnectionsArray, oldNetworkConnections, status8 => {
-                                    powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, assetID, status9 => {
-                                        callback()
+    modelutils.getModelByModelname(model, modelData => {
+        let mountType = modelData.data().mount
+
+        rackNonExistent(changePlanID, stepID, rack, datacenter, datacenterID, status1 => {
+            datacenterNonExistent(changePlanID, stepID, datacenter, status2 => {
+                hostnameConflict(changePlanID, stepID, assetID, hostname, status3 => {
+                    ownerConflict(changePlanID, stepID, owner, status4 => {
+                        assetIDConflict(changePlanID, stepID, assetID, status5 => {
+                            modelConflict(changePlanID, stepID, model, status6 => {
+                                //assetID is null here, because it's used to check for self conflicting in rackUConflict
+                                rackUConflict(changePlanID, stepID, null, model, datacenter, datacenterID, rack, rackU, status7 => {
+                                    console.log(networkConnections)
+                                    let networkConnectionsArray = assetnetworkportutils.networkConnectionsToArray(networkConnections)
+                                    networkConnectionConflict(changePlanID, stepID, networkConnectionsArray, oldNetworkConnections, status8 => {
+                                        powerConnectionConflict(changePlanID, stepID, powerConnections, datacenter, rack, rackU, assetID, status9 => {
+                                            callback()
+                                        })
                                     })
-                                })
+
+                                }, null, null, mountType === "chassis" ? assetID : null)
 
                             })
-
                         })
-                    })
 
+                    })
                 })
             })
         })
@@ -815,22 +879,47 @@ function checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, callback)
 
             let otherStepNum = i;
             if (thisChangeType === "add") {
-                addChangeCheck(changePlanID, thisStepData, thisStepID, thisStepNum, otherStepNum, status => {
-                    counter--
-                    if (counter === 0) {
-                        callback()
-                    }
-                })
+
+                if (thisStepData.changes.chassisHostname) {//blade
+                    addBladeChangeCheck(changePlanID, thisStepData, thisStepID, thisStepNum, otherStepNum, status => {
+                        counter--
+                        if (counter === 0) {
+                            callback()
+                        }
+                    })
+
+                }
+                else {
+                    addChangeCheck(changePlanID, thisStepData, thisStepID, thisStepNum, otherStepNum, status => {
+                        counter--
+                        if (counter === 0) {
+                            callback()
+                        }
+                    })
+                }
             }
             else if (thisChangeType === "edit") {
-                editChangeCheck(changePlanID, thisStepID, thisStepNum, otherStepNum, status => {
-                    counter--
-                    if (counter === 0) {
-                        callback()
+                let thisAssetID = thisStepData.assetID.toString()
+                bladeRef.doc(thisAssetID).get().then(thisBladeInfo => {
+                    if (thisBladeInfo.exists) {//this bladeRef is okay: then the current asset we are tryin to edit is a blade
+                        editBladeChangeCheck(changePlanID, thisStepID, thisStepNum, otherStepNum, status => {
+                            counter--
+                            if (counter === 0) {
+                                callback()
+                            }
+                        })
+                    }
+                    else {
+                        editChangeCheck(changePlanID, thisStepID, thisStepNum, otherStepNum, status => {
+                            counter--
+                            if (counter === 0) {
+                                callback()
+                            }
+                        })
                     }
                 })
             }
-            else if(thisChangeType === "decommissions"){
+            else if (thisChangeType === "decommissions") {
                 //decommission
                 decommissionChangeCheck(changePlanID, thisStepID, otherStepNum, thisStepData, status => {
                     counter--
@@ -839,7 +928,7 @@ function checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, callback)
                     }
                 })
             }
-            else{//have a move change type
+            else {//have a move change type
                 moveChangeCheck(changePlanID, thisStepID, otherStepNum, thisStepData, status => {
                     counter--
                     if (counter === 0) {
@@ -851,11 +940,14 @@ function checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, callback)
     })
 }
 
-function moveChangeCheck(changePlanID, thisStepID, otherStepNum, thisStepData, callback){
+function moveChangeCheck(changePlanID, thisStepID, otherStepNum, thisStepData, callback) {
     //the current step we are on is a move
     //is it a move to or from offline?
-    //what do we need to check for conflicts for with previous steps?
-    //if i am an edit step: want to check 
+    ///add/edit a blade to the chassis that has been moved offline
+    //Move a chassis to/from even though it has been decommissioned in a previous step
+    
+    //Make sure add blade sequential step conflicts (rack specifically) still works
+    
     callback()
 }
 
@@ -864,9 +956,6 @@ function editChangeCheck(changePlanID, thisStepID, thisStepNum, otherStepNum, ca
     changeplanutils.getMergedAssetAndChange(changePlanID, thisStepNum, thisStepData => {
         if (thisStepData) {
 
-            // console.log(thisStepData)
-            // console.log("Changeplan ID for getStepDocID: " + changePlanID)
-            //loop over and check
             changeplanutils.getStepDocID(changePlanID, otherStepNum, otherStepID => {
                 changeplansRef.doc(changePlanID).collection('changes').doc(otherStepID).get().then(otherStepDoc => {
                     if (otherStepDoc.data().change === "add") {
@@ -878,8 +967,6 @@ function editChangeCheck(changePlanID, thisStepID, thisStepNum, otherStepNum, ca
                         let otherHostname = otherStepDoc.data().changes.hostname.new
                         let otherPowerConnections = otherStepDoc.data().changes.powerConnections.new
                         let otherNetworkConnections = otherStepDoc.data().changes.networkConnections.new
-
-
                         rackUStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherModel, otherDatacenter, otherRack, otherRackU, true, thisStepNum, callback1 => {
                             // assetIDStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherAssetID, true, thisStepNum, callback2 => {
                             hostnameStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherHostname, otherAssetID, true, thisStepNum, callback3 => {
@@ -891,9 +978,7 @@ function editChangeCheck(changePlanID, thisStepID, thisStepNum, otherStepNum, ca
                                     })
                                 })
                             })
-                            // })
                         })
-
                     }
                     else if (otherStepDoc.data().change === "edit") {
                         changeplanutils.getMergedAssetAndChange(changePlanID, otherStepNum, otherAssetData => {
@@ -922,10 +1007,7 @@ function editChangeCheck(changePlanID, thisStepID, thisStepNum, otherStepNum, ca
                                 })
                                 // })
                             })
-
-
                         })
-
                     }
                     else {
                         //trying to edit an asset that was decomm in a previous step
@@ -943,22 +1025,367 @@ function editChangeCheck(changePlanID, thisStepID, thisStepNum, otherStepNum, ca
                                 networkConnectionOtherAssetIDStep(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, thisNetworkConnections, otherStepAssetID, thisStepNum, callback1 => {
                                     console.log("editChangeCheck() against decomm step completed.")
                                     callback()
-
                                 })
                             })
                         } else {
                             callback()
                         }
                     }
-
                 }).catch((error) => {
                     callback()
                     console.log(error)
                 })
             })
-
-
         }
+    })
+
+}
+
+//sequential step conflict check
+function editBladeChangeCheck(changePlanID, thisStepID, thisStepNum, otherStepNum, callback) {
+    changeplanutils.getMergedAssetAndChange(changePlanID, thisStepNum, thisStepData => {
+        changeplansRef.doc(changePlanID).collection('changes').where('step', "==", thisStepNum).get().then(thisChangeDoc => {
+            if (thisStepData) {
+                console.log(thisStepData)
+                changeplanutils.getStepDocID(changePlanID, otherStepNum, otherStepID => {
+                    changeplansRef.doc(changePlanID).collection('changes').doc(otherStepID).get().then(otherStepDoc => {
+
+                        if (otherStepDoc.data().change === "add") {
+                            //the other step is an add. Adding a blade that conflcits with the current blade's slot
+                            console.log("BLACKING OUT")
+
+                            if (otherStepDoc.data().changes.chassisHostname) { //other step is adding a blade
+
+                                bladeRef.doc(thisStepData.assetId).get().then(thisBladeInfo => {
+
+                                    if (thisBladeInfo.exists) { //now we know the current edit step blade's info and the other decomm step is a blade
+
+                                        //otherRack and otherRackU need to be the other blade's chassisHostname and chassisSlot
+
+                                        let thisChassisHostname = thisChangeDoc.docs[0].data().changes.chassisHostname ? thisChangeDoc.docs[0].data().changes.chassisHostname.new
+                                            : thisBladeInfo.data().rack
+                                        //we can get chassisHostname and slot if these fields were changed in the edit. But what if they weren't? then use bladeinfo
+                                        let thisChassisSlot = thisChangeDoc.docs[0].data().changes.chassisSlot ? thisChangeDoc.docs[0].data().changes.chassisSlot.new
+                                            : thisBladeInfo.data().rackUthisBladeInfo.data().rackU
+
+                                        let otherChassisHostname = otherStepDoc.data().changes.chassisHostname.new
+                                        let otherChassisSlot = otherStepDoc.data().changes.chassisSlot.new
+
+                                        console.log(thisChassisHostname, otherChassisHostname)
+
+                                        if (otherChassisHostname == thisChassisHostname) {
+                                            let otherModel = otherStepDoc.data().changes.model.new
+                                            let otherDatacenter = otherStepDoc.data().changes.datacenter.new
+
+                                            rackUStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherModel, otherDatacenter,
+                                                otherChassisHostname, otherChassisSlot, true, thisStepNum, status => {
+                                                    console.log("Back from rackUStepCon")
+                                                    callback()
+                                                }, true, thisChassisHostname, thisChassisSlot)
+                                        }
+                                        else {
+                                            callback()
+                                        }
+
+                                    }
+                                    else {
+                                        callback()
+                                    }
+
+                                })
+                            }
+                        }
+                        else if (otherStepDoc.data().change === "edit") {
+                            changeplanutils.getMergedAssetAndChange(changePlanID, otherStepNum, otherAssetData => {
+                                let otherModel = otherAssetData.model
+                                let otherDatacenter = otherAssetData.datacenter
+                                let otherAssetID = otherAssetData.assetId
+                                //console.log(otherAssetData)
+
+                                modelutils.getModelByModelname(otherModel, otherModelData => {
+                                    let otherMountType = otherModelData.data().mount
+
+                                    if (otherMountType === "blade") { //other step is editing a blade
+
+                                        bladeRef.doc(otherAssetID).get().then(otherBladeInfo => {
+                                            changeplansRef.doc(changePlanID).collection('changes').where('step', "==", otherStepNum).get().then(otherChangeDoc => {
+
+                                                bladeRef.doc(thisStepData.assetId).get().then(thisBladeInfo => { //can't rely on bladeinfo, need the change plani info
+
+
+                                                    //what if the otherChassisHostname and slot were edited? what if they weren't? 
+                                                    let otherChassisHostname = otherChangeDoc.docs[0].data().changes.chassisHostname ? otherChangeDoc.docs[0].data().changes.chassisHostname.new
+                                                        : otherBladeInfo.data().rack
+                                                    let otherChassisSlot = otherChangeDoc.docs[0].data().changes.chassisSlot ? otherChangeDoc.docs[0].data().changes.chassisSlot.new
+                                                        : otherBladeInfo.data().rackU
+
+                                                    let thisChassisHostname = thisChangeDoc.docs[0].data().changes.chassisHostname ? thisChangeDoc.docs[0].data().changes.chassisHostname.new
+                                                        : thisBladeInfo.data().rack
+                                                    //we can get chassisHostname and slot if these fields were changed in the edit. But what if they weren't? then use bladeinfo
+                                                    let thisChassisSlot = thisChangeDoc.docs[0].data().changes.chassisSlot ? thisChangeDoc.docs[0].data().changes.chassisSlot.new
+                                                        : thisBladeInfo.data().rackU
+
+                                                    console.log(otherChassisHostname)
+                                                    console.log(thisChassisHostname)
+
+                                                    if (otherChassisHostname == thisChassisHostname) {
+                                                        rackUStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherModel, otherDatacenter, otherChassisHostname, otherChassisSlot, true, thisStepNum, status => {
+                                                            console.log("back from rackustepcon")
+                                                            callback()
+                                                        }, true, thisChassisHostname, thisChassisSlot)
+                                                    }
+                                                    else {
+                                                        callback()
+                                                    }
+                                                })
+                                            })
+                                        })
+
+                                    }
+                                    else {
+                                        callback()
+                                    }
+
+                                })
+                            })
+                        }
+                        else if (otherStepDoc.data().change === "decommission") {
+                            let otherAssetID = otherStepDoc.data().assetID.toString()
+                            assetRef.doc(otherAssetID).get().then(otherAssetInfo => {
+                                bladeRef.doc(thisStepData.assetId).get().then(thisBladeInfo => { //can't rely on bladeinfo, need the change plani info
+
+                                    let otherHostname = otherAssetInfo.data().hostname
+
+                                    let thisChassisHostname = thisChangeDoc.docs[0].data().changes.chassisHostname ? thisChangeDoc.docs[0].data().changes.chassisHostname.new
+                                        : thisBladeInfo.data().rack
+
+                                    if (otherHostname == thisChassisHostname) {
+                                        let errorIDSet = new Set()
+                                        errorIDSet.add("decommissionChassisStepErrID")
+
+                                        addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, null, otherStepNum, errorIDSet, status => {
+                                            callback(status)
+                                        })
+                                    }
+                                    else {
+                                        callback()
+                                    }
+
+                                })
+                            })
+
+                        }
+                        else { //move change type
+
+                            if (otherStepDoc.data().location === "rack") {
+                                let otherAssetID = otherStepDoc.data().assetID.toString()
+                                let otherModel = otherStepDoc.data().model
+
+                                modelutils.getModelByModelname(otherModel, otherModelData => {
+                                    let mountType = otherModelData.data().mount
+
+                                    if (mountType == "chassis") {
+                                        assetRef.doc(otherAssetID).get().then(otherAssetDoc => {
+                                            if (otherAssetDoc.exists) {
+                                                let otherHostname = otherAssetDoc.data().hostname
+                                                bladeRef.doc(thisStepData.assetId).get().then(thisBladeInfo => { //can't rely on bladeinfo, need the change plani info
+
+                                                    let thisChassisHostname = thisChangeDoc.docs[0].data().changes.chassisHostname ? thisChangeDoc.docs[0].data().changes.chassisHostname.new
+                                                        : thisBladeInfo.data().rack
+
+                                                    if (otherHostname == thisChassisHostname) {
+                                                        let errorIDSet = new Set()
+                                                        errorIDSet.add("moveChassisStepErrID")
+
+                                                        addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, null, otherStepNum, errorIDSet, status => {
+                                                            callback(status)
+                                                        })
+                                                    }
+                                                    else {
+                                                        callback()
+                                                    }
+
+                                                })
+                                            }
+                                            else {
+                                                callback()
+                                            }
+
+                                        })
+                                    }
+                                    else {
+                                        callback()
+                                    }
+
+                                })
+                            }
+                            else {
+                                callback()
+                            }
+
+                        }//is this the most elegant code? no. but i cant give a fuck anymore. have fun in callback hell.
+                    })
+
+                })
+            }
+        })
+    })
+
+}
+
+function addBladeChangeCheck(changePlanID, thisStepData, thisStepID, thisStepNum, otherStepNum, callback) {
+    changeplanutils.getStepDocID(changePlanID, otherStepNum, otherStepID => {
+        changeplansRef.doc(changePlanID).collection('changes').doc(otherStepID).get().then(otherStepDoc => {
+            //curent step is add blade
+
+            //if the other step is an add/edit blade, need to check if the other blade is on the same chassis and would conflict with slot
+            if (otherStepDoc.data().change === "add") {
+                //console.log(otherStepDoc.data())
+
+                if (otherStepDoc.data().changes.chassisHostname) { //other step is adding a blade
+                    console.log(otherStepDoc.data().changes.chassisHostname.new)
+                    console.log(thisStepData.changes.chassisHostname.new)
+
+                    if (otherStepDoc.data().changes.chassisHostname.new == thisStepData.changes.chassisHostname.new) {
+                        let otherModel = otherStepDoc.data().changes.model.new
+                        let otherDatacenter = otherStepDoc.data().changes.datacenter.new
+                        //let otherRack = otherStepDoc.data().changes.rack.new
+                        // let otherRackU = otherStepDoc.data().changes.rackU.new
+
+                        let thisChassisHostname = thisStepData.changes.chassisHostname.new
+                        let thisChassisSlot = thisStepData.changes.chassisSlot.new
+                        //otherRack and otherRackU need to be the other blade's chassisHostname and chassisSlot
+                        let otherChassisHostname = otherStepDoc.data().changes.chassisHostname.new
+                        let otherChassisSlot = otherStepDoc.data().changes.chassisSlot.new
+                        rackUStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherModel, otherDatacenter, otherChassisHostname, otherChassisSlot, false, thisStepNum, status => {
+                            console.log("Back from rackUStepCon")
+                            callback()
+                        }, true, thisChassisHostname, thisChassisSlot)
+                    }
+                    else {
+                        callback()
+                    }
+                }
+                else {
+                    callback()
+                }
+            }
+
+            //if the other step is an edit blade, need to check if the other blade is on the same chassis and would conflict with slots
+            else if (otherStepDoc.data().change === "edit") {
+                console.log("IN EDIT step conflict check for blades")
+                changeplanutils.getMergedAssetAndChange(changePlanID, otherStepNum, otherAssetData => {
+                    let otherModel = otherAssetData.model
+                    let otherDatacenter = otherAssetData.datacenter
+                    let otherAssetID = otherAssetData.assetId
+                    //console.log(otherAssetData)
+
+                    modelutils.getModelByModelname(otherModel, otherModelData => {
+                        let otherMountType = otherModelData.data().mount
+
+                        if (otherMountType === "blade") { //other step is editing a blade
+                            bladeRef.doc(otherAssetID).get().then(otherBladeInfo => {
+                                changeplansRef.doc(changePlanID).collection('changes').where('step', "==", otherStepNum).get().then(otherChangeDoc => {
+
+                                    let otherChassisHostname = otherChangeDoc.docs[0].data().changes.chassisHostname ? otherChangeDoc.docs[0].data().changes.chassisHostname.new
+                                        : otherBladeInfo.data().rack
+                                    let otherChassisSlot = otherChangeDoc.docs[0].data().changes.chassisSlot ? otherChangeDoc.docs[0].data().changes.chassisSlot.new
+                                        : otherBladeInfo.data().rackU
+
+
+                                    let thisChassisHostname = thisStepData.changes.chassisHostname.new
+                                    let thisChassisSlot = thisStepData.changes.chassisSlot.new
+
+                                    console.log(otherChassisHostname)
+                                    console.log(thisStepData.changes.chassisHostname.new)
+                                    if (otherChassisHostname == thisStepData.changes.chassisHostname.new) {
+                                        rackUStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherModel, otherDatacenter, otherChassisHostname, otherChassisSlot, false, thisStepNum, status => {
+                                            console.log("back from rackustepcon")
+                                            callback()
+                                        }, true, thisChassisHostname, thisChassisSlot)
+                                    }
+                                    else {
+                                        callback()
+                                    }
+                                })
+                            })
+                        }
+                        else {
+                            callback()
+                        }
+
+                    })
+                })
+            }
+            //if the other step is a decomm, need to check if the chassis the blade is on was decommed in a previous step
+            else if (otherStepDoc.data().change === "decommission") {
+                let otherAssetID = otherStepDoc.data().assetID.toString()
+                assetRef.doc(otherAssetID).get().then(otherAssetDoc => {
+                    if (otherAssetDoc.exists) {
+
+                        let otherHostname = otherAssetDoc.data().hostname
+                        console.log(otherHostname)
+                        console.log(thisStepData.changes.chassisHostname.new)
+                        if (otherHostname == thisStepData.changes.chassisHostname.new) {
+                            let errorIDSet = new Set()
+                            errorIDSet.add("decommissionChassisStepErrID")
+
+                            addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, null, otherStepNum, errorIDSet, status => {
+                                callback(status)
+                            })
+                        }
+                        else {
+                            callback()
+                        }
+                    }
+                    else {
+                        callback()
+                    }
+                })
+            }
+            //if the other step is a move, need to check if the chassis the blade is on was moved offline
+            //remember this function is checking: current step is an add blade, against previous steps
+            else {
+                if (otherStepDoc.data().location === "rack") {
+                    let otherAssetID = otherStepDoc.data().assetID.toString()
+                    let otherModel = otherStepDoc.data().model
+
+                    modelutils.getModelByModelname(otherModel, otherModelData => {
+                        let mountType = otherModelData.data().mount
+
+                        if (mountType == "chassis") {
+                            assetRef.doc(otherAssetID).get().then(otherAssetDoc => {
+                                if (otherAssetDoc.exists) {
+                                    let otherHostname = otherAssetDoc.data().hostname
+
+                                    if (otherHostname == thisStepData.changes.chassisHostname.new) {
+                                        let errorIDSet = new Set()
+                                        errorIDSet.add("moveChassisStepErrID")
+
+                                        addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, null, otherStepNum, errorIDSet, status => {
+                                            callback(status)
+                                        })
+                                    }
+                                    else {
+                                        callback()
+                                    }
+                                }
+                                else {
+                                    callback()
+                                }
+                            })
+                        }
+                        else {
+                            callback()
+                        }
+
+                    })
+                }
+                else {
+                    callback()
+                }
+            }
+        })
     })
 
 }
@@ -970,8 +1397,8 @@ function addChangeCheck(changePlanID, thisStepData, thisStepID, thisStepNum, oth
             //be careful with what you are comparing
             //since otherStepNum changes
 
-            //TODO: separate this out into own if (add) else if(edit)
             if (otherStepDoc.data().change === "add") {
+                //everything below is for norma/chassis assets
                 let otherRack = otherStepDoc.data().changes.rack.new
                 let otherRackU = otherStepDoc.data().changes.rackU.new
                 let otherDatacenter = otherStepDoc.data().changes.datacenter.new
@@ -993,6 +1420,7 @@ function addChangeCheck(changePlanID, thisStepData, thisStepID, thisStepNum, oth
                         })
                     })
                 })
+
             }
             else if (otherStepDoc.data().change === "edit") {
                 //want to get all possible data from the other edit step to compare this step against
@@ -1021,12 +1449,9 @@ function addChangeCheck(changePlanID, thisStepData, thisStepID, thisStepNum, oth
                             })
                         })
                     })
-
-
                 })
             }
-            else {
-                //console.log("The other step is decomm")
+            else if (otherStepDoc.data().change === "decommission") {
                 let thisNetworkConnections = thisStepData.changes.networkConnections.new
                 let otherStepAssetID = otherStepDoc.data().assetID
                 networkConnectionOtherAssetIDStep(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, thisNetworkConnections, otherStepAssetID, thisStepNum, callback1 => {
@@ -1034,9 +1459,14 @@ function addChangeCheck(changePlanID, thisStepData, thisStepID, thisStepNum, oth
                     callback()
 
                 })
+            }
+            else {
+                //the other step is a move to/from offline
+                callback()
+                console.log("Comparing an add step to a previous move step. Taken care of in addBladeChangeCheck()")
+                //add a blade to a chassis that was moved offline. This is taken care of in addBladeChangeCheck()
 
             }
-
         })
     })
 
@@ -1058,7 +1488,6 @@ function decommissionChangeCheck(changePlanID, thisStepID, otherStepNum, thisSte
                     //console.log("up in this bitch rn")
                     errorIDSet.add("decommissionStepErrID")
 
-                    //TODO: is it necessary to have symmetric conflicts here? So if you want to decommission asset X in step 4, and you check previous steps and found that asset X has been decommissioned in step 2, then is it necessary for step 2 to also show the conflict too?
                     addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, null, otherStepNum, errorIDSet, status => {
                         callback(status)
                     })
@@ -1066,7 +1495,6 @@ function decommissionChangeCheck(changePlanID, thisStepID, otherStepNum, thisSte
                 else {
                     callback(false)
                 }
-
             }
             else {
                 callback(false)
@@ -1074,8 +1502,6 @@ function decommissionChangeCheck(changePlanID, thisStepID, otherStepNum, thisSte
         }).catch(callback(false))
     })
 }
-
-//TODO: also do the live db comparison for decomms
 
 function networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherNetworkConnections, otherAssetID, isEdit, thisStepNum, callback) {
     let errorIDSet = new Set()
@@ -1100,7 +1526,6 @@ function networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, o
                 errorIDSet.add("networkConnectionThisPortConflictErrID")
             }
 
-
         })
     })
 
@@ -1111,8 +1536,6 @@ function networkConnectionsStepConflict(changePlanID, thisStepID, otherStepID, o
 
 }
 
-//DOES THIS NEED THE ISEDIT CHANGE
-//call this in the else: know that it's a decomm change
 // is the other asset i want to connect to been decomm by a previous /otherstep?
 //networkConnections is an array
 function networkConnectionOtherAssetIDStep(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, thisNetworkConnections, otherStepAssetID, thisStepNum, callback) {
@@ -1139,7 +1562,6 @@ function networkConnectionOtherAssetIDStep(changePlanID, thisStepID, otherStepID
 
 }
 
-//TODO: need to test this
 function powerConnectionsStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherPowerConnections, otherDatacenter, otherRack, isEdit, thisStepNum, callback) {
     //how to tell if 2 steps share the same power connection?
     let errorIDSet = new Set()
@@ -1188,7 +1610,6 @@ function hostnameStepConflict(changePlanID, thisStepID, otherStepID, otherStepNu
     let thisHostname = isEdit ? thisStepData.hostname : thisStepData.changes.hostname.new
     let thisAssetID = isEdit ? thisStepData.assetId : thisStepData.assetID
 
-
     if (thisHostname === otherHostname && thisAssetID !== otherAssetID && isEdit) {
         errorIDSet.add("hostnameStepErrID")
         addConflictToDBSteps(changePlanID, thisStepID, thisStepNum, otherStepID, otherStepNum, errorIDSet, status => {
@@ -1207,7 +1628,7 @@ function hostnameStepConflict(changePlanID, thisStepID, otherStepID, otherStepNu
     }
 }
 
-function rackUStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherModel, otherDatacenter, otherRack, otherRackU, isEdit, thisStepNum, callback) {
+function rackUStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, thisStepData, otherModel, otherDatacenter, otherRack, otherRackU, isEdit, thisStepNum, callback, thisBlade = null, thisChassisHostname = null, thisChassisSlot = null) {
     let errorIDSet = new Set()
     let thisModel = isEdit ? thisStepData.model : thisStepData.changes.model.new
     //console.log(thisModel)
@@ -1224,27 +1645,42 @@ function rackUStepConflict(changePlanID, thisStepID, otherStepID, otherStepNum, 
             else {
                 let otherModelHeight = otherModelDoc.data().height
                 let thisModelHeight = thisModelDoc.data().height
-                let thisDatacenter = thisStepData.datacenter
-                let thisRack = isEdit ? thisStepData.rack : thisStepData.changes.rack.new
-                let thisRackU = isEdit ? thisStepData.rackU : thisStepData.changes.rackU.new
+                let thisDatacenter = (isEdit ? thisStepData.datacenter : thisStepData.changes.datacenter.new)
+
+                console.log(thisStepData)
+                let thisRack = thisBlade ? thisChassisHostname
+                    : (isEdit ? thisStepData.rack : thisStepData.changes.rack.new)
+                //let thisRack = isEdit ? thisStepData.rack : thisStepData.changes.rack.new //what if the current step is add or edit blade?
+                let thisRackU = thisBlade ? thisChassisSlot
+                    : (isEdit ? thisStepData.rackU : thisStepData.changes.rackU.new)
+
+                //let thisRackU = isEdit ? thisStepData.rackU : thisStepData.changes.rackU.new 
                 //console.log(otherModelHeight, thisModelHeight, thisDatacenter, thisRackU, thisRack)
 
                 let thisOccupied = []
                 for (let i = 0; i < thisModelHeight; i++) {
                     let occupiedThisPos = thisRackU + i
+                    console.log("occupiedThisPos: " + occupiedThisPos)
                     thisOccupied.push(occupiedThisPos)
                 }
                 let otherOccupied = []
+                console.log(otherModelHeight)
+                console.log(otherRackU)
                 for (let j = 0; j < otherModelHeight; j++) {
-                    let occupiedOtherPos = otherRackU + j
+                    let occupiedOtherPos = otherRackU + j //otherRackU needs to be slotNum if other step is a blade
+                    console.log("occupiedOterPos: " + occupiedOtherPos)
                     otherOccupied.push(occupiedOtherPos)
                 }
-
-                if (otherDatacenter == thisDatacenter && otherRack == thisRack) {
+                console.log(otherDatacenter, thisDatacenter)
+                console.log(otherRack, thisRack)
+                if (otherDatacenter == thisDatacenter && otherRack == thisRack) {  //need to compare chassis hostnames here
                     let intersection = thisOccupied.filter(x => otherOccupied.includes(x));
+                    console.log("LEVEL 1")
+                    console.log(...thisOccupied)
+                    console.log(...otherOccupied)
                     if (intersection.length) {
-
-                        errorIDSet.add("rackUConflictStepErrID")
+                        console.log("LEVEL 2")
+                        errorIDSet.add(thisBlade ? "slotConflictStepErrID" : "rackUConflictStepErrID")
                         addConflictToDBSteps(changePlanID, thisStepID, thisStepNum, otherStepID, otherStepNum, errorIDSet, status => {
                             callback(status)
                         })
@@ -1395,8 +1831,6 @@ function changePlanHasConflicts(changePlanID, callback) {
                     else {
                         callback([])
                     }
-
-
                 }).catch(error => {
                     console.log(error)
                 }
@@ -1407,7 +1841,6 @@ function changePlanHasConflicts(changePlanID, callback) {
             callback([])
         }
     })
-
 }
 
 function checkAllLiveDBConflicts(isExecuted, changePlanID, callback) {
@@ -1430,7 +1863,6 @@ function checkAllLiveDBConflicts(isExecuted, changePlanID, callback) {
 
                         }
                     })
-
                 })
             }
             else {

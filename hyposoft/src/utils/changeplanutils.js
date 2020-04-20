@@ -271,84 +271,95 @@ function editAssetChange(newAsset, assetID, changePlanID, callback, docID = null
             changes: {}
         };
         let oldAsset = documentSnapshot.data();
-        Object.keys(newAsset).forEach(assetProperty => {
-            if ((typeof oldAsset[assetProperty] === "object" && !isEqual(oldAsset[assetProperty], newAsset[assetProperty])) || (typeof oldAsset[assetProperty] !== "object" && oldAsset[assetProperty] !== newAsset[assetProperty])) {
-                assetChangePlanObject.changes = {
-                    ...assetChangePlanObject.changes,
-                    [assetProperty]: {
-                        old: oldAsset[assetProperty],
-                        new: newAsset[assetProperty]
-                    }
+        firebaseutils.bladeRef.doc(String(assetID)).get().then(function (bladeDocSnap) {
+            if(bladeDocSnap.exists){
+                oldAsset = {
+                    ...oldAsset,
+                    chassisHostname: bladeDocSnap.data().rack,
+                    chassisSlot: bladeDocSnap.data().rackU
                 }
             }
-        });
-        if (docID) {
-            changeplansRef.doc(changePlanID).collection("changes").doc(docID).get().then(function (docSnapInner) {
-                if (docSnapInner.exists) {
-                    assetChangePlanObject.step = docSnapInner.data().step;
-                    changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject)
+            Object.keys(newAsset).forEach(assetProperty => {
+                console.log(assetProperty, oldAsset[assetProperty])
+                if ((typeof oldAsset[assetProperty] === "object" && !isEqual(oldAsset[assetProperty], newAsset[assetProperty])) || (typeof oldAsset[assetProperty] !== "object" && oldAsset[assetProperty] !== newAsset[assetProperty])) {
+                    assetChangePlanObject.changes = {
+                        ...assetChangePlanObject.changes,
+                        [assetProperty]: {
+                            old: oldAsset[assetProperty],
+                            new: newAsset[assetProperty]
+                        }
+                    }
+                }
+            });
+            if (docID) {
+                changeplansRef.doc(changePlanID).collection("changes").doc(docID).get().then(function (docSnapInner) {
+                    if (docSnapInner.exists) {
+                        assetChangePlanObject.step = docSnapInner.data().step;
+                        changeplansRef.doc(changePlanID).collection("changes").doc(docID).set(assetChangePlanObject)
+                            // .then(function (doc) {
+                            //     callback(true);
+                            // })
+                            .then(function () {
+                                changeplanconflictutils.clearAllStepConflicts(changePlanID, status1 => {
+                                    //checking against liveDB not necessary, and only take more time
+                                    // changeplanconflictutils.checkAllLiveDBConflicts(docSnapInner.data().executed, changePlanID, status2 => {
+                                    //     console.log("Made it back from db checks")
+                                    changeplanconflictutils.checkSequentialStepConflicts(docSnapInner.data().executed, changePlanID, status3 => {
+                                        console.log("DONE RECHECKING")
+                                        callback(true);
+
+                                    })
+                                    //})
+                                })
+                            }).catch(function (error) {
+                            console.log(error);
+                            callback(null);
+                        })
+                    } else {
+                        callback(null);
+                    }
+                }).catch(function (error) {
+                    console.log(error);
+                    callback(null);
+                })
+            } else {
+                changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
+                    let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
+                    assetChangePlanObject.step = changeNumber;
+                    changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject)
                         // .then(function (doc) {
+                        //     //network ports need to be done at time of execution
+                        //     //so does power port and logging
                         //     callback(true);
+
                         // })
                         .then(function () {
-                            changeplanconflictutils.clearAllStepConflicts(changePlanID, status1 => {
-                                //checking against liveDB not necessary, and only take more time
-                                // changeplanconflictutils.checkAllLiveDBConflicts(docSnapInner.data().executed, changePlanID, status2 => {
-                                //     console.log("Made it back from db checks")
-                                changeplanconflictutils.checkSequentialStepConflicts(docSnapInner.data().executed, changePlanID, status3 => {
-                                    console.log("DONE RECHECKING")
-                                    callback(true);
 
+                            getChangePlanData(changePlanID, cpData => {
+                                changeplanconflictutils.clearAllStepConflicts(changePlanID, status1 => {
+                                    //checking against liveDB not necessary, and only take more time
+                                    //changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
+                                    //     console.log("Made it back from db checks")
+                                    changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
+                                        console.log("DONE RECHECKING")
+                                        callback(true);
+
+                                    })
+                                    //})
                                 })
-                                //})
                             })
                         }).catch(function (error) {
                         console.log(error);
                         callback(null);
-                    })
-                } else {
-                    callback(null);
-                }
-            }).catch(function (error) {
-                console.log(error);
-                callback(null);
-            })
-        } else {
-            changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
-                let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
-                assetChangePlanObject.step = changeNumber;
-                changeplansRef.doc(changePlanID).collection("changes").add(assetChangePlanObject)
-                    // .then(function (doc) {
-                    //     //network ports need to be done at time of execution
-                    //     //so does power port and logging
-                    //     callback(true);
-
-                    // })
-                    .then(function () {
-
-                        getChangePlanData(changePlanID, cpData => {
-                            changeplanconflictutils.clearAllStepConflicts(changePlanID, status1 => {
-                                //checking against liveDB not necessary, and only take more time
-                                //changeplanconflictutils.checkAllLiveDBConflicts(cpData.executed, changePlanID, status2 => {
-                                //     console.log("Made it back from db checks")
-                                changeplanconflictutils.checkSequentialStepConflicts(cpData.executed, changePlanID, status3 => {
-                                    console.log("DONE RECHECKING")
-                                    callback(true);
-
-                                })
-                                //})
-                            })
-                        })
-                    }).catch(function (error) {
+                    });
+                }).catch(function (error) {
                     console.log(error);
                     callback(null);
                 });
-            }).catch(function (error) {
-                console.log(error);
-                callback(null);
-            });
-        }
-
+            }
+        }).catch(function () {
+            callback(null);
+        });
     });
 }
 
@@ -432,13 +443,13 @@ function decommissionAssetChange(assetID, changePlanID, callback, stepID = null,
     });
 }
 
-function moveAssetChange(assetID, changePlanID, datacenter, rack, rackU, offlineStorageName, callback, stepID = null, isBladeServer = null) {
+function moveAssetChange(assetID, changePlanID, datacenter, rack, rackU, offlineStorageName, location, destination, callback, stepID = null, isBladeServer = null) {
     console.log("3")
-    let query = !offlineStorageName ? db.collectionGroup("offlineAssets").where("assetId", "==", assetID) : assetRef.doc(assetID)
+    let query = location === "offline" ? db.collectionGroup("offlineAssets").where("assetId", "==", assetID) : assetRef.doc(assetID)
     query.get().then(function (queryResult) {
         console.log("4")
         let documentSnapshot;
-        if (!offlineStorageName) {
+        if (location === "offline") {
             if (queryResult.empty) {
                 callback(null);
             } else {
@@ -452,14 +463,15 @@ function moveAssetChange(assetID, changePlanID, datacenter, rack, rackU, offline
             }
         }
         changeplansRef.doc(changePlanID).collection("changes").orderBy("step", "desc").limit(1).get().then(function (querySnapshot) {
-            console.log("5")
+            console.log("5", documentSnapshot)
             let changeNumber = querySnapshot.empty ? 1 : parseInt(querySnapshot.docs[0].data().step) + 1;
             let assetChangePlanObject = {
                 assetID: parseInt(assetID),
-                location: !offlineStorageName ? "offline" : "rack",
+                location: location,
                 change: "move",
                 step: stepID ? stepID :  changeNumber,
-                model: documentSnapshot.data().model
+                model: documentSnapshot.data().model,
+                destination: destination
             };
             if(!offlineStorageName){
                 //move to rack
@@ -586,35 +598,40 @@ function moveAssetChange(assetID, changePlanID, datacenter, rack, rackU, offline
                     datacenter: {
                         old: documentSnapshot.data().datacenter,
                         new: offlineStorageName
-                    },
-                    datacenterAbbrev: {
-                        old: documentSnapshot.data().datacenterAbbrev,
-                        new: ""
-                    },
-                    datacenterID: {
-                        old: documentSnapshot.data().datacenterID,
-                        new: ""
-                    },
-                    rack: {
-                        old: documentSnapshot.data().rack,
-                        new: ""
-                    },
-                    rackID: {
-                        old: documentSnapshot.data().rackID,
-                        new: ""
-                    },
-                    rackNum: {
-                        old: documentSnapshot.data().rackNum,
-                        new: ""
-                    },
-                    rackRow: {
-                        old: documentSnapshot.data().rackRow,
-                        new: ""
-                    },
-                    rackU: {
-                        old: documentSnapshot.data().rackU,
-                        new: ""
                     }
+                };
+                if(location === "rack"){
+                    changes = {
+                        ...changes,
+                        datacenterAbbrev: {
+                            old: documentSnapshot.data().datacenterAbbrev,
+                            new: ""
+                        },
+                        datacenterID: {
+                            old: documentSnapshot.data().datacenterID,
+                            new: ""
+                        },
+                        rack: {
+                            old: documentSnapshot.data().rack,
+                            new: ""
+                        },
+                        rackID: {
+                            old: documentSnapshot.data().rackID,
+                            new: ""
+                        },
+                        rackNum: {
+                            old: documentSnapshot.data().rackNum,
+                            new: ""
+                        },
+                        rackRow: {
+                            old: documentSnapshot.data().rackRow,
+                            new: ""
+                        },
+                        rackU: {
+                            old: documentSnapshot.data().rackU,
+                            new: ""
+                        }
+                    };
                 }
                 assetChangePlanObject = {
                     ...assetChangePlanObject,
@@ -855,9 +872,14 @@ function generateWorkOrder(changePlanID, callback) {
                         let documentSnapshot = doc.data().location === "rack" ? queryResult : queryResult.docs[0];
                         let moveString = "Move asset #" + doc.data().assetID + " from ";
                         if(doc.data().location === "rack"){
-                            moveString += "datacenter " + doc.data().changes.datacenter["old"] + " rack " + doc.data().changes.rack["old"] + " height " + doc.data().changes.rackU["old"] + " to offline storage site " + doc.data().changes.datacenter["new"];
+                            moveString += "datacenter " + doc.data().changes.datacenter["old"] + " rack " + doc.data().changes.rack["old"] + " height " + doc.data().changes.rackU["old"] + " ";
                         } else {
-                            moveString += "offline storage site " + doc.data().changes.datacenter["old"] + " to datacenter " + doc.data().changes.datacenter["new"] + " rack " + doc.data().changes.rack["new"] + " height " + doc.data().changes.rackU["new"];
+                            moveString += "offline storage site " + doc.data().changes.datacenter["old"] + " ";
+                        }
+                        if(doc.data().destination === "rack"){
+                            moveString += "to datacenter " + doc.data().changes.datacenter["new"] + " rack " + doc.data().changes.rack["new"] + " height " + doc.data().changes.rackU["new"];
+                        } else {
+                            moveString += "to offline storage site " + doc.data().changes.datacenter["new"];
                         }
                         let moveText = [moveString];
                         deleteNetworkPowerText(documentSnapshot, deleteText => {
@@ -1372,26 +1394,49 @@ function executeChangePlan(changePlanID, callback) {
                                                     }, moveFunction);
                                                 } else {
                                                     //move from offline
-                                                    moveFunction = modelResult.data().mount === "chassis" ? bladeutils.addChassis : (modelResult.data().mount === "blade" ? bladeutils.addServer : assetutils.addAsset);
-                                                    offlinestorageutils.moveAssetFromOfflineStorage(change.data().assetID.toString(), change.data().changes.datacenter["new"], change.data().changes.rack["new"], change.data().changes.rackU["new"], moveResult => {
-                                                        console.log(moveResult)
-                                                        if(!moveResult){
-                                                            count++;
-                                                            if (count === querySnapshot.size) {
-                                                                changeplansRef.doc(changePlanID.toString()).update({
-                                                                    executed: true,
-                                                                    timestamp: Date.now()
-                                                                }).then(function () {
-                                                                    logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
-                                                                    callback(true);
-                                                                }).catch(function () {
-                                                                    callback(null);
-                                                                });
+                                                    if(change.data().destination === "rack"){
+                                                        //to rack
+                                                        moveFunction = modelResult.data().mount === "chassis" ? bladeutils.addChassis : (modelResult.data().mount === "blade" ? bladeutils.addServer : assetutils.addAsset);
+                                                        offlinestorageutils.moveAssetFromOfflineStorage(change.data().assetID.toString(), change.data().changes.datacenter["new"], change.data().changes.rack["new"], change.data().changes.rackU["new"], moveResult => {
+                                                            console.log(moveResult)
+                                                            if(!moveResult){
+                                                                count++;
+                                                                if (count === querySnapshot.size) {
+                                                                    changeplansRef.doc(changePlanID.toString()).update({
+                                                                        executed: true,
+                                                                        timestamp: Date.now()
+                                                                    }).then(function () {
+                                                                        logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
+                                                                        callback(true);
+                                                                    }).catch(function () {
+                                                                        callback(null);
+                                                                    });
+                                                                }
+                                                            } else {
+                                                                callback(null);
                                                             }
-                                                        } else {
-                                                            callback(null);
-                                                        }
-                                                    }, moveFunction)
+                                                        }, moveFunction)
+                                                    } else {
+                                                        //to offline
+                                                        offlinestorageutils.moveAssetFromOfflineToOffline(change.data().assetID.toString(), change.data().changes.datacenter["new"], moveResult => {
+                                                            if(moveResult){
+                                                                count++;
+                                                                if (count === querySnapshot.size) {
+                                                                    changeplansRef.doc(changePlanID.toString()).update({
+                                                                        executed: true,
+                                                                        timestamp: Date.now()
+                                                                    }).then(function () {
+                                                                        logutils.addLog(changePlanID, logutils.CHANGEPLAN(), logutils.COMPLETE());
+                                                                        callback(true);
+                                                                    }).catch(function () {
+                                                                        callback(null);
+                                                                    });
+                                                                }
+                                                            } else {
+                                                                callback(null);
+                                                            }
+                                                        })
+                                                    }
                                                 }
                                             } else {
                                                 callback(null);
@@ -1720,7 +1765,7 @@ function executeEditAsset(doc, callback) {
     })
 }
 
-function getMergedAssetAndChange(changePlanID, step, callback) {
+function getMergedAssetAndChange(changePlanID, step, callback, replaceRackAndRackU) {
     changeplansRef.doc(changePlanID.toString()).collection("changes").where("step", "==", parseInt(step)).get().then(function (querySnapshot) {
         if (!querySnapshot.empty) {
             let changeData = querySnapshot.docs[0].data().changes;

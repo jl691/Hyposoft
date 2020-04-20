@@ -3,6 +3,7 @@ import * as assetutils from './assetutils'
 import * as decomutils from '../utils/decommissionutils'
 import * as datacenterutils from './datacenterutils'
 import * as offlineutils from './offlinestorageutils'
+import * as logutils from './logutils'
 
 function addChassis(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu,callback, changePlanID = null, changeDocID = null, doNothing = null, noLog = false, offlineStorageName = null) {
     assetutils.addAsset(overrideAssetID, model, hostname, rack, racku, owner, comment, datacenter, macAddresses, networkConnectionsArray, powerConnections, displayColor, memory, storage, cpu,(errorMessage,id) => {
@@ -255,7 +256,7 @@ function updateServer(assetID, model, hostname, chassisHostname, slot, owner, co
                                       model: model,
                                       chassisId: chassisId,
                                       chassisVendor: chassisVendor
-                                  }).then(() => resolve())
+                                  }).then(logutils.addLog(id,logutils.ASSET(),logutils.BLADE_MODIFY(),docRef.data(),()=>resolve()))
                                 })
                             }
                             resolve()

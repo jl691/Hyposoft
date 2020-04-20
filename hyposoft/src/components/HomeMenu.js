@@ -42,8 +42,8 @@ class HomeMenu extends Component {
       }
 
       return (
-              <Menu icon={<icons.Menu size='medium' />}
-                  size={'large'}
+              <Menu
+                label={'Menu'}
                   items={this.generateItems()}
               />
       )

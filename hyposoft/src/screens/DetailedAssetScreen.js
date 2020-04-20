@@ -48,7 +48,8 @@ export default class DetailedAssetScreen extends Component {
             powerMap: false,
             popupType: "",
             initialLoaded: false,
-            model: ""
+            model: "",
+            loadingText: "Please wait..."
         }
 
         this.generatePDUStatus = this.generatePDUStatus.bind(this);
@@ -90,15 +91,46 @@ export default class DetailedAssetScreen extends Component {
                 assetutils.getAssetDetails(
                     this.props.match.params.assetID,
                     assetsdb => {
-                        this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
-                            console.log(assetsdb)
+                        if (assetsdb) {
+                            this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
+                                console.log(assetsdb)
+                                this.setState({
+                                    asset: assetsdb
+
+                                }, function () {
+
+                                    this.generatePDUStatus(() => {
+                                        console.log("testhere")
+                                      modelutils.getModelByModelname(assetsdb.model, modelDoc => {
+                                          console.log(modelDoc.data())
+                                          this.setState({
+                                              model: modelDoc.data(),
+                                              initialLoaded: true
+                                          })
+                                      })
+                                    });
+                                });
+                            })
+                        } else {
                             this.setState({
-                                asset: assetsdb
+                                loadingText: "Asset not found"
+                            })
+                        }
+                    })
+            });
+        }
+        else {
+            assetutils.getAssetDetails(
+                this.props.match.params.assetID,
+                assetsdb => {
+                    if (assetsdb) {
+                        this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
+                            this.setState({
+                                asset: assetsdb,
+                                //initialLoaded: true
 
                             }, function () {
-
                                 this.generatePDUStatus(() => {
-                                    console.log("testhere")
                                   modelutils.getModelByModelname(assetsdb.model, modelDoc => {
                                       console.log(modelDoc.data())
                                       this.setState({
@@ -109,30 +141,11 @@ export default class DetailedAssetScreen extends Component {
                                 });
                             });
                         })
-                    })
-            });
-        }
-        else {
-            assetutils.getAssetDetails(
-                this.props.match.params.assetID,
-                assetsdb => {
-                    this.determineBladeData(assetsdb.assetID, assetsdb.hostname, () => {
+                    } else {
                         this.setState({
-                            asset: assetsdb,
-                            //initialLoaded: true
-
-                        }, function () {
-                            this.generatePDUStatus(() => {
-                              modelutils.getModelByModelname(assetsdb.model, modelDoc => {
-                                  console.log(modelDoc.data())
-                                  this.setState({
-                                      model: modelDoc.data(),
-                                      initialLoaded: true
-                                  })
-                              })
-                            });
-                        });
-                    })
+                            loadingText:  "Asset not found"
+                        })
+                    }
                 }, this.props.match.params.storageSiteAbbrev)
         };
     }
@@ -224,13 +237,13 @@ export default class DetailedAssetScreen extends Component {
             this.state.model[field] === "" ?
                 <tr>
                     <td><b>Model {[field]} </b></td>
-                    <td style={{ textAlign: 'right' }}>{this.state.asset.variances[field] !== "" ? this.state.asset.variances[field] + " " + "(Modified from base value N/A)" : "N/A"}</td>
+                    <td>{this.state.asset.variances[field] !== "" ? this.state.asset.variances[field] + " " + "(Modified from base value N/A)" : "N/A"}</td>
                 </tr>
                 :
 
                 <tr>
                     <td><b>Model {[field]} </b></td>
-                    <td style={{ textAlign: 'right' }}>{this.state.asset.variances[field] !== "" ? this.state.asset.variances[field] + " " + "(Modified from base value " + this.state.model[field] + ")" : this.state.model[field]}</td>
+                    <td>{this.state.asset.variances[field] !== "" ? this.state.asset.variances[field] + " " + "(Modified from base value " + this.state.model[field] + ")" : this.state.model[field]}</td>
                 </tr>
         ))
     }
@@ -252,7 +265,7 @@ export default class DetailedAssetScreen extends Component {
         return (
             <tr>
                 <td><b>Model Network Ports </b></td>
-                <td style={{ textAlign: 'right' }}>{result}</td>
+                <td>{result}</td>
             </tr>)
 
     }
@@ -674,6 +687,7 @@ export default class DetailedAssetScreen extends Component {
 
                     <MoveAssetForm location={this.props.match.params.storageSiteAbbrev ? "offline" : "rack"} assetID={this.state.asset.assetID}
                                    model={this.state.asset.model}
+                                   offlineAbbrev={this.props.match.params.storageSiteAbbrev}
                         currentLocation={this.props.match.params.storageSiteAbbrev ? "offline storage site " + this.props.match.params.storageSiteAbbrev : "datacenter " + this.state.asset.datacenter + " on rack " + this.state.asset.rack + " at height " + this.state.asset.rackU}
                         success={this.handleCancelRefreshPopupChange} cancelCallback={this.handleCancelPopupChange} />
                 </Layer>
@@ -719,7 +733,7 @@ export default class DetailedAssetScreen extends Component {
                                     pad='small'>
                                     {(!this.state.initialLoaded
                                         ?
-                                        <Box align="center"><Text>Please wait...</Text></Box>
+                                        <Box align="center"><Text>{this.state.loadingText}</Text></Box>
                                         :
                                         <Box flex margin={{ left: 'medium', top: 'small', bottom: 'small', right: 'medium' }}
                                             direction='column' justify='start'>
@@ -730,24 +744,24 @@ export default class DetailedAssetScreen extends Component {
 
 
                                                     <tr>
-                                                        <td><b>Hostname</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.hostname === "" ? "N/A" : this.state.asset.hostname}</td>
+                                                        <td width={"150px"}><b>Hostname</b></td>
+                                                        <td>{this.state.asset.hostname === "" ? "N/A" : this.state.asset.hostname}</td>
                                                     </tr>
                                                     <tr>
                                                         <td><b>Model</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.model}</td>
+                                                        <td>{this.state.asset.model}</td>
                                                     </tr>
                                                     {this.generateVariancesTable()}
-                                     
+
                                                     {!this.props.match.params.storageSiteAbbrev && <tr>
                                                         <td><b>Datacenter</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.datacenter || 'N/A'}</td>
+                                                        <td>{this.state.asset.datacenter || 'N/A'}</td>
                                                     </tr>}
                                                     {(this.bladeData
                                                         ?
                                                         <tr>
                                                             <td><b>Chassis Hostname</b></td>
-                                                            <td style={{ textAlign: 'right' }}>{this.bladeData.rack}</td>
+                                                            <td>{this.bladeData.rack}</td>
                                                         </tr>
                                                         :
                                                         <tr></tr>
@@ -756,22 +770,22 @@ export default class DetailedAssetScreen extends Component {
                                                         ?
                                                         <tr>
                                                             <td><b>Slot</b></td>
-                                                            <td style={{ textAlign: 'right' }}>{this.bladeData.rackU}</td>
+                                                            <td>{this.bladeData.rackU}</td>
                                                         </tr>
                                                         :
                                                         <tr></tr>
                                                     )}
                                                     {!this.props.match.params.storageSiteAbbrev && <tr>
                                                         <td><b>{!this.bladeData ? 'Rack' : 'Chassis Rack'}</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.rack}</td>
+                                                        <td>{this.state.asset.rack}</td>
                                                     </tr>}
                                                     {!this.props.match.params.storageSiteAbbrev && <tr>
                                                         <td><b>{!this.bladeData ? 'Rack U' : 'Chassis Rack U'}</b></td>
-                                                        <td style={{ textAlign: 'right' }}>{this.state.asset.rackU}</td>
+                                                        <td>{this.state.asset.rackU}</td>
                                                     </tr>}
                                                     <tr>
                                                         <td><b>Owner</b></td>
-                                                        <td style={{ textAlign: 'right' }}>@{this.state.asset.owner || 'N/A'}</td>
+                                                        <td>@{this.state.asset.owner || 'N/A'}</td>
                                                     </tr>
                                                     {this.renderPDUStatus()}
                                                 </tbody>
@@ -845,19 +859,21 @@ export default class DetailedAssetScreen extends Component {
                                             </span>
                                             {(this.chassisSlots
                                                 ?
-                                                <Box flex margin={{ top: 'small', bottom: 'small' }}
-                                                    direction='column' justify='start'>
-                                                    <Heading level='4' margin='none'>Blade Chassis View</Heading>
-                                                    <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
-                                                        gap='small' align='center'>
-                                                        <BladeChassisView
-                                                            chassisId={!this.bladeData ? this.state.asset.assetID : this.bladeData.chassisId}
-                                                            chassisHostname={!this.bladeData ? (this.state.asset.hostname ? this.state.asset.hostname : bladeutils.makeNoHostname(this.state.asset.assetID)) : this.bladeData.rack}
-                                                            chassisSlots={this.chassisSlots}
-                                                            slot={!this.bladeData ? null : this.bladeData.rackU}
-                                                        />
+                                                <MediaQuery minDeviceWidth={1224}>
+                                                    <Box flex margin={{ top: 'small', bottom: 'small' }}
+                                                        direction='column' justify='start'>
+                                                        <Heading level='4' margin='none'>Blade Chassis View</Heading>
+                                                        <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
+                                                            gap='small' align='center'>
+                                                            <BladeChassisView
+                                                                chassisId={!this.bladeData ? this.state.asset.assetID : this.bladeData.chassisId}
+                                                                chassisHostname={!this.bladeData ? (this.state.asset.hostname ? this.state.asset.hostname : bladeutils.makeNoHostname(this.state.asset.assetID)) : this.bladeData.rack}
+                                                                chassisSlots={this.chassisSlots}
+                                                                slot={!this.bladeData ? null : this.bladeData.rackU}
+                                                            />
+                                                        </Box>
                                                     </Box>
-                                                </Box>
+                                                </MediaQuery>
                                                 :
                                                 <Box></Box>
                                             )}

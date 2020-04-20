@@ -211,12 +211,13 @@ export default class EditAssetForm extends Component {
                 this.updateFunction = assetutils.updateAsset
                 this.isNonBlade = true
             }
+            console.log(this.isNonBlade, this.state.model, doc.data().mount)
             if (!this.isNonBlade) {
                 bladeutils.getBladeInfo(this.state.asset_id, data => {
                     if (data) {
                         // purposefully not using setState so render is not called!!!
-                        this.state.rack = data.rack
-                        this.state.rackU = data.rackU
+                        this.state.rack = this.props.chassisHostname ? this.props.chassisHostname : data.rack
+                        this.state.rackU = this.props.chassisSlot ? this.props.chassisSlot : data.rackU
                     }
                     callback()
                 })
