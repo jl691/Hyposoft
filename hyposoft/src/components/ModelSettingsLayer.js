@@ -195,7 +195,7 @@ class ModelSettingsLayer extends React.Component {
                 ToastsStore.info(this.state.modelNumber.trim() + ' by ' + this.state.vendor.trim() + ' exists', 3000, 'burntToast')
                 return
             } else {
-                var height = this.state.mount === 'blade' ? 0 : parseInt(this.state.height)
+                var height = this.state.mount === 'blade' ? 1 : parseInt(this.state.height)
                 this.dbFunction(this.state.id, this.state.vendor,
                     this.state.modelNumber, height,
                     this.state.displayColor, networkPorts,
