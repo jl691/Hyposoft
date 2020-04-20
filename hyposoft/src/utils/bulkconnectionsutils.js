@@ -221,47 +221,56 @@ async function addConnections (data, fetchedAssets, callback) {
 }
 
 function exportFilteredConnections (assets) {
-    var rows = [
-        ["src_hostname", "src_port", "src_mac", "dest_hostname", "dest_port"]
-    ]
-    var portsToIgnore = []
-    var hostnamesOfIds = {}
+    firebaseutils.modelsRef.get().then(qs => {
+        var existingModels = {}
+        for (var i = 0; i < qs.size; i++) {
+            existingModels[qs.docs[i].id] = qs.docs[i].data()
+        }
+        var rows = [
+            ["src_hostname", "src_port", "src_mac", "dest_hostname", "dest_port"]
+        ]
+        var portsToIgnore = []
+        var hostnamesOfIds = {}
 
-    for (var i = 0; i < assets.length; i++) {
-        const numPorts = (assets[i].networkConnections ? Object.keys(assets[i].networkConnections).length : 0)
-        // NOTE: I shouldn't have to do the ternary check above bc networkConnections shouldn't ever be undefined/null
-        // but until Janice fixes the schema of assets, I'll do this extra check to be safe.
-        // Remove it afterwards! (Not necessary but it'll be cleaner)
-        assets[i].numPorts = numPorts
-        hostnamesOfIds[assets[i].asset_id] = assets[i].hostname
-    }
+        for (i = 0; i < assets.length; i++) {
+            const numPorts = (assets[i].networkConnections ? Object.keys(assets[i].networkConnections).length : 0)
+            // NOTE: I shouldn't have to do the ternary check above bc networkConnections shouldn't ever be undefined/null
+            // but until Janice fixes the schema of assets, I'll do this extra check to be safe.
+            // Remove it afterwards! (Not necessary but it'll be cleaner)
+            assets[i].numPorts = numPorts
+            hostnamesOfIds[assets[i].asset_id] = assets[i].hostname
+        }
 
-    assets.sort(function(a, b){
-        return b.numPorts - a.numPorts
-    })
+        assets.sort(function(a, b){
+            return b.numPorts - a.numPorts
+        })
 
-    for (i = 0; i < assets.length; i++) {
-        const asset = assets[i]
-        if (asset.networkConnections) {
-            for (var j = 0; j < Object.keys(asset.networkConnections).length; j++) {
-                if (!portsToIgnore.includes(asset.asset_id+'.'+Object.keys(asset.networkConnections)[j])) {
-                    const portInfo = asset.networkConnections[Object.keys(asset.networkConnections)[j]]
-                    const macAddress = (asset.macAddresses ? asset.macAddresses[Object.keys(asset.networkConnections)[j]] : '')
-                    if (portInfo) {
-                        rows.push([asset.hostname, Object.keys(asset.networkConnections)[j], macAddress, hostnamesOfIds[portInfo.otherAssetID], portInfo.otherPort])
-                        portsToIgnore.push(portInfo.otherAssetID+'.'+portInfo.otherPort)
-                    } else {
-                        rows.push([asset.hostname, Object.keys(asset.networkConnections)[j], macAddress, '', ''])
+        for (i = 0; i < assets.length; i++) {
+            const asset = assets[i]
+            if (existingModels[asset.modelId].mount === 'blade') {
+                continue // Dont export blades
+            }
+            if (asset.networkConnections) {
+                for (var j = 0; j < Object.keys(asset.networkConnections).length; j++) {
+                    if (!portsToIgnore.includes(asset.asset_id+'.'+Object.keys(asset.networkConnections)[j])) {
+                        const portInfo = asset.networkConnections[Object.keys(asset.networkConnections)[j]]
+                        const macAddress = (asset.macAddresses ? asset.macAddresses[Object.keys(asset.networkConnections)[j]] : '')
+                        if (portInfo) {
+                            rows.push([asset.hostname, Object.keys(asset.networkConnections)[j], macAddress, hostnamesOfIds[portInfo.otherAssetID], portInfo.otherPort])
+                            portsToIgnore.push(portInfo.otherAssetID+'.'+portInfo.otherPort)
+                        } else {
+                            rows.push([asset.hostname, Object.keys(asset.networkConnections)[j], macAddress, '', ''])
+                        }
                     }
                 }
             }
         }
-    }
 
-    var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
-        type: "data:text/csv;charset=utf-8;",
+        var blob = new Blob([rows.map(e => e.join(",")).join("\r\n")], {
+            type: "data:text/csv;charset=utf-8;",
+        })
+        saveAs(blob, "hyposoft_connections_filtered.csv")
     })
-    saveAs(blob, "hyposoft_connections_filtered.csv")
 }
 
 function getConnectionsForExport (callback) {
@@ -271,6 +280,7 @@ function getConnectionsForExport (callback) {
     var assetsFound = []
     var portsToIgnore = []
     var hostnamesOfIds = {}
+    var existingModels = {}
 
     function postFetch() {
         assetsFound.sort(function(a, b){
@@ -279,6 +289,9 @@ function getConnectionsForExport (callback) {
 
         for (var i = 0; i < assetsFound.length; i++) {
             const asset = assetsFound[i]
+            if (existingModels[asset.modelId].mount === 'blade') {
+                continue // Dont export blades
+            }
             if (asset.networkConnections) {
                 for (var j = 0; j < Object.keys(asset.networkConnections).length; j++) {
                     if (!portsToIgnore.includes(asset.id+'.'+Object.keys(asset.networkConnections)[j])) {
@@ -307,11 +320,13 @@ function getConnectionsForExport (callback) {
             // Remove it afterwards! (Not necessary but it'll be cleaner)
             assetsFound.push({...qs.docs[i].data(), id: qs.docs[i].id, numPorts: numPorts})
             hostnamesOfIds[''+qs.docs[i].id] = qs.docs[i].data().hostname
-
-            if (assetsFound.length === qs.size) {
-                postFetch()
-            }
         }
+        firebaseutils.modelsRef.get().then(qs => {
+            for (var i = 0; i < qs.size; i++) {
+                existingModels[qs.docs[i].id] = qs.docs[i].data()
+            }
+            postFetch()
+        })
     })
 }
 

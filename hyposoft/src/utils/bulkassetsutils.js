@@ -356,59 +356,68 @@ function validateImportedAssets (data, callback) {
             } else {
                 // Either ignore or modify
                 const assetFromDb = assetsLoaded[datum.asset_number]
-                var ppC1 = (assetFromDb.powerConnections && assetFromDb.powerConnections[0] && ((assetFromDb.powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[0].port)) || ''
-                var ppC2 = (assetFromDb.powerConnections && assetFromDb.powerConnections[1] && ((assetFromDb.powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[1].port)) || ''
+                var ppC1 = ''
+                var ppC2 = ''
 
-                if (isBlade) { // Power connections don't matter for blades
+                if (isBlade || isOffline) { // Power connections don't matter for blades or offlien assets
                     ppC1 = ''
                     ppC2 = ''
                     datum.power_port_connection_1 = ''
                     datum.power_port_connection_2 = ''
+                } else {
+                    ppC1 = (assetFromDb.powerConnections && assetFromDb.powerConnections[0] && ((assetFromDb.powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[0].port)) || ''
+                    ppC2 = (assetFromDb.powerConnections && assetFromDb.powerConnections[1] && ((assetFromDb.powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[1].port)) || ''
                 }
 
                 if (isOffline) {
                     // Offline asset regardless of type
-                    if ((assetFromDb.hostname && assetFromDb.hostname.toLowerCase().trim() == datum.hostname) &&
-                        assetFromDb.datacenter.toLowerCase().trim() == existingOSs[datum.offline_site.toLowerCase().trim()].abbreviation.toLowerCase().trim() &&
-                        assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim() &&
-                        assetFromDb.comment.trim() == datum.comment.trim() &&
-                        assetFromDb.variances.cpu == datum.custom_cpu &&
-                        assetFromDb.variances.memory == datum.custom_memory &&
-                        assetFromDb.variances.storage == datum.custom_storage &&
-                        assetFromDb.variances.displayColor == datum.custom_display_color) {
+                    if ((assetFromDb.hostname !== undefined && assetFromDb.hostname.toLowerCase().trim() == datum.hostname) &&
+                        (assetFromDb.datacenter && assetFromDb.datacenter.toLowerCase().trim() == existingOSs[datum.offline_site].name.toLowerCase().trim()) &&
+                        (assetFromDb.owner && assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim()) &&
+                        (assetFromDb.commet && assetFromDb.comment.trim() == datum.comment.trim()) &&
+                        (assetFromDb.variances &&
+                            assetFromDb.variances.cpu == datum.custom_cpu &&
+                            assetFromDb.variances.memory == datum.custom_memory &&
+                            assetFromDb.variances.storage == datum.custom_storage &&
+                            assetFromDb.variances.displayColor == datum.custom_display_color
+                        )) {
                         toBeIgnored.push(datum)
                     } else {
                         toBeModified.push(datum)
                     }
                 } else if (isBlade) {
                     // Online asset but blade-type
-                    if ((assetFromDb.hostname && assetFromDb.hostname.toLowerCase().trim() == datum.hostname) &&
-                        assetFromDb.datacenterAbbrev.toLowerCase().trim() == datum.datacenter.toLowerCase().trim() &&
-                        usedSlotsInChassis[datum.chassis_number][datum.chassis_slot] == datum.asset_number &&
-                        assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim() &&
-                        assetFromDb.comment.trim() == datum.comment.trim() &&
-                        assetFromDb.variances.cpu == datum.custom_cpu &&
-                        assetFromDb.variances.memory == datum.custom_memory &&
-                        assetFromDb.variances.storage == datum.custom_storage &&
-                        assetFromDb.variances.displayColor == datum.custom_display_color) {
+                    if (assetFromDb && (assetFromDb.hostname !== undefined && assetFromDb.hostname.toLowerCase().trim() == datum.hostname) &&
+                        (assetFromDb.datacenterAbbrev && assetFromDb.datacenterAbbrev.toLowerCase().trim() == datum.datacenter.toLowerCase().trim()) &&
+                        (datum.chassis_number in usedSlotsInChassis && usedSlotsInChassis[datum.chassis_number][datum.chassis_slot] == datum.asset_number) &&
+                        (assetFromDb.owner && assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim()) &&
+                        (assetFromDb.commet && assetFromDb.comment.trim() == datum.comment.trim()) &&
+                        (assetFromDb.variances &&
+                            assetFromDb.variances.cpu == datum.custom_cpu &&
+                            assetFromDb.variances.memory == datum.custom_memory &&
+                            assetFromDb.variances.storage == datum.custom_storage &&
+                            assetFromDb.variances.displayColor == datum.custom_display_color
+                        )) {
                         toBeIgnored.push(datum)
                     } else {
                         toBeModified.push(datum)
                     }
                 } else {
                     // All other regular assets
-                    if ((assetFromDb.hostname && assetFromDb.hostname.toLowerCase().trim() == datum.hostname) &&
-                        assetFromDb.datacenterAbbrev.toLowerCase().trim() == datum.datacenter.toLowerCase().trim() &&
-                        assetFromDb.rack.toUpperCase().trim() == datum.rack &&
+                    if (assetFromDb && (assetFromDb.hostname !== undefined && assetFromDb.hostname.toLowerCase().trim() == datum.hostname) &&
+                        (assetFromDb.datacenterAbbrev && assetFromDb.datacenterAbbrev.toLowerCase().trim() == datum.datacenter.toLowerCase().trim()) &&
+                        (assetFromDb.rack && assetFromDb.rack.toUpperCase().trim() == datum.rack) &&
                         ''+assetFromDb.rackU == datum.rack_position.trim() &&
-                        assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim() &&
-                        assetFromDb.comment.trim() == datum.comment.trim() &&
+                        (assetFromDb.owner && assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim()) &&
+                        (assetFromDb.comment && assetFromDb.comment.trim() == datum.comment.trim()) &&
                         ppC1 == datum.power_port_connection_1.trim().toUpperCase() &&
                         ppC2 == datum.power_port_connection_2.trim().toUpperCase() &&
-                        assetFromDb.variances.cpu == datum.custom_cpu &&
-                        assetFromDb.variances.memory == datum.custom_memory &&
-                        assetFromDb.variances.storage == datum.custom_storage &&
-                        assetFromDb.variances.displayColor == datum.custom_display_color) {
+                        (assetFromDb.variances &&
+                            assetFromDb.variances.cpu == datum.custom_cpu &&
+                            assetFromDb.variances.memory == datum.custom_memory &&
+                            assetFromDb.variances.storage == datum.custom_storage &&
+                            assetFromDb.variances.displayColor == datum.custom_display_color
+                        )) {
                         toBeIgnored.push(datum)
                     } else {
                         toBeModified.push(datum)
@@ -1024,6 +1033,8 @@ function exportFilteredAssets (assets) {
 }
 
 function getAssetsForExport (callback) {
+    var assets = {}
+    var offlineAssets = {}
     firebaseutils.assetRef.orderBy('assetId').get().then(qs => {
         var rows = [
             ["asset_number", "hostname", "datacenter", "rack", "rack_position",
@@ -1031,31 +1042,68 @@ function getAssetsForExport (callback) {
         ]
 
         for (var i = 0; i < qs.size; i++) {
-            const ppC1 = (qs.docs[i].data().powerConnections && qs.docs[i].data().powerConnections.length >= 1 && qs.docs[i].data().powerConnections[0].pduSide && qs.docs[i].data().powerConnections[0].port ? (
-                (qs.docs[i].data().powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+qs.docs[i].data().powerConnections[0].port
-            ) : '')
-            const ppC2 = (qs.docs[i].data().powerConnections && qs.docs[i].data().powerConnections.length >= 2 && qs.docs[i].data().powerConnections[1].pduSide && qs.docs[i].data().powerConnections[1].port ? (
-                (qs.docs[i].data().powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+qs.docs[i].data().powerConnections[1].port
-            ) : '')
-
-            rows = [...rows, [
-                escapeStringForCSV(qs.docs[i].data().assetId),
-                escapeStringForCSV(qs.docs[i].data().hostname),
-                escapeStringForCSV(qs.docs[i].data().datacenterAbbrev),
-                escapeStringForCSV(qs.docs[i].data().rack),
-                ''+qs.docs[i].data().rackU,
-                escapeStringForCSV(qs.docs[i].data().vendor),
-                escapeStringForCSV(qs.docs[i].data().modelNumber),
-                escapeStringForCSV(qs.docs[i].data().owner),
-                escapeStringForCSV(qs.docs[i].data().comment),
-                ppC1,
-                ppC2
-            ]]
-
-            if (rows.length === qs.size+1) {
-                callback(rows)
-            }
+            assets[qs.docs[i].data().assetId] = qs.docs[i].data()
         }
+
+        firebaseutils.assetRef.orderBy('assetId').get().then(qs2 => {
+            for (i = 0; i < qs2.size; i++) {
+                offlineAssets[qs2.docs[i].data().assetId] = qs2.docs[i].data()
+            }
+
+            var assetsKeys = Object.keys(assets)
+            for (i = 0; i < assetsKeys.length; i++) {
+                // add live assets to csv
+                var asset = assets[assetsKeys[i]]
+                const ppC1 = (asset.powerConnections && asset.powerConnections.length >= 1 && asset.powerConnections[0].pduSide && asset.powerConnections[0].port ? (
+                    (asset.powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+asset.powerConnections[0].port
+                ) : '')
+                const ppC2 = (asset.powerConnections && asset.powerConnections.length >= 2 && asset.powerConnections[1].pduSide && asset.powerConnections[1].port ? (
+                    (asset.powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+asset.powerConnections[1].port
+                ) : '')
+
+                rows = [...rows, [
+                    escapeStringForCSV(asset.assetId),
+                    escapeStringForCSV(asset.hostname),
+                    escapeStringForCSV(asset.datacenterAbbrev),
+                    escapeStringForCSV(asset.rack),
+                    ''+asset.rackU,
+                    escapeStringForCSV(asset.vendor),
+                    escapeStringForCSV(asset.modelNumber),
+                    escapeStringForCSV(asset.owner),
+                    escapeStringForCSV(asset.comment),
+                    ppC1,
+                    ppC2
+                ]]
+            }
+
+            var offlineAssetsKeys = Object.keys(offlineAssets)
+            for (i = 0; i < offlineAssetsKeys.length; i++) {
+                // add offline assets to csv
+                asset = offlineAssets[offlineAssetsKeys[i]]
+                const ppC1 = (asset.powerConnections && asset.powerConnections.length >= 1 && asset.powerConnections[0].pduSide && asset.powerConnections[0].port ? (
+                    (asset.powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+asset.powerConnections[0].port
+                ) : '')
+                const ppC2 = (asset.powerConnections && asset.powerConnections.length >= 2 && asset.powerConnections[1].pduSide && asset.powerConnections[1].port ? (
+                    (asset.powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+asset.powerConnections[1].port
+                ) : '')
+
+                rows = [...rows, [
+                    escapeStringForCSV(asset.assetId),
+                    escapeStringForCSV(asset.hostname),
+                    escapeStringForCSV(asset.datacenterAbbrev),
+                    escapeStringForCSV(asset.rack),
+                    ''+asset.rackU,
+                    escapeStringForCSV(asset.vendor),
+                    escapeStringForCSV(asset.modelNumber),
+                    escapeStringForCSV(asset.owner),
+                    escapeStringForCSV(asset.comment),
+                    ppC1,
+                    ppC2
+                ]]
+            }
+
+            callback(rows)
+        })
     })
 }
 
