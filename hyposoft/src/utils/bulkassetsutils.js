@@ -149,7 +149,7 @@ function validateImportedAssets (data, callback) {
 
             if (!isOffline && !userutils.doesLoggedInUserHaveAssetPerm((datum.datacenter+'').trim())) {
                 errors = [...errors, [i + 1, "You don't have asset management permissions for this site"]]
-            } else if (isOffline && !userutils.doesLoggedInUserHaveAssetPerm((datum.offline_site+'').trim())) {
+            } else if (isOffline && !userutils.doesLoggedInUserHaveAssetPerm((datum.offline_site+'').trim(), true)) {
                 errors = [...errors, [i + 1, "You don't have asset management permissions for this site"]]
             }
 
@@ -210,28 +210,58 @@ function validateImportedAssets (data, callback) {
                 errors = [...errors, [i + 1, 'Owner does not exist']]
             }
 
-            if (datum.power_port_connection_1 && !/^[LR]([2][0-4]|[1][0-9]|[0][1-9]|[1-9])$/i.test(datum.power_port_connection_1)) {
-                errors = [...errors, [i + 1, 'Power port connection 1 invalid']]
-            }
-
-            if (datum.power_port_connection_2 && !/^[LR]([2][0-4]|[1][0-9]|[0][1-9]|[1-9])$/i.test(datum.power_port_connection_2)) {
-                errors = [...errors, [i + 1, 'Power port connection 2 invalid']]
-            }
-
-            var powerPortsNumber = 0
-            if (canTestForFit) {
-                powerPortsNumber = existingModels[datum.vendor][datum.model_number].powerPorts
-                if (!powerPortsNumber && (datum.power_port_connection_1 || datum.power_port_connection_2)) {
-                    errors = [...errors, [i + 1, 'This model does not have any power ports']]
-                    canTestForFit = false
+            if(!isBlade) {
+                if (datum.power_port_connection_1 && !/^[LR]([2][0-4]|[1][0-9]|[0][1-9]|[1-9])$/i.test(datum.power_port_connection_1)) {
+                    errors = [...errors, [i + 1, 'Power port connection 1 invalid']]
                 }
 
-                if (powerPortsNumber == 1 && datum.power_port_connection_2) {
-                    errors = [...errors, [i + 1, 'This model has only one power port and you have specified a connection for power port #2']]
-                    canTestForFit = false
+                if (datum.power_port_connection_2 && !/^[LR]([2][0-4]|[1][0-9]|[0][1-9]|[1-9])$/i.test(datum.power_port_connection_2)) {
+                    errors = [...errors, [i + 1, 'Power port connection 2 invalid']]
+                }
+
+                var powerPortsNumber = 0
+                if (canTestForFit) {
+                    powerPortsNumber = existingModels[datum.vendor][datum.model_number].powerPorts
+                    if (!powerPortsNumber && (datum.power_port_connection_1 || datum.power_port_connection_2)) {
+                        errors = [...errors, [i + 1, 'This model does not have any power ports']]
+                        canTestForFit = false
+                    }
+
+                    if (powerPortsNumber == 1 && datum.power_port_connection_2) {
+                        errors = [...errors, [i + 1, 'This model has only one power port and you have specified a connection for power port #2']]
+                        canTestForFit = false
+                    }
                 }
             }
+
             if (canTestForFit) {
+                if (!datum.custom_display_color || String(datum.custom_display_color).trim() === '') {
+                    datum.custom_display_color = existingModels[datum.vendor][datum.model_number].displayColor
+                } else if (datum.custom_display_color && !/^#[0-9A-F]{6}$/i.test(String(datum.custom_display_color))) {
+                    errors = [...errors, [i+1, 'Invalid display color']]
+                }
+                
+                if (datum.custom_cpu.trim() && datum.custom_cpu.trim().length > 50) {
+                    errors = [...errors, [i+1, 'CPU should be less than 50 characters long']]
+                } else if (datum.custom_cpu.trim() === '') {
+                    datum.custom_cpu = existingModels[datum.vendor][datum.model_number].cpu
+                }
+
+                if (datum.custom_storage.trim() && datum.custom_storage.trim().length > 50) {
+                    errors = [...errors, [i+1, 'Storage should be less than 50 characters long']]
+                } else if (datum.custom_storage.trim() === '') {
+                    datum.custom_storage = existingModels[datum.vendor][datum.model_number].storage
+                }
+
+                if (datum.custom_memory && String(datum.custom_memory).trim() !== '' &&
+                 (isNaN(String(datum.custom_memory).trim()) || !Number.isInteger(parseFloat(String(datum.custom_memory).trim())) || parseInt(String(datum.custom_memory).trim()) < 0 || parseInt(String(datum.custom_memory).trim()) > 1000)) {
+                     errors = [...errors, [i+1, 'Memory should be a non-negative integer not greater than 1000']]
+                } else if (datum.custom_memory.trim() === '') {
+                    datum.custom_memory = existingModels[datum.vendor][datum.model_number].memory
+                }
+            }
+
+            if (!isBlade && canTestForFit) {
                 // Can do rack fit test only if model exists, datacenter is valid, rack is valid and rack position is valid
 
                 // Rewrote custom asset fit tests for speed and reducing redundant db queries

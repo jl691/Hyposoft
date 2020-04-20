@@ -201,6 +201,23 @@ function updateEveryonesAssetPermissions () {
     })
 }
 
+var permissionsInterval
+
+function keepRefreshingPermissions() {
+    permissionsInterval = setInterval(() => {
+        firebaseutils.usersRef.doc(localStorage.getItem('userDocId')).get().then(doc => {
+            const userObject = doc.data()
+            localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(
+                userObject.displayName+userObject.username+userObject.email+JSON.stringify(userObject.permissions)))
+            localStorage.setItem('permissions', JSON.stringify(userObject.permissions))
+        })
+    }, 10000)
+}
+
+function stopRefreshingPermissions() {
+    clearInterval(permissionsInterval)
+}
+
 function logUserIn(userObject) {
     localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(
         userObject.displayName+userObject.username+userObject.email+JSON.stringify(userObject.permissions)))
@@ -210,7 +227,7 @@ function logUserIn(userObject) {
     localStorage.setItem('userDocId', userObject.docId)
     localStorage.setItem('isNetIDAccount', userObject.password.trim() === '' ? 'yes' : 'no')
     localStorage.setItem('permissions', JSON.stringify(userObject.permissions))
-    updateEveryonesAssetPermissions()
+    keepRefreshingPermissions()
 }
 
 function getLoggedInUser() {
@@ -222,6 +239,7 @@ function getLoggedInUserUsername() {
 }
 
 function logout() {
+    stopRefreshingPermissions()
     localStorage.clear()
 }
 
@@ -368,5 +386,6 @@ fetchClaim, usernameTaken, validEmail, removeClaim, updateUsername, sendRecovery
 fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers, getLoggedInUser,
  ADMIN_PERMISSION, isLoggedInUserNetID, getLoggedInUserUsername, getAllDataCenterAbbrevs,
 updateUserPermissions, doesLoggedInUserHaveModelPerm, doesLoggedInUserHaveAssetPerm,
-doesLoggedInUserHaveAuditPerm, doesLoggedInUserHavePowerPerm,
+doesLoggedInUserHaveAuditPerm, doesLoggedInUserHavePowerPerm, keepRefreshingPermissions,
+stopRefreshingPermissions,
 doesLoggedInUserHaveAnyAssetPermsAtAll, getAllowedDCsString, updateEveryonesAssetPermissions }
