@@ -1134,6 +1134,13 @@ function updateAsset(assetID, model, hostname, rack, rackU, owner, comment, data
                                                                                                     }, offlineStorageAbbrev)
                                                                                                 } else {
                                                                                                     console.log(changeDocID);
+                                                                                                    if(chassis){
+                                                                                                        assetObject = {
+                                                                                                            ...assetObject,
+                                                                                                            chassisHostname: chassis.hostname,
+                                                                                                            chassisSlot: chassis.slot
+                                                                                                        };
+                                                                                                    }
                                                                                                     assetObject.networkConnections = networkConnectionsArray;
                                                                                                     changeplanutils.editAssetChange(assetObject, assetID, changePlanID, (result) => {
                                                                                                         if (result) {

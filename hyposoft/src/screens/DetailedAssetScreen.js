@@ -674,6 +674,7 @@ export default class DetailedAssetScreen extends Component {
 
                     <MoveAssetForm location={this.props.match.params.storageSiteAbbrev ? "offline" : "rack"} assetID={this.state.asset.assetID}
                                    model={this.state.asset.model}
+                                   offlineAbbrev={this.props.match.params.storageSiteAbbrev}
                         currentLocation={this.props.match.params.storageSiteAbbrev ? "offline storage site " + this.props.match.params.storageSiteAbbrev : "datacenter " + this.state.asset.datacenter + " on rack " + this.state.asset.rack + " at height " + this.state.asset.rackU}
                         success={this.handleCancelRefreshPopupChange} cancelCallback={this.handleCancelPopupChange} />
                 </Layer>
@@ -845,7 +846,7 @@ export default class DetailedAssetScreen extends Component {
                                             </span>
                                             {(this.chassisSlots
                                                 ?
-                                                <MediaQuery maxDeviceWidth={1224}>
+                                                <MediaQuery minDeviceWidth={1224}>
                                                     <Box flex margin={{ top: 'small', bottom: 'small' }}
                                                         direction='column' justify='start'>
                                                         <Heading level='4' margin='none'>Blade Chassis View</Heading>
