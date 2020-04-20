@@ -97,6 +97,10 @@ function checkConnectedToPDU(assetID, callback){
                 })
             } else if (doc.exists && doc.data().mount === "chassis" && docSnapshot.data().vendor.toUpperCase() === "BMI" && docSnapshot.data().hostname) {
                 // allow chassis to fall through to last else statement
+                if (docSnapshot.data().datacenterAbbrev.toUpperCase() === "RTP1" && docSnapshot.data().rackRow.charCodeAt(0) >= 65 && docSnapshot.data().rackRow.charCodeAt(0) <= 69 && parseInt(docSnapshot.data().rackNum) >= 1 && parseInt(docSnapshot.data().rackNum) <= 19 && docSnapshot.data().powerConnections && docSnapshot.data().powerConnections.length) {
+                  callback('bcman,pdu')
+                  return
+                }
                 callback('bcman')
             } else {
                 console.log(docSnapshot.data());
