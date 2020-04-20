@@ -93,7 +93,7 @@ function checkConnectedToPDU(assetID, callback){
             if (doc.exists && doc.data().mount === "blade") {
                 firebaseutils.bladeRef.doc(assetID).get().then(doc => {
                     const split = doc.data().rack.split(' ')
-                    callback(doc.exists && doc.data().chassisVendor.toUpperCase() === "BMI" && split.length === 1 ? 'bcman' : null)
+                    callback(doc.exists && doc.data().chassisVendor.toUpperCase() === "BMI" && split.length === 1 ? 'bcman' : '')
                 })
             } else if (doc.exists && doc.data().mount === "chassis" && docSnapshot.data().vendor.toUpperCase() === "BMI" && docSnapshot.data().hostname) {
                 // allow chassis to fall through to last else statement
@@ -116,12 +116,12 @@ function checkConnectedToPDU(assetID, callback){
                     console.log("Should be true")
                     callback('pdu');
                 } else {
-                    callback(null);
+                    callback('');
                 }
             }
           })
         } else {
-            callback(null);
+            callback('');
         }
     })
 }
