@@ -211,6 +211,7 @@ export default class EditAssetForm extends Component {
                 this.updateFunction = assetutils.updateAsset
                 this.isNonBlade = true
             }
+            console.log(this.isNonBlade, this.state.model, doc.data().mount)
             if (!this.isNonBlade) {
                 bladeutils.getBladeInfo(this.state.asset_id, data => {
                     if (data) {

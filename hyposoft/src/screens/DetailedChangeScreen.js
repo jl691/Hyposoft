@@ -578,16 +578,16 @@ class DetailedChangeScreen extends React.Component {
                                     <table style={{ marginTop: '10px', marginBottom: '10px' }}>
                                         <tbody>
                                             <tr>
-                                                <td><b>Step #</b></td>
-                                                <td style={{ textAlign: 'right' }}>{this.stepID}</td>
+                                                <td width={"150px"}><b>Step #</b></td>
+                                                <td>{this.stepID}</td>
                                             </tr>
                                             <tr>
                                                 <td><b>Asset ID</b></td>
-                                                <td style={{ textAlign: 'right' }}>{this.state.change.assetID ? this.state.change.assetID : "TBD"}</td>
+                                                <td>{this.state.change.assetID ? this.state.change.assetID : "TBD"}</td>
                                             </tr>
                                             <tr>
                                                 <td><b>Change</b></td>
-                                                <td style={{ textAlign: 'right' }}>{this.state.change.change}</td>
+                                                <td>{this.state.change.change}</td>
                                             </tr>
                                         </tbody>
                                     </table>
