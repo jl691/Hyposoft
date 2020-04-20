@@ -259,6 +259,8 @@ function validateImportedAssets (data, callback) {
                 }
             }
 
+            datum.mount_type = existingModels[datum.vendor][datum.model_number].mount
+
             if (datum.mount_type === 'chassis' && !(datum.asset_number in assetsLoaded)) {
                 // This is a new chassis
                 if (!(datum.asset_number in newChassis)) {
