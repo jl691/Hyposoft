@@ -670,7 +670,8 @@ class AssetScreen extends Component {
                                     }}>Assets{this.props.match.params.storageSiteAbbrev && " in storage site " + this.props.match.params.storageSiteAbbrev}</Heading>
                                     <UserMenu alignSelf='end' this={this}/>
                                 </AppBar>
-                                <Button primary icon={<Filter size={"medium"}/>}
+
+                                {!this.props.match.params.storageSiteAbbrev && <Button primary icon={<Filter size={"medium"}/>}
                                         onClick={() => this.setState({popupType: "Filters"})}
                                 style={{
                                     borderRadius: '100%',
@@ -678,7 +679,7 @@ class AssetScreen extends Component {
                                     position: "absolute",
                                     right: "2%",
                                     bottom: "2%"
-                                }}/>
+                                }}/>}
 
 
                                 <Box direction='row'
@@ -758,6 +759,12 @@ class AssetScreen extends Component {
                                                       right: 'medium'
                                                   }} label="View Decommissioned Assets" alignSelf='center'
                                                           onClick={() => this.props.history.push('/decommissioned')}/>
+                                                {this.props.match.params.storageSiteAbbrev && <Button primary icon={<Share/>} label={"Export Filtered Assets"} onClick={() => {
+                                                    bulkassetutils.exportFilteredAssets(this.state.searchResults || this.assetTable.current.state.assets);
+                                                }} alignSelf='center' margin={{bottom: 'small'}}/>}
+                                                {this.props.match.params.storageSiteAbbrev && <Button primary icon={<Share/>} label={"Export Selected Barcodes"} onClick={() => {
+                                                    labelutils.generateLabelPDF(this.assetTable.current.state.selectedAssets.sort());
+                                                }} alignSelf='center'/>}
 
                                             </Box>
                                         </Box>
