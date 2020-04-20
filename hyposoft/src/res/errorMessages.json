@@ -32,7 +32,10 @@
     "slotConflictDBErrID": "A blade at this slot conflicts with another blade on the chassis.",
     "decommissionChassisStepErrID": "Trying to edit or add a blade whose chassis was decommissioned in a previous step.",
     "moveChassisStepErrID": "Trying to edit or add a blade whose chassis was moved to offline storage.",
-    "slotConflictStepErrID": "The blade at this slot conflicts with a blade in another step."
+    "slotConflictStepErrID": "The blade at this slot conflicts with a blade in another step.",
+    "move1ChassisStepErrID": "Trying to move a chassis offline when there are blades in previous steps dependent on it.",
+    "move2ChassisStepErrID": "Trying to move move to a chassis that has been decommissioned in a previous step.",
+    "move3ChassisStepErrID": "Trying to move move to a chassis that has been moved to offline storage in a previous step."
 
 
     

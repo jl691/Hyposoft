@@ -232,6 +232,8 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacen
 
                             //assuming tht somehow, if we are a blade, that it will correctly check the chassis for conflicts, not rack or smth
                             console.log(chassisAssetID)
+                            console.log(isBlade)
+                            console.log(slotNum, rackU, doc.data().height, rackID)
                             rackutils.checkAssetFits(isBlade ? slotNum : rackU, doc.data().height, rackID, async function (status) {
                                 console.log(status.length)
                                 if (status && status.length) {
@@ -246,7 +248,7 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacen
                                     //what if model was deleted? Then
                                     callback(false)
                                 }
-                            }, assetID, isChassis  || isBlade ? { id: chassisAssetID } : null) //{id: chassisId} instead of true. so assetID of the chassis...what if offline to active htough? use the assetID of the new chassis we are moving to. Aka, look up in assets the where hostname === chassisHostname and return the doc id
+                            }, assetID, isChassis || isBlade ? { id: chassisAssetID } : null) //{id: chassisId} instead of true. so assetID of the chassis...what if offline to active htough? use the assetID of the new chassis we are moving to. Aka, look up in assets the where hostname === chassisHostname and return the doc id
 
                         }
                     })
@@ -607,6 +609,7 @@ function moveAssetChangePackage(changePlanID, thisStepID, assetID, location, dat
                             chassisAssetID = chassisAssetDoc.docs[0].id //optional param to pass into rackUConfl if u are blade
                         }
                         console.log(chassisAssetID)
+                        console.log("IM HEEEEERE")
                         rackNonExistent(changePlanID, thisStepID,
                             chassisRack.toString(),
                             location === "rack" ? datacenterObj.old : datacenterObj.new,
@@ -619,7 +622,7 @@ function moveAssetChangePackage(changePlanID, thisStepID, assetID, location, dat
                                     status => {
                                         callback()
 
-                                    }, chassisHostname, slotNum)
+                                    }, chassisHostname, slotNum, chassisAssetID)
                             }, chassisHostname)
                     })
                     //else, your current location is rack, so you are moving to offline. And only need to check that offline exists, which we already do with datacenterNonexistent at the top
@@ -662,7 +665,7 @@ function editBladeChangePlanPackage(changePlanID, stepID, model, hostname, chass
         datacenterNonExistent(changePlanID, stepID, datacenter, status2 => {
             hostnameConflict(changePlanID, stepID, assetID, hostname, status3 => {
                 ownerConflict(changePlanID, stepID, owner, status4 => {
-                    
+
                     assetIDConflict(changePlanID, stepID, assetID, status5 => {
                         modelConflict(changePlanID, stepID, model, status6 => {
                             rackNonExistent(changePlanID, stepID, rack, datacenter, datacenterID, status7 => {
@@ -919,7 +922,7 @@ function checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, callback)
                     }
                 })
             }
-            else if (thisChangeType === "decommissions") {
+            else if (thisChangeType === "decommission") {
                 //decommission
                 decommissionChangeCheck(changePlanID, thisStepID, otherStepNum, thisStepData, status => {
                     counter--
@@ -929,6 +932,7 @@ function checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, callback)
                 })
             }
             else {//have a move change type
+               
                 moveChangeCheck(changePlanID, thisStepID, otherStepNum, thisStepData, status => {
                     counter--
                     if (counter === 0) {
@@ -940,15 +944,134 @@ function checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, callback)
     })
 }
 
+//sequential step check
 function moveChangeCheck(changePlanID, thisStepID, otherStepNum, thisStepData, callback) {
-    //the current step we are on is a move
-    //is it a move to or from offline?
-    ///add/edit a blade to the chassis that has been moved offline
-    //Move a chassis to/from even though it has been decommissioned in a previous step
-    
-    //Make sure add blade sequential step conflicts (rack specifically) still works
-    
-    callback()
+    changeplanutils.getStepDocID(changePlanID, otherStepNum, otherStepID => {
+        changeplansRef.doc(changePlanID).collection('changes').doc(otherStepID).get().then(otherStepDoc => {
+            //curent step is add blade
+console.log("IN MOVECHANGECHECK()")
+            console.log(thisStepData)
+            modelutils.getModelByModelname(thisStepData.model, thisModelDoc => {
+                let mountType = thisModelDoc.data().mount
+                let destination = thisStepData.destination
+
+                //add a blade to the chassis that has been moved offline
+                console.log(destination, mountType)
+                if (otherStepDoc.data().change === "add" && destination === "offline") {
+
+                    if (mountType === "chassis") {
+                        let otherHostname = otherStepDoc.data().changes.chassisHostname.new
+                        let thisAssetID = thisStepData.assetID.toString()
+                        assetRef.doc(thisAssetID).get().then(thisAssetDoc => {
+
+                            let thisChassisHostname = thisAssetDoc.data().hostname //move a chassis from rack to offline
+                            console.log(thisChassisHostname, otherHostname)
+
+                            if (otherHostname == thisChassisHostname) {
+                                let errorIDSet = new Set()
+                                errorIDSet.add("move1ChassisStepErrID")
+
+                                addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, null, otherStepNum, errorIDSet, status => {
+                                    callback(status)
+                                })
+
+                            }
+                            else {
+                                callback()
+                            }
+                        })
+                    }
+                    else {
+                        callback()
+                    }
+
+                }
+                //edit a blade to the chassis that has been moved offline
+                else if (otherStepDoc.data().change === "edit" && destination === "offline") {
+                    if (mountType === "chassis") {
+
+                        let otherAssetID = otherStepDoc.data().assetID.toString()
+                        bladeRef.doc(otherAssetID).get().then(otherBladeInfo => {
+                            let thisAssetID = thisStepData.assetID.toString()
+                            assetRef.doc(thisAssetID).get().then(thisAssetDoc => {
+
+                                let thisChassisHostname = thisAssetDoc.data().hostname //move a chassis from rack to offline
+ //this step is a move on a chassis 
+                                //check this chassis against a previous edit step: blade moving to the chassis. So check the edit blade's chassisHostname
+                                let otherChassisHostname = otherStepDoc.data().changes.chassisHostname ? otherStepDoc.data().changes.chassisHostname.new
+                                    : otherBladeInfo.data().rack
+
+                                if (thisChassisHostname == otherChassisHostname) {
+                                    let errorIDSet = new Set()
+                                    errorIDSet.add("move1ChassisStepErrID")
+
+                                    addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, null, otherStepNum, errorIDSet, status => {
+                                        callback(status)
+                                    })
+
+                                }
+                                else {
+                                    callback()
+                                }
+                            })
+                        })
+                    }
+                    else {
+                        callback()
+                    }
+                }
+
+                //is the current chassis you are trying to move to been decomm?
+                //this actually belongs in decommChangeCheck
+                else if (otherStepDoc.data().change === "decommission" && destination === "rack" && mountType === "blade") {
+                    //am i a blade?
+                    //if I am, then I want to see if my chassis that I'm moving to has been decomm in a previous step
+
+                    let thisChassisHostname = thisStepData.changes.chassisHostname.new
+                    let otherHostname = otherStepDoc.data().hostname
+                    console.log(thisChassisHostname, otherHostname)
+                    if (thisChassisHostname === otherHostname) {
+                        let errorIDSet = new Set()
+                        errorIDSet.add("move2ChassisStepErrID")
+                        //trying to move a blade
+
+                        addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, null, otherStepNum, errorIDSet, status => {
+                            callback(status)
+                        })
+
+                    }
+                }
+                else if (otherStepDoc.data().change === "move" && destination === "rack" && mountType === "blade") {
+
+                    let thisChassisHostname = thisStepData.changes.chassisHostname.new
+                    let otherHostname = otherStepDoc.data().changes.chassisHostname.new
+                    console.log(thisChassisHostname, otherHostname)
+
+                    if (thisChassisHostname === otherHostname) {
+                        let errorIDSet = new Set()
+                        errorIDSet.add("move3ChassisStepErrID")
+                        //trying to move a blade
+
+                        addConflictToDBSteps(changePlanID, thisStepID, thisStepData.step, null, otherStepNum, errorIDSet, status => {
+                            callback(status)
+                        })
+                    }
+
+                    else {
+                        callback()
+                    }
+                }
+                //move against a move. i have no brain power to think of anything 
+                else { //move
+                    console.log(" : (")
+                    callback()
+                }
+
+            })
+
+        })
+    })
+
 }
 
 //If the current step is an edit step, and we need to check it against all the previous steps

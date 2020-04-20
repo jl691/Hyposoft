@@ -277,13 +277,13 @@ export default class DetailedAssetScreen extends Component {
                 ToastsStore.info("Click a refresh button by a PDU status to power cycle it.", 5000);
             }
             let fromBlade = 0
-            if (this.connectedPDU === 'bcman') {
-              if (!this.bladeData && !this.chassisSlots) {
+            if (this.connectedPDU.includes('bcman') && (this.bladeData || this.chassisSlots)) {
+              const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
+              fromBlade = eachFor.length
+              if (fromBlade === 0) {
                 callback()
                 return
               }
-              const eachFor = this.bladeData ? [this.bladeData] : this.chassisSlots
-              fromBlade = eachFor.length
               eachFor.forEach(powerPiece => {
                   const host = this.bladeData ? powerPiece.rack : this.state.asset.hostname
                   const slot = this.bladeData ? powerPiece.rackU : powerPiece.slot
@@ -302,7 +302,7 @@ export default class DetailedAssetScreen extends Component {
                       this.setState({
                           [host + ":" + slot]: toggle
                       })
-                      if (this.powerPorts.length === eachFor.length + Object.keys(this.state.asset.powerConnections).length) {
+                      if (this.powerPorts.length === eachFor.length + Object.keys(this.connectedPDU.includes('pdu') ? this.state.asset.powerConnections : {}).length) {
                           this.setState({
                               powerMap: true
                           })
@@ -313,11 +313,11 @@ export default class DetailedAssetScreen extends Component {
               })
             }
               this.hasPortConnections = Object.keys(this.state.asset.powerConnections).length
-              if (this.hasPortConnections === 0) {
+              if (this.hasPortConnections === 0 && fromBlade === 0) {
                 callback()
                 return
               }
-              Object.keys(this.state.asset.powerConnections).forEach(pduConnections => {
+              Object.keys(this.connectedPDU.includes('pdu') ? this.state.asset.powerConnections : {}).forEach(pduConnections => {
                   let formattedNum;
                   if (this.state.asset.rackNum.toString().length === 1) {
                       formattedNum = "0" + this.state.asset.rackNum;
@@ -899,7 +899,7 @@ export default class DetailedAssetScreen extends Component {
                                             <Heading level='4' margin='none'>Asset Actions</Heading>
                                             <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
                                                 gap='small'>
-                                                {(this.connectedPDU && this.hasPortConnections !== 0 && !this.props.match.params.storageSiteAbbrev && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
+                                                {(this.connectedPDU.includes('pdu') && !this.props.match.params.storageSiteAbbrev && (userutils.doesLoggedInUserHavePowerPerm() || userutils.isLoggedInUserAdmin() || userutils.getLoggedInUserUsername() === this.state.asset.owner)) &&
                                                     <Box direction='column' flex alignSelf='stretch'
                                                         gap='small'>
                                                         <Button icon={<Power />} label="Power Asset On" onClick={() => {

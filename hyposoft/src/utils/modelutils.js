@@ -275,11 +275,16 @@ function exportFilteredModels(models) {
 
         var mountType = models[i].mount === 'normal' ? 'asset' : models[i].mount
 
+        var height = ''+models[i].height
+        if (mountType === 'blade') {
+            height = ''
+        }
+
         rows = [...rows, [
             mountType,
             escapeStringForCSV(models[i].vendor),
             escapeStringForCSV(models[i].modelNumber),
-            ''+models[i].height,
+            height,
             displayColor.toUpperCase(),
             ''+(models[i].networkPortsCount || ''),
             ''+(models[i].powerPorts || ''),
@@ -338,12 +343,16 @@ function getModelsForExport(callback) {
             }
 
             var mountType = qs.docs[i].data().mount === 'normal' ? 'asset' : qs.docs[i].data().mount
+            var height = ''+qs.docs[i].data().height
+            if (mountType === 'blade') {
+                height = ''
+            }
 
             rows = [...rows, [
                 mountType,
                 escapeStringForCSV(qs.docs[i].data().vendor),
                 escapeStringForCSV(qs.docs[i].data().modelNumber),
-                ''+qs.docs[i].data().height,
+                height,
                 displayColor.toUpperCase(),
                 ''+(qs.docs[i].data().networkPortsCount || ''),
                 ''+(qs.docs[i].data().powerPorts || ''),
@@ -497,7 +506,7 @@ function validateImportedModels (data, callback) {
         } else if (datum.mount_type === 'blade') {
             datum.height = '1'
         }
-        
+
         if (!datum.display_color || String(datum.display_color).trim() === '') {
             datum.display_color = '#000000'
         } else if (datum.display_color && !/^#[0-9A-F]{6}$/i.test(String(datum.display_color))) {
