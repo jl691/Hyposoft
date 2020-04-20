@@ -368,7 +368,7 @@ function validateImportedAssets (data, callback) {
 
                 if (isOffline) {
                     // Offline asset regardless of type
-                    if (assetFromDb.hostname.toLowerCase().trim() == datum.hostname.toLowerCase().trim() &&
+                    if ((assetFromDb.hostname && assetFromDb.hostname.toLowerCase().trim() == datum.hostname) &&
                         assetFromDb.datacenter.toLowerCase().trim() == existingOSs[datum.offline_site.toLowerCase().trim()].abbreviation.toLowerCase().trim() &&
                         assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim() &&
                         assetFromDb.comment.trim() == datum.comment.trim() &&
@@ -382,7 +382,7 @@ function validateImportedAssets (data, callback) {
                     }
                 } else if (isBlade) {
                     // Online asset but blade-type
-                    if (assetFromDb.hostname.toLowerCase().trim() == datum.hostname.toLowerCase().trim() &&
+                    if ((assetFromDb.hostname && assetFromDb.hostname.toLowerCase().trim() == datum.hostname) &&
                         assetFromDb.datacenterAbbrev.toLowerCase().trim() == datum.datacenter.toLowerCase().trim() &&
                         usedSlotsInChassis[datum.chassis_number][datum.chassis_slot] == datum.asset_number &&
                         assetFromDb.owner.toLowerCase().trim() == datum.owner.toLowerCase().trim() &&
