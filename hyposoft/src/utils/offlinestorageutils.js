@@ -5,6 +5,9 @@ import * as userutils from "./userutils";
 import {offlinestorageRef} from "./firebaseutils";
 import {db} from "./firebaseutils";
 
+const algoliasearch = require('algoliasearch')
+const client = algoliasearch('V7ZYWMPYPA', '26434b9e666e0b36c5d3da7a530cbdf3')
+
 function getStorageSites(itemCount, callback, start = null) {
     let storageSites = [];
     let query = start ? firebaseutils.offlinestorageRef.orderBy("name").orderBy("abbreviation").limit(25).startAfter(start) : firebaseutils.offlinestorageRef.orderBy("name").orderBy("abbreviation").limit(25);
@@ -100,6 +103,7 @@ function addStorageSite(name, abbrev, callback) {
                         abbreviation: abbrev
                     }).then(function (docRef) {
                         userutils.updateEveryonesAssetPermissions();
+                        logutils.addLog(docRef.id,logutils.OFFLINE_SITE(),logutils.CREATE())
                         callback(true);
                     }).catch(function (error) {
                         callback(null);
@@ -123,6 +127,7 @@ function deleteStorageSite(name, callback) {
                 if(assetDocSnap.empty){
                     firebaseutils.offlinestorageRef.doc(querySnapshot.docs[0].id).delete().then(function () {
                         userutils.updateEveryonesAssetPermissions();
+                        logutils.addLog(querySnapshot.docs[0].id,logutils.OFFLINE_SITE(),logutils.DELETE(),querySnapshot.docs[0].data())
                         callback(true);
                     }).catch(function (error) {
                         callback(null);
@@ -151,6 +156,7 @@ function updateStorageSite(oldName, oldAbbrev, newName, newAbbrev, callback) {
                                 name: newName,
                                 abbreviation: newAbbrev
                             }, {merge: true}).then(function () {
+                                logutils.addLog(querySnapshot.docs[0].id,logutils.OFFLINE_SITE(),logutils.MODIFY(),querySnapshot.docs[0].data())
                                 callback(true);
                             }).catch(function (error) {
                                 callback(null);
@@ -216,6 +222,36 @@ function moveAssetToOfflineStorage(assetID, offlineStorageName, callback, moveFu
                             firebaseutils.offlinestorageRef.doc(offlineStorageID).collection("offlineAssets").doc(String(assetID)).set(assetData).then(function () {
                                 moveFunction(assetID, result => {
                                     if(result){
+                                        let index = client.initIndex(offlineStorageAbbrev + "_index");
+                                        let suffixes_list = []
+                                        let _model = assetData.model;
+
+                                        while (_model.length > 1) {
+                                            _model = _model.substr(1)
+                                            suffixes_list.push(_model)
+                                        }
+
+                                        let _hostname = assetData.hostname
+
+                                        while (_hostname.length > 1) {
+                                            _hostname = _hostname.substr(1)
+                                            suffixes_list.push(_hostname)
+                                        }
+
+                                        let _owner = assetData.owner
+
+                                        while (_owner.length > 1) {
+                                            _owner = _owner.substr(1)
+                                            suffixes_list.push(_owner)
+                                        }
+
+                                        index.saveObject({
+                                            ...assetData,
+                                            objectID: assetID,
+                                            suffixes: suffixes_list.join(' ')
+                                        }).then(({ objectID }) => {
+                                            console.log(assetData, suffixes_list, objectID, offlineStorageAbbrev + "_index");
+                                        });
                                         logutils.addLog(assetID,logutils.OFFLINE(),logutils.MOVE(),{...savedAssetData,datacenterAbbrev: offlineStorageAbbrev},()=>callback(true, offlineStorageAbbrev))
                                     } else {
                                         console.log("6")
@@ -260,7 +296,14 @@ function moveAssetFromOfflineStorage(assetID, datacenter, rack, rackU, callback,
                       if(!result){
                           let parentDoc = querySnapshot.docs[0].ref.parent.parent;
                           offlinestorageRef.doc(parentDoc.id).collection("offlineAssets").doc(String(assetID)).delete().then(function () {
-                              logutils.addLog(data.assetId,logutils.ASSET(),logutils.MOVE(),data,()=>callback(null))
+                              parentDoc.get().then(function (parentDocSnap) {
+                                  let index = client.initIndex(parentDocSnap.data().abbreviation + "_index");
+                                  index.deleteObject(assetID);
+                                  logutils.addLog(data.assetId,logutils.ASSET(),logutils.MOVE(),data,()=>callback(null))
+                              }).catch(function () {
+                                  // reset assetId
+                                  querySnapshot.docs[0].ref.update({assetId: String(assetID)}).then(() => callback("Could not get the par\rent document."))
+                              });
                           }).catch(function () {
                               // reset assetId
                               querySnapshot.docs[0].ref.update({assetId: String(assetID)}).then(() => callback("Could not remove the asset from offline storage."))
@@ -287,7 +330,16 @@ function moveAssetFromOfflineToOffline(assetID, newOfflineName, callback){
                     assetDoc.datacenter = newOfflineName;
                     offlinestorageRef.doc(parentID).collection("offlineAssets").doc(assetID).delete().then(function () {
                         offlinestorageRef.doc(newOfflineID).collection("offlineAssets").doc(assetID).set(assetDoc).then(function () {
-                            logutils.addLog(assetID, logutils.OFFLINE(), logutils.MOVE(),{...assetQuerySnap.docs[0].data(), datacenterAbbrev:newOfflineAbbrev},() => callback(true, newOfflineAbbrev))
+                            assetQuerySnap.docs[0].ref.parent.parent.get().then(function (parentDocSnap) {
+                                let oldIndex = client.initIndex(parentDocSnap.data().abbreviation + "_index");
+                                let newIndex = client.initIndex(newOfflineAbbrev + "_index");
+                                newIndex.saveObject(oldIndex.getObject());
+                                oldIndex.deleteObject(assetID);
+                                logutils.addLog(assetID, logutils.OFFLINE(), logutils.MOVE(),{...assetQuerySnap.docs[0].data(), datacenterAbbrev:newOfflineAbbrev},() => callback(true, newOfflineAbbrev))
+                            }).catch(function (error) {
+                                console.log(error)
+                                callback(null);
+                            })
                         }).catch(function (error) {
                             console.log(error)
                             callback(null);
