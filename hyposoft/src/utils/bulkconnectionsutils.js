@@ -19,6 +19,9 @@ function validateImportedConnections (data, callback) {
         for (var i = 0; i < data.length; i++) {
             var datum = data[i]
             console.log(fetchedAssets)
+            if (existingModels[fetchedAssets[datum.src_hostname].vendor][fetchedAssets[datum.src_hostname].modelNumber].mount === 'blade') {
+                errors = [...errors, [i+1, "Blade assets are not permitted in this file"]]
+            }
 
             if (!fetchedAssets[datum.src_hostname]) {
                 errors = [...errors, [i+1, 'No asset with provided source hostname found']]
@@ -36,7 +39,7 @@ function validateImportedConnections (data, callback) {
 
             if (datum.src_mac && !/^([0-9a-fA-F]{2}[\W_]*){5}([0-9a-fA-F]{2})$/.test(datum.src_mac)) {
                 errors = [...errors, [i+1, 'Bad MAC address']]
-            } else {
+            } else if (datum.src_mac){
                 datum.src_mac = datum.src_mac.replace((/[\W_]/g), "").toLowerCase().replace(/(.{2})(?!$)/g,"$1:")
             }
 
@@ -51,7 +54,7 @@ function validateImportedConnections (data, callback) {
                     (fetchedAssets[datum.src_hostname].networkConnections[datum.src_port] && fetchedAssets[datum.src_hostname].networkConnections[datum.src_port].otherAssetID === datumAssetId)) {
                     // TODO: Confirm w Janice that the entire object is null and not just otherAssetID
                     if (fetchedAssets[datum.src_hostname].networkConnections[datum.src_port].otherPort === datum.dest_port) {
-                        if (fetchedAssets[datum.src_hostname].macAddresses[datum.src_port] === datum.src_mac) {
+                        if (datum.src_port in fetchedAssets[datum.src_hostname].macAddresses && fetchedAssets[datum.src_hostname].macAddresses[datum.src_port] === datum.src_mac) {
                             toBeIgnored.push(datum)
                             continue
                         }
@@ -139,6 +142,12 @@ async function addConnections (data, fetchedAssets, callback) {
             }
         }
 
+        const newMacAddress = (datum.src_mac ? datum.src_mac : (
+            datum.src_port in fetchedAssets[datum.src_hostname].macAddresses ?
+            fetchedAssets[datum.src_hostname].macAddresses[datum.src_port] :
+            null
+        ))
+
         if (datum.dest_hostname) {
             // This means: modify or add
 
@@ -160,20 +169,18 @@ async function addConnections (data, fetchedAssets, callback) {
             }
 
             // Now add new connection to source
-            const newMacAddress = (datum.src_mac ? datum.src_mac : fetchedAssets[datum.src_hostname].macAddresses[datum.src_port])
-            firebaseutils.assetRef.doc(fetchedAssets[datum.src_hostname].id).update({
+            var src_updates = {
                 ["networkConnections."+datum.src_port+".otherAssetID"]: fetchedAssets[datum.dest_hostname].id,
                 ["networkConnections."+datum.src_port+".otherPort"]: datum.dest_port,
-                ["macAddresses."+datum.src_port]: newMacAddress
-            })
+            }
+            if (newMacAddress) {
+                src_updates["macAddresses."+datum.src_port] = newMacAddress
+            }
+            firebaseutils.assetRef.doc(fetchedAssets[datum.src_hostname].id).update(src_updates)
 
             if (datum.src_hostname in fetchedAssets) {
                 var newAsset1 = fetchedAssets[datum.src_hostname]
-                newAsset1 = Object.assign({}, newAsset1, {
-                    ["networkConnections."+datum.src_port+".otherAssetID"]: fetchedAssets[datum.dest_hostname].id,
-                    ["networkConnections."+datum.src_port+".otherPort"]: datum.dest_port,
-                    ["macAddresses."+datum.src_port]: newMacAddress
-                })
+                newAsset1 = Object.assign({}, newAsset1, src_updates)
             }
 
             // Lastly add new connection to new destination
@@ -194,11 +201,13 @@ async function addConnections (data, fetchedAssets, callback) {
             // This means: delete
 
             // Now delete connection from source
-            const newMacAddress = (datum.src_mac ? datum.src_mac : (fetchedAssets[datum.src_hostname].macAddresses[datum.src_port] || null))
-            firebaseutils.assetRef.doc(fetchedAssets[datum.src_hostname].id).update({
+            var delete_updates = {
                 ["networkConnections."+datum.src_port]: firebaseutils.firebase.firestore.FieldValue.delete(),
-                ["macAddresses."+datum.src_port]: newMacAddress
-            })
+            }
+            if(newMacAddress) {
+                delete_updates["macAddresses."+datum.src_port] = newMacAddress
+            }
+            firebaseutils.assetRef.doc(fetchedAssets[datum.src_hostname].id).update(delete_updates)
 
             var newAsset3 = fetchedAssets[datum.dest_hostname]
             newAsset3 = Object.assign({}, newAsset3, {

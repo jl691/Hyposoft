@@ -170,14 +170,14 @@ class ModelSettingsLayer extends React.Component {
         }
 
 
-        var memory = 0
+        var memory = ''
         if (this.state.memory.trim() !== '' &&
             (isNaN(this.state.memory.trim()) || !Number.isInteger(parseFloat(this.state.memory.trim())) || parseInt(this.state.memory.trim()) < 0 || parseInt(this.state.memory.trim()) > 1000)) {
             ToastsStore.info('Memory should be a non-negative integer less than 1000', 3000, 'burntToast')
             this.setState(oldState => ({...oldState, memory: ''}))
             return
         } else if (this.state.memory.trim() !== '') {
-            memory = parseInt(this.state.memory)
+            memory = this.state.memory+''
         }
 
         if (this.state.storage.trim() !== '' && this.state.storage.trim().length > 50) {
