@@ -246,7 +246,7 @@ const rackUConflict = (changePlanID, stepID, assetID, model, datacenter, datacen
                                     //what if model was deleted? Then
                                     callback(false)
                                 }
-                            }, assetID, isChassis ? { id: chassisAssetID } : null) //{id: chassisId} instead of true. so assetID of the chassis...what if offline to active htough? use the assetID of the new chassis we are moving to. Aka, look up in assets the where hostname === chassisHostname and return the doc id
+                            }, assetID, isChassis  || isBlade ? { id: chassisAssetID } : null) //{id: chassisId} instead of true. so assetID of the chassis...what if offline to active htough? use the assetID of the new chassis we are moving to. Aka, look up in assets the where hostname === chassisHostname and return the doc id
 
                         }
                     })
@@ -662,20 +662,21 @@ function editBladeChangePlanPackage(changePlanID, stepID, model, hostname, chass
         datacenterNonExistent(changePlanID, stepID, datacenter, status2 => {
             hostnameConflict(changePlanID, stepID, assetID, hostname, status3 => {
                 ownerConflict(changePlanID, stepID, owner, status4 => {
+                    
                     assetIDConflict(changePlanID, stepID, assetID, status5 => {
                         modelConflict(changePlanID, stepID, model, status6 => {
-                            //assetID is null here, because it's used to check for self conflicting in rackUConflict
                             rackNonExistent(changePlanID, stepID, rack, datacenter, datacenterID, status7 => {
-                         
+                                console.log(rack, rackU)
+                                console.log(chassisHostname, chassisSlot)
                                 rackUConflict(changePlanID, stepID, assetID, model, datacenter, datacenterID, rack, rackU, status8 => {
                                     callback()
 
-                                }, chassisHostname, chassisSlot)
+                                }, chassisHostname, chassisSlot, chassisAssetID)
                             }, chassisHostname)
 
                         })
 
-                    })
+                    }, true)
 
                 })
             })
@@ -707,7 +708,7 @@ function addBladeChangePlanPackage(changePlanID, stepID, model, hostname, chassi
                                 rackUConflict(changePlanID, stepID, null, model, datacenter, datacenterID, rack, rackU, status8 => {
                                     callback()
 
-                                }, chassisHostname, chassisSlot)
+                                }, chassisHostname, chassisSlot, chassisAssetID)
                             }, chassisHostname)
 
                         })
@@ -942,8 +943,11 @@ function checkWithPreviousSteps(changePlanID, thisStepID, thisStepNum, callback)
 function moveChangeCheck(changePlanID, thisStepID, otherStepNum, thisStepData, callback) {
     //the current step we are on is a move
     //is it a move to or from offline?
-    //what do we need to check for conflicts for with previous steps?
-    //if i am an edit step: want to check 
+    ///add/edit a blade to the chassis that has been moved offline
+    //Move a chassis to/from even though it has been decommissioned in a previous step
+    
+    //Make sure add blade sequential step conflicts (rack specifically) still works
+    
     callback()
 }
 
