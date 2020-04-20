@@ -2,7 +2,7 @@ import * as firebase from 'firebase/app'
 import 'firebase/firestore'
 import { sha256 } from 'js-sha256'
 
-const firebaseConfig = {
+var firebaseConfig = {
     apiKey: "AIzaSyBE772y7XqZWwG5Q6Un0lu3zJsM12l-EDg",
     authDomain: "hyposoft-dev.firebaseapp.com",
     databaseURL: "https://hyposoft-dev.firebaseio.com",
