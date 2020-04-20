@@ -1,20 +1,8 @@
 const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-const nodemailer = require('nodemailer');
-const cors = require('cors')({origin: true});
+const https = require('https');
 const firestore = require('@google-cloud/firestore');
 const client = new firestore.v1.FirestoreAdminClient();
 
-admin.initializeApp();
-
-// This is for the email delivery
-let transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'ece458jajascript@gmail.com',
-        pass: 'dukeece458badpassword'
-    }
-});
 
 const bucket_daily = 'gs://daily_backups_hyposoft_prod';
 const bucket_weekly = 'gs://weekly_backups_hyposoft_prod';
@@ -40,25 +28,11 @@ exports.scheduledDailyFirestoreExport = functions.pubsub
     const response = responses[0];
     console.log(`Operation Name: ${response['name']}`);
     // Now send directed email
-    cors(req, res, () => {
+    https.get('https://hyposoft-53c70.appspot.com/dailyBackupEmail', (res) => {
 
-       const dest = 'ad353@duke.edu';
-
-       const mailOptions = {
-           from: 'HypoSoft Backup Team <ece458jajascript@gmail.com>', // Something like: Jane Doe <janedoe@gmail.com>
-           to: dest,
-           subject: "Daily Backup Success", // email subject
-           html: "<p>Hello!</p><br/><p>A daily backup of your database was successfully taken at "+ new Date()+"</p><br/><p>Have a great day!</p><p>HypoSoft Backup Team</p>" // email content in HTML
-       };
-
-       // returning result
-       return transporter.sendMail(mailOptions, (erro, info) => {
-           if(erro){
-               return res.send(erro.toString());
-           }
-           return res.send('Sent');
-       });
-   });
+    }).on('error', (e) => {
+      console.error(e);
+    });
     return response;
   })
   .catch(err => {
@@ -87,24 +61,11 @@ exports.scheduledWeeklyFirestoreExport = functions.pubsub
     const response = responses[0];
     console.log(`Operation Name: ${response['name']}`);
     // Now send directed email
-    cors(req, res, () => {
-       const dest = 'ad353@duke.edu';
+    https.get('https://hyposoft-53c70.appspot.com/weeklyBackupEmail', (res) => {
 
-       const mailOptions = {
-           from: 'HypoSoft Backup Team <ece458jajascript@gmail.com>', // Something like: Jane Doe <janedoe@gmail.com>
-           to: dest,
-           subject: "Weekly Backup Success", // email subject
-           html: "<p>Hello!</p><br/><p>A weekly backup of your database was successfully taken at "+ new Date()+"</p><br/><p>Have a great day!</p><p>HypoSoft Backup Team</p>" // email content in HTML
-       };
-
-       // returning result
-       return transporter.sendMail(mailOptions, (erro, info) => {
-           if(erro){
-               return res.send(erro.toString());
-           }
-           return res.send('Sent');
-       });
-   });
+    }).on('error', (e) => {
+      console.error(e);
+    });
     return response;
   })
   .catch(err => {
@@ -133,24 +94,11 @@ exports.scheduledMonthlyFirestoreExport = functions.pubsub
     const response = responses[0];
     console.log(`Operation Name: ${response['name']}`);
     // Now send directed email
-    cors(req, res, () => {
+    https.get('https://hyposoft-53c70.appspot.com/monthlyBackupEmail', (res) => {
 
-       const dest = 'ad353@duke.edu';
-
-       const mailOptions = {
-           from: 'HypoSoft Backup Team <ece458jajascript@gmail.com>', // Something like: Jane Doe <janedoe@gmail.com>
-           to: dest,
-           subject: "Monthly Backup Success", // email subject
-           html: "<p>Hello!</p><br/><p>A monthly backup of your database was successfully taken at "+ new Date()+"</p><br/><p>Have a great day!</p><p>HypoSoft Backup Team</p>" // email content in HTML
-       };
-
-       // returning result
-       return transporter.sendMail(mailOptions, (erro, info) => {
-           if(erro){
-               return res.send(erro.toString());
-           }
-           return res.send('Sent');
-       });
+    }).on('error', (e) => {
+      console.error(e);
+    });
    });
     return response;
   })
