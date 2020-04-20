@@ -47,8 +47,10 @@ function validateImportedAssets (data, callback) {
         // First populate usedRackUsInRack so we can check for conflicts
         for (var a = 0; a < Object.keys(assetsLoaded).length; a++) {
             const asset = assetsLoaded[Object.keys(assetsLoaded)[a]]
-            for (var t = asset.rackU; t < asset.rackU + existingModels[asset.vendor][asset.modelNumber].height; t++) {
-                usedRackUsInRack[asset.rackID][t] = asset.id
+            if (existingModels[asset.vendor][asset.modelNumber].mount !== 'blade') {
+                for (var t = asset.rackU; t < asset.rackU + existingModels[asset.vendor][asset.modelNumber].height; t++) {
+                    usedRackUsInRack[asset.rackID][t] = asset.id
+                }
             }
         }
 
@@ -310,6 +312,7 @@ function validateImportedAssets (data, callback) {
                 }
                 for (var j = parseInt(datum.rack_position); j < parseInt(datum.rack_position) + parseInt(existingModels[datum.vendor][datum.model_number].height); j++) {
                     if ((rackNamesToIdsForOurDC[datum.rack] in usedRackUsInRack && j in usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]] && usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]][j] != datum.asset_number) || j > 42) {
+                        console.log('row: '+(i+1)+', '+usedRackUsInRack[rackNamesToIdsForOurDC[datum.rack]][j]+' conflicts w us: '+datum.asset_number)
                         errors = [...errors, [i + 1, 'Asset will not fit on the rack at this position']]
                     }
                 }
@@ -1187,12 +1190,14 @@ function getAssetsForExport (callback) {
                             var rackU = ''
                             var chassisId = ''
                             var chassisSlot = ''
+                            var dc = escapeStringForCSV(asset.datacenterAbbrev)
 
                             if (models[asset.modelId].mount === 'blade') {
                                 rack = ''
                                 rackU = ''
                                 chassisId = blades[asset.assetId].chassisId
                                 chassisSlot = blades[asset.assetId].rackU
+                                dc = ''
                             } else {
                                 rack = escapeStringForCSV(asset.rack)
                                 rackU = ''+asset.rackU
@@ -1203,7 +1208,7 @@ function getAssetsForExport (callback) {
                             rows = [...rows, [
                                 escapeStringForCSV(asset.assetId),
                                 escapeStringForCSV(asset.hostname),
-                                escapeStringForCSV(asset.datacenterAbbrev),
+                                dc,
                                 '',
                                 rack,
                                 rackU,
