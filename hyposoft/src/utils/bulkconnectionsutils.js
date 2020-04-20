@@ -252,6 +252,9 @@ function exportFilteredConnections (assets) {
             }
             if (asset.networkConnections) {
                 for (var j = 0; j < Object.keys(asset.networkConnections).length; j++) {
+                    if (Object.keys(asset.networkConnections)[j].startsWith('blade')) {
+                        continue
+                    }
                     if (!portsToIgnore.includes(asset.asset_id+'.'+Object.keys(asset.networkConnections)[j])) {
                         const portInfo = asset.networkConnections[Object.keys(asset.networkConnections)[j]]
                         const macAddress = (asset.macAddresses ? asset.macAddresses[Object.keys(asset.networkConnections)[j]] : '')
@@ -294,6 +297,9 @@ function getConnectionsForExport (callback) {
             }
             if (asset.networkConnections) {
                 for (var j = 0; j < Object.keys(asset.networkConnections).length; j++) {
+                    if (Object.keys(asset.networkConnections)[j].startsWith('blade')) {
+                        continue
+                    }
                     if (!portsToIgnore.includes(asset.id+'.'+Object.keys(asset.networkConnections)[j])) {
                         const portInfo = asset.networkConnections[Object.keys(asset.networkConnections)[j]]
                         const macAddress = (asset.macAddresses ? asset.macAddresses[Object.keys(asset.networkConnections)[j]] : '')
