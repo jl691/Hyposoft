@@ -69,7 +69,7 @@ function validateImportedAssets (data, callback) {
             datum.vendor = datum.vendor && datum.vendor.trim()
             datum.model_number = datum.model_number && datum.model_number.trim()
             datum.owner = datum.owner && datum.owner.trim()
-            datum.hostname = datum.hostname && datum.hostname.trim()
+            datum.hostname = datum.hostname && datum.hostname.toLowerCase().trim()
             datum.rack = datum.rack && datum.rack.toUpperCase().trim()
             datum.power_port_connection_1 = datum.power_port_connection_1 && datum.power_port_connection_1.toUpperCase().trim()
             datum.power_port_connection_2 = datum.power_port_connection_2 && datum.power_port_connection_2.toUpperCase().trim()
@@ -93,10 +93,39 @@ function validateImportedAssets (data, callback) {
                 assetNumbersSeenInImport.push(datum.asset_number)
             }
 
-            var isBlade = existingModels[datum.vendor][datum.model_number].mount === 'blade'
-            var isOffline = !(datum.asset_number in assetsLoaded) && (datum.asset_number in offlineAssets)
-            var isDCBlank = !datum.datacenter || datum.datacenter.trim() === ''
-            var isOSBlank = !datum.offline_site || datum.offline_site.trim() === ''
+            if (!(datum.asset_number in assetsLoaded)) {
+                if (!datum.vendor) {
+                    canTestForFit = false
+                    errors = [...errors, [i + 1, 'Vendor missing']]
+                }
+
+                if (!datum.model_number) {
+                    canTestForFit = false
+                    errors = [...errors, [i + 1, 'Model number missing']]
+                }
+            } else {
+                if (datum.model_number !== assetsLoaded[datum.asset_number].modelNumber ||
+                    datum.vendor !== assetsLoaded[datum.asset_number].vendor) {
+                    errors = [...errors, [i + 1, 'You cannot change the model for an existing asset']]
+                }
+            }
+
+            if (datum.vendor && !(datum.vendor in existingModels)) {
+                canTestForFit = false
+                errors = [...errors, [i + 1, 'Unknown vendor']]
+            } else if (datum.model_number && !(datum.model_number in existingModels[datum.vendor])) {
+                canTestForFit = false
+                errors = [...errors, [i + 1, 'Unknown model number for specified vendor']]
+            }
+
+            try {
+                var isBlade = existingModels[datum.vendor][datum.model_number].mount === 'blade'
+                var isOffline = !(datum.asset_number in assetsLoaded) && (datum.asset_number in offlineAssets)
+                var isDCBlank = !datum.datacenter || datum.datacenter.trim() === ''
+                var isOSBlank = !datum.offline_site || datum.offline_site.trim() === ''
+            } catch (error) {
+                continue // not work it
+            }
 
             if (!isBlade && isDCBlank && isOSBlank && !(datum.asset_number in assetsLoaded) && !(datum.asset_number in offlineAssets)) {
                 errors = [...errors, [i + 1, 'Either datacenter or offline site must be specified for new non-blade assets']]
@@ -200,31 +229,6 @@ function validateImportedAssets (data, callback) {
                         }
                     }
                 }
-            }
-
-            if (!(datum.asset_number in assetsLoaded)) {
-                if (!datum.vendor) {
-                    canTestForFit = false
-                    errors = [...errors, [i + 1, 'Vendor missing']]
-                }
-
-                if (!datum.model_number) {
-                    canTestForFit = false
-                    errors = [...errors, [i + 1, 'Model number missing']]
-                }
-            } else {
-                if (datum.model_number !== assetsLoaded[datum.asset_number].modelNumber ||
-                    datum.vendor !== assetsLoaded[datum.asset_number].vendor) {
-                    errors = [...errors, [i + 1, 'You cannot change the model for an existing asset']]
-                }
-            }
-
-            if (datum.vendor && !(datum.vendor in existingModels)) {
-                canTestForFit = false
-                errors = [...errors, [i + 1, 'Unknown vendor']]
-            } else if (datum.model_number && !(datum.model_number in existingModels[datum.vendor])) {
-                canTestForFit = false
-                errors = [...errors, [i + 1, 'Unknown model number for specified vendor']]
             }
 
             if (datum.owner && !existingUsernames.includes(datum.owner)) {
@@ -391,7 +395,7 @@ function validateImportedAssets (data, callback) {
                     }
                 } else {
                     // All other regular assets
-                    if (assetFromDb.hostname.toLowerCase().trim() == datum.hostname.toLowerCase().trim() &&
+                    if ((assetFromDb.hostname && assetFromDb.hostname.toLowerCase().trim() == datum.hostname) &&
                         assetFromDb.datacenterAbbrev.toLowerCase().trim() == datum.datacenter.toLowerCase().trim() &&
                         assetFromDb.rack.toUpperCase().trim() == datum.rack &&
                         ''+assetFromDb.rackU == datum.rack_position.trim() &&
