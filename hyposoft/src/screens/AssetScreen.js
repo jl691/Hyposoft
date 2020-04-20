@@ -634,9 +634,9 @@ class AssetScreen extends Component {
                                 <Button icon={<Share/>} label={<Text size="small">Export Filtered Assets</Text>} margin={{top: 'small', bottom: 'medium'}} onClick={() => {
                                     bulkassetutils.exportFilteredAssets(this.state.searchResults || this.assetTable.current.state.assets);
                                 }} style={{marginBottom: "10px"}}/>
-                                <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} margin={{bottom: 'medium'}} onClick={() => {
+                                {!this.props.match.params.storageSiteAbbrev && <Button icon={<Share/>} label={<Text size="small">Export Filtered Connections</Text>} margin={{bottom: 'medium'}} onClick={() => {
                                     bulkconnectionstutils.exportFilteredConnections(this.state.searchResults || this.assetTable.current.state.assets);
-                                }} style={{marginBottom: "10px"}}/>
+                                }} style={{marginBottom: "10px"}}/>}
                                 <Button icon={<Share/>} label={<Text size="small">Export Selected Barcodes</Text>} onClick={() => {
                                     labelutils.generateLabelPDF(this.assetTable.current.state.selectedAssets.sort());
                                 }} margin={{bottom: 'medium'}}/>
