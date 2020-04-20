@@ -2,7 +2,7 @@
     "rackErrID": "The rack in this change plan step does not exist.",
     "datacenterErrID": "The datacenter in this change plan step does not exist.",
     "rackUConflictDBErrID": "An asset at this rack U conflicts with other asset(s) on the rack.",
-    "rackUConflictStepErrID": "An asset at this rack U conflicts with other asset(s) on the rack placed in an earlier step.",
+    "rackUConflictStepErrID": "An asset at this rack U conflicts with other asset(s) on the rack placed in another step.",
     "ownerErrID": "The owner for this asset does not exist.",
     "hostnameDBErrID": "The hostname in this change plan step is already taken.",
     "hostnameStepErrID": "The hostname in this change plan step is already taken in a previous step.",
@@ -29,7 +29,10 @@
 
     "chassisErrID": "The chassis this blade belongs to does not exist.",
     "offlineStorageErrID": "The offline storage site does not exist.",
-    "slotConflictDBErrID": "An blade at this slot conflicts with another blade on the chassis."
+    "slotConflictDBErrID": "A blade at this slot conflicts with another blade on the chassis.",
+    "decommissionChassisStepErrID": "Trying to edit or add a blade whose chassis was decommissioned in a previous step.",
+    "moveChassisStepErrID": "Trying to edit or add a blade whose chassis was moved to offline storage.",
+    "slotConflictStepErrID": "The blade at this slot conflicts with a blade in another step."
 
 
     
