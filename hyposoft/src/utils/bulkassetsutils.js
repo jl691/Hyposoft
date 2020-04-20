@@ -737,6 +737,13 @@ function bulkAddAssets (assets, callback) {
         }
     }
 
+    if (chassisCount === 0) {
+        // Now we can add all the blades safely
+        bladesToAdd.forEach((blade, i) => {
+            bulkAddBladeAsset(blade)
+        })
+    }
+
     for (i = 0; i < assets.length; i++) {
         var asset = assets[i]
         if(asset.isOffline) {
@@ -744,7 +751,6 @@ function bulkAddAssets (assets, callback) {
             bulkAddOfflineAsset(asset)
         } else if (asset.isBlade) {
             // Online blade asset
-            // Handled in callback in the following else-block
         } else {
             // Regular online asset
             bulkAddRegularAsset(asset, () => {
@@ -1035,74 +1041,94 @@ function exportFilteredAssets (assets) {
 function getAssetsForExport (callback) {
     var assets = {}
     var offlineAssets = {}
-    firebaseutils.assetRef.orderBy('assetId').get().then(qs => {
-        var rows = [
-            ["asset_number", "hostname", "datacenter", "rack", "rack_position",
-            "vendor", "model_number", "owner", "comment", "power_port_connection_1", "power_port_connection_2"]
-        ]
+    var models = {}
 
+    firebaseutils.modelsRef.get().then(qs => {
         for (var i = 0; i < qs.size; i++) {
-            assets[qs.docs[i].data().assetId] = qs.docs[i].data()
+            models[qs.docs[i].id] = qs.docs[i].data()
         }
 
-        firebaseutils.assetRef.orderBy('assetId').get().then(qs2 => {
-            for (i = 0; i < qs2.size; i++) {
-                offlineAssets[qs2.docs[i].data().assetId] = qs2.docs[i].data()
+        firebaseutils.assetRef.orderBy('assetId').get().then(qs => {
+            var rows = [
+                ["asset_number", "hostname", "datacenter", "offline_site", "rack", "rack_position",
+                "chassis_number", "chassis_slot",
+                "vendor", "model_number", "owner", "comment", "power_port_connection_1", "power_port_connection_2",
+                "custom_display_color", "custom_cpu", "custom_memory", "custom_storage"]
+            ]
+
+            for (var i = 0; i < qs.size; i++) {
+                assets[qs.docs[i].data().assetId] = qs.docs[i].data()
             }
 
-            var assetsKeys = Object.keys(assets)
-            for (i = 0; i < assetsKeys.length; i++) {
-                // add live assets to csv
-                var asset = assets[assetsKeys[i]]
-                const ppC1 = (asset.powerConnections && asset.powerConnections.length >= 1 && asset.powerConnections[0].pduSide && asset.powerConnections[0].port ? (
-                    (asset.powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+asset.powerConnections[0].port
-                ) : '')
-                const ppC2 = (asset.powerConnections && asset.powerConnections.length >= 2 && asset.powerConnections[1].pduSide && asset.powerConnections[1].port ? (
-                    (asset.powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+asset.powerConnections[1].port
-                ) : '')
+            firebaseutils.db.collectionGroup('offlineAssets').orderBy('assetId').get().then(qs2 => {
+                for (i = 0; i < qs2.size; i++) {
+                    offlineAssets[qs2.docs[i].data().assetId] = qs2.docs[i].data()
+                }
 
-                rows = [...rows, [
-                    escapeStringForCSV(asset.assetId),
-                    escapeStringForCSV(asset.hostname),
-                    escapeStringForCSV(asset.datacenterAbbrev),
-                    escapeStringForCSV(asset.rack),
-                    ''+asset.rackU,
-                    escapeStringForCSV(asset.vendor),
-                    escapeStringForCSV(asset.modelNumber),
-                    escapeStringForCSV(asset.owner),
-                    escapeStringForCSV(asset.comment),
-                    ppC1,
-                    ppC2
-                ]]
-            }
+                var assetsKeys = Object.keys(assets)
+                for (i = 0; i < assetsKeys.length; i++) {
+                    // add live assets to csv
+                    var asset = assets[assetsKeys[i]]
+                    const ppC1 = (asset.powerConnections && asset.powerConnections.length >= 1 && asset.powerConnections[0].pduSide && asset.powerConnections[0].port ? (
+                        (asset.powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+asset.powerConnections[0].port
+                    ) : '')
+                    const ppC2 = (asset.powerConnections && asset.powerConnections.length >= 2 && asset.powerConnections[1].pduSide && asset.powerConnections[1].port ? (
+                        (asset.powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+asset.powerConnections[1].port
+                    ) : '')
 
-            var offlineAssetsKeys = Object.keys(offlineAssets)
-            for (i = 0; i < offlineAssetsKeys.length; i++) {
-                // add offline assets to csv
-                asset = offlineAssets[offlineAssetsKeys[i]]
-                const ppC1 = (asset.powerConnections && asset.powerConnections.length >= 1 && asset.powerConnections[0].pduSide && asset.powerConnections[0].port ? (
-                    (asset.powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+asset.powerConnections[0].port
-                ) : '')
-                const ppC2 = (asset.powerConnections && asset.powerConnections.length >= 2 && asset.powerConnections[1].pduSide && asset.powerConnections[1].port ? (
-                    (asset.powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+asset.powerConnections[1].port
-                ) : '')
+                    rows = [...rows, [
+                        escapeStringForCSV(asset.assetId),
+                        escapeStringForCSV(asset.hostname),
+                        escapeStringForCSV(asset.datacenterAbbrev),
+                        '',
+                        escapeStringForCSV(asset.rack),
+                        ''+asset.rackU,
+                        chassisId,
+                        chassisSlot,
+                        escapeStringForCSV(asset.vendor),
+                        escapeStringForCSV(asset.modelNumber),
+                        escapeStringForCSV(asset.owner),
+                        escapeStringForCSV(asset.comment),
+                        ppC1,
+                        ppC2,
+                        escapeStringForCSV(asset.variances.displayColor),
+                        escapeStringForCSV(asset.variances.cpu),
+                        escapeStringForCSV(asset.variances.memory+''),
+                        escapeStringForCSV(asset.variances.storage)
+                    ]]
+                }
 
-                rows = [...rows, [
-                    escapeStringForCSV(asset.assetId),
-                    escapeStringForCSV(asset.hostname),
-                    escapeStringForCSV(asset.datacenterAbbrev),
-                    escapeStringForCSV(asset.rack),
-                    ''+asset.rackU,
-                    escapeStringForCSV(asset.vendor),
-                    escapeStringForCSV(asset.modelNumber),
-                    escapeStringForCSV(asset.owner),
-                    escapeStringForCSV(asset.comment),
-                    ppC1,
-                    ppC2
-                ]]
-            }
+                var offlineAssetsKeys = Object.keys(offlineAssets)
+                for (i = 0; i < offlineAssetsKeys.length; i++) {
+                    // add offline assets to csv
+                    asset = offlineAssets[offlineAssetsKeys[i]]
+                    const ppC1 = ''
+                    const ppC2 = ''
 
-            callback(rows)
+                    rows = [...rows, [
+                        escapeStringForCSV(asset.assetId),
+                        escapeStringForCSV(asset.hostname),
+                        '',
+                        offlineSiteAbbrev,
+                        '',
+                        '',
+                        '',
+                        '',
+                        escapeStringForCSV(asset.vendor),
+                        escapeStringForCSV(asset.modelNumber),
+                        escapeStringForCSV(asset.owner),
+                        escapeStringForCSV(asset.comment),
+                        ppC1,
+                        ppC2,
+                        escapeStringForCSV(asset.variances.displayColor),
+                        escapeStringForCSV(asset.variances.cpu),
+                        escapeStringForCSV(asset.variances.memory+''),
+                        escapeStringForCSV(asset.variances.storage)
+                    ]]
+                }
+
+                callback(rows)
+            })
         })
     })
 }
