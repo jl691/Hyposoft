@@ -381,7 +381,7 @@ function validateImportedModels (data, callback) {
         for (var i = 0; i < data.length; i++) {
             var datum = data[i]
             datum.rowNumber = i+1
-            if (datum.mount_type !== fetchedModels[i].mount) {
+            if (fetchedModels[i].found && datum.mount_type !== fetchedModels[i].mount) {
                 errors = [...errors, [i+1, "Can't change mount type of a model after creation"]]
             }
             if (datum.height) {

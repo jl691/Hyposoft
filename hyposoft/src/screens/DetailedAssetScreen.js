@@ -738,7 +738,7 @@ export default class DetailedAssetScreen extends Component {
                                                         <td style={{ textAlign: 'right' }}>{this.state.asset.model}</td>
                                                     </tr>
                                                     {this.generateVariancesTable()}
-                                     
+
                                                     {!this.props.match.params.storageSiteAbbrev && <tr>
                                                         <td><b>Datacenter</b></td>
                                                         <td style={{ textAlign: 'right' }}>{this.state.asset.datacenter || 'N/A'}</td>
@@ -845,19 +845,21 @@ export default class DetailedAssetScreen extends Component {
                                             </span>
                                             {(this.chassisSlots
                                                 ?
-                                                <Box flex margin={{ top: 'small', bottom: 'small' }}
-                                                    direction='column' justify='start'>
-                                                    <Heading level='4' margin='none'>Blade Chassis View</Heading>
-                                                    <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
-                                                        gap='small' align='center'>
-                                                        <BladeChassisView
-                                                            chassisId={!this.bladeData ? this.state.asset.assetID : this.bladeData.chassisId}
-                                                            chassisHostname={!this.bladeData ? (this.state.asset.hostname ? this.state.asset.hostname : bladeutils.makeNoHostname(this.state.asset.assetID)) : this.bladeData.rack}
-                                                            chassisSlots={this.chassisSlots}
-                                                            slot={!this.bladeData ? null : this.bladeData.rackU}
-                                                        />
+                                                <MediaQuery maxDeviceWidth={1224}>
+                                                    <Box flex margin={{ top: 'small', bottom: 'small' }}
+                                                        direction='column' justify='start'>
+                                                        <Heading level='4' margin='none'>Blade Chassis View</Heading>
+                                                        <Box direction='column' flex alignSelf='stretch' style={{ marginTop: '15px' }}
+                                                            gap='small' align='center'>
+                                                            <BladeChassisView
+                                                                chassisId={!this.bladeData ? this.state.asset.assetID : this.bladeData.chassisId}
+                                                                chassisHostname={!this.bladeData ? (this.state.asset.hostname ? this.state.asset.hostname : bladeutils.makeNoHostname(this.state.asset.assetID)) : this.bladeData.rack}
+                                                                chassisSlots={this.chassisSlots}
+                                                                slot={!this.bladeData ? null : this.bladeData.rackU}
+                                                            />
+                                                        </Box>
                                                     </Box>
-                                                </Box>
+                                                </MediaQuery>
                                                 :
                                                 <Box></Box>
                                             )}
