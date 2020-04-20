@@ -494,7 +494,10 @@ function validateImportedModels (data, callback) {
             errors = [...errors, [i+1, 'Height should be a positive integer not greater than 42U']]
         } else if (datum.mount_type === 'blade' && datum.height && (datum.height.trim() !== '' || datum.height.trim() !== '0')) {
             errors = [...errors, [i+1, 'Height should be 0 or blank for blades']]
+        } else if (datum.mount_type === 'blade') {
+            datum.height = '1'
         }
+        
         if (!datum.display_color || String(datum.display_color).trim() === '') {
             datum.display_color = '#000000'
         } else if (datum.display_color && !/^#[0-9A-F]{6}$/i.test(String(datum.display_color))) {
@@ -628,7 +631,7 @@ function bulkAddModels (models, callback) {
         }
 
         createModel(null, ''+model.vendor, ''+model.model_number, model.height&&parseInt(model.height), ''+model.display_color,
-         network_ports, model.power_ports&&parseInt(model.power_ports), ''+model.cpu, ''+model.memory, ''+model.storage,
+         network_ports, model.power_ports ? parseInt(model.power_ports) : null, ''+model.cpu, ''+model.memory, ''+model.storage,
          ''+model.comment, ''+model.mount_type, (modelDoc, modelDocid) => {
              let suffixes_list = []
              let cpu = modelDoc.cpu
