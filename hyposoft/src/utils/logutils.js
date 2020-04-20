@@ -146,17 +146,24 @@ function addLog(objectId, objectType, action, data = null, callback = null, want
 
 function finishAddingLog(object, objectId, objectType, action, callback) {
     if (object) {
-        const timestamp = Date.now()
-        const userId = userutils.getLoggedInUser()
-        getUserName(userId, null, action, user => {
-            if (user) {
-                var log = packageLog(timestamp, objectId, objectType, object.name, object.data, object.previousData, object.datacenter, action, userId, user.name)
-                firebaseutils.logsRef.add(log)
-              }
+        if (action === BLADE_MODIFY() && objectType === ASSET() && buildDiff({currentData: {chassisHostname: object.data.chassisHostname,slot: object.data.slot},previousData: {chassisHostname: object.previousData.chassisHostname,slot: object.previousData.slot},objectType: objectType}) === ' ') {
+            // no modification at all
             if (callback) {
               callback()
             }
-        })
+        } else {
+          const timestamp = Date.now()
+          const userId = userutils.getLoggedInUser()
+          getUserName(userId, null, action, user => {
+              if (user) {
+                  var log = packageLog(timestamp, objectId, objectType, object.name, object.data, object.previousData, object.datacenter, action, userId, user.name)
+                  firebaseutils.logsRef.add(log)
+                }
+              if (callback) {
+                callback()
+              }
+          })
+        }
     }
 }
 
