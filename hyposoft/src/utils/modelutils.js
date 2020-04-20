@@ -389,8 +389,8 @@ function validateImportedModels (data, callback) {
                     errors = [...errors, [i+1, "Can't change height for a model with deployed instances"]]
                 }
             } else {
-                if (!fetchedModels[i].found) {
-                    errors = [...errors, [i+1, "Height required for creating a new model"]]
+                if (!fetchedModels[i].found && datum.mount_type !== 'blade') {
+                    errors = [...errors, [i+1, "Height required for creating a new non-blade-type model"]]
                 }
             }
 
