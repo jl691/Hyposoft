@@ -24,6 +24,7 @@ import AddAssetForm from "../components/AddAssetForm";
 
 import * as changeplanconflictutils from '../utils/changeplanconflictutils'
 import * as assetutils from '../utils/assetutils'
+import MoveAssetForm from "../components/MoveAssetForm";
 
 class DetailedChangePlanScreen extends React.Component {
 
@@ -310,6 +311,19 @@ class DetailedChangePlanScreen extends React.Component {
                                 popupType: "Edit" + datum.change,
                                 stepID: datum.id,
                             });
+                        } else if (datum.change === "move") {
+                            assetutils.getAssetDetails(datum.assetID, assetDetails => {
+                                console.log(assetDetails)
+                                if(assetDetails){
+                                    this.setState({
+                                        popupType: "Edit" + datum.change,
+                                        stepID: datum.id,
+                                        currentChange: assetDetails,
+                                        location: datum.location.toString(),
+                                        changeDetails: datum
+                                    });
+                                }
+                            }, datum.location === "offline" ?  true : null)
                         }
 
                     }} />)
@@ -468,10 +482,20 @@ class DetailedChangePlanScreen extends React.Component {
                         updateMacAddressesFromParent={assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses)}
                         updatePowerConnectionsFromParent={this.state.currentChange.powerConnections}
                         updateNetworkConnectionsFromParent={assetnetworkportutils.networkConnectionsToArray(this.state.currentChange.networkConnections)}
+
+                        chassisHostname={this.state.currentChange.chassisHostname ? this.state.currentChange.chassisHostname : null}
+                        chassisSlot={this.state.currentChange.chassisSlot ? this.state.currentChange.chassisSlot : null}
+
+                        updateDisplayColorFromParent={this.state.currentChange.variances.displayColor}
+                        updateCpuFromParent={this.state.currentChange.variances.cpu}
+                        updateMemoryFromParent={this.state.currentChange.variances.memory}
+                        updateStorageFromParent={this.state.currentChange.variances.storage}
+                        
                     />
                 </Layer>
             )
         } else if (popupType === 'Editadd') {
+            console.log(this.state.currentChange)
             console.log(this.state.currentChange.macAddresses, this.state.currentChange, assetmacutils.unfixMacAddressesForMACForm(this.state.currentChange.macAddresses))
             popup = (
                 <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
@@ -495,7 +519,33 @@ class DetailedChangePlanScreen extends React.Component {
                         updateCommentFromParent={this.state.currentChange.comment}
                         updateDatacenterFromParent={this.state.currentChange.datacenter}
                         updateAssetIDFromParent={this.state.currentChange.assetId ? this.state.currentChange.assetId : ""}
+
+                        updateDisplayColorFromParent={this.state.currentChange.variances.displayColor}
+                        updateCpuFromParent={this.state.currentChange.variances.cpu}
+                        updateMemoryFromParent={this.state.currentChange.variances.memory}
+                        updateStorageFromParent={this.state.currentChange.variances.storage}
                     />
+                </Layer>
+            )
+        } else if (popupType === 'Editmove') {
+            console.log(this.changePlanID)
+            popup = (
+                <Layer height="small" width="medium" onEsc={() => this.setState({ popupType: undefined })}
+                       onClickOutside={() => this.setState({ popupType: undefined })}>
+                <MoveAssetForm
+                    success={this.cancelPopup}
+                    cancelCallback={this.cancelPopup}
+                    changePlanID={this.changePlanID}
+                    assetID={this.state.currentChange.assetId}
+                    model={this.state.currentChange.model}
+                    location={this.state.location}
+                    editStorageSite={this.state.changeDetails.location === "rack" ? this.state.changeDetails.changes.datacenter["new"] : null}
+                    editDatacenter={this.state.changeDetails.location === "offline" ? this.state.changeDetails.changes.datacenter["new"] : null}
+                    editRack={this.state.changeDetails.location === "offline" ? this.state.changeDetails.changes.rack["new"] : null}
+                    editRackU={this.state.changeDetails.location === "offline" ? this.state.changeDetails.changes.rackU["new"] : null}
+                    stepID={this.state.changeDetails.step}
+                    currentLocation={this.state.location === "offline" ? "offline storage site " + this.state.currentChange.datacenter : "datacenter " + this.state.currentChange.datacenter + " on rack " + this.state.currentChange.rack + " at height " + this.state.currentChange.rackU}
+                />
                 </Layer>
             )
         }

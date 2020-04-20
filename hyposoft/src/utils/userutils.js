@@ -26,12 +26,13 @@ function doesLoggedInUserHaveModelPerm() {
     return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('MODEL_PERMISSION')))
 }
 
-function doesLoggedInUserHaveAssetPerm(dcAbbrev) {
+function doesLoggedInUserHaveAssetPerm(dcAbbrev, offline=false) {
     // If dcAbbrev is null, check for global permissions
+    const suffix = offline ? ' (offline)' : ''
     if (!dcAbbrev) {
         return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_GLOBAL')))
     }
-    return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_GLOBAL')) || (JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_'+dcAbbrev)))
+    return isUserLoggedIn() && ((JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_GLOBAL')) || (JSON.parse(localStorage.getItem('permissions')).includes('ASSET_PERMISSION_'+dcAbbrev+suffix)))
 }
 
 function getAllowedDCsString() {
@@ -200,6 +201,23 @@ function updateEveryonesAssetPermissions () {
     })
 }
 
+var permissionsInterval
+
+function keepRefreshingPermissions() {
+    permissionsInterval = setInterval(() => {
+        firebaseutils.usersRef.doc(localStorage.getItem('userDocId')).get().then(doc => {
+            const userObject = doc.data()
+            localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(
+                userObject.displayName+userObject.username+userObject.email+JSON.stringify(userObject.permissions)))
+            localStorage.setItem('permissions', JSON.stringify(userObject.permissions))
+        })
+    }, 10000)
+}
+
+function stopRefreshingPermissions() {
+    clearInterval(permissionsInterval)
+}
+
 function logUserIn(userObject) {
     localStorage.setItem('userLoginCheck', firebaseutils.hashAndSalt(
         userObject.displayName+userObject.username+userObject.email+JSON.stringify(userObject.permissions)))
@@ -209,6 +227,7 @@ function logUserIn(userObject) {
     localStorage.setItem('userDocId', userObject.docId)
     localStorage.setItem('isNetIDAccount', userObject.password.trim() === '' ? 'yes' : 'no')
     localStorage.setItem('permissions', JSON.stringify(userObject.permissions))
+    keepRefreshingPermissions()
 }
 
 function getLoggedInUser() {
@@ -220,6 +239,7 @@ function getLoggedInUserUsername() {
 }
 
 function logout() {
+    stopRefreshingPermissions()
     localStorage.clear()
 }
 
@@ -351,7 +371,12 @@ function getAllDataCenterAbbrevs(callback) {
         for (var i = 0; i < querySnapshot.size; i++) {
             results.push(querySnapshot.docs[i].data().abbreviation)
         }
-        callback(results)
+        firebaseutils.offlinestorageRef.get().then(qs => {
+            for (var j = 0; j < qs.size; j++) {
+                results.push(qs.docs[j].data().abbreviation+" (offline)")
+            }
+            callback(results)
+        })
     })
 }
 
@@ -361,5 +386,6 @@ fetchClaim, usernameTaken, validEmail, removeClaim, updateUsername, sendRecovery
 fetchRecovery, removeRecovery, changePasswordByEmail, getAllUsers, getLoggedInUser,
  ADMIN_PERMISSION, isLoggedInUserNetID, getLoggedInUserUsername, getAllDataCenterAbbrevs,
 updateUserPermissions, doesLoggedInUserHaveModelPerm, doesLoggedInUserHaveAssetPerm,
-doesLoggedInUserHaveAuditPerm, doesLoggedInUserHavePowerPerm,
+doesLoggedInUserHaveAuditPerm, doesLoggedInUserHavePowerPerm, keepRefreshingPermissions,
+stopRefreshingPermissions,
 doesLoggedInUserHaveAnyAssetPermsAtAll, getAllowedDCsString, updateEveryonesAssetPermissions }

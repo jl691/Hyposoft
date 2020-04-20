@@ -582,7 +582,7 @@ class UsersScreen extends Component {
                                         />
                                     <CheckBox
                                         checked={this.state.editPermissions.includes('ASSET_PERMISSION_GLOBAL')}
-                                        label="Asset management permission (Global)"
+                                        label={"Site permission \u00b7 Global"}
                                         onChange={(event) => {
                                             if (event.target.checked && !this.state.editPermissions.includes('ASSET_PERMISSION_GLOBAL')){
                                                 this.setState(oldState => {
@@ -621,7 +621,7 @@ class UsersScreen extends Component {
                                     {this.state.datacenterAbbrevs.map(dcAbbrev => (
                                         <CheckBox
                                             checked={this.state.editPermissions.includes('ASSET_PERMISSION_'+dcAbbrev)}
-                                            label={"Asset management permission ("+dcAbbrev+")"}
+                                            label={"Site permission \u00b7 "+dcAbbrev}
                                             onChange={(event) => {
                                                 if (event.target.checked && !this.state.editPermissions.includes('ASSET_PERMISSION_'+dcAbbrev)){
                                                     this.setState(oldState => ({

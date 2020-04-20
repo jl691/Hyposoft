@@ -26,6 +26,7 @@ class SingleRackElevation extends React.Component {
     componentDidMount() {
         let canvas = new fabric.Canvas(this.props.rackID);
         this.drawDiagram(this.props.rackID, canvas);
+        canvas.hoverCursor = 'pointer'
         //this.sendPNGToParent(canvas, this.state.letter, this.state.number);
     }
 
@@ -184,7 +185,14 @@ class SingleRackElevation extends React.Component {
                         selectable: false
                     });
 
-                    let assetText = new fabric.Text(asset.model.substr(0, 20), {
+                    let firstText;
+                    if(asset.mount === "chassis"){
+                        firstText = asset.model.substr(1, 12) + " - " + asset.count + " blade(s)" ;
+                    } else {
+                        firstText = asset.model.substr(1, 20);
+                    }
+
+                    let assetText = new fabric.Text(firstText, {
                         fill: this.getContrastYIQ(asset.color),
                         fontFamily: 'Arial',
                         fontSize: 15,

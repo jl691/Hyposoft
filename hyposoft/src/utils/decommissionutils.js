@@ -4,36 +4,49 @@ import * as userutils from './userutils'
 import * as assetnetworkportutils from '../utils/assetnetworkportutils'
 import * as assetutils from "../utils/assetutils"
 
-function decommissionAsset(id,callback) {
-    firebaseutils.assetRef.doc(id).get().then(doc => {
-        if (!doc.exists) {
+function decommissionAsset(id,callback,decommissionFunction=assetutils.deleteAsset,chassisParams=null, offlineStorage = null) {
+    let query = offlineStorage ? firebaseutils.db.collectionGroup("offlineAssets").where("assetId", "==", id) : firebaseutils.assetRef.doc(id);
+
+    query.get().then(snap => {
+        if (offlineStorage && snap.empty) {
+            callback(false)
+            return
+        } else if(!offlineStorage && !snap.exists){
             callback(false)
             return
         }
+        let doc = offlineStorage ? snap.docs[0] : snap;
         const docData = doc.data()
         assetnetworkportutils.getNetworkPortConnections(id, graph => {
-          firebaseutils.usersRef.doc(userutils.getLoggedInUser()).get().then(doc => {
-            if (!doc.exists) {
-                callback(false)
-                return
-            }
-            assetutils.deleteAsset(id, result => {
-                if (result) {
-                  logutils.addLog(id,logutils.ASSET(),logutils.DECOMMISSION(),docData)
-                  firebaseutils.decommissionRef.add({...docData,timestamp: Date.now(),name: doc.data().username,graph: graph}).then(() => callback(true))
-                  .catch( error => {
-                      console.log("Error getting documents: ", error)
-                      callback(false)
-                  })
-                } else {
+          firebaseutils.modelsRef.doc(docData.modelId).get().then(doc => {
+            const baseModel = {cpu: doc.data() ? doc.data().cpu : '', displayColor: doc.data() ? doc.data().displayColor : '', memory: doc.data() ? doc.data().memory : '', storage: doc.data() ? doc.data().storage : ''}
+            firebaseutils.usersRef.doc(userutils.getLoggedInUser()).get().then(doc => {
+              if (!doc.exists) {
                   callback(false)
-                }
-              }, true)
-            })
-            .catch( error => {
-              console.log("Error getting documents: ", error)
-              callback(false)
-            })
+                  return
+              }
+              decommissionFunction(id, (result,myParams) => {
+                  if (result) {
+                    logutils.addLog(id,offlineStorage ? logutils.OFFLINE() : logutils.ASSET(),logutils.DECOMMISSION(),docData)
+                    var offlineData = {}
+                    if (offlineStorage) {
+                      offlineData = {datacenterAbbrev: '',datacenterID: '',rack: '',rackID: '',rackNum: '',rackRow: '',rackU: ''}
+                    }
+                    firebaseutils.decommissionRef.add({...docData,...offlineData,timestamp: Date.now(),name: doc.data().username,graph: graph,baseModel: baseModel,chassisParams: chassisParams ? chassisParams : (myParams ? myParams : null)}).then(() => callback(true))
+                    .catch( error => {
+                        console.log("Error getting documents: ", error)
+                        callback(false)
+                    })
+                  } else {
+                    callback(false)
+                  }
+                }, true, offlineStorage ? offlineStorage : null)
+              })
+              .catch( error => {
+                console.log("Error getting documents: ", error)
+                callback(false)
+              })
+          })
         })
     })
     .catch( error => {

@@ -26,7 +26,7 @@ import * as datacenterutils from "../utils/datacenterutils";
 import * as assetnetworkportutils from "../utils/assetnetworkportutils";
 import * as changeplanutils from "../utils/changeplanutils";
 import {Redirect} from "react-router-dom";
-import SingleRackElevation from "./SingleRackElevation";
+import SingleRackElevationNative from "./SingleRackElevationNative";
 import HomeMenu from "./HomeMenu";
 
 class RackView extends React.Component {
@@ -428,7 +428,9 @@ class RackView extends React.Component {
                         console.log(datum)
                         this.setState({
                             popupType: 'Elevation',
-                            elevation: datum.id
+                            elevation: datum.id,
+                            letter: datum.letter,
+                            number: datum.number
                         })
                     }}/>)
             },
@@ -636,11 +638,10 @@ class RackView extends React.Component {
         } else if (popupType === 'Elevation') {
             popup = (
                 <Layer onEsc={() => this.setState({popupType: undefined})}
-                       onClickOutside={() => this.setState({popupType: undefined})}>
+                       onClickOutside={() => this.setState({popupType: "", letter: undefined, number: undefined})}
+                       margin='small'>
                     <Box overflow={"auto"}>
-                        <SingleRackElevation rackID={this.state.elevation}/>
-                        <Button label="Close" icon={<Close/>}
-                                onClick={() => this.setState({popupType: ""})}/>
+                        <SingleRackElevationNative rackID={this.state.elevation} letter={this.state.letter} number={this.state.number}/>
                     </Box>
                 </Layer>
             );

@@ -15,34 +15,35 @@ describe('change plan add asset tests: basic test', () => {
     })
 
     //the issues with these tests is in the setup. Trying to get docs that dont exist. Works fine manually though
+    //can set up another datacenter and rack that you will not delete in the set up
 
-    // test('changeplan add asset conflicts: rack', done => {
-    //     //trying to simulate someone clicking on the detail view of the change plan step and retriggering the check
-    //     changeplanconflictutils.rackNonExistent(ids['changePlan'], ids['changePlanStep'], 'A1', 'Test Datacenter', rackStatus => {
-    //         firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
-    //             expect(docRef.data().database.rack[0]).toBe('rackErrID')
-    //             done()
-    //         })
+    test('changeplan add asset conflicts: rack', done => {
+        //trying to simulate someone clicking on the detail view of the change plan step and retriggering the check
+        changeplanconflictutils.rackNonExistent(ids['changePlan'], ids['changePlanStep'], 'A1', 'Test Datacenter', ids['datacenter'], rackStatus => {
+            firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
+                expect(docRef.data().database.rack[0]).toBe('rackErrID')
+                done()
+            })
 
-    //     })
+        })
 
-    // })
-    // test('changeplan add asset conflicts: datacenter', done => {
-    //     changeplanconflictutils.datacenterNonExistent(ids['changePlan'], ids['changePlanStep'], 'Test Datacenter', datacenterStatus => {
-    //         firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
-    //             expect(docRef.data().database.datacenter[0]).toBe('datacenterErrID')
-    //             done()
-    //         })
+    })
+    test('changeplan add asset conflicts: datacenter', done => {
+        changeplanconflictutils.datacenterNonExistent(ids['changePlan'], ids['changePlanStep'], 'Test Datacenter', datacenterStatus => {
+            firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
+                expect(docRef.data().database.datacenter[0]).toBe('datacenterErrID')
+                done()
+            })
 
-    //     })
+        })
 
-    // })
+    })
 
     //is assetID '111111' good to use? what about ''?
     test('changeplan add asset conflicts: hostname', done => {
-        changeplanconflictutils.hostnameConflict(ids['changePlan'], ids['changePlanStep'], '123456','asset1', hostnameStatus => {
+        changeplanconflictutils.hostnameConflict(ids['changePlan'], ids['changePlanStep'], '123456', 'asset1', hostnameStatus => {
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
-                expect(docRef.data().database.hostname[0]).toBe('hostnameErrID')
+                expect(docRef.data().database.hostname[0]).toBe('hostnameDBErrID')
                 done()
             })
 
@@ -63,7 +64,7 @@ describe('change plan add asset tests: basic test', () => {
     test('changeplan add asset conflicts: assetID', done => {
         changeplanconflictutils.assetIDConflict(ids['changePlan'], ids['changePlanStep'], '999999', assetIDStatus => {
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
-                expect(docRef.data().database.assetID[0]).toBe('assetIDErrID')
+                expect(docRef.data().database.assetID[0]).toBe('assetIDDBErrID')
                 done()
             })
 
@@ -122,8 +123,9 @@ function conflictSetup(callback) {
 
                                 //changing the 'live' database so there are conflicts now with the change plan step
                                 firebaseutils.modelsRef.doc(ids['model']).delete().then(docRef => {
-                                    firebaseutils.datacentersRef.doc(ids['datacenter']).delete().then(docRef => {
-                                        firebaseutils.racksRef.doc(ids['rack']).delete().then(docRef => {
+                                    firebaseutils.racksRef.doc(ids['rack']).delete().then(docRef => {
+                                        firebaseutils.datacentersRef.doc(ids['datacenter']).delete().then(docRef => {
+
                                             firebaseutils.usersRef.doc(ids['user']).delete().then(docRef => {
                                                 callback()
                                             })

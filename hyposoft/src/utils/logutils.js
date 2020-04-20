@@ -22,12 +22,24 @@ function DATACENTER() {
     return 'datacenter'
 }
 
+function OFFLINE_SITE() {
+    return 'offline site'
+}
+
 function CHANGEPLAN() {
     return 'change plan'
 }
 
 function PDU() {
     return 'pdu'
+}
+
+function BCMAN() {
+    return 'bcman'
+}
+
+function OFFLINE() {
+    return 'offline asset'
 }
 
 // ACTIONS
@@ -37,6 +49,10 @@ function CREATE() {
 
 function MODIFY() {
     return 'modified'
+}
+
+function BLADE_MODIFY() {
+    return 'modified blade by changing'
 }
 
 function DELETE() {
@@ -61,6 +77,10 @@ function POWER_ON() {
 
 function POWER_OFF() {
     return 'powered off'
+}
+
+function MOVE() {
+    return 'moved'
 }
 
 // only optional is objectId and objectType
@@ -98,11 +118,18 @@ function addLog(objectId, objectType, action, data = null, callback = null, want
             case DATACENTER():
                 getDatacenterName(objectId,data,action,datacenter => finishAddingLog(datacenter, objectId, objectType, action, callback))
                 break
+            case OFFLINE_SITE():
+                getOfflineSiteName(objectId,data,action,offlineSite => finishAddingLog(offlineSite, objectId, objectType, action, callback))
+                break
             case CHANGEPLAN():
                 getChangePlanName(objectId,data,action,changeplan => finishAddingLog(changeplan, objectId, objectType, action, callback))
                 break
             case PDU():
-                getPDUName(data,action,(pdu,assetId) => finishAddingLog(pdu, assetId, objectType, action, callback))
+            case BCMAN():
+                getPDUName(data,action,(pdu,assetId) => finishAddingLog(pdu, assetId, objectType, action, callback),objectType===BCMAN())
+                break
+            case OFFLINE():
+                getAssetName(objectId,data,action,asset => finishAddingLog(asset, objectId, objectType, action, callback),true)
                 break
             default:
                 console.log("Could not create log due to unknown type: " + objectType)
@@ -126,17 +153,24 @@ function addLog(objectId, objectType, action, data = null, callback = null, want
 
 function finishAddingLog(object, objectId, objectType, action, callback) {
     if (object) {
-        const timestamp = Date.now()
-        const userId = userutils.getLoggedInUser()
-        getUserName(userId, null, action, user => {
-            if (user) {
-                var log = packageLog(timestamp, objectId, objectType, object.name, object.data, object.previousData, object.datacenter, action, userId, user.name)
-                firebaseutils.logsRef.add(log)
-              }
+        if (action === BLADE_MODIFY() && objectType === ASSET() && buildDiff({currentData: {chassisHostname: object.data.chassisHostname,slot: object.data.slot},previousData: {chassisHostname: object.previousData.chassisHostname,slot: object.previousData.slot},objectType: objectType}) === ' ') {
+            // no modification at all
             if (callback) {
               callback()
             }
-        })
+        } else {
+          const timestamp = Date.now()
+          const userId = userutils.getLoggedInUser()
+          getUserName(userId, null, action, user => {
+              if (user) {
+                  var log = packageLog(timestamp, objectId, objectType, object.name, object.data, object.previousData, object.datacenter, action, userId, user.name)
+                  firebaseutils.logsRef.add(log)
+                }
+              if (callback) {
+                callback()
+              }
+          })
+        }
     }
 }
 
@@ -173,6 +207,20 @@ function getObjectData(objectId, objectType, callback, wantPromise = false) {
                 break
             case DATACENTER():
                 firebaseutils.datacentersRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case OFFLINE_SITE():
+                firebaseutils.offlinestorageRef.doc(objectId).get().then(doc => callback(doc.data()))
+                .catch( error => {
+                    console.log("Error getting documents: ", error)
+                    callback(null)
+                })
+                break
+            case OFFLINE():
+                firebaseutils.db.collectionGroup("offlineAssets").where("assetId", "==", objectId).get().then(qs => callback(qs.docs[0].data()))
                 .catch( error => {
                     console.log("Error getting documents: ", error)
                     callback(null)
@@ -222,8 +270,8 @@ function filterLogsFromName(search,itemNo,startAfter,callback) {
         docSnaps.docs.forEach(doc => {
             const user = doc.data().userName.toLowerCase()
             const object = doc.data().objectName.toLowerCase()
-            const includesAsset = doc.data().objectType === ASSET() && (object.includes(searchName) || doc.data().objectId.includes(searchName))
-            const includesPDUAsset = doc.data().objectType === PDU() && includesAssetInPDUName(object,searchName)
+            const includesAsset = (doc.data().objectType === ASSET() || doc.data().objectType === OFFLINE()) && (object.includes(searchName) || doc.data().objectId.includes(searchName))
+            const includesPDUAsset = (doc.data().objectType === PDU() || doc.data().objectType === BCMAN()) && includesAssetInPDUName(object,searchName)
             const includesUser = user.includes(searchName) || (doc.data().objectType === USER() && object.includes(searchName))
             if (!search || includesAsset || includesPDUAsset || includesUser) {
                 logs = [...logs,{...doc.data(), log: buildLog(doc.data()), date: getDate(doc.data().timestamp), itemNo: itemNo++}]
@@ -248,6 +296,7 @@ function doesObjectStillExist(objectType,objectId,callback,objectName=null) {
     switch (objectType) {
         case ASSET():
         case PDU():
+        case BCMAN():
             firebaseutils.assetRef.doc(objectId).get().then(doc => {
                 if (doc.exists) {
                     callback(true,true)
@@ -261,6 +310,9 @@ function doesObjectStillExist(objectType,objectId,callback,objectName=null) {
                     callback(docSnaps.docs[0].exists,false)
                 })
             })
+            break
+        case OFFLINE():
+            firebaseutils.db.collectionGroup("offlineAssets").where("assetId", "==", objectId).get().then(qs => callback(!qs.empty,true))
             break
         case CHANGEPLAN():
             firebaseutils.changeplansRef.doc(objectId).get().then(doc => callback(doc.exists,true))
@@ -283,9 +335,16 @@ function doesObjectStillExist(objectType,objectId,callback,objectName=null) {
 
 function buildLog(data) {
     var log = data.userName + ' '
-              + data.action + (data.action === MODIFY() && data.previousData ? buildDiff(data) : ' ')
+              + data.action + ((data.action === MODIFY() || data.action === BLADE_MODIFY()) && data.previousData ? buildDiff(data) : ' ')
               + data.objectType + ' ' + data.objectName
-              + (data.objectType === RACK() || data.objectType === ASSET() || data.objectType === PDU() ? (' in datacenter ' + data.datacenter + '.') : '.')
+              + (data.objectType === RACK()
+                || ((data.objectType === ASSET() || data.objectType === OFFLINE()) && data.action !== MOVE())
+                || data.objectType === PDU()
+                || data.objectType === BCMAN()
+                    ? ((data.objectType === OFFLINE() ? ' in offline storage site ' : ' in datacenter ') + data.datacenter + '.')
+                    : (data.action === MOVE()
+                        ? (' from ' + data.previousData.datacenter + ' to ' + data.datacenter + '.')
+                        : '.'))
     return log
 }
 
@@ -294,7 +353,7 @@ function buildDiff(data) {
     var num = 0
     var field;
     for (field in data.previousData) {
-      if (data.previousData[field] !== data.currentData[field]) {
+      if (data.previousData[field] != data.currentData[field]) {
          let returnedDiff = buildSpecificDiff(data,field)
          if (returnedDiff) {
            diff = diff + (num > 0 ? ',' : '') + ' ' + returnedDiff
@@ -308,6 +367,7 @@ function buildDiff(data) {
 function buildSpecificDiff(data,field) {
     switch (data.objectType) {
       case ASSET():
+      case OFFLINE():
           return assetDiff(data,field)
       case MODEL():
           return modelDiff(data,field)
@@ -317,6 +377,8 @@ function buildSpecificDiff(data,field) {
           return userDiff(data,field)
       case DATACENTER():
           return datacenterDiff(data,field)
+      case OFFLINE_SITE():
+          return defaultDiff(data,field)
       default:
           return ''
     }
@@ -339,15 +401,46 @@ function getUserName(id,data,action,callback) {
     }
 }
 
-function getAssetName(id,data,action,callback) {
+function getAssetName(id,data,action,callback,offline=false) {
     if (data && (action === DELETE() || action === DECOMMISSION())) {
         callback({name: data.model+' '+data.hostname, data: data, previousData: null, datacenter: data.datacenter})
     } else {
-        firebaseutils.assetRef.doc(id).get().then(doc => callback({name: doc.data().model+' '+doc.data().hostname, data: doc.data(), previousData: data, datacenter: doc.data().datacenter}))
-        .catch( error => {
-          console.log("Error getting documents: ", error)
-          callback(null)
-        })
+        if (offline) {
+          firebaseutils.db.collectionGroup("offlineAssets").where("assetId", "==", id).get().then(qs => callback({name: qs.docs[0].data().model+' '+qs.docs[0].data().hostname, data: {...qs.docs[0].data(),datacenterAbbrev: data.datacenterAbbrev}, previousData: data, datacenter: qs.docs[0].data().datacenter}))
+          .catch( error => {
+            console.log("Error getting documents: ", error)
+            callback(null)
+          })
+        } else {
+          if (action === BLADE_MODIFY()) {
+            firebaseutils.assetRef.doc(id).get().then(doc => {
+              firebaseutils.bladeRef.doc(id).get().then(docRef => {
+                // pass in bladeRef data as current data
+                var prevData = data
+                var currentData = docRef.data()
+                prevData['chassisHostname'] = prevData.rack
+                currentData['chassisHostname'] = currentData.rack
+                prevData['slot'] = prevData.rackU
+                currentData['slot'] = currentData.rackU
+                delete prevData.rack
+                delete prevData.rackU
+                delete currentData.rack
+                delete currentData.rackU
+                callback({name: doc.data().model+' '+doc.data().hostname, data: currentData, previousData: prevData, datacenter: doc.data().datacenter})
+              })
+            })
+            .catch( error => {
+              console.log("Error getting documents: ", error)
+              callback(null)
+            })
+          } else {
+            firebaseutils.assetRef.doc(id).get().then(doc => callback({name: doc.data().model+' '+doc.data().hostname, data: doc.data(), previousData: data, datacenter: doc.data().datacenter}))
+            .catch( error => {
+              console.log("Error getting documents: ", error)
+              callback(null)
+            })
+          }
+        }
     }
 }
 
@@ -398,6 +491,18 @@ function getDatacenterName(id,data,action,callback) {
     }
 }
 
+function getOfflineSiteName(id,data,action,callback) {
+  if (data && action === DELETE()) {
+      callback({name: data.name, data: data, previousData: null, datacenter: null})
+  } else {
+      firebaseutils.offlinestorageRef.doc(id).get().then(doc => callback({name: doc.data().name, data: doc.data(), previousData: data, datacenter: null}))
+      .catch( error => {
+        console.log("Error getting documents: ", error)
+        callback(null)
+      })
+  }
+}
+
 function getChangePlanName(id,data,action,callback) {
     if (data && action === DELETE()) {
         callback({name: data.name, data: data, previousData: null, datacenter: null})
@@ -410,23 +515,27 @@ function getChangePlanName(id,data,action,callback) {
     }
 }
 
-function getPDUName(data,action,callback) {
-    firebaseutils.assetRef.get().then(docSnaps => {
+function getPDUName(data,action,callback,bcman=false) {
+    let ref = bcman ? firebaseutils.bladeRef : firebaseutils.assetRef
+    ref.get().then(async(docSnaps) => {
         var assetId = null
         var asset;
         for (var i = 0; i < docSnaps.docs.length; i++) {
             asset = docSnaps.docs[i].data()
+            const docID = docSnaps.docs[i].id
             let formattedNum;
-            if (asset.rackNum.toString().length === 1) {
-                formattedNum = "0" + asset.rackNum;
-            } else {
-                formattedNum = asset.rackNum;
+            if (!bcman) {
+              if (asset.rackNum.toString().length === 1) {
+                  formattedNum = "0" + asset.rackNum;
+              } else {
+                  formattedNum = asset.rackNum;
+              }
             }
-            if (asset.powerConnections) {
-                for (var j = 0; j < asset.powerConnections.length; j++) {
-                    const assetPDU = "hpdu-rtp1-" + asset.rackRow + formattedNum + asset.powerConnections[j].pduSide.charAt(0) + ":" + asset.powerConnections[j].port
+            if (bcman || asset.powerConnections) {
+                for (var j = 0; j < (bcman ? 1 : asset.powerConnections.length); j++) {
+                    const assetPDU = bcman ? (asset.rack+':'+asset.rackU) : ("hpdu-rtp1-" + asset.rackRow + formattedNum + asset.powerConnections[j].pduSide.charAt(0) + ":" + asset.powerConnections[j].port)
                     if (assetPDU === data.pdu+':'+data.portNumber) {
-                        assetId = asset.assetId
+                        assetId = bcman ? docID : asset.assetId
                         break
                     }
                 }
@@ -436,7 +545,13 @@ function getPDUName(data,action,callback) {
             }
         }
         if (assetId) {
-            callback({name: data.pdu+':'+data.portNumber+' connected to asset '+asset.model+' '+asset.hostname, data: {...data,asset: asset}, previousData: null, datacenter: asset.datacenter}, assetId)
+            let extra = null
+            if (bcman) {
+              extra = await new Promise(function(resolve, reject) {
+                  firebaseutils.assetRef.doc(assetId).get().then(doc => resolve({dc: doc.data().datacenter, host: doc.data().hostname}))
+              })
+            }
+            callback({name: data.pdu+':'+data.portNumber+' connected to asset '+asset.model+' '+(extra ? extra.host : asset.hostname), data: {...data,asset: asset}, previousData: null, datacenter: extra ? extra.dc : asset.datacenter}, assetId)
             return
         }
         callback(null,null)
@@ -455,7 +570,20 @@ function assetDiff(data,field) {
         return !findArrayAndMapDiff(flattenArrayOrMap(data.previousData[field]),flattenArrayOrMap(data.currentData[field]),true) ? '' : (field + arrayAndMapDiffString)
       case 'macAddresses':
         return !findArrayAndMapDiff(data.previousData[field],data.currentData[field],true) ? '' : (field + arrayAndMapDiffString)
+      case 'variances':
+        return !findArrayAndMapDiff(data.previousData[field],data.currentData[field],true) ? '' : (field + arrayAndMapDiffString)
       case 'id':
+      case 'datacenterAbbrev':
+      case 'datacenterID':
+      case 'rackID':
+      case 'rackNum':
+      case 'rackRow':
+      case 'modelId':
+      case 'modelNumber':
+      case 'vendor':
+      case 'chassisId':
+      case 'chassisVendor':
+      case 'rackId':
           return ''
       default:
         return defaultDiff(data,field)
@@ -533,7 +661,7 @@ function findArrayAndMapDiff(a,b,map=false) {
                 permDiff.push(field + (act == ' by removing ' ? ' as ' : ' to be ') + c[field])
             } else {
               if (act === ' by changing ' && other[field] && other[field] !== c[field]) {
-                permDiff.push(field + ' from ' + other[field] + ' to ' + c[field])
+                permDiff.push(field + ' from ' + other[field] + ' to ' + (c[field] ? c[field] : 'none'))
               }
             }
           } else {
@@ -567,14 +695,14 @@ function flattenArrayOrMap(flat) {
       }
       delete newMap[key]
       for (var nextKey in value) {
-        newMap[key+':'+nextKey] = value[nextKey]
-        flatten(key+':'+nextKey)
+        newMap[key+'|'+nextKey] = value[nextKey]
+        flatten(key+'|'+nextKey)
       }
     }
 
     function getValue(key) {
       var value = flat
-      const keyArray = key.split(':')
+      const keyArray = key.split('|')
       for (var field in keyArray) {
         value = value[keyArray[field]]
       }
@@ -675,4 +803,4 @@ var isEqual = function (value, other, name) {
 	return true;
 };
 
-export { ASSET, MODEL, RACK, USER, DATACENTER, CHANGEPLAN, PDU, CREATE, MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, POWER_ON, POWER_OFF, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }
+export { ASSET, MODEL, RACK, USER, DATACENTER, OFFLINE_SITE, CHANGEPLAN, PDU, BCMAN, OFFLINE, CREATE, MODIFY, BLADE_MODIFY, DELETE, DECOMMISSION, EXECUTE, COMPLETE, POWER_ON, POWER_OFF, MOVE, addLog, getObjectData, getLogs, doesObjectStillExist, filterLogsFromName, isEqual }

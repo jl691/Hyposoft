@@ -22,6 +22,7 @@ describe('change plan add asset: network connections test', () => {
                 otherPort: '2'
             }
         ]
+
         changeplanconflictutils.networkConnectionConflict(ids['changePlan'], ids['changePlanStep'], networkConnections, null, networkConnectionsStatus => {
                 expect(networkConnectionsStatus).toBe(false)
                 done()
@@ -47,7 +48,7 @@ describe('change plan add asset: network connections test', () => {
         changeplanconflictutils.networkConnectionConflict(ids['changePlan'], ids['changePlanStep'], networkConnections, null, networkConnectionsStatus => {
 
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
-                expect(docRef.data().database.networkConnections[0]).toBe('networkConnectionConflictErrID')
+                expect(docRef.data().database.networkConnections[0]).toBe('networkConnectionConflictDBErrID')
                 // expect([...docRef.data().networkConnections].includes('networkConnectionOtherAssetIDErrID')).toBe(true)
                 done()
             })
@@ -66,8 +67,8 @@ describe('change plan add asset: network connections test', () => {
         changeplanconflictutils.networkConnectionConflict(ids['changePlan'], ids['changePlanStep'], networkConnections, null, networkConnectionsStatus => {
 
             firebaseutils.changeplansRef.doc(ids['changePlan']).collection('conflicts').doc(ids['changePlanStep']).get().then(docRef => {
-                expect(docRef.data().database.networkConnections[0]).toBe('networkConnectionOtherAssetIDErrID')
-                expect(docRef.data().database.networkConnections[1]).toBe('networkConnectionNonExistentOtherPortErrID')
+                expect(docRef.data().database.networkConnections[0]).toBe('networkConnectionOtherAssetIDDBErrID')
+                expect(docRef.data().database.networkConnections[1]).toBe('networkConnectionNonExistentOtherPortDBErrID')
                 done()
             })
         })
