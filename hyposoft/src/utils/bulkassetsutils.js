@@ -240,7 +240,7 @@ function validateImportedAssets (data, callback) {
                 } else if (datum.custom_display_color && !/^#[0-9A-F]{6}$/i.test(String(datum.custom_display_color))) {
                     errors = [...errors, [i+1, 'Invalid display color']]
                 }
-                
+
                 if (datum.custom_cpu.trim() && datum.custom_cpu.trim().length > 50) {
                     errors = [...errors, [i+1, 'CPU should be less than 50 characters long']]
                 } else if (datum.custom_cpu.trim() === '') {
@@ -315,8 +315,15 @@ function validateImportedAssets (data, callback) {
             } else {
                 // Either ignore or modify
                 const assetFromDb = assetsLoaded[datum.asset_number]
-                const ppC1 = (assetFromDb.powerConnections && assetFromDb.powerConnections[0] && ((assetFromDb.powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[0].port)) || ''
-                const ppC2 = (assetFromDb.powerConnections && assetFromDb.powerConnections[1] && ((assetFromDb.powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[1].port)) || ''
+                var ppC1 = (assetFromDb.powerConnections && assetFromDb.powerConnections[0] && ((assetFromDb.powerConnections[0].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[0].port)) || ''
+                var ppC2 = (assetFromDb.powerConnections && assetFromDb.powerConnections[1] && ((assetFromDb.powerConnections[1].pduSide === 'Left' ? 'L' : 'R')+assetFromDb.powerConnections[1].port)) || ''
+
+                if (isBlade) { // Power connections don't matter for blades
+                    ppC1 = ''
+                    ppC2 = ''
+                    datum.power_port_connection_1 = ''
+                    datum.power_port_connection_2 = ''
+                }
 
                 if (assetFromDb.hostname.toLowerCase().trim() == datum.hostname.toLowerCase().trim() &&
                     assetFromDb.datacenterAbbrev.toLowerCase().trim() == datum.datacenter.toLowerCase().trim() &&
